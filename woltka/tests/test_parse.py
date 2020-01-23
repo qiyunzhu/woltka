@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp, mkstemp
 
-from woltk.parse import (
+from woltka.parse import (
     infer_align_format, parse_line_ordinal, parse_b6o_line, parse_sam_line,
     cigar_to_lens)
 

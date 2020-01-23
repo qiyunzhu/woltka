@@ -22,7 +22,7 @@ def main():
 
 
 for module in modules:
-    main.add_command(getattr(import_module(f'woltk.{module}'), module))
+    main.add_command(getattr(import_module(f'woltka.{module}'), module))
 
 
 if __name__ == '__main__':

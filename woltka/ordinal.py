@@ -12,8 +12,8 @@ import sys
 import logging
 import click
 
-from woltk.util import readzip
-from woltk.parse import infer_align_format, parse_line_ordinal, assign_parser
+from woltka.util import readzip
+from woltka.parse import infer_align_format, parse_line_ordinal, assign_parser
 
 
 @click.command()

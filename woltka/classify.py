@@ -11,32 +11,35 @@
 from os.path import join
 import click
 
-from woltk.core import count
-from woltk.util import readzip, id2file_map, allkeys
-from woltk.parse import read_map_file
+from woltka.core import count
+from woltka.util import readzip, id2file_map, allkeys
+from woltka.parse import read_map_file
+from woltka.tree import build_tree
 
 
 @click.command()
 @click.option(
-    '--input-dir', '-i', required=True,
+    '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help='input read map directory')
 @click.option(
-    '--output-table', '-o', required=True,
+    '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True, dir_okay=False),
     help='output profile')
+# input information
 @click.option(
-    '--input-fmt', '-f', default='auto',
+    '--format', '-f', 'input_fmt', default='auto',
     type=click.Choice(['auto', 'b6o', 'sam', 'map'], case_sensitive=False),
     help=('format of read alignment: "auto": automatic determination '
           '(default), "b6o": BLAST tabular format (-outfmt 6), "sam": SAM '
           'format, "map": simple map of query <tab> subject'))
 @click.option(
-    '--input-ext', '-e',
+    '--extension', '-e', 'input_ext',
     help='input filename extension following sample ID')
 @click.option(
     '--sample-ids', '-s', type=click.File('r'),
     help='list of sample IDs to be included')
+# behavior
 @click.option(
     '--ambiguity', '-a', default='norm', show_default=True,
     type=click.Choice(['uniq', 'all', 'norm'], case_sensitive=False),
@@ -53,29 +56,40 @@ from woltk.parse import read_map_file
     '--ixend/--no-ixend', default=False,
     help=('subject identifiers end with underscore index, the latter of which '
           'is to be removed prior to mapping.'))
+# tree information
 @click.option(
-    '--groups', '-g', type=click.Path(exists=True), multiple=True,
-    help=('map(s) of subjects to higher groups, such as nucleotides to host '
-          'genomes, or sequence IDs to taxonomy IDs, can accept multiple maps '
-          'specified in order'))
+    '--names', 'names_fp', type=click.Path(exists=True),
+    help=('map of taxonomic units to labels; can be plain map or NCBI '
+          'names.dmp'))
 @click.option(
-    '--lineage', '-l',
-    type=click.Path(writable=True, dir_okay=False),
+    '--nodes', 'nodes_fp', type=click.Path(exists=True),
+    help=('hierarchical structure of taxonomy defined by NCBI names.dmp '
+          'or compatible format'))
+@click.option(
+    '--newick', 'newick_fp', type=click.Path(exists=True),
+    help=('classification hierarchies defined by a tree in Newick format.'))
+@click.option(
+    '--levels', 'levels_fp', type=click.Path(exists=True),
+    help=('classification hierarchies defined by a table with each column '
+          'representing a level and header as level name.'))
+@click.option(
+    '--lineage', 'lineage_fp', type=click.Path(exists=True),
     help=('map of subjects/groups to lineage strings in format of "taxonomic;'
           'units;from;high;to;low", can be Greengenes-style taxonomy where '
           'level codes such as "k__" will be parsed'))
 @click.option(
-    '--nodes', type=click.Path(exists=True),
-    help=('hierarchical structure of taxonomy defined by NCBI names.dmp '
-          'or compatible format'))
-@click.option(
-    '--names', type=click.Path(exists=True),
-    help=('map of taxonomic units to labels; can be plain map or NCBI '
-          'names.dmp'))
-def classify(input_dir, output_table, input_fmt, input_ext, sample_ids,
-             ambiguity, lca, ixend, groups, lineage, nodes, names):
+    '--groups', 'group_fps', type=click.Path(exists=True), multiple=True,
+    help=('map(s) of subjects to higher groups, such as nucleotides to host '
+          'genomes, or sequence IDs to taxonomy IDs, can accept multiple maps '
+          'specified in order'))
+def classify(input_fp, output_fp,
+             input_fmt, input_ext, sample_ids,
+             ambiguity, lca, ixend,
+             names_fp, nodes_fp, newick_fp, levels_fp, lineage_fp, group_fps):
     """Generate a profile of query samples based on hierarchical organization
     subjects."""
+
+    '''Read sample information.'''
 
     # parse sample Ids
     ids = None
@@ -84,30 +98,32 @@ def classify(input_dir, output_table, input_fmt, input_ext, sample_ids,
         click.echo('Samples to include: %d.' % len(ids))
 
     # match input files with sample Ids
-    input_map = id2file_map(input_dir, input_ext, ids)
+    input_map = id2file_map(input_fp, input_ext, ids)
     if not ids:
         ids = sorted(input_map.keys())
         click.echo('Samples to read: %d.' % len(ids))
     elif len(input_map) < len(ids):
         raise ValueError('Inconsistent sample IDs.')
 
-    # read maps of higher groups
-    group_maps = []
-    for group in groups:
-        group_maps.append(readzip(group))
+    '''Read classification tree.'''
+
+    tree, ranks, names = build_tree(
+        names_fp, nodes_fp, newick_fp, levels_fp, lineage_fp, group_fps)
+
+    '''Parse maps.'''
 
     # parse input maps and generate profile
     data = {}
     for id_ in ids:
         click.echo(f'Parsing {id_}...')
-        with readzip(join(input_dir, input_map[id_])) as f:
+        with readzip(join(input_fp, input_map[id_])) as f:
             x = read_map_file(f, input_fmt)
             click.echo(len(x))
             data[id_] = count(x, ambiguity)
             click.echo(data[id_].keys())
 
     # write output profile
-    with open(output_table, 'w') as f:
+    with open(output_fp, 'w') as f:
         write_profile(f, data, samples=ids)
     click.echo('Done.')
 

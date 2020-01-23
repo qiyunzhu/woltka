@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp, mkstemp
 
-from woltk.ordinal import (
+from woltka.ordinal import (
     match_read_gene, read_gene_table, readmap_to_profile)
 
 

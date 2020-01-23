@@ -27,9 +27,9 @@ classes = """
 classifiers = [s.strip() for s in classes.split('\n') if s]
 
 
-name = 'woltk'
+name = 'woltka'
 
-description = 'Web of Life Toolkit'
+description = 'Web of Life ToolKit App'
 
 long_description = open('README.md').read()
 

@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp, mkstemp
 
-from woltk.util import (
+from woltka.util import (
     readzip, id2file_map, allkeys)
 
 
