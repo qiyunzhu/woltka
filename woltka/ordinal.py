@@ -139,7 +139,7 @@ def ordinal(input_align, output_map, genetab, input_format, threshold,
     # parser for read-to-gene(s) map
     def _parse_map_line(line, *args):
         nonlocal profile, rids
-        rid, genes = line.rstrip('\r\n').split('\t')
+        rid, genes = line.rstrip().split('\t')
         rix = len(rids)
         rids.append(rid)
         for gene in genes.split(','):
@@ -221,7 +221,7 @@ def read_gene_table(f):
     res = {}
     nucl = None
     for line in f:
-        line = line.rstrip('\r\n')
+        line = line.rstrip()
 
         # ">" or "#" indicates nucleotide name
         if line.startswith(('>', '#')):

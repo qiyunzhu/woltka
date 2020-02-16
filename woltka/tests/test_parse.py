@@ -9,10 +9,9 @@
 # ----------------------------------------------------------------------------
 
 from unittest import TestCase, main
-from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
-from tempfile import mkdtemp, mkstemp
+from tempfile import mkdtemp
 
 from woltka.parse import (
     infer_align_format, parse_line_ordinal, parse_b6o_line, parse_sam_line,
@@ -27,11 +26,27 @@ class ParseTests(TestCase):
     def tearDown(self):
         rmtree(self.tmpdir)
 
+    def test_infer_align_format(self):
+        # simple cases
+        # map
+        line = 'S1/1	NC_123456'
+        self.assertEqual(infer_align_format(line), 'map')
+
+        # b6o
+        line = 'S1/1	NC_123456	100	100	0	0	1	100	25	124	0.1	100'
+        self.assertEqual(infer_align_format(line), 'b6o')
+
+        # sam
+        line = '@HD	VN:1.0	SO:unsorted'
+        self.assertEqual(infer_align_format(line), 'sam')
+        line = 'S1	77	NC_123456	26	0	100M	*	0	0	*	*'
+        self.assertEqual(infer_align_format(line), 'sam')
+
     def test_parse_line_ordinal(self):
         # b6o (BLAST, DIAMOND, BURST, etc.)
         parser = parse_b6o_line
         b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-               'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')                
+               'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
         rids, lenmap, locmap = [], {}, {}
 
         # first line

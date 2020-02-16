@@ -12,10 +12,9 @@ from unittest import TestCase, main
 from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
-from tempfile import mkdtemp, mkstemp
+from tempfile import mkdtemp
 
-from woltka.util import (
-    readzip, id2file_map, allkeys)
+from woltka.util import id2file_map, allkeys
 
 
 class UtilTests(TestCase):

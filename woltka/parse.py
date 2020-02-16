@@ -61,6 +61,8 @@ def read_map_file(fh, fmt='auto'):
         query, subject = parser(line)[:2]
         res.setdefault(query, []).append(subject)
 
+    return res
+
 
 def infer_align_format(line):
     """Guess the format of an alignment file based on first line.
@@ -87,7 +89,7 @@ def infer_align_format(line):
     """
     if line.split()[0] == '@HD':
         return 'sam'
-    row = line.rstrip('\r\n').split('\t')
+    row = line.rstrip().split('\t')
     if len(row) == 2:
         return 'map'
     if len(row) == 12:
@@ -174,12 +176,12 @@ def parse_map_line(line, *args):
     Only first two columns are considered.
     """
     try:
-        return line.rstrip('\r\n').split('\t')[:2]
+        return line.rstrip().split('\t')[:2]
     except ValueError:
         raise ValueError(f'Invalid line in mapping file: {line}.')
 
     # nonlocal profile, rids
-    # rid, genes = line.rstrip('\r\n').split('\t')[:2]
+    # rid, genes = line.rstrip().split('\t')[:2]
     # rix = len(rids)
     # rids.append(rid)
     # for gene in genes.split(','):
@@ -208,7 +210,7 @@ def parse_b6o_line(line):
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
-    x = line.rstrip('\r\n').split('\t')
+    x = line.rstrip().split('\t')
     qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
     sstart, send = sorted([int(x[8]), int(x[9])])
     return qseqid, sseqid, score, length, sstart, send
@@ -243,7 +245,7 @@ def parse_sam_line(line):
     # skip header
     if line.startswith('@'):
         return
-    x = line.rstrip('\r\n').split('\t')
+    x = line.rstrip().split('\t')
     qname, rname = x[0], x[2]  # query and subject identifiers
 
     # skip unmapped
@@ -322,7 +324,7 @@ def parse_kraken(line):
     .. _Kraken2 manual:
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
-    x = line.rstrip('\r\n').split('\t')
+    x = line.rstrip().split('\t')
     return x[1], x[2] if x[0] == 'C' else None, None
 
 
@@ -350,5 +352,5 @@ def parse_centrifuge(line):
     """
     if line.startswith('readID'):
         return None
-    x = line.rstrip('\r\n').split('\t')
+    x = line.rstrip().split('\t')
     return x[0], x[1], int(x[2]), int(x[3])

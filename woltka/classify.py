@@ -8,10 +8,11 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+from os import makedirs
 from os.path import join
 import click
 
-from woltka.core import count
+from woltka.core import count, assign
 from woltka.util import readzip, id2file_map, allkeys
 from woltka.parse import read_map_file
 from woltka.tree import build_tree
@@ -21,11 +22,12 @@ from woltka.tree import build_tree
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help='input read map directory')
+    help='directory of input read alignment(s)')
 @click.option(
     '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True, dir_okay=False),
-    help='output profile')
+    type=click.Path(writable=True),
+    help=('path to output profile file (single rank) or directory (multiple '
+          'ranks)'))
 # input information
 @click.option(
     '--format', '-f', 'input_fmt', default='auto',
@@ -41,11 +43,16 @@ from woltka.tree import build_tree
     help='list of sample IDs to be included')
 # behavior
 @click.option(
-    '--ambiguity', '-a', default='norm', show_default=True,
-    type=click.Choice(['uniq', 'all', 'norm'], case_sensitive=False),
-    help=('how to treat reads that occur multiple times: "uniq": drop '
-          'non-unique reads; "all": count each occurrence once; "norm": '
-          'count each occurrence 1/k times (k = number of occurrences)'))
+    '--rank', '-r', 'rank_lst', type=click.STRING,
+    help=('classify sequences at this rank; ignore or enter "none" to omit '
+          'classification; enter "free" for free-rank classification; can '
+          'specify multiple comma-delimited ranks and one profile will be '
+          'generated for each rank'))
+@click.option(
+    '--multi/--no-multi', default=True,
+    help=('allow one sequence to be assigned to multiple classification '
+          'units at the same rank; per-unit match counts will be recorded '
+          'and profile will be normalized by total number of matches'))
 @click.option(
     '--lca/--no-lca', default=True,
     help=('attempt to find lowest common ancestor (LCA) in taxonomy for '
@@ -58,6 +65,12 @@ from woltka.tree import build_tree
           'is to be removed prior to mapping.'))
 # tree information
 @click.option(
+    '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
+    help=('map(s) of subjects to higher classification units, such as '
+          'nucleotides to host genomes, sequence IDs to taxonomy IDs, gene '
+          'family to pathway, etc., can accept multiple maps entered in low-'
+          'to-high order'))
+@click.option(
     '--names', 'names_fp', type=click.Path(exists=True),
     help=('map of taxonomic units to labels; can be plain map or NCBI '
           'names.dmp'))
@@ -69,7 +82,7 @@ from woltka.tree import build_tree
     '--newick', 'newick_fp', type=click.Path(exists=True),
     help=('classification hierarchies defined by a tree in Newick format.'))
 @click.option(
-    '--levels', 'levels_fp', type=click.Path(exists=True),
+    '--rank-table', 'ranktb_fp', type=click.Path(exists=True),
     help=('classification hierarchies defined by a table with each column '
           'representing a level and header as level name.'))
 @click.option(
@@ -77,81 +90,91 @@ from woltka.tree import build_tree
     help=('map of subjects/groups to lineage strings in format of "taxonomic;'
           'units;from;high;to;low", can be Greengenes-style taxonomy where '
           'level codes such as "k__" will be parsed'))
-@click.option(
-    '--groups', 'group_fps', type=click.Path(exists=True), multiple=True,
-    help=('map(s) of subjects to higher groups, such as nucleotides to host '
-          'genomes, or sequence IDs to taxonomy IDs, can accept multiple maps '
-          'specified in order'))
 def classify(input_fp, output_fp,
              input_fmt, input_ext, sample_ids,
-             ambiguity, lca, ixend,
-             names_fp, nodes_fp, newick_fp, levels_fp, lineage_fp, group_fps):
+             rank_lst, multi, lca, ixend,
+             map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
     """Generate a profile of query samples based on hierarchical organization
     subjects."""
 
-    '''Read sample information.'''
-
     # parse sample Ids
-    ids = None
+    samples = None
     if sample_ids:
-        ids = sample_ids.read().splitlines()
-        click.echo('Samples to include: %d.' % len(ids))
+        samples = sample_ids.read().splitlines()
+        click.echo('Samples to include: %d.' % len(samples))
 
     # match input files with sample Ids
-    input_map = id2file_map(input_fp, input_ext, ids)
-    if not ids:
-        ids = sorted(input_map.keys())
-        click.echo('Samples to read: %d.' % len(ids))
-    elif len(input_map) < len(ids):
+    input_map = id2file_map(input_fp, input_ext, samples)
+    if not samples:
+        samples = sorted(input_map.keys())
+        click.echo('Samples to read: %d.' % len(samples))
+    elif len(input_map) < len(samples):
         raise ValueError('Inconsistent sample IDs.')
 
-    '''Read classification tree.'''
+    # build classification system
+    tree, rankd, named, root = build_tree(
+        map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp)
 
-    tree, ranks, names = build_tree(
-        names_fp, nodes_fp, newick_fp, levels_fp, lineage_fp, group_fps)
-
-    '''Parse maps.'''
+    # parse target ranks
+    ranks = ['none'] if rank_lst is None else rank_lst.split(',')
+    data = {x: {} for x in ranks}
 
     # parse input maps and generate profile
-    data = {}
-    for id_ in ids:
-        click.echo(f'Parsing {id_}...')
-        with readzip(join(input_fp, input_map[id_])) as f:
-            x = read_map_file(f, input_fmt)
-            click.echo(len(x))
-            data[id_] = count(x, ambiguity)
-            click.echo(data[id_].keys())
+    args = [tree, rankd, root]
+    for sample in samples:
+        click.echo(f'Parsing {sample}...')
 
-    # write output profile
-    with open(output_fp, 'w') as f:
-        write_profile(f, data, samples=ids)
+        # read alignment file into query-subject(s) map
+        with readzip(join(input_fp, input_map[sample])) as f:
+            map_ = read_map_file(f, input_fmt)
+
+        # merge duplicate query-subject pairs
+        map_ = {k: set(v) for k, v in map_.items()}
+        click.echo(f'Query sequences: {len(map_)}.')
+        for rank in ranks:
+            assignment = {k: assign(v, rank, *args) for k, v in map_.items()}
+            data[rank][sample] = count(assignment)
+            try:
+                del data[rank][sample][None]
+            except KeyError:
+                pass
+        # click.echo(data[sample].keys())
+
+    # determine output filenames
+    if len(ranks) == 1:
+        rank2fp = {ranks[0]: output_fp}
+    else:
+        makedirs(output_fp, exist_ok=True)
+        rank2fp = {x: join(output_fp, f'{x}.tsv') for x in ranks}
+
+    # write output profile(s)
+    for rank in ranks:
+        with open(rank2fp[rank], 'w') as f:
+            write_profile(f, data[rank], named, samples)
     click.echo('Done.')
 
 
-def write_profile(fh, data, fmt='tsv', samples=None):
-    """Write profile to a plain tab-delimited file."""
+def write_profile(fh, data, named=None, samples=None):
+    """Write profile to a plain tab-delimited file.
+    """
     if samples is None:
         samples = sorted(data)
-    if fmt == 'tsv':
-        write_tsv(fh, data, samples)
-    elif fmt == 'biom':
-        write_biom(fh, data, samples)
-
-
-def write_tsv(fh, data, samples):
     print('#SampleID\t{}'.format('\t'.join(samples)), file=fh)
-    for feature in sorted(allkeys(data)):
-        row = [feature]
+    for key in sorted(allkeys(data)):
+        # get feature name
+        try:
+            row = [named[key]]
+        except (TypeError, KeyError):
+            row = [key]
+        # get feature count
         for sample in samples:
             try:
-                row.append(str(int(data[sample][feature])))
+                row.append(str(int(data[sample][key])))
             except KeyError:
                 row.append('0')
-        print('\t'.join(row), file=fh)
-
-
-def write_biom(fh, data, samples):
-    pass
+        # skip all-zero row
+        if any(x != '0' for x in row[1:]):
+            print('\t'.join(row), file=fh)
 
 
 if __name__ == "__main__":
