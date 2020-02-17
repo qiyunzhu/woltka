@@ -12,11 +12,15 @@ import click
 from importlib import import_module
 
 
-modules = ('ordinal', 'classify')
+click_kws = {
+    'context_settings': {
+        'help_option_names': ['-h', '--help']}}
+
+modules = ('classify', 'gotu')
 
 
 @click.version_option('0.1.0')
-@click.group()
+@click.group(**click_kws)
 def main():
     pass
 

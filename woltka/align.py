@@ -24,7 +24,7 @@ A parser function returns a tuple of:
 """
 
 
-def read_map_file(fh, fmt='auto'):
+def read_align(fh, fmt='auto'):
     """Read an entire mapping file.
 
     Parameters
@@ -56,7 +56,7 @@ def read_map_file(fh, fmt='auto'):
     else:
         parser = assign_parser(fmt)
 
-    # parse the remaining content
+    # parse remaining content
     for line in fh:
         query, subject = parser(line)[:2]
         res.setdefault(query, []).append(subject)

@@ -81,7 +81,7 @@ def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
         with readzip(fp) as f:
             map_ = read_map(f)
         update_dict(tree, map_)
-        update_dict(rankd, {k: rank for k in map_.keys()})
+        update_dict(rankd, {k: rank for k in set(map_.values())})
 
     # taxdump-style names and nodes
     if names_fp:
@@ -98,7 +98,7 @@ def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
         with readzip(newick_fp) as f:
             update_dict(tree, read_newick(f))
 
-    # level file
+    # rank table file
     if ranktb_fp:
         with readzip(ranktb_fp) as f:
             update_dict(tree, read_ranktb(f))
@@ -110,6 +110,26 @@ def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
 
 
 def read_map(fh):
+    """Read simple low-to-high map from file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Simple mapping file.
+
+    Returns
+    -------
+    dict
+        Mapping (mutually identical to a taxonomy tree).
+
+    Notes
+    -----
+    Only first two columns are considered.
+
+    TODO
+    ----
+    Support for one-to-multiple mappings.
+    """
     try:
         return dict(x.split('\t', 2)[:2] for x in fh.read().splitlines())
     except ValueError:
@@ -470,14 +490,23 @@ def get_lineage(taxon, tree):
     list of str
         Lineage from root to query taxon.
     """
+    # if taxon is not in tree, return None
+    try:
+        parent = tree[taxon]
+    except KeyError:
+        return None
+
+    # move up classification hierarchy till root
     lineage = [taxon]
     this = taxon
     while True:
+        lineage.append(parent)
+        this = parent
         parent = tree[this]
         if parent == this:
             break
-        lineage.append(parent)
-        this = parent
+
+    # reverse lineage so that it's high-to-low
     return list(reversed(lineage))
 
 
@@ -501,17 +530,30 @@ def find_rank(taxon, rank, tree, rankd):
     str
         Ancestral taxon if found.
     """
+    # if taxon is not in tree, return None
+    try:
+        parent = tree[taxon]
+    except KeyError:
+        return None
+
+    # move up hierarchy until reaching given rank
     this = taxon
     while True:
+
+        # check rank of current taxon
         try:
             if rankd[this] == rank:
                 return this
         except KeyError:
             pass
-        parent = tree[this]
+
+        # stop when reaching root
         if parent == this:
             break
+
+        # move up to parent
         this = parent
+        parent = tree[this]
 
 
 def find_lca(taxa, tree):
@@ -526,24 +568,29 @@ def find_lca(taxa, tree):
 
     Returns
     -------
-    str
-        LCA of taxa.
+    str or None
+        LCA of taxa, or None if any taxon is not in tree.
 
     TODO
     ----
     Combine LCA and majority rule, which is not trivial and requires careful
     reasoning and algorithm design.
     """
-    lineage = None
-    for taxon in taxa:
+    taxa_ = list(taxa)
 
-        # get lineage of first taxon
-        if lineage is None:
-            lineage = get_lineage(taxon, tree)
-            continue
+    # get lineage of first taxon
+    lineage = get_lineage(taxa_[0], tree)
+    if lineage is None:
+        return
 
-        # compare with remaining taxa
+    # compare with remaining taxa
+    for taxon in taxa_[1:]:
+        try:
+            parent = tree[taxon]
+        except KeyError:
+            return
         this = taxon
+
         while True:
 
             # if shared lineage found
@@ -557,10 +604,10 @@ def find_lca(taxa, tree):
 
             # if not found
             except ValueError:
-                parent = tree[this]
                 if parent == this:
                     break
                 this = parent
+                parent = tree[this]
                 continue
 
     # LCA is the last of shared lineage

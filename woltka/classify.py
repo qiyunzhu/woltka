@@ -13,12 +13,14 @@ from os.path import join
 import click
 
 from woltka.core import count, assign
-from woltka.util import readzip, id2file_map, allkeys
-from woltka.parse import read_map_file
+from woltka.util import readzip, id2file_map, intize, delnone, allkeys
+from woltka.align import read_align
+from woltka.ordinal import read_gene_coords, whether_prefix, ordinal
 from woltka.tree import build_tree
 
 
 @click.command()
+# input and output
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
@@ -63,6 +65,12 @@ from woltka.tree import build_tree
     '--ixend/--no-ixend', default=False,
     help=('subject identifiers end with underscore index, the latter of which '
           'is to be removed prior to mapping.'))
+# gene information
+@click.option(
+    '--coords', 'coords_fp', type=click.Path(exists=True),
+    help=('table of coordinates of genes on reference genomes, with which '
+          'sequence-to-genome alignment will be translated into sequence-to-'
+          'gene mapping'))
 # tree information
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
@@ -90,30 +98,43 @@ from woltka.tree import build_tree
     help=('map of subjects/groups to lineage strings in format of "taxonomic;'
           'units;from;high;to;low", can be Greengenes-style taxonomy where '
           'level codes such as "k__" will be parsed'))
-def classify(input_fp, output_fp,
-             input_fmt, input_ext, sample_ids,
-             rank_lst, multi, lca, ixend,
-             map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
-    """Generate a profile of query samples based on hierarchical organization
-    subjects."""
+def classify(input_fp, output_fp, input_fmt, input_ext, sample_ids, rank_lst,
+             multi, lca, ixend, coords_fp, map_fps, names_fp, nodes_fp,
+             newick_fp, ranktb_fp, lineage_fp):
+    """Generate a profile of samples based on a classification system.
+    """
 
     # parse sample Ids
     samples = None
     if sample_ids:
         samples = sample_ids.read().splitlines()
-        click.echo('Samples to include: %d.' % len(samples))
+        click.echo(f'Samples to include: {len(samples)}.')
 
     # match input files with sample Ids
     input_map = id2file_map(input_fp, input_ext, samples)
     if not samples:
         samples = sorted(input_map.keys())
-        click.echo('Samples to read: %d.' % len(samples))
+        click.echo(f'Samples to read: {len(samples)}.')
     elif len(input_map) < len(samples):
         raise ValueError('Inconsistent sample IDs.')
 
-    # build classification system
-    tree, rankd, named, root = build_tree(
-        map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp)
+    # load gene coordinates
+    if coords_fp:
+        with readzip(coords_fp) as fh:
+            coords = read_gene_coords(fh, sort=True)
+        is_prefix = whether_prefix(coords)
+    else:
+        coords = None
+
+    # load classification system
+    args = (map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp)
+    if any(args):
+        click.echo(f'Reading classification system...', nl=False)
+        tree, rankd, named, root = build_tree(*args)
+        click.echo(' Done.')
+        click.echo(f'Total classification units: {len(tree)}.')
+    else:
+        tree, rankd, named, root = None, None, None, None
 
     # parse target ranks
     ranks = ['none'] if rank_lst is None else rank_lst.split(',')
@@ -122,25 +143,27 @@ def classify(input_fp, output_fp,
     # parse input maps and generate profile
     args = [tree, rankd, root]
     for sample in samples:
-        click.echo(f'Parsing {sample}...')
+        click.echo(f'Parsing sample {sample}...', nl=False)
 
         # read alignment file into query-subject(s) map
-        with readzip(join(input_fp, input_map[sample])) as f:
-            map_ = read_map_file(f, input_fmt)
+        with readzip(join(input_fp, input_map[sample])) as fh:
+            if coords is not None:
+                map_ = ordinal(fh, coords, input_fmt, prefix=is_prefix)
+            else:
+                map_ = read_align(fh, input_fmt)
 
         # merge duplicate query-subject pairs
         map_ = {k: set(v) for k, v in map_.items()}
+
+        click.echo(' Done.')
         click.echo(f'Query sequences: {len(map_)}.')
         for rank in ranks:
             assignment = {k: assign(v, rank, *args) for k, v in map_.items()}
-            data[rank][sample] = count(assignment)
-            try:
-                del data[rank][sample][None]
-            except KeyError:
-                pass
-        # click.echo(data[sample].keys())
+            data[rank][sample] = intize(count(assignment))
+            delnone(data[rank][sample])
 
     # determine output filenames
+    click.echo('Writing output profiles...', nl=False)
     if len(ranks) == 1:
         rank2fp = {ranks[0]: output_fp}
     else:
@@ -149,9 +172,10 @@ def classify(input_fp, output_fp,
 
     # write output profile(s)
     for rank in ranks:
-        with open(rank2fp[rank], 'w') as f:
-            write_profile(f, data[rank], named, samples)
-    click.echo('Done.')
+        with open(rank2fp[rank], 'w') as fh:
+            write_profile(fh, data[rank], named, samples)
+    click.echo(' Done.')
+    click.echo('Task completed.')
 
 
 def write_profile(fh, data, named=None, samples=None):
@@ -172,9 +196,7 @@ def write_profile(fh, data, named=None, samples=None):
                 row.append(str(int(data[sample][key])))
             except KeyError:
                 row.append('0')
-        # skip all-zero row
-        if any(x != '0' for x in row[1:]):
-            print('\t'.join(row), file=fh)
+        print('\t'.join(row), file=fh)
 
 
 if __name__ == "__main__":

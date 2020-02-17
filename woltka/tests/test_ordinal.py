@@ -13,14 +13,14 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.ordinal import (
-    match_read_gene, read_gene_table, readmap_to_profile)
+from woltka.util import readzip
+from woltka.ordinal import match_read_gene, read_gene_coords, whether_prefix
 
 
 class OrdinalTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
-        self.datadir = join(dirname(realpath(__file__)), 'data')
+        self.datdir = join(dirname(realpath(__file__)), 'data')
 
     def tearDown(self):
         rmtree(self.tmpdir)
@@ -71,12 +71,7 @@ class OrdinalTests(TestCase):
         queue = sorted(genes + reads, key=lambda x: x[0])
 
         # default (threshold = 80%)
-        obs = match_read_gene(queue, lens)
-        exp = {'g1': 1, 'g2': 2, 'g3': 1}
-        self.assertDictEqual(obs, exp)
-
-        # return read map instead of counts
-        obs = match_read_gene(queue, lens, th=0.8, ismap=True)
+        obs = match_read_gene(queue, lens, th=0.8)
         exp = {'r1': {'g1'},
                'r5': {'g2'},
                'r6': {'g2'},
@@ -84,7 +79,7 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(obs, exp)
 
         # threashold = 50%
-        obs = match_read_gene(queue, lens, th=0.5, ismap=True)
+        obs = match_read_gene(queue, lens, th=0.5)
         exp = {'r1': {'g1'},
                'r2': {'g1'},
                'r3': {'g1'},
@@ -95,7 +90,8 @@ class OrdinalTests(TestCase):
                'r9': {'g3'}}
         self.assertDictEqual(obs, exp)
 
-    def test_read_gene_table(self):
+    def test_read_gene_coords(self):
+        # simple case
         tbl = ('## GCF_000123456',
                '# NC_123456',
                '1	5	384',
@@ -103,34 +99,49 @@ class OrdinalTests(TestCase):
                '# NC_789012',
                '1	912	638',
                '2	529	75')
-        obs = read_gene_table(tbl)
+        obs = read_gene_coords(tbl, sort=True)
         exp = {'NC_123456': [
             (5,   True, True, '1'), (384, False, True, '1'),
             (410, True, True, '2'), (933, False, True, '2')],
                'NC_789012': [
-            (638, True, True, '1'), (912, False, True, '1'),
-            (75,  True, True, '2'), (529, False, True, '2')]}
+            (75,  True, True, '2'), (529, False, True, '2'),
+            (638, True, True, '1'), (912, False, True, '1')]}
         self.assertDictEqual(obs, exp)
 
-    def test_readmap_to_profile(self):
-        # no ambiguity
-        rids = ['R1', 'R2', 'R3', 'R4']
-        profile = {'G1': [0, 1, 2], 'G2': [1, 3]}
-        readmap_to_profile(profile, rids, True)
-        self.assertDictEqual(profile, {'G1': 3, 'G2': 2})
+        # real coords file
+        fp = join(self.datdir, 'function', 'coords.txt.xz')
+        with readzip(fp) as f:
+            obs = read_gene_coords(f, sort=True)
+        self.assertEqual(len(obs), 107)
+        obs_ = obs['G000006745']
+        self.assertEqual(len(obs_), 7188)
+        self.assertTupleEqual(obs_[0], (372,  True,  True, '1'))
+        self.assertTupleEqual(obs_[1], (806,  False, True, '1'))
+        self.assertTupleEqual(obs_[2], (816,  True,  True, '2'))
+        self.assertTupleEqual(obs_[3], (2177, False, True, '2'))
 
-        # R1 occurs 3 times; R2 occurs 2 times
-        rids = ['R1', 'R2', 'R3', 'R1', 'R1', 'R2']
+    def test_whether_prefix(self):
+        # gene Ids are indices
+        coords = {'NC_123456': [
+            (5,   True, True, '1'), (384, False, True, '1'),
+            (410, True, True, '2'), (933, False, True, '2')],
+                  'NC_789012': [
+            (75,  True, True, '2'), (529, False, True, '2'),
+            (638, True, True, '1'), (912, False, True, '1')]}
+        self.assertTrue(whether_prefix(coords))
 
-        # drop R1 and R2
-        profile = {'G1': [0, 1], 'G2': [1, 2, 3]}
-        readmap_to_profile(profile, rids, False)
-        self.assertDictEqual(profile, {'G2': 1})
-
-        # normalize R1 by 3, R2 by 2
-        profile = {'G1': [0, 1], 'G2': [1, 2, 3]}
-        readmap_to_profile(profile, rids, True)
-        self.assertDictEqual(profile, {'G1': 1, 'G2': 2})
+        # gene Ids are unique accessions
+        coords = {'NC_123456': [
+            (5,   True, True,  'NP_135792.1'),
+            (384, False, True, 'NP_135792.1'),
+            (410, True, True,  'NP_246801.2'),
+            (933, False, True, 'NP_246801.2')],
+                  'NC_789012': [
+            (75,  True, True,  'NP_258147.1'),
+            (529, False, True, 'NP_258147.1'),
+            (638, True, True,  'NP_369258.2'),
+            (912, False, True, 'NP_369258.2')]}
+        self.assertFalse(whether_prefix(coords))
 
 
 if __name__ == '__main__':

@@ -16,17 +16,17 @@ from woltka.tree import find_lca, find_rank
 
 
 def count(matches):
-    """Count occurrences of subjects in a map.
+    """Count occurrences of taxa in a map.
 
     Parameters
     ----------
     matches : dict of str or dict
-        Query-to-subject(s) map.
+        Query-to-taxon(a) map.
 
     Returns
     -------
     dict
-        Subject-to-count map.
+        Taxon-to-count map.
     """
     res = {}
     for taxa in matches.values():

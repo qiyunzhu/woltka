@@ -399,9 +399,11 @@ class TreeTests(TestCase):
                '1236	1224',
                '28211	1224'
                '32066	2')
-        obs = get_lineage('1236', read_nodes(tsv)[0])
+        tree = read_nodes(tsv)[0]
+        obs = get_lineage('1236', tree)
         exp = ['1', '2', '1224', '1236']
         self.assertListEqual(obs, exp)
+        self.assertIsNone(get_lineage('1234', tree))
 
         # proteo tree
         obs = get_lineage('561', self.proteo['tree'])  # Escherichia
@@ -486,6 +488,7 @@ class TreeTests(TestCase):
         self.assertEqual(find_rank('1236', 'class', tree, ranks), '1236')
         self.assertEqual(find_rank('1236', 'phylum', tree, ranks), '1224')
         self.assertEqual(find_rank('32066', 'superkingdom', tree, ranks), '2')
+        self.assertIsNone(find_rank('12345', 'species', tree, ranks))
 
         # proteo tree
         args = self.proteo['tree'], self.proteo['ranks']
@@ -514,6 +517,7 @@ class TreeTests(TestCase):
         self.assertEqual(find_lca(['1236', '32066'], tree), '2')
         self.assertEqual(find_lca(['1236', '2157'], tree), '1')
         self.assertEqual(find_lca(['1'], tree), '1')
+        self.assertIsNone(find_lca(['1234'], tree))
 
         # proteo tree
         # Escherichia, Enterobacter => Enterobacteriaceae

@@ -13,12 +13,12 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.parse import (
+from woltka.align import (
     infer_align_format, parse_line_ordinal, parse_b6o_line, parse_sam_line,
     cigar_to_lens)
 
 
-class ParseTests(TestCase):
+class AlignTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.datadir = join(dirname(realpath(__file__)), 'data')

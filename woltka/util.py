@@ -126,20 +126,36 @@ def update_dict(dic, other):
             dic[key] = value
 
 
-def integerize(dic):
-    """Convert a map of numbers to integers.
+def intize(dic, zero=False):
+    """Convert a dictionary of numbers to integers.
 
     Parameters
     ----------
     dic : dict
-        input dictionary
+        Input dictionary.
+    zero : bool, optional
+        Whether keep zero values.
 
     Returns
     -------
     dict
         converted dictionary
     """
-    return {k: int(v) for k, v in dic.items() if int(v)}
+    return {k: int(v) for k, v in dic.items() if int(v) or zero}
+
+
+def delnone(dic):
+    """Delete None key if any from a dictionary.
+
+    Parameters
+    ----------
+    dic : dict
+        Input dictionary.
+    """
+    try:
+        del dic[None]
+    except KeyError:
+        pass
 
 
 def allkeys(dic):
