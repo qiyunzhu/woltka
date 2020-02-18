@@ -108,6 +108,13 @@ def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
         with readzip(ranktb_fp) as f:
             update_dict(tree, read_ranktb(f))
 
+    # lineage strings file
+    if lineage_fp:
+        with readzip(lineage_fp) as f:
+            tree_, rankd_ = read_lineage(f)
+        update_dict(tree, tree_)
+        update_dict(rankd, rankd_)
+
     # fill root
     root = fill_root(tree)
 

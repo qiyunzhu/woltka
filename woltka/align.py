@@ -25,7 +25,7 @@ A parser function returns a tuple of:
 
 
 def read_align(fh, fmt='auto'):
-    """Read an entire mapping file.
+    """Read an alignment file into a query-to-subject(s) map.
 
     Parameters
     ----------
@@ -185,13 +185,6 @@ def parse_map_line(line, *args):
         return line.rstrip().split('\t')[:2]
     except ValueError:
         raise ValueError(f'Invalid line in mapping file: {line}.')
-
-    # nonlocal profile, rids
-    # rid, genes = line.rstrip().split('\t')[:2]
-    # rix = len(rids)
-    # rids.append(rid)
-    # for gene in genes.split(','):
-    #     profile.setdefault(gene, []).append(rix)
 
 
 def parse_b6o_line(line):

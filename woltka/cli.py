@@ -39,6 +39,9 @@ def cli():
     '--ixend/--no-ixend', default=False,
     help=('subject identifiers end with underscore index, the latter of which '
           'is to be removed prior to mapping.'))
+@click.option(
+    '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
+    help=('map of nucleotides to genomes'))
 @click.pass_context
 def gotu(ctx, **kwargs):
     """Generate a gOTU table based on sequence alignments.
@@ -105,8 +108,7 @@ def gotu(ctx, **kwargs):
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('map(s) of subjects to higher classification units, such as '
           'nucleotides to host genomes, sequence IDs to taxonomy IDs, gene '
-          'family to pathway, etc., can accept multiple maps entered in low-'
-          'to-high order'))
+          'family to pathway, etc., can accept multiple maps'))
 @click.option(
     '--names', 'names_fp', type=click.Path(exists=True),
     help=('map of taxonomic units to labels; can be plain map or NCBI '

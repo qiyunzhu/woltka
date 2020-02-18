@@ -47,7 +47,7 @@ def classify(input_fp:    str,
     See Also
     --------
     cli.classify
-    
+
     Notes
     -----
     Explanations of parameters are provided as click decorators in `cli.py`.
