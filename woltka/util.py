@@ -210,3 +210,33 @@ def last_value(lst):
         return next(x for x in reversed(lst) if x is not None)
     except StopIteration:
         pass
+
+
+def prep_table(profile, samples=None):
+    """Convert a profile into data, index and columns, which can be further
+    converted into a Pandas DataFrame or BIOM table.
+
+    Parameters
+    ----------
+    profile : dict
+        Input profile.
+
+    Returns
+    -------
+    list of list, list, list
+        Data (2D array of values).
+        Index (observation Ids).
+        Columns (sample Ids).
+    """
+    index = sorted(allkeys(profile))
+    columns = samples or sorted(profile)
+    data = []
+    for key in index:
+        row = []
+        for sample in columns:
+            try:
+                row.append(int(profile[sample][key]))
+            except KeyError:
+                row.append(0)
+        data.append(row)
+    return data, index, columns

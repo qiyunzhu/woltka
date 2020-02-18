@@ -33,7 +33,7 @@ The system supports multiple formats of taxonomy files:
 
 import re
 
-from woltka.util import readzip, path2stem, update_dict, last_value
+from .util import readzip, path2stem, update_dict, last_value
 
 
 # standard taxonomic ranks
@@ -42,6 +42,11 @@ rankorder = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus',
 rank2code = {'kingdom': 'k', 'phylum': 'p', 'class':   'c', 'order':  'o',
              'family':  'f', 'genus':  'g', 'species': 's', 'strain': 't'}
 code2rank = {v: k for k, v in rank2code.items()}
+
+# compatibilities for top-level ranks (domain, superkingdom, kingdom)
+rank2code['domain'] = 'k'
+rank2code['superkingdom'] = 'k'
+code2rank['d'] = 'kingdom'
 
 # unclassified taxon names
 notax = {'', '0', 'unclassified', 'unassigned'}

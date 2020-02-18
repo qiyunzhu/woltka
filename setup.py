@@ -55,7 +55,7 @@ setup(
     classifiers=classifiers,
     python_requires='>=3.6',
     entry_points={
-        'console_scripts': [f'{name}={name}.cli:main'],
+        'console_scripts': [f'{name}={name}.cli:cli'],
         'qiime2.plugins': [f'q2-{name}={name}.q2.plugin_setup:plugin']
     }
 )

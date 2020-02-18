@@ -11,7 +11,7 @@
 """Functions for matching reads and genes using an ordinal system.
 """
 
-from woltka.align import infer_align_format, parse_line_ordinal, assign_parser
+from .align import infer_align_format, parse_line_ordinal, assign_parser
 
 
 def ordinal(fh, coords, fmt=None, th=0.8, lines=1000000, prefix=False):

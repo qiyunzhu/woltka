@@ -13,10 +13,10 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.core import count, majority, assign
+from woltka.classify import count, majority, assign
 
 
-class CoreTests(TestCase):
+class ClassifyTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.datadir = join(dirname(realpath(__file__)), 'data')

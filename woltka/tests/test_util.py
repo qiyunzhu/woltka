@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.util import id2file_map, allkeys
+from woltka.util import id2file_map, allkeys, prep_table
 
 
 class UtilTests(TestCase):
@@ -81,6 +81,20 @@ class UtilTests(TestCase):
         obs = allkeys(data)
         exp = {'G1', 'G2', 'G3', 'G4', 'G5'}
         self.assertSetEqual(obs, exp)
+
+    def test_prep_table(self):
+        data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+                'S2': {'G1': 2, 'G4': 3, 'G5': 7},
+                'S3': {'G2': 3, 'G5': 5}}
+        obs0, obs1, obs2 = prep_table(data)
+        exp0 = [[4, 2, 0],
+                [5, 0, 3],
+                [8, 0, 0],
+                [0, 3, 0],
+                [0, 7, 5]]
+        self.assertListEqual(obs0, exp0)
+        self.assertListEqual(obs1, ['G1', 'G2', 'G3', 'G4', 'G5'])
+        self.assertListEqual(obs2, ['S1', 'S2', 'S3'])
 
 
 if __name__ == '__main__':

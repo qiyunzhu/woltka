@@ -8,102 +8,46 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+"""Main module for classification of sequencing data.
+"""
+
 from os import makedirs
 from os.path import join
 import click
 
-from woltka.core import count, assign
-from woltka.util import readzip, id2file_map, intize, delnone, allkeys
-from woltka.align import read_align
-from woltka.ordinal import read_gene_coords, whether_prefix, ordinal
-from woltka.tree import build_tree
+from .util import readzip, id2file_map, count_list, intize, delnone, allkeys
+from .align import read_align
+from .ordinal import read_gene_coords, whether_prefix, ordinal
+from .tree import build_tree, find_rank, find_lca
 
 
-@click.command()
-# input and output
-@click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help='directory of input read alignment(s)')
-@click.option(
-    '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True),
-    help=('path to output profile file (single rank) or directory (multiple '
-          'ranks)'))
-# input information
-@click.option(
-    '--format', '-f', 'input_fmt', default='auto',
-    type=click.Choice(['auto', 'b6o', 'sam', 'map'], case_sensitive=False),
-    help=('format of read alignment: "auto": automatic determination '
-          '(default), "b6o": BLAST tabular format (-outfmt 6), "sam": SAM '
-          'format, "map": simple map of query <tab> subject'))
-@click.option(
-    '--extension', '-e', 'input_ext',
-    help='input filename extension following sample ID')
-@click.option(
-    '--sample-ids', '-s', type=click.File('r'),
-    help='list of sample IDs to be included')
-# behavior
-@click.option(
-    '--rank', '-r', 'rank_lst', type=click.STRING,
-    help=('classify sequences at this rank; ignore or enter "none" to omit '
-          'classification; enter "free" for free-rank classification; can '
-          'specify multiple comma-delimited ranks and one profile will be '
-          'generated for each rank'))
-@click.option(
-    '--multi/--no-multi', default=True,
-    help=('allow one sequence to be assigned to multiple classification '
-          'units at the same rank; per-unit match counts will be recorded '
-          'and profile will be normalized by total number of matches'))
-@click.option(
-    '--lca/--no-lca', default=True,
-    help=('attempt to find lowest common ancestor (LCA) in taxonomy for '
-          'non-unique matches; note: root is not assumed unless defined, '
-          'and there may be multiple LCAs, in which case each is counted '
-          'once; results are then subject to ambiguity treatment'))
-@click.option(
-    '--ixend/--no-ixend', default=False,
-    help=('subject identifiers end with underscore index, the latter of which '
-          'is to be removed prior to mapping.'))
-# gene information
-@click.option(
-    '--coords', 'coords_fp', type=click.Path(exists=True),
-    help=('table of coordinates of genes on reference genomes, with which '
-          'sequence-to-genome alignment will be translated into sequence-to-'
-          'gene mapping'))
-# tree information
-@click.option(
-    '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('map(s) of subjects to higher classification units, such as '
-          'nucleotides to host genomes, sequence IDs to taxonomy IDs, gene '
-          'family to pathway, etc., can accept multiple maps entered in low-'
-          'to-high order'))
-@click.option(
-    '--names', 'names_fp', type=click.Path(exists=True),
-    help=('map of taxonomic units to labels; can be plain map or NCBI '
-          'names.dmp'))
-@click.option(
-    '--nodes', 'nodes_fp', type=click.Path(exists=True),
-    help=('hierarchical structure of taxonomy defined by NCBI names.dmp '
-          'or compatible format'))
-@click.option(
-    '--newick', 'newick_fp', type=click.Path(exists=True),
-    help=('classification hierarchies defined by a tree in Newick format.'))
-@click.option(
-    '--rank-table', 'ranktb_fp', type=click.Path(exists=True),
-    help=('classification hierarchies defined by a table with each column '
-          'representing a level and header as level name.'))
-@click.option(
-    '--lineage', 'lineage_fp', type=click.Path(exists=True),
-    help=('map of subjects/groups to lineage strings in format of "taxonomic;'
-          'units;from;high;to;low", can be Greengenes-style taxonomy where '
-          'level codes such as "k__" will be parsed'))
-def classify(input_fp, output_fp, input_fmt, input_ext, sample_ids, rank_lst,
-             multi, lca, ixend, coords_fp, map_fps, names_fp, nodes_fp,
-             newick_fp, ranktb_fp, lineage_fp):
-    """Generate a profile of samples based on a classification system.
+def classify(input_fp:    str,
+             output_fp:   str,
+             input_fmt:   str = 'auto',
+             input_ext:   str = None,
+             sample_ids: list = None,
+             rank_lst:    str = None,
+             multi:       str = True,
+             lca:        bool = True,
+             ixend:      bool = False,
+             coords_fp:   str = None,
+             map_fps:    list = None,
+             names_fp:    str = None,
+             nodes_fp:    str = None,
+             newick_fp:   str = None,
+             ranktb_fp:   str = None,
+             lineage_fp:  str = None) -> dict:
+    """Main classification workflow.
+
+    Returns
+    -------
+    dict of dict
+        Per-rank profiles generated from classification
+
+    See Also
+    --------
+    cli.classify
     """
-
     # parse sample Ids
     samples = None
     if sample_ids:
@@ -162,20 +106,140 @@ def classify(input_fp, output_fp, input_fmt, input_ext, sample_ids, rank_lst,
             data[rank][sample] = intize(count(assignment))
             delnone(data[rank][sample])
 
-    # determine output filenames
-    click.echo('Writing output profiles...', nl=False)
-    if len(ranks) == 1:
-        rank2fp = {ranks[0]: output_fp}
-    else:
-        makedirs(output_fp, exist_ok=True)
-        rank2fp = {x: join(output_fp, f'{x}.tsv') for x in ranks}
+    if output_fp:
 
-    # write output profile(s)
-    for rank in ranks:
-        with open(rank2fp[rank], 'w') as fh:
-            write_profile(fh, data[rank], named, samples)
-    click.echo(' Done.')
+        # determine output filenames
+        click.echo('Writing output profiles...', nl=False)
+        if len(ranks) == 1:
+            rank2fp = {ranks[0]: output_fp}
+        else:
+            makedirs(output_fp, exist_ok=True)
+            rank2fp = {x: join(output_fp, f'{x}.tsv') for x in ranks}
+
+        # write output profile(s)
+        for rank in ranks:
+            with open(rank2fp[rank], 'w') as fh:
+                write_profile(fh, data[rank], named, samples)
+        click.echo(' Done.')
+
     click.echo('Task completed.')
+    return data
+
+
+def count(matches):
+    """Count occurrences of taxa in a map.
+
+    Parameters
+    ----------
+    matches : dict of str or dict
+        Query-to-taxon(a) map.
+
+    Returns
+    -------
+    dict
+        Taxon-to-count map.
+    """
+    res = {}
+    for taxa in matches.values():
+        try:
+            # unique match (scalar)
+            res[taxa] = res.get(taxa, 0) + 1
+        except TypeError:
+            # multiple matches (dict of subject : count), to be normalized by
+            # total match count
+            k = 1 / sum(taxa.values())
+            for taxon, n in taxa.items():
+                res[taxon] = res.get(taxon, 0) + n * k
+    return res
+
+
+def majority(taxa, th=0.8):
+    """Select taxon from list by majority rule.
+
+    Parameters
+    ----------
+    taxa : list of str
+        Input taxon list.
+    th : float, optional
+        Threshold of majority, range = (0.5, 1.0].
+
+    Returns
+    -------
+    str or None
+        Selected taxon.
+    """
+    for taxon, n in sorted(count_list(taxa).items(), key=lambda x: x[1],
+                           reverse=True):
+        return taxon if n >= len(taxa) * th else None
+
+
+def assign(subs, rank=None, tree=None, rankd=None, root=None,
+           above=False, multi=False, major=None, subok=False):
+    """Assign a query sequence to a classification unit based on its subjects.
+
+    Parameters
+    ----------
+    subs : set of str
+        Subject(s) of a query sequence.
+    rank : str, optional
+        Ranks to assign to, or "free" for rank-free LCA assignment.
+    tree : dict, optional
+        Hierarchical classification system.
+    rankd : dict, optional
+        Rank dictionary.
+    root : str, optional
+        Root identifier.
+    above : bool, optional
+        Assignment above given rank is acceptable (for fixed ranks).
+    major : float, optional
+        Majority-rule assignment threshold (available only with a fixed rank
+        and not above or multi).
+    multi : bool, optional
+        Count occurrence of each possible assignment instead of targeting one
+        assignment (available only with a fixed rank and not above).
+    subok : bool, optional
+        Allow assignment to subject(s) itself instead of higher classification
+        units.
+
+    Returns
+    -------
+    str or dict
+        Unique assignment or assignment-to-count map.
+    """
+    # no classification, just subject(s) itself
+    if rank is None or rank == 'none' or tree is None:
+        if len(subs) == 1:
+            return max(subs)
+        elif multi:
+            return count_list(subs)
+        else:
+            return None
+
+    # free rank classification: find LCA
+    elif rank == 'free':
+        if len(subs) == 1:
+            if subok:
+                return tree[max(subs)]
+            else:
+                return max(subs)
+        else:
+            lca = find_lca(subs, tree)
+            return None if lca == root else lca
+
+    # fixed rank classification
+    else:
+        taxa = [find_rank(x, rank, tree, rankd) for x in subs]
+        if len(set(taxa)) == 1:
+            return taxa[0]
+        elif major:
+            return majority(taxa, major)
+        elif above:
+            lca = find_lca(set(taxa), tree)
+            return None if lca == root else lca
+        elif multi:
+            return count_list(taxa)
+        else:
+            return None
 
 
 def write_profile(fh, data, named=None, samples=None):
@@ -183,7 +247,7 @@ def write_profile(fh, data, named=None, samples=None):
     """
     if samples is None:
         samples = sorted(data)
-    print('#SampleID\t{}'.format('\t'.join(samples)), file=fh)
+    print('#FeatureID\t{}'.format('\t'.join(samples)), file=fh)
     for key in sorted(allkeys(data)):
         # get feature name
         try:
