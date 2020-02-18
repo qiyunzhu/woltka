@@ -9,9 +9,8 @@ It currently provides the following functional modules (subcommands):
 
 Woltka ships with a **QIIME 2 plugin**. [See here for instructions](q2).
 
-## Installation
 
-### As a standalone program
+## Installation
 
 Requires: Python 3.6 or above.
 
@@ -25,21 +24,6 @@ After installation, launch the program by executing:
 woltka
 ```
 
-### Installation-free usage
-
-Requires: Python 3.6+ and Python library [Click](https://click.palletsprojects.com).
-
-[Download](https://github.com/qiyunzhu/woltka/archive/dev.zip) the program from GitHub, unzip, then launch the program with:
-
-```bash
-python <program_dir>/woltka/cli.py
-```
-
-Alternatively, launch individual subcommand (e.g., the gOTU module)
-
-```bash
-python <program_dir>/woltka/gotu.py
-```
 
 ## Example usage
 
@@ -79,6 +63,7 @@ woltka classify \
   --rank uniref,process \
   -o output_dir
 ```
+
 
 (Contents below are under development.)
 
