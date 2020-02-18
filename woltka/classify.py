@@ -47,6 +47,10 @@ def classify(input_fp:    str,
     See Also
     --------
     cli.classify
+    
+    Notes
+    -----
+    Explanations of parameters are provided as click decorators in `cli.py`.
     """
     # parse sample Ids
     samples = None
@@ -261,7 +265,3 @@ def write_profile(fh, data, named=None, samples=None):
             except KeyError:
                 row.append('0')
         print('\t'.join(row), file=fh)
-
-
-if __name__ == "__main__":
-    classify()

@@ -33,9 +33,7 @@ Woltka ships with small test datasets under this directory:
 <program_dir>/woltka/tests/data
 ```
 
-One can execute the following commands to make sure that Woltka functions correctly, and to get an impression of the basic usage of Woltka.
-
-gOTU table generation:
+The following command can generate a gOTU table based on per-sample sequence alignment files under the same directory:
 
 ```bash
 qiime woltka gotu --p-align-dir align/bowtie2 --o-table table.qza

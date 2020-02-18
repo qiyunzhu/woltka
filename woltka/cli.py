@@ -10,10 +10,11 @@
 
 import click
 
+from . import __version__
 from .classify import classify as _classify
 
 
-@click.version_option('0.1.0')
+@click.version_option(__version__)
 @click.group()
 def cli():
     pass
