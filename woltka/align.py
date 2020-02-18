@@ -51,14 +51,20 @@ def read_align(fh, fmt='auto'):
         line = fh.readline()
         fmt = infer_align_format(line)
         parser = assign_parser(fmt)
-        query, subject = parser(line)[:2]
-        res.setdefault(query, []).append(subject)
+        try:
+            query, subject = parser(line)[:2]
+            res.setdefault(query, []).append(subject)
+        except TypeError:
+            pass
     else:
         parser = assign_parser(fmt)
 
     # parse remaining content
     for line in fh:
-        query, subject = parser(line)[:2]
+        try:
+            query, subject = parser(line)[:2]
+        except TypeError:
+            continue
         res.setdefault(query, []).append(subject)
 
     return res
