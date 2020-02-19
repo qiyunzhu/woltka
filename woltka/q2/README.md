@@ -36,7 +36,7 @@ Woltka ships with small test datasets under this directory:
 The following command can generate a gOTU table based on per-sample sequence alignment files under the same directory:
 
 ```bash
-qiime woltka gotu --p-align-dir align/bowtie2 --o-table table.qza
+qiime woltka gotu --p-input-path align/bowtie2 --o-table table.qza
 ```
 
 The output file `table.qza` contains a BIOM table (QIIME artifact type: `FeatureTable[Frequency]`) in which columns are samples and rows are gOTUs. It can then be analyzed using the classical QIIME 2 workflow.

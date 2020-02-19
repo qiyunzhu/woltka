@@ -29,7 +29,7 @@ def classify(input_path:  str,
              sample_ids: list = None,
              demux:      bool = None,
              rank_lst:    str = None,
-             multi:       str = True,
+             ambig:       str = True,
              lca:        bool = True,
              ixend:      bool = False,
              coords_fp:   str = None,
@@ -45,9 +45,6 @@ def classify(input_path:  str,
     ----------
     input_path : str
         Path to input alignment file or directory of alignment files.
-            If file,
-
-            If directory, demultiplexing is off unless specified.
     output_path : str
         Path to output profile file or directory of profile files.
     input_fmt : str, optional
@@ -235,7 +232,7 @@ def majority(taxa, th=0.8):
 
 
 def assign(subs, rank=None, tree=None, rankd=None, root=None,
-           above=False, multi=False, major=None, subok=False):
+           above=False, ambig=False, major=None, subok=False):
     """Assign a query sequence to a classification unit based on its subjects.
 
     Parameters
@@ -254,8 +251,8 @@ def assign(subs, rank=None, tree=None, rankd=None, root=None,
         Assignment above given rank is acceptable (for fixed ranks).
     major : float, optional
         Majority-rule assignment threshold (available only with a fixed rank
-        and not above or multi).
-    multi : bool, optional
+        and not above or ambig).
+    ambig : bool, optional
         Count occurrence of each possible assignment instead of targeting one
         assignment (available only with a fixed rank and not above).
     subok : bool, optional
@@ -271,7 +268,7 @@ def assign(subs, rank=None, tree=None, rankd=None, root=None,
     if rank is None or rank == 'none' or tree is None:
         if len(subs) == 1:
             return max(subs)
-        elif multi:
+        elif ambig:
             return count_list(subs)
         else:
             return None
@@ -297,7 +294,7 @@ def assign(subs, rank=None, tree=None, rankd=None, root=None,
         elif above:
             lca = find_lca(set(taxa), tree)
             return None if lca == root else lca
-        elif multi:
+        elif ambig:
             return count_list(taxa)
         else:
             return None

@@ -23,10 +23,10 @@ import biom
 from woltka.classify import classify, prep_table
 
 
-def gotu(align_dir: str) -> biom.Table:
+def gotu(input_path: str) -> biom.Table:
     """Generate a gOTU table based on sequence alignments.
     """
-    profile = classify(align_dir, None)['none']
+    profile = classify(input_path, None)['none']
     return make_biom(profile)
 
 

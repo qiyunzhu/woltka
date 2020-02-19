@@ -31,10 +31,11 @@ plugin.methods.register_function(
     inputs={},
     input_descriptions={},
     parameters={
-        'align_dir': Str,
+        'input_path': Str,
     },
     parameter_descriptions={
-        'align_dir': 'Directory containing input sequence alignments.',
+        'input_path': ('Path to a multiplexed alignment file, or a directory '
+                       'of per-sample alignment files.')
     },
     outputs=[
         ('table', FeatureTable[Frequency])

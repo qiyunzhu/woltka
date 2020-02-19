@@ -32,7 +32,7 @@ def cli():
     type=click.Path(writable=True),
     help=('output gOTU table)'))
 @click.option(
-    '--multi/--no-multi', default=True,
+    '--ambig/--no-ambig', default=True,
     help=('allow one sequence to be assigned to multiple gOTUs; each hit '
           'will be counted as 1 / k (k is the totally number of hits)'))
 @click.option(
@@ -85,7 +85,7 @@ def gotu(ctx, **kwargs):
           'specify multiple comma-delimited ranks and one profile will be '
           'generated for each rank.'))
 @click.option(
-    '--multi/--no-multi', default=True,
+    '--ambig/--no-ambig', default=True,
     help=('allow one sequence to be assigned to multiple classification '
           'units at the same rank; per-unit match counts will be recorded '
           'and profile will be normalized by total number of matches'))
