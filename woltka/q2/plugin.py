@@ -20,8 +20,7 @@ Minimum requirement: QIIME 2 2019.1
 import numpy as np
 import biom
 
-from woltka.util import prep_table
-from woltka.classify import classify
+from woltka.classify import classify, prep_table
 
 
 def gotu(align_dir: str) -> biom.Table:
@@ -34,7 +33,6 @@ def gotu(align_dir: str) -> biom.Table:
 def filter_values(table: biom.Table, th: float) -> biom.Table:
     """Filter out low-abundance features within each sample in a table.
     """
-
     def filter_otus(data, id_, md):
         bound = th if th > 1 else data.sum() * th
         data[data < bound] = 0
@@ -45,7 +43,7 @@ def filter_values(table: biom.Table, th: float) -> biom.Table:
     return table
 
 
-def make_biom(profile):
+def make_biom(profile: dict) -> biom.Table:
     """Convert a profile into a BIOM table.
     """
     data, index, columns = prep_table(profile)

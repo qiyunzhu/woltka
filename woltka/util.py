@@ -8,7 +8,6 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from os import listdir
 from os.path import basename, splitext
 import gzip
 import bz2
@@ -27,76 +26,68 @@ def readzip(fp):
     Parameters
     ----------
     fp : str
-        input filepath
+        Input filepath.
 
     Returns
     -------
     file handle
-        text stream ready to be read
+        Text stream ready to be read.
     """
     ext = splitext(fp)[1]
     zipfunc = getattr(ZIPDIC[ext], 'open') if ext in ZIPDIC else open
     return zipfunc(fp, 'rt')
 
 
-def path2stem(fp):
+def file2stem(fname, ext=None):
+    """Extract stem from filename.
+
+    Parameters
+    ----------
+    fp : str
+        Filepath.
+    ext : str, optional
+        Filename extension.
+
+    Returns
+    -------
+    str
+        Filename stem.
+
+    Notes
+    -----
+    Common compression file extensions are recognized and stripped beforehand.
+
+    There is no commonly accepted term for "filename with extension stripped".
+    The term "stem" is from C++. In Python's `splitext` function, it is called
+    "root". But "root" in this program describes tree root.
+    """
+    if ext is not None:
+        if not fname.endswith(ext):
+            raise ValueError('Filepath and filename extension do not match.')
+        return fname[:-len(ext)]
+    else:
+        stem, ext = splitext(fname)
+        if ext in ZIPDIC:
+            stem, ext = splitext(stem)
+        return stem
+
+
+def path2stem(fp, ext=None):
     """Get filename stem from filepath.
 
     Parameters
     ----------
     fp : str
-        filepath
+        Filepath.
+    ext : str, optional
+        Filename extension.
 
     Returns
     -------
     str
-        filename stem
+        Filename stem.
     """
-    stem, ext = splitext(basename(fp))
-    if ext in ZIPDIC:
-        stem, ext = splitext(stem)
-    return stem
-
-
-def id2file_map(dir_, ext=None, ids=None):
-    """Generate a map of Ids to files.
-
-    Parameters
-    ----------
-    dir_ : str
-        directory to search for matching files
-    ext : str, optional
-        filename extension
-    ids : iterable of str, optional
-        Id list
-
-    Returns
-    -------
-    dict
-        Id to file map
-    """
-    res = {}
-    if ext is not None:
-        if not ext.startswith('.'):
-            ext = '.' + ext
-        n = len(ext)
-    for fname in listdir(dir_):
-        id_ = None
-        if ext is not None:
-            if fname.endswith(ext):
-                id_ = fname[:-n]
-        else:
-            id_, ext_ = splitext(fname)
-            if ext_ in ZIPDIC:
-                id_ = splitext(id_)[0]
-        if id_ is None:
-            continue
-        if ids is not None and id_ not in ids:
-            continue
-        if id_ in res:
-            raise ValueError('Ambiguous files for Id: {}.'.format(id_))
-        res[id_] = fname
-    return res
+    return file2stem(basename(fp), ext)
 
 
 def update_dict(dic, other):
@@ -124,6 +115,20 @@ def update_dict(dic, other):
             assert dic[key] == value, f'Conflicting values found for "{key}".'
         except KeyError:
             dic[key] = value
+
+
+def add_dict(dic, other):
+    """Combine one dictionary with another, adding values for common keys.
+
+    Parameters
+    ----------
+    dic : dict
+        Dictionary to be updated.
+    other : dict
+        Dictionary as source of new items.
+    """
+    for key, value in other.items():
+        dic[key] = dic.get(key, 0) + value
 
 
 def intize(dic, zero=False):
@@ -210,33 +215,3 @@ def last_value(lst):
         return next(x for x in reversed(lst) if x is not None)
     except StopIteration:
         pass
-
-
-def prep_table(profile, samples=None):
-    """Convert a profile into data, index and columns, which can be further
-    converted into a Pandas DataFrame or BIOM table.
-
-    Parameters
-    ----------
-    profile : dict
-        Input profile.
-
-    Returns
-    -------
-    list of list, list, list
-        Data (2D array of values).
-        Index (observation Ids).
-        Columns (sample Ids).
-    """
-    index = sorted(allkeys(profile))
-    columns = samples or sorted(profile)
-    data = []
-    for key in index:
-        row = []
-        for sample in columns:
-            try:
-                row.append(int(profile[sample][key]))
-            except KeyError:
-                row.append(0)
-        data.append(row)
-    return data, index, columns

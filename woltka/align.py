@@ -24,7 +24,7 @@ A parser function returns a tuple of:
 """
 
 
-def read_align(fh, fmt='auto'):
+def read_align_file(fh, fmt=None):
     """Read an alignment file into a query-to-subject(s) map.
 
     Parameters
@@ -47,7 +47,7 @@ def read_align(fh, fmt='auto'):
     res = {}
 
     # determine file format based on first line
-    if fmt == 'auto':  # auto-determine
+    if fmt is None:  # auto-determine
         line = fh.readline()
         fmt = infer_align_format(line)
         parser = assign_parser(fmt)

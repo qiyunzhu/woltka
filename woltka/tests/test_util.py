@@ -13,66 +13,91 @@ from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+import gzip
 
-from woltka.util import id2file_map, allkeys, prep_table
+from woltka.util import (
+    readzip, file2stem, path2stem, update_dict, intize, delnone, allkeys,
+    count_list, last_value)
 
 
 class UtilTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
-        self.datadir = join(dirname(realpath(__file__)), 'data')
+        self.datdir = join(dirname(realpath(__file__)), 'data')
 
     def tearDown(self):
         rmtree(self.tmpdir)
 
-    def test_id2file_map(self):
-        ids = ['a', 'b', 'c']
+    def test_readzip(self):
+        text = 'Hello World!'
 
-        # regular Fasta files
-        for id_ in ids:
-            open(join(self.tmpdir, '{}.faa'.format(id_)), 'a').close()
-        obs = id2file_map(self.tmpdir)
-        exp = {x: '{}.faa'.format(x) for x in ids}
-        self.assertDictEqual(obs, exp)
-        for id_ in ids:
-            remove(join(self.tmpdir, '{}.faa'.format(id_)))
+        # regular file
+        fp = join(self.tmpdir, 'test.txt')
+        with open(fp, 'w') as f:
+            f.write(text)
+        with readzip(fp) as f:
+            obs = f.read().rstrip()
+        self.assertEqual(obs, text)
+        remove(fp)
 
-        # gzipped Fasta files
-        for id_ in ids:
-            open(join(self.tmpdir, '{}.faa.gz'.format(id_)), 'a').close()
-        obs = id2file_map(self.tmpdir)
-        exp = {x: '{}.faa.gz'.format(x) for x in ids}
-        self.assertDictEqual(obs, exp)
-        for id_ in ids:
-            remove(join(self.tmpdir, '{}.faa.gz'.format(id_)))
+        # compressed file
+        fpz = join(self.tmpdir, 'test.txt.gz')
+        with gzip.open(fpz, 'wb') as f:
+            f.write(text.encode())
+        with readzip(fpz) as f:
+            obs = f.read().rstrip()
+        self.assertEqual(obs, text)
+        remove(fpz)
 
-        # user-defined extension filename
-        for id_ in ids:
-            open(join(self.tmpdir, '{}.faa'.format(id_)), 'a').close()
-        open(join(self.tmpdir, 'readme.txt'), 'a').close()
-        open(join(self.tmpdir, 'taxdump'), 'a').close()
-        obs = id2file_map(self.tmpdir, ext='faa')
-        exp = {x: '{}.faa'.format(x) for x in ids}
-        self.assertDictEqual(obs, exp)
-        remove(join(self.tmpdir, 'readme.txt'))
-        remove(join(self.tmpdir, 'taxdump'))
-
-        # user-defined ID list
-        obs = id2file_map(self.tmpdir, ids=['a', 'b'])
-        exp = {x: '{}.faa'.format(x) for x in ['a', 'b']}
-        self.assertDictEqual(obs, exp)
-        for id_ in ids:
-            remove(join(self.tmpdir, '{}.faa'.format(id_)))
-
-        # duplicated IDs
-        open(join(self.tmpdir, 'x.faa'), 'a').close()
-        open(join(self.tmpdir, 'x.tsv'), 'a').close()
+    def test_file2stem(self):
+        self.assertEqual(file2stem('input.txt'), 'input')
+        self.assertEqual(file2stem('input.gz'), 'input')
+        self.assertEqual(file2stem('input.txt.gz'), 'input')
+        self.assertEqual(file2stem('input.txt.gz', ext='.gz'), 'input.txt')
         with self.assertRaises(ValueError) as ctx:
-            id2file_map(self.tmpdir)
-        msg = 'Ambiguous files for Id: x.'
-        self.assertEqual(str(ctx.exception), msg)
-        remove(join(self.tmpdir, 'x.faa'))
-        remove(join(self.tmpdir, 'x.tsv'))
+            file2stem('input.txt', ext='.gz')
+        self.assertEqual(str(ctx.exception), (
+            'Filepath and filename extension do not match.'))
+
+    def test_path2stem(self):
+        self.assertEqual(path2stem('input.txt.bz2'), 'input')
+        self.assertEqual(path2stem('/home/input.txt'), 'input')
+        self.assertEqual(path2stem('/home/input.fa', ext='a'), 'input.f')
+        self.assertEqual(path2stem('/home/.bashrc'), '.bashrc')
+
+    def test_update_dict(self):
+        d0 = {'a': 1, 'b': 2}
+        d1 = {'c': 3, 'd': 4}
+        update_dict(d0, d1)
+        self.assertDictEqual(d0, {'a': 1, 'b': 2, 'c': 3, 'd': 4})
+        d2 = {'e': 5, 'a': 1}
+        update_dict(d0, d2)
+        self.assertDictEqual(d0, {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5})
+        d3 = {'g': 6, 'b': 100}
+        with self.assertRaises(AssertionError) as ctx:
+            update_dict(d0, d3)
+        self.assertEqual(str(ctx.exception), (
+            'Conflicting values found for "b".'))
+
+    def test_intize(self):
+        dic = {'a': 1.0, 'b': 2.5, 'c': 3.6}
+        exp = {'a': 1, 'b': 2, 'c': 3}
+        self.assertDictEqual(intize(dic), exp)
+        dic['b'], exp['b'] = -2.8, -2
+        self.assertDictEqual(intize(dic), exp)
+        dic['d'] = 0.3
+        self.assertDictEqual(intize(dic), exp)
+        exp['d'] = 0
+        self.assertDictEqual(intize(dic, zero=True), exp)
+
+    def test_delnone(self):
+        dic = {'a': 1, 'b': 2, 'c': 3}
+        obs = dic.copy()
+        delnone(obs)
+        self.assertDictEqual(obs, dic)
+        obs[None] = 4
+        delnone(obs)
+        self.assertDictEqual(obs, dic)
 
     def test_allkeys(self):
         data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
@@ -82,19 +107,16 @@ class UtilTests(TestCase):
         exp = {'G1', 'G2', 'G3', 'G4', 'G5'}
         self.assertSetEqual(obs, exp)
 
-    def test_prep_table(self):
-        data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
-                'S2': {'G1': 2, 'G4': 3, 'G5': 7},
-                'S3': {'G2': 3, 'G5': 5}}
-        obs0, obs1, obs2 = prep_table(data)
-        exp0 = [[4, 2, 0],
-                [5, 0, 3],
-                [8, 0, 0],
-                [0, 3, 0],
-                [0, 7, 5]]
-        self.assertListEqual(obs0, exp0)
-        self.assertListEqual(obs1, ['G1', 'G2', 'G3', 'G4', 'G5'])
-        self.assertListEqual(obs2, ['S1', 'S2', 'S3'])
+    def test_count_list(self):
+        lst = [1, 1, 2, 3, 1, 2, 4, 3, 1]
+        obs = count_list(lst)
+        exp = {1: 4, 2: 2, 3: 2, 4: 1}
+        self.assertDictEqual(obs, exp)
+
+    def test_last_value(self):
+        lst = ['a', 1, None, 'b', 2, None]
+        self.assertEqual(last_value(lst), 2)
+        self.assertIsNone(last_value([None, None]))
 
 
 if __name__ == '__main__':

@@ -77,7 +77,7 @@ def ordinal(fh, coords, fmt=None, th=0.8, lines=1000000, prefix=False):
         lenmap, locmap = {}, {}
 
     # determine alignment format
-    if fmt == 'auto':  # auto-determine
+    if fmt is None:  # auto-determine
         line = fh.readline()
         fmt = infer_align_format(line)
         parser = assign_parser(fmt)

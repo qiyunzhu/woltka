@@ -24,11 +24,11 @@ def cli():
 
 @cli.command('gotu')
 @click.option(
-    '--input', '-i', 'input_fp', required=True,
+    '--input', '-i', 'input_path', required=True,
     type=click.Path(exists=True, file_okay=False, dir_okay=True),
     help='input read alignment directory')
 @click.option(
-    '--output', '-o', 'output_fp', required=True,
+    '--output', '-o', 'output_path', required=True,
     type=click.Path(writable=True),
     help=('output gOTU table)'))
 @click.option(
@@ -54,34 +54,36 @@ def gotu(ctx, **kwargs):
 @cli.command('classify')
 # input and output
 @click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help='directory of input read alignment(s)')
+    '--input', '-i', 'input_path', required=True,
+    type=click.Path(exists=True, file_okay=True, dir_okay=True),
+    help='Path to input alignment file or directory of alignment files.')
 @click.option(
-    '--output', '-o', 'output_fp', required=True,
+    '--output', '-o', 'output_path', required=True,
     type=click.Path(writable=True),
-    help=('path to output profile file (single rank) or directory (multiple '
-          'ranks)'))
+    help='Path to output profile file or directory of profile files.')
 # input information
 @click.option(
-    '--format', '-f', 'input_fmt', default='auto',
-    type=click.Choice(['auto', 'b6o', 'sam', 'map'], case_sensitive=False),
-    help=('format of read alignment: "auto": automatic determination '
-          '(default), "b6o": BLAST tabular format (-outfmt 6), "sam": SAM '
-          'format, "map": simple map of query <tab> subject'))
+    '--format', '-f', 'input_fmt',
+    type=click.Choice(['b6o', 'sam', 'map'], case_sensitive=False),
+    help=('Format of read alignments: "b6o": BLAST tabular format, "sam": SAM '
+          'format, "map": simple map of query <tab> subject. If not specified,'
+          ' program will automatically infer from file content.'))
 @click.option(
-    '--extension', '-e', 'input_ext',
-    help='input filename extension following sample ID')
+    '--filext', '-e', 'input_ext',
+    help='Input filename extension following sample ID.')
 @click.option(
     '--sample-ids', '-s', type=click.File('r'),
-    help='list of sample IDs to be included')
+    help='List of sample IDs to be included.')
+@click.option(
+    '--demux/--no-demux', default=None,
+    help='Demultiplex alignments by last underscore in read identifier.')
 # behavior
 @click.option(
     '--rank', '-r', 'rank_lst', type=click.STRING,
-    help=('classify sequences at this rank; ignore or enter "none" to omit '
+    help=('Classify sequences at this rank; ignore or enter "none" to omit '
           'classification; enter "free" for free-rank classification; can '
           'specify multiple comma-delimited ranks and one profile will be '
-          'generated for each rank'))
+          'generated for each rank.'))
 @click.option(
     '--multi/--no-multi', default=True,
     help=('allow one sequence to be assigned to multiple classification '

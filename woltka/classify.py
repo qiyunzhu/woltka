@@ -12,20 +12,22 @@
 """
 
 from os import makedirs
-from os.path import join
+from os.path import join, basename
 import click
 
-from .util import readzip, id2file_map, count_list, intize, delnone, allkeys
-from .align import read_align
+from .util import readzip, count_list, add_dict, intize, delnone, allkeys
+from .sample import read_ids, match_sample_file, demultiplex
+from .align import read_align_file
 from .ordinal import read_gene_coords, whether_prefix, ordinal
 from .tree import build_tree, find_rank, find_lca
 
 
-def classify(input_fp:    str,
-             output_fp:   str,
-             input_fmt:   str = 'auto',
+def classify(input_path:  str,
+             output_path: str,
+             input_fmt:   str = None,
              input_ext:   str = None,
              sample_ids: list = None,
+             demux:      bool = None,
              rank_lst:    str = None,
              multi:       str = True,
              lca:        bool = True,
@@ -38,6 +40,32 @@ def classify(input_fp:    str,
              ranktb_fp:   str = None,
              lineage_fp:  str = None) -> dict:
     """Main classification workflow.
+
+    Parameters
+    ----------
+    input_path : str
+        Path to input alignment file or directory of alignment files.
+            If file,
+
+            If directory, demultiplexing is off unless specified.
+    output_path : str
+        Path to output profile file or directory of profile files.
+    input_fmt : str, optional
+        Format of input alignment file. Options:
+            'b6o': BLAST tabular format.
+            'sam': SAM format.
+            'map': Simple map of query <tab> subject.
+            unspecified: program will automatically infer from file content.
+    input_ext : str, optional
+        Input filename extension following sample Id.
+            e.g., with input_ext = '_R1.fastq.gz', filename 'ID_R1.fastq.gz'
+            is accepted and sample Id being 'ID', while filenames 'ID.log' and
+            'readme.txt' are dropped.
+    demux : bool, optional
+        Whether demultiplex query Ids by pattern "sample_read".
+            Query Id is split at first underscore. This works for QIIME/Qiita-
+            style sample Ids (where underscore is not allowed). But one needs
+            to be cautious otherwise.
 
     Returns
     -------
@@ -53,18 +81,15 @@ def classify(input_fp:    str,
     Explanations of parameters are provided as click decorators in `cli.py`.
     """
     # parse sample Ids
-    samples = None
     if sample_ids:
-        samples = sample_ids.read().splitlines()
+        samples = read_ids(sample_ids)
         click.echo(f'Samples to include: {len(samples)}.')
+    else:
+        samples = None
 
-    # match input files with sample Ids
-    input_map = id2file_map(input_fp, input_ext, samples)
-    if not samples:
-        samples = sorted(input_map.keys())
-        click.echo(f'Samples to read: {len(samples)}.')
-    elif len(input_map) < len(samples):
-        raise ValueError('Inconsistent sample IDs.')
+    # match sample Ids and input alignment files
+    demux, files = match_sample_file(input_path, input_ext, demux, samples)
+    click.echo(f'Alignment files to read: {len(files)}.')
 
     # load gene coordinates
     if coords_fp:
@@ -90,35 +115,67 @@ def classify(input_fp:    str,
 
     # parse input maps and generate profile
     args = [tree, rankd, root]
-    for sample in samples:
-        click.echo(f'Parsing sample {sample}...', nl=False)
+    for fp in sorted(files):
+        click.echo(f'Parsing alignment file {basename(fp)}...', nl=False)
 
         # read alignment file into query-subject(s) map
-        with readzip(join(input_fp, input_map[sample])) as fh:
-            if coords is not None:
-                map_ = ordinal(fh, coords, input_fmt, prefix=is_prefix)
-            else:
-                map_ = read_align(fh, input_fmt)
+        with readzip(fp) as fh:
 
-        # merge duplicate query-subject pairs
-        map_ = {k: set(v) for k, v in map_.items()}
+            # plain read to subject map
+            if coords is None:
+                readmap = read_align_file(fh, input_fmt)
+
+            # match reads to genes using ordinal algorithm
+            else:
+                readmap = ordinal(fh, coords, input_fmt, prefix=is_prefix)
 
         click.echo(' Done.')
-        click.echo(f'Query sequences: {len(map_)}.')
-        for rank in ranks:
-            assignment = {k: assign(v, rank, *args) for k, v in map_.items()}
-            data[rank][sample] = intize(count(assignment))
-            delnone(data[rank][sample])
+        click.echo(f'Query sequences: {len(readmap)}.')
 
-    if output_fp:
+        # merge duplicate subjects per query
+        readmap = {k: set(v) for k, v in readmap.items()}
+
+        # demultiplex into multiple samples
+        if demux:
+            readmap = demultiplex(readmap, samples)
+
+        # sample Id from filename
+        else:
+            readmap = {files[fp]: readmap}
+
+        # assign reads at each rank
+        for sample, map_ in readmap.items():
+            for rank in ranks:
+
+                # call assignment workflow
+                asgmt = {k: assign(v, rank, *args) for k, v in map_.items()}
+
+                # convert floats into intergers
+                counts = intize(count(asgmt))
+
+                # delete "None" keys
+                delnone(counts)
+
+                # combine old and new counts
+                try:
+                    add_dict(data[rank][sample], counts)
+                except KeyError:
+                    data[rank][sample] = counts
+
+    # get sample Ids from data
+    if demux and not samples:
+        samples = sorted(allkeys(data))
+
+    # output results
+    if output_path:
 
         # determine output filenames
         click.echo('Writing output profiles...', nl=False)
         if len(ranks) == 1:
-            rank2fp = {ranks[0]: output_fp}
+            rank2fp = {ranks[0]: output_path}
         else:
-            makedirs(output_fp, exist_ok=True)
-            rank2fp = {x: join(output_fp, f'{x}.tsv') for x in ranks}
+            makedirs(output_path, exist_ok=True)
+            rank2fp = {x: join(output_path, f'{x}.tsv') for x in ranks}
 
         # write output profile(s)
         for rank in ranks:
@@ -261,7 +318,37 @@ def write_profile(fh, data, named=None, samples=None):
         # get feature count
         for sample in samples:
             try:
-                row.append(str(int(data[sample][key])))
+                row.append(str(data[sample][key]))
             except KeyError:
                 row.append('0')
         print('\t'.join(row), file=fh)
+
+
+def prep_table(profile, samples=None):
+    """Convert a profile into data, index and columns, which can be further
+    converted into a Pandas DataFrame or BIOM table.
+
+    Parameters
+    ----------
+    profile : dict
+        Input profile.
+
+    Returns
+    -------
+    list of list, list, list
+        Data (2D array of values).
+        Index (observation Ids).
+        Columns (sample Ids).
+    """
+    index = sorted(allkeys(profile))
+    columns = samples or sorted(profile)
+    data = []
+    for key in index:
+        row = []
+        for sample in columns:
+            try:
+                row.append(profile[sample][key])
+            except KeyError:
+                row.append(0)
+        data.append(row)
+    return data, index, columns
