@@ -29,7 +29,9 @@ def classify(input_path:  str,
              sample_ids: list = None,
              demux:      bool = None,
              rank_lst:    str = None,
+             major:       int = None,
              ambig:       str = True,
+             subok:      bool = None,
              lca:        bool = True,
              ixend:      bool = False,
              coords_fp:   str = None,
@@ -67,15 +69,17 @@ def classify(input_path:  str,
     Returns
     -------
     dict of dict
-        Per-rank profiles generated from classification
+        Per-rank profiles generated from classification.
 
     See Also
     --------
-    cli.classify
+    .cli.classify
+        Command-line parameters and help information.
 
     Notes
     -----
-    Explanations of parameters are provided as click decorators in `cli.py`.
+    This is the only function in the entire program which directly interface
+    with the user via `click.echo`, except for raising errors.
     """
     # parse sample Ids
     if sample_ids:
@@ -110,8 +114,10 @@ def classify(input_path:  str,
     ranks = ['none'] if rank_lst is None else rank_lst.split(',')
     data = {x: {} for x in ranks}
 
+    # assignment arguments
+    args = [tree, rankd, root, None, major and major / 100, ambig, subok]
+
     # parse input maps and generate profile
-    args = [tree, rankd, root]
     for fp in sorted(files):
         click.echo(f'Parsing alignment file {basename(fp)}...', nl=False)
 

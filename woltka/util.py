@@ -144,7 +144,7 @@ def intize(dic, zero=False):
     Returns
     -------
     dict
-        converted dictionary
+        Converted dictionary.
     """
     return {k: int(v) for k, v in dic.items() if int(v) or zero}
 
@@ -169,7 +169,7 @@ def allkeys(dic):
     Parameters
     ----------
     dic : dict
-        input dictionary
+        Input dictionary.
 
     Returns
     -------

@@ -77,7 +77,7 @@ def gotu(ctx, **kwargs):
 @click.option(
     '--demux/--no-demux', default=None,
     help='Demultiplex alignments by last underscore in read identifier.')
-# behavior
+# classification
 @click.option(
     '--rank', '-r', 'rank_lst', type=click.STRING,
     help=('Classify sequences at this rank; ignore or enter "none" to omit '
@@ -85,24 +85,30 @@ def gotu(ctx, **kwargs):
           'specify multiple comma-delimited ranks and one profile will be '
           'generated for each rank.'))
 @click.option(
+    '--major', type=click.IntRange(51, 99),
+    help=('Majority-rule assignment percentage threshold.'))
+@click.option(
     '--ambig/--no-ambig', default=True,
-    help=('allow one sequence to be assigned to multiple classification '
+    help=('Allow one sequence to be assigned to multiple classification '
           'units at the same rank; per-unit match counts will be recorded '
           'and profile will be normalized by total number of matches'))
 @click.option(
+    '--subok/--no-subok', default=True,
+    help=('Can report subject IDs in classification result.'))
+@click.option(
     '--lca/--no-lca', default=True,
-    help=('attempt to find lowest common ancestor (LCA) in taxonomy for '
+    help=('Attempt to find lowest common ancestor (LCA) in taxonomy for '
           'non-unique matches; note: root is not assumed unless defined, '
           'and there may be multiple LCAs, in which case each is counted '
           'once; results are then subject to ambiguity treatment'))
 @click.option(
     '--ixend/--no-ixend', default=False,
-    help=('subject identifiers end with underscore index, the latter of which '
+    help=('Subject identifiers end with underscore index, the latter of which '
           'is to be removed prior to mapping.'))
 # gene information
 @click.option(
     '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
-    help=('table of coordinates of genes on reference genomes, with which '
+    help=('Table of coordinates of genes on reference genomes, with which '
           'sequence-to-genome alignment will be translated into sequence-to-'
           'gene mapping'))
 # tree information
