@@ -98,7 +98,7 @@ def infer_align_format(line):
     row = line.rstrip().split('\t')
     if len(row) == 2:
         return 'map'
-    if len(row) == 12:
+    if len(row) >= 12:
         if all(row[i].isdigit() for i in range(3, 10)):
             return 'b6o'
     if len(row) >= 11:

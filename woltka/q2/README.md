@@ -39,4 +39,10 @@ The following command can generate a gOTU table based on per-sample sequence ali
 qiime woltka gotu --p-input-path align/bowtie2 --o-table table.qza
 ```
 
+In a real scenario, the workflow for shotgun metagenome sequence alignment is available at the Qiita server. One may process "per_sample_FASTQ" files with command: "**Shogun v1.0.7**" and parameter set: "**wol_bowtie2**". This will launch the alignment job. Once done, one may download the alignment file `alignment.bowtie2.sam.xz`, then generate a gOTU table with:
+
+```bash
+qiime woltka gotu --p-input-path alignment.bowtie2.sam.xz --o-table table.qza
+```
+
 The output file `table.qza` contains a BIOM table (QIIME artifact type: `FeatureTable[Frequency]`) in which columns are samples and rows are gOTUs. It can then be analyzed using the classical QIIME 2 workflow.
