@@ -15,67 +15,124 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.classify import (
-    assign, count, majority,  write_profile, prep_table)
+    classify, assign, assign_none, assign_free, assign_rank, count, majority,
+    write_profile, prep_table)
 
 
 class ClassifyTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
-        self.datadir = join(dirname(realpath(__file__)), 'data')
+        self.datdir = join(dirname(realpath(__file__)), 'data')
 
     def tearDown(self):
         rmtree(self.tmpdir)
 
     def test_classify(self):
-        # TODO
-        pass
+        # simplest gotu workflow
+        # for other tests see test_cli.classify
+        input_path = join(self.datdir, 'align', 'bowtie2')
+        output_path = join(self.tmpdir, 'tmp.tsv')
+        classify(input_path, output_path)
+        with open(output_path, 'r') as f:
+            obs = f.read().splitlines()
+        exp_fp = join(self.datdir, 'output', 'bowtie2.gotu.tsv')
+        with open(exp_fp, 'r') as f:
+            exp = f.read().splitlines()
+        self.assertListEqual(obs, exp)
+        remove(output_path)
 
     def test_assign(self):
-        # without a tree
-        # assign to self
-        self.assertEqual(assign({'G1'}), 'G1')
-
         # count subjects
-        obs = assign({'G1', 'G2'}, ambig=True)
-        exp = {'G1': 1, 'G2': 1}
-        self.assertDictEqual(obs, exp)
-
-        # cannot assign
-        obs = assign({'G1', 'G2', 'G3'})
-        self.assertIsNone(obs)
-
-        # rank has no effect if no tree
-        obs = assign({'G1', 'G2', 'G3'}, rank='hello')
-        self.assertIsNone(obs)
-
-        # with a tree
-        subs = {'G1', 'G2', 'G3'}
-        tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
-                'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
-        rankd = {'T1': 'general', 'T2': 'general', 'T0': 'marshal'}
+        obs = assign({'G1', 'G2', 'G3'}, rank='none', ambig=True)
+        self.assertDictEqual(obs, {'G1': 1, 'G2': 1, 'G3': 1})
 
         # free-rank assign
-        obs = assign(subs, 'free', tree=tree)
+        tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
+                'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
+        obs = assign({'G1', 'G2', 'G3'}, rank='free', tree=tree)
         self.assertEqual(obs, 'T0')
-
-        # tree not used
-        obs = assign(subs, 'none', tree=tree)
+        obs = assign({'G1', 'G2', 'G3'}, rank='free', tree=tree, root='T0')
         self.assertIsNone(obs)
 
         # fixed rank assign
-        kwargs = {'tree': tree, 'rankd': rankd}
-        obs = assign(subs, 'marshal', **kwargs)
+        rankd = {'T1': 'general', 'T2': 'general', 'T0': 'marshal'}
+        kwargs = {'tree': tree, 'rankd': rankd, 'root': 'T0'}
+        obs = assign({'G1', 'G2', 'G3'}, 'marshal', **kwargs)
         self.assertEqual(obs, 'T0')
-        obs = assign(subs, 'general', **kwargs)
+        obs = assign({'G1', 'G2', 'G3'}, 'general', **kwargs)
         self.assertIsNone(obs)
         obs = assign({'G1', 'G2'}, 'general', **kwargs)
         self.assertEqual(obs, 'T1')
 
-        # rank that does not exist
-        obs = assign(subs, 'admiral', **kwargs)
+    def test_assign_none(self):
+        # assign to self
+        self.assertEqual(assign_none({'G1'}), 'G1')
+
+        # count subjects
+        obs = assign_none({'G1', 'G2'}, ambig=True)
+        exp = {'G1': 1, 'G2': 1}
+        self.assertDictEqual(obs, exp)
+
+        # cannot assign
+        obs = assign_none({'G1', 'G2', 'G3'})
         self.assertIsNone(obs)
 
-        # TODO: add more tests
+    def test_assign_free(self):
+        tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
+                'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
+        kwargs = {'tree': tree, 'root': 'T0'}
+
+        # free-rank assignment
+        obs = assign_free({'G1', 'G2'}, **kwargs)
+        self.assertEqual(obs, 'T1')
+
+        # root -> None
+        obs = assign_free({'G1', 'G2', 'G3'}, **kwargs)
+        self.assertIsNone(obs)
+
+        # assign one sub to a taxon
+        obs = assign_free({'G1'}, **kwargs)
+        self.assertEqual(obs, 'T1')
+
+        # assign one sub to itself
+        obs = assign_free({'G1'}, **kwargs, subok=True)
+        self.assertEqual(obs, 'G1')
+
+    def test_assign_rank(self):
+        tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
+                'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
+        rankd = {'T1': 'general', 'T2': 'general', 'T0': 'marshal'}
+        kwargs = {'tree': tree, 'rankd': rankd, 'root': 'T0'}
+
+        # fixed-rank assignment
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'marshal', **kwargs)
+        self.assertEqual(obs, 'T0')
+        obs = assign_rank({'G1', 'G2'}, 'general', **kwargs)
+        self.assertEqual(obs, 'T1')
+        obs = assign_rank({'G1'}, 'general', **kwargs)
+        self.assertEqual(obs, 'T1')
+
+        # rank that does not exist
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'admiral', **kwargs)
+        self.assertIsNone(obs)
+
+        # cannot find consensus at rank
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs)
+        self.assertIsNone(obs)
+
+        # majority rule
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs, major=0.6)
+        self.assertEqual(obs, 'T1')
+
+        # consider ambiguity
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs, ambig=True)
+        exp = {'T1': 2, 'T2': 1}
+        self.assertDictEqual(obs, exp)
+
+        # assign above rank
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', tree=tree,
+                          rankd=rankd, root=None, above=True)
+        self.assertEqual(obs, 'T0')
 
     def test_count(self):
         # unique match

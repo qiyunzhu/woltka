@@ -68,6 +68,7 @@ woltka classify \
   --coords function/coords.txt.xz \
   --map function/uniref.map.xz \
   --map function/go/process.tsv.xz \
+  --map-is-rank \
   --rank uniref,process \
   -o output_dir
 ```

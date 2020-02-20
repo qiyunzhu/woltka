@@ -80,15 +80,18 @@ class UtilTests(TestCase):
             'Conflicting values found for "b".'))
 
     def test_intize(self):
-        dic = {'a': 1.0, 'b': 2.5, 'c': 3.6}
-        exp = {'a': 1, 'b': 2, 'c': 3}
-        self.assertDictEqual(intize(dic), exp)
-        dic['b'], exp['b'] = -2.8, -2
-        self.assertDictEqual(intize(dic), exp)
-        dic['d'] = 0.3
-        self.assertDictEqual(intize(dic), exp)
-        exp['d'] = 0
-        self.assertDictEqual(intize(dic, zero=True), exp)
+        dic = {'a': 1.0, 'b': 2.2, 'c': 3.6}
+        intize(dic)
+        exp = {'a': 1, 'b': 2, 'c': 4}
+        self.assertDictEqual(dic, exp)
+        dic = {'a': -0.2, 'b': -3.3, 'c': 1.8, 'd': 0.4}
+        intize(dic)
+        exp = {'b': -3, 'c': 2}
+        self.assertDictEqual(dic, exp)
+        dic = {'a': -0.2, 'b': -3.3, 'c': 1.8, 'd': 0.4}
+        intize(dic, zero=True)
+        exp = {'a': 0, 'b': -3, 'c': 2, 'd': 0}
+        self.assertDictEqual(dic, exp)
 
     def test_delnone(self):
         dic = {'a': 1, 'b': 2, 'c': 3}

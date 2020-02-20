@@ -28,20 +28,20 @@ def classify(input_path:  str,
              input_ext:   str = None,
              sample_ids: list = None,
              demux:      bool = None,
-             rank_lst:    str = None,
+             ranks:       str = None,
              above:      bool = False,
              major:       int = None,
              ambig:       str = True,
              subok:      bool = None,
-             lca:        bool = True,
              deidx:      bool = False,
              coords_fp:   str = None,
-             map_fps:    list = None,
+             names_fp:    str = None,
              nodes_fp:    str = None,
              newick_fp:   str = None,
-             ranktb_fp:   str = None,
              lineage_fp:  str = None,
-             names_fp:    str = None) -> dict:
+             ranktb_fp:   str = None,
+             map_fps:    list = None,
+             map_rank:   bool = False) -> dict:
     """Main classification workflow.
 
     Parameters
@@ -74,7 +74,7 @@ def classify(input_path:  str,
         If None, program will determine demultiplex behavior based on the input
         path: turn on if it's a file; turn off if it's a directory.
 
-    rank_lst: list of str, optional
+    ranks: list of str, optional
         List of ranks at each of which sequences are to be classified. Can also
         be "none" to omit classification (simply report subject IDs) or "free"
         to perform free-rank classification (LCA of subjects regardless of rank
@@ -91,8 +91,6 @@ def classify(input_path:  str,
     subok : bool, optional
         Allow directly reporting subject ID(s) if a sequence cannot be assigned
         to any higher classification unit.
-    lca : bool, optional
-        Perform lowest common ancestor (LCA) assignment for non-unique matches.
     deidx : bool, optional
         Strip "underscore index" suffixes from subject IDs.
 
@@ -101,11 +99,8 @@ def classify(input_path:  str,
         sequence-to-genome alignments will be translated into sequence-to-gene
         mappings. Essential for functional classification.
 
-    map_fps : list of str, optional
-        Paths to maps of lower classification units to higher classification
-        units. Filename stem will be treated as the rank name.
-        Examples include nucleotides to host genomes, sequence IDs to taxonomy
-        IDs, gene families to pathways, etc.
+    names_fp : str, optional
+        Path to NCBI-style names.dmp or plain taxon-to-name map.
     nodes_fp : str, optional
         Path to NCBI-style nodes.dmp or compatible formats, providing a map of
         taxon (1st column) to parent (2nd column) and rank (3rd column,
@@ -113,14 +108,18 @@ def classify(input_path:  str,
     newick_fp : str, optional
         Path to Newick-format tree file which defines rank-free hierarchies of
         classification.
-    ranktb_fp : str, optional
-        Path to table of classification units at each rank (column).
     lineage_fp : str, optional
         Path to map of lineage strings (semicolon-delimited taxa from high to
         low). Can be Greengenes-style taxonomy where rank codes such as "k__"
         will be parsed, or code-free strings.
-    names_fp : str, optional
-        Path to NCBI-style names.dmp or plain taxon-to-name map.
+    ranktb_fp : str, optional
+        Path to table of classification units at each rank (column).
+    map_fps : list of str, optional
+        Paths to maps of lower classification units to higher classification
+        units. Examples include nucleotides to host genomes, sequence IDs to
+        taxonomy IDs, gene families to pathways, etc.
+    map_rank : bool, optional
+        Map filename stem will be treated as rank name.
 
     Returns
     -------
@@ -155,26 +154,21 @@ def classify(input_path:  str,
         is_prefix = whether_prefix(coords)
 
     # load classification system
-    tree = None
-    args = (map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp)
+    tree, rankd, named, root = None, None, None, None
+    args = (names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps)
     if any(args):
         click.echo(f'Reading classification system...', nl=False)
-        tree, rankd, named, root = build_tree(*args)
+        tree, rankd, named, root = build_tree(*args, map_rank)
         click.echo(' Done.')
         click.echo(f'Total classification units: {len(tree)}.')
 
     # parse target ranks
-    ranks = ['none'] if rank_lst is None else rank_lst.split(',')
+    ranks = ['none'] if ranks is None else ranks.split(',')
     data = {x: {} for x in ranks}
 
     # assignment parameters
-    kwargs = {'tree':  tree,
-              'rankd': None if tree is None else rankd,
-              'root':  None if tree is None else root,
-              'above': above,
-              'major': None if major is None else major / 100,
-              'ambig': ambig,
-              'subok': subok}
+    kwargs = {'tree':  tree, 'rankd': rankd,  'root':  root,  'above': above,
+              'major': major and major / 100, 'ambig': ambig, 'subok': subok}
 
     # parse input maps and generate profile
     for fp in sorted(files):
@@ -216,8 +210,11 @@ def classify(input_path:  str,
                 # call assignment workflow
                 asgmt = {k: assign(v, rank, **kwargs) for k, v in map_.items()}
 
-                # convert floats into intergers
-                counts = intize(count(asgmt))
+                # count taxa
+                counts = count(asgmt)
+
+                # round floats
+                intize(counts)
 
                 # delete "None" keys
                 delnone(counts)
@@ -244,8 +241,7 @@ def classify(input_path:  str,
             rank2fp = {x: join(output_path, f'{x}.tsv') for x in ranks}
 
         # write output profile(s)
-        kwargs = {'named': None if tree is None else named,
-                  'samples': samples}
+        kwargs = {'named': named, 'samples': samples}
         for rank in ranks:
             with open(rank2fp[rank], 'w') as fh:
                 write_profile(fh, data[rank], **kwargs)
@@ -298,38 +294,107 @@ def assign(subs:    set,
     """
     # no classification, just subject(s) itself
     if rank is None or rank == 'none' or tree is None:
-        if len(subs) == 1:
-            return max(subs)
-        elif ambig:
-            return count_list(subs)
-        else:
-            return None
+        return assign_none(subs, ambig)
 
     # free rank classification: find LCA
     elif rank == 'free':
-        if len(subs) == 1:
-            if subok:
-                return tree[max(subs)]
-            else:
-                return max(subs)
-        else:
-            lca = find_lca(subs, tree)
-            return None if lca == root else lca
+        return assign_free(subs, tree, root, subok)
 
     # fixed rank classification
     else:
-        taxa = [find_rank(x, rank, tree, rankd) for x in subs]
-        if len(set(taxa)) == 1:
-            return taxa[0]
-        elif major:
-            return majority(taxa, major)
-        elif above:
-            lca = find_lca(set(taxa), tree)
-            return None if lca == root else lca
-        elif ambig:
-            return count_list(taxa)
-        else:
-            return None
+        return assign_rank(subs, rank, tree, rankd, root, above, major, ambig)
+
+
+def assign_none(subs, ambig=False):
+    """Assign query to subjects without using a classification system.
+
+    Parameters
+    ----------
+    subs : set of str
+        Subjects.
+    ambig : bool, optional
+        Count occurrence of each subject.
+
+    Returns
+    -------
+    str or dict
+        Unique assignment or assignment-to-count map.
+    """
+    try:
+        sub, = subs
+        return sub
+    except ValueError:
+        return count_list(subs) if ambig else None
+
+
+def assign_free(subs, tree, root, subok=False):
+    """Assign query based on a classification system in a rank-free manner.
+
+    Parameters
+    ----------
+    subs : set of str
+        Subjects.
+    tree : dict
+        Hierarchical classification system.
+    root : str, optional
+        Root identifier.
+    subok : bool, optional
+        Allow assignment to subjects.
+
+    Returns
+    -------
+    str or dict
+        Unique assignment or assignment-to-count map.
+    """
+    try:
+        sub, = subs
+        return sub if subok else tree[sub]
+    except ValueError:
+        lca = find_lca(subs, tree)
+        return None if lca == root else lca
+
+
+def assign_rank(subs, rank, tree, rankd, root, above=False, major=None,
+                ambig=False):
+    """Assign query to a fixed rank in a classification system.
+
+    Parameters
+    ----------
+    subs : set of str
+        Subjects.
+    rank : str
+        Target rank.
+    tree : dict
+        Hierarchical classification system.
+    rankd : dict, optional
+        Rank dictionary.
+    root : str, optional
+        Root identifier.
+    above : bool, optional
+        Allow assignment above rank.
+    major : float, optional
+        Majority-rule assignment threshold.
+    ambig : bool, optional
+        Count occurrence of each taxon at rank.
+
+    Returns
+    -------
+    str or dict
+        Unique assignment or assignment-to-count map.
+    """
+    taxa = [find_rank(x, rank, tree, rankd) for x in subs]
+    tset = set(taxa)
+    if len(tset) == 1:
+        return taxa[0]
+    elif major:
+        return majority(taxa, major)
+    elif above:
+        lca = find_lca(tset, tree)
+        return None if lca == root else lca
+    elif ambig:
+        return count_list(taxa)
+    else:
+        return None
 
 
 def count(matches):

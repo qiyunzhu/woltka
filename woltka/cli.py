@@ -87,7 +87,7 @@ def gotu(ctx, **kwargs):
     help='Demultiplex alignment by first underscore in query identifier.')
 # classification
 @click.option(
-    '--rank', '-r', 'rank_lst', type=click.STRING,
+    '--rank', '-r', 'ranks', type=click.STRING,
     help=('Classify sequences at this rank. Ignore or enter "none" to omit '
           'classification; enter "free" for free-rank classification. Can '
           'specify multiple comma-delimited ranks and one profile will be '
@@ -105,9 +105,6 @@ def gotu(ctx, **kwargs):
     '--subok/--no-subok', default=True,
     help='Can report subject IDs in classification result.')
 @click.option(
-    '--lca/--no-lca', default=True,
-    help='Find lowest common ancestor (LCA) for non-unique matches.')
-@click.option(
     '--deidx/--no-deidx', default=False,
     help='Strip "underscore index" suffixes from subject IDs.')
 # gene information
@@ -116,9 +113,9 @@ def gotu(ctx, **kwargs):
     help='Table of gene coordinates of  on reference genomes.')
 # tree information
 @click.option(
-    '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('Map(s) of subjects or lower classification units to higher ones. '
-          'Can accept multiple maps.'))
+    '--names', 'names_fp', type=click.Path(exists=True),
+    help=('Names of classification units as defined by NCBI names.dmp or a '
+          'plain map.'))
 @click.option(
     '--nodes', 'nodes_fp', type=click.Path(exists=True),
     help='Hierarchies defined by NCBI nodes.dmp or compatible formats.')
@@ -126,15 +123,18 @@ def gotu(ctx, **kwargs):
     '--newick', 'newick_fp', type=click.Path(exists=True),
     help='Hierarchies defined by a tree in Newick format.')
 @click.option(
-    '--rank-table', 'ranktb_fp', type=click.Path(exists=True),
-    help='Table of classification units at each rank (column).')
-@click.option(
     '--lineage', 'lineage_fp', type=click.Path(exists=True),
     help='Map of lineage strings. Can accept Greengenes-style rank prefix.')
 @click.option(
-    '--names', 'names_fp', type=click.Path(exists=True),
-    help=('Names of classification units as defined by NCBI names.dmp or a '
-          'plain map.'))
+    '--rank-table', 'ranktb_fp', type=click.Path(exists=True),
+    help='Table of classification units at each rank (column).')
+@click.option(
+    '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
+    help=('Map(s) of subjects or lower classification units to higher ones. '
+          'Can accept multiple maps.'))
+@click.option(
+    '--map-is-rank', 'map_rank', is_flag=True,
+    help='Map filename stem is rank name.')
 def classify(**kwargs):
     """Generate a profile of samples based on a classification system.
     """

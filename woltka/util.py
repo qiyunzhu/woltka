@@ -144,13 +144,16 @@ def intize(dic, zero=False):
         Input dictionary.
     zero : bool, optional
         Whether keep zero values.
-
-    Returns
-    -------
-    dict
-        Converted dictionary.
     """
-    return {k: int(v) for k, v in dic.items() if int(v) or zero}
+    todel = []
+    for key, value in dic.items():
+        intval = round(value)
+        if intval or zero:
+            dic[key] = intval
+        else:
+            todel.append(key)
+    for key in todel:
+        del dic[key]
 
 
 def delnone(dic):

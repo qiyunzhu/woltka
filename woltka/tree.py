@@ -45,23 +45,31 @@ code2rank['d'] = 'kingdom'
 notax = {'', '0', 'unclassified', 'unassigned'}
 
 
-def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
+def build_tree(names_fp:   str = None,
+               nodes_fp:   str = None,
+               newick_fp:  str = None,
+               lineage_fp: str = None,
+               ranktb_fp:  str = None,
+               map_fps:   list = None,
+               map_rank:  bool = False) -> (dict, dict, dict, str):
     """Construct a tree to represent the hierarchical classification system.
 
     Parameters
     ----------
-    map_fps : list of str
-        Mapping files.
-    names_fp : str
+    names_fp : str, optional
         Taxonomic names file.
-    nodes_fp : str
+    nodes_fp : str, optional
         Taxonomic nodes file.
-    newick_fp : str
+    newick_fp : str, optional
         Newick tree file.
-    ranktb_fp : str
-        Rank table file.
-    lineage_fp : str
+    lineage_fp : str, optional
         Lineage strings file.
+    ranktb_fp : str, optional
+        Rank table file.
+    map_fps : list of str, optional
+        Mapping files.
+    map_rank : bool, optional
+        Mapping filename is rank.
 
     Returns
     -------
@@ -73,18 +81,12 @@ def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
     """
     tree, rankd, named = {}, {}, {}
 
-    # plain maps
-    for fp in map_fps:
-        rank = path2stem(fp)  # filename stem as rank
-        with readzip(fp) as f:
-            map_ = read_map(f)
-        update_dict(tree, map_)
-        update_dict(rankd, {k: rank for k in set(map_.values())})
-
-    # taxdump-style names and nodes
+    # taxonomy names
     if names_fp:
         with readzip(names_fp) as f:
-            update_dict(named, read_names(f))
+            named = read_names(f)
+
+    # taxonomy nodes
     if nodes_fp:
         with readzip(nodes_fp) as f:
             tree_, rankd_ = read_nodes(f)
@@ -96,17 +98,26 @@ def build_tree(map_fps, names_fp, nodes_fp, newick_fp, ranktb_fp, lineage_fp):
         with readzip(newick_fp) as f:
             update_dict(tree, read_newick(f))
 
-    # rank table file
-    if ranktb_fp:
-        with readzip(ranktb_fp) as f:
-            update_dict(tree, read_ranktb(f))
-
     # lineage strings file
     if lineage_fp:
         with readzip(lineage_fp) as f:
             tree_, rankd_ = read_lineage(f)
         update_dict(tree, tree_)
         update_dict(rankd, rankd_)
+
+    # rank table file
+    if ranktb_fp:
+        with readzip(ranktb_fp) as f:
+            update_dict(tree, read_ranktb(f))
+
+    # plain mapping files
+    for fp in map_fps:
+        rank = path2stem(fp)  # filename stem as rank
+        with readzip(fp) as f:
+            map_ = read_map(f)
+        update_dict(tree, map_)
+        if map_rank:
+            update_dict(rankd, {k: rank for k in set(map_.values())})
 
     # fill root
     root = fill_root(tree)
