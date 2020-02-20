@@ -225,13 +225,14 @@ Wolkta supports various formats of classification systems, specifically:
 3. `--ranktb`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
 
 4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
-  
-  Can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
-  Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
+
+   Can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
+
+   Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
 
 5. `--map` or `-m`: Simple map of lower taxon to higher taxon. Filename stem represents rank name.
-  
-  Can supply multiple maps (by typing multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
+
+   Can supply multiple maps (by typing multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
 
 If no classification file is provided, Woltka will automatically build a classification system from the alignment files, in which subject identifiers will be parsed as lineage strings.
 
@@ -241,7 +242,7 @@ Furthermore, one can supply Woltka with a taxon name dictionary, and the output 
 
 * `--names`: NCBI-style `names.dmp` or a simple taxon-to-name map.
 
-Classification files are **additive**--unless they conflict--which will be noted by Woltka. Example command:
+Classification files are **additive** --- unless they conflict --- which will be noted by Woltka. Example command:
 
 ```bash
 woltka classify \

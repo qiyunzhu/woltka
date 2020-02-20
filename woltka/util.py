@@ -8,6 +8,10 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+"""Generic utility functions that are not specific to certain bioinformatics
+operations.
+"""
+
 from os.path import basename, splitext
 import gzip
 import bz2

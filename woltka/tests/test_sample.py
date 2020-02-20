@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.sample import read_ids, match_sample_file, id2file_map, demultiplex
+from woltka.sample import read_ids, match_sample_file, id2file_map
 
 
 class SampleTests(TestCase):
@@ -213,32 +213,6 @@ class SampleTests(TestCase):
 
         obs = id2file_map(dir_, ids=['S01', 'S02', 'S03'])
         exp = {f'S0{i}': f'S0{i}.sam.xz' for i in range(1, 4)}
-        self.assertDictEqual(obs, exp)
-
-    def test_demultiplex(self):
-        # simple case
-        dic = {'S1_R1': 5,
-               'S1_R2': 12,
-               'S1_R3': 3,
-               'S2_R1': 10,
-               'S2_R2': 8,
-               'S2_R4': 7,
-               'S3_R2': 15,
-               'S3_R3': 1,
-               'S3_R4': 5}
-        obs = demultiplex(dic)
-        exp = {'S1': {'R1': 5, 'R2': 12, 'R3': 3},
-               'S2': {'R1': 10, 'R2': 8, 'R4': 7},
-               'S3': {'R2': 15, 'R3': 1, 'R4': 5}}
-        self.assertDictEqual(obs, exp)
-
-        # change separator, no result
-        obs = demultiplex(dic, sep='.')
-        self.assertDictEqual(obs, {'': dic})
-
-        # enforce sample Ids
-        obs = demultiplex(dic, samples=['S1', 'S2', 'SX'])
-        exp = {x: exp[x] for x in ['S1', 'S2']}
         self.assertDictEqual(obs, exp)
 
 

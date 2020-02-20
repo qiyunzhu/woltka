@@ -14,8 +14,19 @@ from . import __version__
 from .classify import classify as _classify
 
 
+class NatOrder(click.Group):
+    """Natural ordering of click command groups.
+
+    See Also
+    --------
+    https://github.com/pallets/click/issues/513
+    """
+    def list_commands(self, ctx):
+        return self.commands.keys()
+
+
 @click.version_option(__version__)
-@click.group()
+@click.group(cls=NatOrder)
 def cli():
     pass
 
@@ -25,23 +36,20 @@ def cli():
 @cli.command('gotu')
 @click.option(
     '--input', '-i', 'input_path', required=True,
-    type=click.Path(exists=True, file_okay=False, dir_okay=True),
-    help='input read alignment directory')
+    type=click.Path(exists=True, file_okay=True, dir_okay=True),
+    help=('Path to a multiplexed alignment file or a directory of per-sample '
+          'alignment files.'))
 @click.option(
     '--output', '-o', 'output_path', required=True,
     type=click.Path(writable=True),
-    help=('output gOTU table)'))
+    help=('Path to output gOTU table.'))
 @click.option(
     '--ambig/--no-ambig', default=True,
-    help=('allow one sequence to be assigned to multiple gOTUs; each hit '
-          'will be counted as 1 / k (k is the totally number of hits)'))
-@click.option(
-    '--ixend/--no-ixend', default=False,
-    help=('subject identifiers end with underscore index, the latter of which '
-          'is to be removed prior to mapping.'))
+    help=('Allow one sequence to be assigned to multiple gOTUs. Each hit '
+          'will be counted as 1 / k (k is the totally number of hits).'))
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('map of nucleotides to genomes'))
+    help=('Map of nucleotides to genomes.'))
 @click.pass_context
 def gotu(ctx, **kwargs):
     """Generate a gOTU table based on sequence alignments.
@@ -76,67 +84,57 @@ def gotu(ctx, **kwargs):
     help='List of sample IDs to be included.')
 @click.option(
     '--demux/--no-demux', default=None,
-    help='Demultiplex alignments by last underscore in read identifier.')
+    help='Demultiplex alignment by first underscore in query identifier.')
 # classification
 @click.option(
     '--rank', '-r', 'rank_lst', type=click.STRING,
-    help=('Classify sequences at this rank; ignore or enter "none" to omit '
-          'classification; enter "free" for free-rank classification; can '
+    help=('Classify sequences at this rank. Ignore or enter "none" to omit '
+          'classification; enter "free" for free-rank classification. Can '
           'specify multiple comma-delimited ranks and one profile will be '
           'generated for each rank.'))
 @click.option(
+    '--above/--no-above', default=False,
+    help='Allow assigning to a classification unit higher than given rank.')
+@click.option(
     '--major', type=click.IntRange(51, 99),
-    help=('Majority-rule assignment percentage threshold.'))
+    help='Majority-rule assignment percentage threshold.')
 @click.option(
     '--ambig/--no-ambig', default=True,
-    help=('Allow one sequence to be assigned to multiple classification '
-          'units at the same rank; per-unit match counts will be recorded '
-          'and profile will be normalized by total number of matches'))
+    help='Allow assigning one sequence to multiple classification units.')
 @click.option(
     '--subok/--no-subok', default=True,
-    help=('Can report subject IDs in classification result.'))
+    help='Can report subject IDs in classification result.')
 @click.option(
     '--lca/--no-lca', default=True,
-    help=('Attempt to find lowest common ancestor (LCA) in taxonomy for '
-          'non-unique matches; note: root is not assumed unless defined, '
-          'and there may be multiple LCAs, in which case each is counted '
-          'once; results are then subject to ambiguity treatment'))
+    help='Find lowest common ancestor (LCA) for non-unique matches.')
 @click.option(
-    '--ixend/--no-ixend', default=False,
-    help=('Subject identifiers end with underscore index, the latter of which '
-          'is to be removed prior to mapping.'))
+    '--deidx/--no-deidx', default=False,
+    help='Strip "underscore index" suffixes from subject IDs.')
 # gene information
 @click.option(
     '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
-    help=('Table of coordinates of genes on reference genomes, with which '
-          'sequence-to-genome alignment will be translated into sequence-to-'
-          'gene mapping'))
+    help='Table of gene coordinates of  on reference genomes.')
 # tree information
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('map(s) of subjects to higher classification units, such as '
-          'nucleotides to host genomes, sequence IDs to taxonomy IDs, gene '
-          'family to pathway, etc., can accept multiple maps'))
-@click.option(
-    '--names', 'names_fp', type=click.Path(exists=True),
-    help=('map of taxonomic units to labels; can be plain map or NCBI '
-          'names.dmp'))
+    help=('Map(s) of subjects or lower classification units to higher ones. '
+          'Can accept multiple maps.'))
 @click.option(
     '--nodes', 'nodes_fp', type=click.Path(exists=True),
-    help=('hierarchical structure of taxonomy defined by NCBI names.dmp '
-          'or compatible format'))
+    help='Hierarchies defined by NCBI nodes.dmp or compatible formats.')
 @click.option(
     '--newick', 'newick_fp', type=click.Path(exists=True),
-    help=('classification hierarchies defined by a tree in Newick format.'))
+    help='Hierarchies defined by a tree in Newick format.')
 @click.option(
     '--rank-table', 'ranktb_fp', type=click.Path(exists=True),
-    help=('classification hierarchies defined by a table with each column '
-          'representing a level and header as level name.'))
+    help='Table of classification units at each rank (column).')
 @click.option(
     '--lineage', 'lineage_fp', type=click.Path(exists=True),
-    help=('map of subjects/groups to lineage strings in format of "taxonomic;'
-          'units;from;high;to;low", can be Greengenes-style taxonomy where '
-          'level codes such as "k__" will be parsed'))
+    help='Map of lineage strings. Can accept Greengenes-style rank prefix.')
+@click.option(
+    '--names', 'names_fp', type=click.Path(exists=True),
+    help=('Names of classification units as defined by NCBI names.dmp or a '
+          'plain map.'))
 def classify(**kwargs):
     """Generate a profile of samples based on a classification system.
     """

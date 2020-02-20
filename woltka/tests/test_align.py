@@ -15,7 +15,7 @@ from tempfile import mkdtemp
 
 from woltka.align import (
     infer_align_format, parse_line_ordinal, parse_b6o_line, parse_sam_line,
-    cigar_to_lens)
+    cigar_to_lens, strip_index, demultiplex)
 
 
 class AlignTests(TestCase):
@@ -158,6 +158,40 @@ class AlignTests(TestCase):
             cigar_to_lens('*')
         msg = 'Missing CIGAR string.'
         self.assertEqual(str(context.exception), msg)
+
+    def test_strip_index(self):
+        dic = {'R1': ['G1_1', 'G1_2', 'G2_3', 'G3'],
+               'R2': ['G1_1', 'G1.3', 'G4_5', 'G4_x']}
+        strip_index(dic)
+        self.assertDictEqual(dic, {
+            'R1': ['G1', 'G1',   'G2', 'G3'],
+            'R2': ['G1', 'G1.3', 'G4', 'G4']})
+
+    def test_demultiplex(self):
+        # simple case
+        dic = {'S1_R1': 5,
+               'S1_R2': 12,
+               'S1_R3': 3,
+               'S2_R1': 10,
+               'S2_R2': 8,
+               'S2_R4': 7,
+               'S3_R2': 15,
+               'S3_R3': 1,
+               'S3_R4': 5}
+        obs = demultiplex(dic)
+        exp = {'S1': {'R1': 5, 'R2': 12, 'R3': 3},
+               'S2': {'R1': 10, 'R2': 8, 'R4': 7},
+               'S3': {'R2': 15, 'R3': 1, 'R4': 5}}
+        self.assertDictEqual(obs, exp)
+
+        # change separator, no result
+        obs = demultiplex(dic, sep='.')
+        self.assertDictEqual(obs, {'': dic})
+
+        # enforce sample Ids
+        obs = demultiplex(dic, samples=['S1', 'S2', 'SX'])
+        exp = {x: exp[x] for x in ['S1', 'S2']}
+        self.assertDictEqual(obs, exp)
 
 
 if __name__ == '__main__':

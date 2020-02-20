@@ -138,33 +138,3 @@ def id2file_map(dir_, ext=None, ids=None):
             raise ValueError(f'Ambiguous files for ID: "{id_}".')
         res[id_] = fname
     return res
-
-
-def demultiplex(dic, samples=None, sep='_'):
-    """Demultiplex a read-to-subject map.
-
-    Parameters
-    ----------
-    map_ : str
-        Read-to-subject(s) map.
-    samples : iterable of str, optional
-        Sample IDs to keep.
-    sep : str, optional
-        Separator between sample ID and read ID.
-
-    Returns
-    -------
-    dict of dict
-        Per-sample read-to-subject(s) maps.
-    """
-    if samples:
-        samset = set(samples)
-    res = {}
-    for key, value in dic.items():
-        try:
-            sample, read = key.split(sep, 1)
-        except ValueError:
-            sample, read = '', key
-        if not samples or sample in samset:
-            res.setdefault(sample, {})[read] = value
-    return res

@@ -22,13 +22,6 @@ This simple data structure is sufficient for the purpose of this program.
 In addition, the name and rank assignments of taxa are recorded in two separate
 dicts, if available. In principle, the system is rank-independent (i.e., "rank"
 can be anything or left empty).
-
-The system supports multiple formats of taxonomy files:
-1. Simple ID-to-taxon map.
-2. NCBI-style taxdump.
-3. Newick-format tree.
-4. Greengenes-style lineage map.
-5. Table of taxon per rank.
 """
 
 import re
