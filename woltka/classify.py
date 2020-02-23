@@ -8,247 +8,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-"""Main module for classification of sequencing data.
+"""Functions for classifying query sequences by assigning their subjects to a
+hierarchical classification system.
 """
 
-from os import makedirs
-from os.path import join, basename
-import click
-
-from .util import readzip, count_list, add_dict, intize, delnone, allkeys
-from .sample import read_ids, match_sample_file
-from .align import read_align_file, strip_index, demultiplex
-from .ordinal import read_gene_coords, whether_prefix, ordinal
-from .tree import build_tree, find_rank, find_lca
-
-
-def classify(input_path:  str,
-             output_path: str,
-             input_fmt:   str = None,
-             input_ext:   str = None,
-             sample_ids: list = None,
-             demux:      bool = None,
-             ranks:       str = None,
-             above:      bool = False,
-             major:       int = None,
-             ambig:       str = True,
-             subok:      bool = None,
-             deidx:      bool = False,
-             coords_fp:   str = None,
-             names_fp:    str = None,
-             nodes_fp:    str = None,
-             newick_fp:   str = None,
-             lineage_fp:  str = None,
-             ranktb_fp:   str = None,
-             map_fps:    list = None,
-             map_rank:   bool = False) -> dict:
-    """Main classification workflow.
-
-    Parameters
-    ----------
-    input_path : str
-        Path to input alignment file or directory of alignment files.
-    output_path : str
-        Path to output profile file or directory of profile files.
-        Will be a file if there is one target rank, or a directory of multiple
-        files starting with rank name if there are multiple target ranks.
-
-    input_fmt : str, optional
-        Format of input alignment file. Options:
-        - 'b6o': BLAST tabular format.
-        - 'sam': SAM format.
-        - 'map': Simple map of query <tab> subject.
-        If None, program will automatically infer from file content.
-    input_ext : str, optional
-        Input filename extension following sample ID.
-        For example, with input_ext = '_R1.fastq.gz', filename 'ID_R1.fastq.gz'
-        is accepted and sample ID being 'ID', while filenames 'ID.log' and
-        'readme.txt' are dropped.
-    sample_ids : iterable of str, optional
-        List of sample IDs to be included.
-    demux : bool, optional
-        Whether demultiplex query IDs by pattern "sample_read".
-        Query ID is split at first underscore. This works for QIIME/Qiita-style
-        sample IDs (where underscore is not allowed). But one needs to be
-        cautious otherwise.
-        If None, program will determine demultiplex behavior based on the input
-        path: turn on if it's a file; turn off if it's a directory.
-
-    ranks: list of str, optional
-        List of ranks at each of which sequences are to be classified. Can also
-        be "none" to omit classification (simply report subject IDs) or "free"
-        to perform free-rank classification (LCA of subjects regardless of rank
-        will be reported).
-    above : bool, optional
-        Allow assigning to a classification unit higher than given rank.
-    major : int, optional
-        Perform majority-rule assignment based on this percentage threshold.
-        Range: [51, 99].
-    ambig : bool, optional
-        Allow one sequence to be assigned to multiple classification units at
-        the same rank. The profile will be normalized by the number of matches
-        per query sequence.
-    subok : bool, optional
-        Allow directly reporting subject ID(s) if a sequence cannot be assigned
-        to any higher classification unit.
-    deidx : bool, optional
-        Strip "underscore index" suffixes from subject IDs.
-
-    coords_fp : str, optional
-        Path to table of gene coordinates on reference genomes, with which
-        sequence-to-genome alignments will be translated into sequence-to-gene
-        mappings. Essential for functional classification.
-
-    names_fp : str, optional
-        Path to NCBI-style names.dmp or plain taxon-to-name map.
-    nodes_fp : str, optional
-        Path to NCBI-style nodes.dmp or compatible formats, providing a map of
-        taxon (1st column) to parent (2nd column) and rank (3rd column,
-        optional).
-    newick_fp : str, optional
-        Path to Newick-format tree file which defines rank-free hierarchies of
-        classification.
-    lineage_fp : str, optional
-        Path to map of lineage strings (semicolon-delimited taxa from high to
-        low). Can be Greengenes-style taxonomy where rank codes such as "k__"
-        will be parsed, or code-free strings.
-    ranktb_fp : str, optional
-        Path to table of classification units at each rank (column).
-    map_fps : list of str, optional
-        Paths to maps of lower classification units to higher classification
-        units. Examples include nucleotides to host genomes, sequence IDs to
-        taxonomy IDs, gene families to pathways, etc.
-    map_rank : bool, optional
-        Map filename stem will be treated as rank name.
-
-    Returns
-    -------
-    dict of dict
-        Per-rank profiles generated from classification.
-
-    See Also
-    --------
-    .cli.classify
-        Command-line parameters and help information.
-
-    Notes
-    -----
-    This is the only function in the entire program which directly interface
-    with the user via `click.echo`, except for raising errors.
-    """
-    # parse sample Ids
-    samples = None
-    if sample_ids:
-        samples = read_ids(sample_ids)
-        click.echo(f'Samples to include: {len(samples)}.')
-
-    # match sample Ids and input alignment files
-    demux, files = match_sample_file(input_path, input_ext, demux, samples)
-    click.echo(f'Alignment files to read: {len(files)}.')
-
-    # load gene coordinates
-    coords = None
-    if coords_fp:
-        with readzip(coords_fp) as fh:
-            coords = read_gene_coords(fh, sort=True)
-        is_prefix = whether_prefix(coords)
-
-    # load classification system
-    tree, rankd, named, root = None, None, None, None
-    args = (names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps)
-    if any(args):
-        click.echo(f'Reading classification system...', nl=False)
-        tree, rankd, named, root = build_tree(*args, map_rank)
-        click.echo(' Done.')
-        click.echo(f'Total classification units: {len(tree)}.')
-
-    # parse target ranks
-    ranks = ['none'] if ranks is None else ranks.split(',')
-    data = {x: {} for x in ranks}
-
-    # assignment parameters
-    kwargs = {'tree':  tree, 'rankd': rankd,  'root':  root,  'above': above,
-              'major': major and major / 100, 'ambig': ambig, 'subok': subok}
-
-    # parse input maps and generate profile
-    for fp in sorted(files):
-        click.echo(f'Parsing alignment file {basename(fp)}...', nl=False)
-
-        # read alignment file into query-subject(s) map
-        with readzip(fp) as fh:
-
-            # plain read to subject map
-            if coords is None:
-                readmap = read_align_file(fh, input_fmt)
-
-            # match reads to genes using ordinal algorithm
-            else:
-                readmap = ordinal(fh, coords, input_fmt, prefix=is_prefix)
-
-        click.echo(' Done.')
-        click.echo(f'Query sequences: {len(readmap)}.')
-
-        # strip indices from subjects
-        if deidx:
-            strip_index(readmap)
-
-        # merge duplicate subjects per query
-        readmap = {k: set(v) for k, v in readmap.items()}
-
-        # demultiplex into multiple samples
-        if demux:
-            readmap = demultiplex(readmap, samples)
-
-        # sample Id from filename
-        else:
-            readmap = {files[fp]: readmap}
-
-        # assign reads at each rank
-        for sample, map_ in readmap.items():
-            for rank in ranks:
-
-                # call assignment workflow
-                asgmt = {k: assign(v, rank, **kwargs) for k, v in map_.items()}
-
-                # count taxa
-                counts = count(asgmt)
-
-                # round floats
-                intize(counts)
-
-                # delete "None" keys
-                delnone(counts)
-
-                # combine old and new counts
-                try:
-                    add_dict(data[rank][sample], counts)
-                except KeyError:
-                    data[rank][sample] = counts
-
-    # get sample Ids from data
-    if demux and not samples:
-        samples = sorted(allkeys(data))
-
-    # output results
-    if output_path:
-
-        # determine output filenames
-        click.echo('Writing output profiles...', nl=False)
-        if len(ranks) == 1:
-            rank2fp = {ranks[0]: output_path}
-        else:
-            makedirs(output_path, exist_ok=True)
-            rank2fp = {x: join(output_path, f'{x}.tsv') for x in ranks}
-
-        # write output profile(s)
-        kwargs = {'named': named, 'samples': samples}
-        for rank in ranks:
-            with open(rank2fp[rank], 'w') as fh:
-                write_profile(fh, data[rank], **kwargs)
-        click.echo(' Done.')
-
-    click.echo('Task completed.')
-    return data
+from .util import count_list
+from .tree import find_rank, find_lca
 
 
 def assign(subs:    set,
@@ -259,8 +24,7 @@ def assign(subs:    set,
            above:  bool = False,
            major: float = None,
            ambig:  bool = False,
-           subok:  bool = False,
-           deidx:  bool = False):
+           subok:  bool = False):
     """Assign a query sequence to a classification unit based on its subjects.
 
     Parameters
@@ -444,63 +208,43 @@ def majority(taxa, th=0.8):
         return taxon if n >= len(taxa) * th else None
 
 
-def write_profile(fh, data, named=None, samples=None):
-    """Write profile to a tab-delimited file.
+def strip_index(readmap):
+    """Remove "underscore index" suffixes from subject IDs.
 
     Parameters
     ----------
-    fh : file handle
-        Output file.
-    data : dict
-        Profile data.
-    named : dict, optional
-        Taxon name dictionary.
-    samples : list, optional
-        Ordered sample ID list.
+    readmap : dict
+        Read map to manipulate.
     """
-    if samples is None:
-        samples = sorted(data)
-    print('#FeatureID\t{}'.format('\t'.join(samples)), file=fh)
-    for key in sorted(allkeys(data)):
-        # get feature name
-        try:
-            row = [named[key]]
-        except (TypeError, KeyError):
-            row = [key]
-        # get feature count
-        for sample in samples:
-            try:
-                row.append(str(data[sample][key]))
-            except KeyError:
-                row.append('0')
-        print('\t'.join(row), file=fh)
+    for query, subjects in readmap.items():
+        readmap[query] = [x.rsplit('_', 1)[0] for x in subjects]
 
 
-def prep_table(profile, samples=None):
-    """Convert a profile into data, index and columns, which can be further
-    converted into a Pandas DataFrame or BIOM table.
+def demultiplex(dic, samples=None, sep='_'):
+    """Demultiplex a read-to-subject(s) map.
 
     Parameters
     ----------
-    profile : dict
-        Input profile.
+    map_ : str
+        Read-to-subject(s) map.
+    samples : iterable of str, optional
+        Sample IDs to keep.
+    sep : str, optional
+        Separator between sample ID and read ID.
 
     Returns
     -------
-    list of list, list, list
-        Data (2D array of values).
-        Index (observation Ids).
-        Columns (sample Ids).
+    dict of dict
+        Per-sample read-to-subject(s) maps.
     """
-    index = sorted(allkeys(profile))
-    columns = samples or sorted(profile)
-    data = []
-    for key in index:
-        row = []
-        for sample in columns:
-            try:
-                row.append(profile[sample][key])
-            except KeyError:
-                row.append(0)
-        data.append(row)
-    return data, index, columns
+    if samples:
+        samset = set(samples)
+    res = {}
+    for key, value in dic.items():
+        try:
+            sample, read = key.split(sep, 1)
+        except ValueError:
+            sample, read = '', key
+        if not samples or sample in samset:
+            res.setdefault(sample, {})[read] = value
+    return res

@@ -8,10 +8,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
+"""Standalone command-line interface (CLI) of the program.
+"""
+
 import click
 
 from . import __version__
-from .classify import classify as _classify
+from .workflow import workflow
 
 
 class NatOrder(click.Group):
@@ -138,7 +141,7 @@ def gotu(ctx, **kwargs):
 def classify(**kwargs):
     """Generate a profile of samples based on a classification system.
     """
-    _classify(**kwargs)
+    workflow(**kwargs)
 
 
 if __name__ == '__main__':

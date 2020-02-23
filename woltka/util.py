@@ -12,6 +12,7 @@
 operations.
 """
 
+from os import listdir
 from os.path import basename, splitext
 import gzip
 import bz2
@@ -222,3 +223,129 @@ def last_value(lst):
         return next(x for x in reversed(lst) if x is not None)
     except StopIteration:
         pass
+
+
+def read_ids(fh):
+    """Read a list of IDs from a file.
+
+    Parameters
+    ----------
+    fh : iterable of str
+        ID list.
+
+    Returns
+    -------
+    list of str
+        ID list.
+
+    Notes
+    -----
+    Only the first column before <tab> is considered. Lines starting with "#"
+    are omitted. Empty entries are discarded.
+    """
+    if fh is None:
+        return
+    res = []
+    for line in fh:
+        if not line.startswith('#'):
+            id_ = line.strip().split('\t', 1)[0]
+            if id_:
+                res.append(id_)
+    if not res:
+        raise ValueError('No ID is read.')
+    if len(set(res)) < len(res):
+        raise ValueError('Duplicate IDs found.')
+    return res
+
+
+def id2file_map(dir_, ext=None, ids=None):
+    """Generate a map of IDs to files.
+
+    Parameters
+    ----------
+    dir_ : str
+        Directory containing files.
+    ext : str, optional
+        Filename extension.
+    ids : iterable of str, optional
+        Id list.
+
+    Returns
+    -------
+    dict
+        Id-to-file map.
+    """
+    res = {}
+    for fname in listdir(dir_):
+        try:
+            id_ = file2stem(fname, ext)
+        except ValueError:
+            continue
+        if ids and id_ not in ids:
+            continue
+        if id_ in res:
+            raise ValueError(f'Ambiguous files for ID: "{id_}".')
+        res[id_] = fname
+    return res
+
+
+def write_table(fh, data, named=None, samples=None):
+    """Write profile to a tab-delimited file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Output file.
+    data : dict
+        Profile data.
+    named : dict, optional
+        Taxon name dictionary.
+    samples : list, optional
+        Ordered sample ID list.
+    """
+    if samples is None:
+        samples = sorted(data)
+    print('#FeatureID\t{}'.format('\t'.join(samples)), file=fh)
+    for key in sorted(allkeys(data)):
+        # get feature name
+        try:
+            row = [named[key]]
+        except (TypeError, KeyError):
+            row = [key]
+        # get feature count
+        for sample in samples:
+            try:
+                row.append(str(data[sample][key]))
+            except KeyError:
+                row.append('0')
+        print('\t'.join(row), file=fh)
+
+
+def prep_table(profile, samples=None):
+    """Convert a profile into data, index and columns, which can be further
+    converted into a Pandas DataFrame or BIOM table.
+
+    Parameters
+    ----------
+    profile : dict
+        Input profile.
+
+    Returns
+    -------
+    list of list, list, list
+        Data (2D array of values).
+        Index (observation Ids).
+        Columns (sample Ids).
+    """
+    index = sorted(allkeys(profile))
+    columns = samples or sorted(profile)
+    data = []
+    for key in index:
+        row = []
+        for sample in columns:
+            try:
+                row.append(profile[sample][key])
+            except KeyError:
+                row.append(0)
+        data.append(row)
+    return data, index, columns

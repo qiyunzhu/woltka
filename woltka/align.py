@@ -24,7 +24,145 @@ A parser function returns a tuple of:
 """
 
 
-def read_align_file(fh, fmt=None):
+def parse_align_file(fh, proc, fmt=None, n=1000000):
+    """Read an alignment file in chunks and yield query-to-subject(s) maps.
+
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    proc : object
+        Module for handling alignments.
+    fmt : str
+        Format of mapping file.
+    n : int, optional
+        Number of lines per chunck.
+
+    Yields
+    ------
+    dict of list
+        Query-to-subject(s) map.
+
+    Notes
+    -----
+    The design of this function aims to couple with the extremely large size of
+    typical alignment files. It reads the entire file sequentially, pauses and
+    processes current cache for every _n_ lines, yields and clears cache, then
+    proceeds.
+    """
+    i = 0        # current line number
+    j = n        # target line number at end of current chunk
+    last = None  # last query Id
+
+    # determine file format based on first line
+    if fmt is None:
+        try:
+            line = next(fh)
+        except StopIteration:
+            return
+        fmt = infer_align_format(line)
+        parser = assign_parser(fmt)
+        try:
+            last = proc.parse(line, parser)
+            i = 1
+        except TypeError:
+            pass
+        proc.append()
+    else:
+        parser = assign_parser(fmt)
+
+    # parse remaining content
+    for line in fh:
+        try:
+            query = proc.parse(line, parser)
+            i += 1
+        except TypeError:
+            continue
+
+        # flush when query Id changes and chunk size was already reached
+        if query != last:
+            if i >= j:
+                yield proc.flush()
+                j = i + n
+            last = query
+        proc.append()
+
+    # finish last chunk
+    yield proc.flush()
+
+
+class Plain(object):
+    """Processor of plain sequence alignments.
+
+    Attributes
+    ----------
+    map : dict
+        Cache of query-to-subject(s) map.
+    buf : (str, str)
+        Buffer of last (query, subject) pair.
+
+    See Also
+    --------
+    parse_align_file
+    ordinal.Ordinal
+
+    Notes
+    -----
+    The design of this class provides an interface for parsing extremely large
+    alignment files. The other class of the same type is `Ordinal`. They both
+    provide three instance methods: `parse`, `append` and `flush` which can be
+    called from parent process.
+    """
+
+    def __init__(self):
+        """Initiate processor.
+        """
+        self.map = {}
+
+    def parse(self, line, parser):
+        """Parse one line in alignment file.
+
+        Parameters
+        ----------
+        line : str
+            Line in alignment file.
+        parser : callable
+            Function to parse the line.
+
+        Returns
+        -------
+        str
+            Query identifier.
+
+        Raises
+        ------
+        TypeError
+            Query and subject cannot be extracted from line.
+        """
+        self.buf = parser(line)[:2]
+        return self.buf[0]
+
+    def append(self):
+        """Append buffered last line to cached read map.
+        """
+        try:
+            query, subject = self.buf
+        except (AttributeError, TypeError):
+            return
+        self.map.setdefault(query, []).append(subject)
+
+    def flush(self):
+        """Process, return and clear read map.
+
+        Returns
+        -------
+        Processed read map.
+        """
+        res, self.map = self.map, {}
+        return res
+
+
+def read_align(fh, fmt=None):
     """Read an alignment file into a query-to-subject(s) map.
 
     Parameters
@@ -76,17 +214,17 @@ def infer_align_format(line):
     Parameters
     ----------
     line : str
-        First line of alignment.
+        First line of alignment file.
 
     Returns
     -------
-    str
+    str or None
         Alignment file format (map, b6o or sam).
 
     Raises
     ------
     ValueError
-        Format cannot be determined.
+        Alignment file format cannot be determined.
 
     See Also
     --------
@@ -104,6 +242,7 @@ def infer_align_format(line):
     if len(row) >= 11:
         if all(row[i].isdigit() for i in (1, 3, 4)):
             return 'sam'
+    raise ValueError('Cannot determine alignment file format.')
 
 
 def assign_parser(fmt):
@@ -129,39 +268,6 @@ def assign_parser(fmt):
         raise ValueError(f'Invalid format code: {fmt}.')
 
 
-def parse_line_ordinal(line, parser, rids, lenmap, locmap):
-    """Parse an alignment line and return information for ordinal matching.
-
-    Parameters
-    ----------
-    line : str
-        Line to parse.
-    parser : function
-        Line parsing function.
-    rids : list
-        Read identifiers.
-    lenmap : dict of dict
-        Query to alignment length map.
-    locmap : dict of list
-        Coordinates of features.
-
-    See Also
-    --------
-    parse_b6o_line
-    parse_sam_line
-    """
-    try:
-        query, subject, _, length, start, end = parser(line)[:6]
-    except TypeError:
-        return
-    idx = len(rids)
-    rids.append(query)
-    lenmap.setdefault(subject, {})[idx] = length
-    locmap.setdefault(subject, []).extend((
-        (start, True, False, idx),
-        (end,  False, False, idx)))
-
-
 def parse_map_line(line, *args):
     """Parse a line in a simple mapping file.
 
@@ -174,17 +280,18 @@ def parse_map_line(line, *args):
 
     Returns
     -------
-    tuple of (str, str)
-        Query, subject.
+    str, str
+        Query and subject.
 
     Notes
     -----
     Only first two columns are considered.
     """
     try:
-        return line.rstrip().split('\t')[:2]
+        query, subject = line.rstrip().split('\t', 2)[:2]
+        return query, subject
     except ValueError:
-        raise ValueError(f'Invalid line in mapping file: {line}.')
+        pass
 
 
 def parse_b6o_line(line):
@@ -353,45 +460,3 @@ def parse_centrifuge(line):
         return None
     x = line.rstrip().split('\t')
     return x[0], x[1], int(x[2]), int(x[3])
-
-
-def strip_index(readmap):
-    """Remove "underscore index" suffixes from subject IDs.
-
-    Parameters
-    ----------
-    readmap : dict
-        Read map to manipulate.
-    """
-    for query, subjects in readmap.items():
-        readmap[query] = [x.rsplit('_', 1)[0] for x in subjects]
-
-
-def demultiplex(dic, samples=None, sep='_'):
-    """Demultiplex a read-to-subject(s) map.
-
-    Parameters
-    ----------
-    map_ : str
-        Read-to-subject(s) map.
-    samples : iterable of str, optional
-        Sample IDs to keep.
-    sep : str, optional
-        Separator between sample ID and read ID.
-
-    Returns
-    -------
-    dict of dict
-        Per-sample read-to-subject(s) maps.
-    """
-    if samples:
-        samset = set(samples)
-    res = {}
-    for key, value in dic.items():
-        try:
-            sample, read = key.split(sep, 1)
-        except ValueError:
-            sample, read = '', key
-        if not samples or sample in samset:
-            res.setdefault(sample, {})[read] = value
-    return res

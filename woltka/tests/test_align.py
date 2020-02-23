@@ -13,18 +13,139 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
+from woltka.util import readzip
 from woltka.align import (
-    infer_align_format, parse_line_ordinal, parse_b6o_line, parse_sam_line,
-    cigar_to_lens, strip_index, demultiplex)
+    parse_align_file, Plain, infer_align_format, assign_parser, parse_map_line,
+    parse_b6o_line, parse_sam_line, cigar_to_lens)
 
 
 class AlignTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
-        self.datadir = join(dirname(realpath(__file__)), 'data')
+        self.datdir = join(dirname(realpath(__file__)), 'data')
 
     def tearDown(self):
         rmtree(self.tmpdir)
+
+    def test_parse_align_file(self):
+        proc = Plain()
+
+        # simple case
+        aln = ('R1	G1',
+               'R2	G1',
+               'R2	G2',
+               'R3	G1',
+               'R3	G3',
+               'R4	G4',
+               'R5	G5')
+        obs = list(parse_align_file(iter(aln), proc))
+        exp = [{'R1': ['G1'],
+                'R2': ['G1', 'G2'],
+                'R3': ['G1', 'G3'],
+                'R4': ['G4'],
+                'R5': ['G5']}]
+        self.assertListEqual(obs, exp)
+
+        # chunk of 1
+        obs = list(parse_align_file(iter(aln), proc, n=1))
+        exp = [{'R1': ['G1']},
+               {'R2': ['G1', 'G2']},
+               {'R3': ['G1', 'G3']},
+               {'R4': ['G4']},
+               {'R5': ['G5']}]
+        self.assertListEqual(obs, exp)
+
+        # chunk of 2
+        obs = list(parse_align_file(iter(aln), proc, n=2))
+        exp = [{'R1': ['G1']},
+               {'R2': ['G1', 'G2']},
+               {'R3': ['G1', 'G3']},
+               {'R4': ['G4'],
+                'R5': ['G5']}]
+        self.assertListEqual(obs, exp)
+
+        # chunk of 3
+        obs = list(parse_align_file(iter(aln), proc, n=3))
+        exp = [{'R1': ['G1'],
+                'R2': ['G1', 'G2']},
+               {'R3': ['G1', 'G3'],
+                'R4': ['G4']},
+               {'R5': ['G5']}]
+        self.assertListEqual(obs, exp)
+
+        # chunk of 4
+        obs = list(parse_align_file(iter(aln), proc, n=4))
+        exp = [{'R1': ['G1'],
+                'R2': ['G1', 'G2']},
+               {'R3': ['G1', 'G3'],
+                'R4': ['G4'],
+                'R5': ['G5']}]
+        self.assertListEqual(obs, exp)
+
+        # chunk of 5
+        obs = list(parse_align_file(iter(aln), proc, n=5))
+        exp = [{'R1': ['G1'],
+                'R2': ['G1', 'G2'],
+                'R3': ['G1', 'G3']},
+               {'R4': ['G4'],
+                'R5': ['G5']}]
+        self.assertListEqual(obs, exp)
+
+        # format is given
+        obs = list(parse_align_file(iter(aln), proc, fmt='map', n=5))
+        self.assertListEqual(obs, exp)
+
+        # empty alignment
+        obs = list(parse_align_file(iter([]), proc))
+        self.assertListEqual(obs, [])
+
+        # bad alignment
+        with self.assertRaises(ValueError) as ctx:
+            list(parse_align_file(iter(('Hi there!',)), proc))
+        self.assertEqual(str(ctx.exception), (
+            'Cannot determine alignment file format.'))
+
+    def test_plain_parse(self):
+        proc = Plain()
+        parser = assign_parser('map')
+        self.assertEqual(proc.parse('R1	G1', parser), 'R1')
+        with self.assertRaises(TypeError):
+            proc.parse('Hi there!', parser)
+
+    def test_plain_append(self):
+        proc = Plain()
+        parser = assign_parser('map')
+        proc.parse('R1	G1', parser)
+        proc.append()
+        self.assertDictEqual(proc.map, {'R1': ['G1']})
+        proc.parse('R2	G1', parser)
+        proc.append()
+        self.assertDictEqual(proc.map, {'R1': ['G1'], 'R2': ['G1']})
+        proc.parse('R2	G2', parser)
+        proc.append()
+        self.assertDictEqual(
+            proc.map, {'R1': ['G1'], 'R2': ['G1', 'G2']})
+
+    def test_plain_flush(self):
+        proc = Plain()
+        parser = assign_parser('map')
+        aln = ('R1	G1',
+               'R2	G1',
+               'R2	G2',
+               'R3	G1',
+               'R3	G3',
+               'R4	G4',
+               'R5	G5')
+        for line in aln:
+            proc.parse(line, parser)
+            proc.append()
+        obs = proc.flush()
+        exp = {'R1': ['G1'],
+               'R2': ['G1', 'G2'],
+               'R3': ['G1', 'G3'],
+               'R4': ['G4'],
+               'R5': ['G5']}
+        self.assertDictEqual(obs, exp)
 
     def test_infer_align_format(self):
         # simple cases
@@ -37,75 +158,45 @@ class AlignTests(TestCase):
         self.assertEqual(infer_align_format(line), 'b6o')
 
         # sam
-        line = '@HD	VN:1.0	SO:unsorted'
-        self.assertEqual(infer_align_format(line), 'sam')
         line = 'S1	77	NC_123456	26	0	100M	*	0	0	*	*'
         self.assertEqual(infer_align_format(line), 'sam')
 
-    def test_parse_line_ordinal(self):
-        # b6o (BLAST, DIAMOND, BURST, etc.)
-        parser = parse_b6o_line
-        b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-               'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        rids, lenmap, locmap = [], {}, {}
+        # sam header
+        line = '@HD	VN:1.0	SO:unsorted'
+        self.assertEqual(infer_align_format(line), 'sam')
+
+        # cannot determine
+        line = 'Hi there!'
+        with self.assertRaises(ValueError) as ctx:
+            infer_align_format(line)
+        self.assertEqual(str(ctx.exception), (
+            'Cannot determine alignment file format.'))
+
+        # real files
+        # Bowtie2 (sam)
+        with readzip(join(self.datdir, 'align', 'bowtie2', 'S01.sam.xz')) as f:
+            self.assertEqual(infer_align_format(next(f)), 'sam')
+
+        # BURST (b6o)
+        with readzip(join(self.datdir, 'align', 'burst', 'S01.b6.bz2')) as f:
+            self.assertEqual(infer_align_format(next(f)), 'b6o')
+
+    def test_assign_parser(self):
+        self.assertEqual(assign_parser('map'), parse_map_line)
+        self.assertEqual(assign_parser('sam'), parse_sam_line)
+        self.assertEqual(assign_parser('b6o'), parse_b6o_line)
+
+    def test_parse_map_line(self):
+        aln = ('R1	G1', 'R2	G2	# note', '# end of file')
 
         # first line
-        parse_line_ordinal(b6o[0], parser, rids, lenmap, locmap)
-        self.assertListEqual(rids, ['S1/1'])
-        self.assertDictEqual(lenmap, {'NC_123456': {0: 100}})
-        self.assertDictEqual(locmap, {'NC_123456': [
-            (225, True, False, 0), (324, False, False, 0)]})
+        self.assertTupleEqual(parse_map_line(aln[0]), ('R1', 'G1'))
 
-        # second line
-        parse_line_ordinal(b6o[1], parser, rids, lenmap, locmap)
-        self.assertListEqual(rids, ['S1/1', 'S1/2'])
-        self.assertDictEqual(lenmap, {'NC_123456': {0: 100, 1: 98}})
-        self.assertDictEqual(locmap, {'NC_123456': [
-            (225, True, False, 0), (324, False, False, 0),
-            (608, True, False, 1), (708, False, False, 1)]})
+        # second line (with additional column)
+        self.assertTupleEqual(parse_map_line(aln[1]), ('R2', 'G2'))
 
-        # sam (Bowtie2, BWA, etc.)
-        parser = parse_sam_line
-        sam = (
-            '@HD	VN:1.0	SO:unsorted',
-            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
-            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
-            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            'S2	16	*	0	0	*	*	0	0	*	*')
-        rids, lenmap, locmap = [], {}, {}
-
-        # header
-        parse_line_ordinal(sam[0], parser, rids, lenmap, locmap)
-        self.assertFalse(len(rids) + len(lenmap) + len(locmap))
-
-        # normal, fully-aligned, forward strand
-        parse_line_ordinal(sam[1], parser, rids, lenmap, locmap)
-        self.assertListEqual(rids, ['S1/1'])
-        self.assertDictEqual(lenmap, {'NC_123456': {0: 100}})
-        self.assertDictEqual(locmap, {'NC_123456': [
-            (26, True, False, 0), (125, False, False, 0)]})
-
-        # shortened, reverse strand
-        parse_line_ordinal(sam[2], parser, rids, lenmap, locmap)
-        self.assertListEqual(rids, ['S1/1', 'S1/2'])
-        self.assertDictEqual(lenmap, {'NC_123456': {
-            0: 100, 1: 80}})
-        self.assertDictEqual(locmap, {'NC_123456': [
-            (26,  True, False, 0), (125, False, False, 0),
-            (151, True, False, 1), (230, False, False, 1)]})
-
-        # not perfectly aligned, unpaired
-        parse_line_ordinal(sam[3], parser, rids, lenmap, locmap)
-        self.assertListEqual(rids, ['S1/1', 'S1/2', 'S2'])
-        self.assertEqual(lenmap['NC_789012'][2], 90)
-        self.assertTupleEqual(locmap['NC_789012'][0], (186,  True, False, 2))
-        self.assertTupleEqual(locmap['NC_789012'][1], (280, False, False, 2))
-
-        # not aligned
-        parse_line_ordinal(sam[4], parser, rids, lenmap, locmap)
-        self.assertEqual(len(rids), 3)
-        self.assertEqual(len(lenmap['NC_789012']), 1)
-        self.assertEqual(len(locmap['NC_789012']), 2)
+        # third line (not tab-delimited)
+        self.assertIsNone(parse_map_line(aln[2]))
 
     def test_parse_b6o_line(self):
         b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
@@ -158,40 +249,6 @@ class AlignTests(TestCase):
             cigar_to_lens('*')
         msg = 'Missing CIGAR string.'
         self.assertEqual(str(context.exception), msg)
-
-    def test_strip_index(self):
-        dic = {'R1': ['G1_1', 'G1_2', 'G2_3', 'G3'],
-               'R2': ['G1_1', 'G1.3', 'G4_5', 'G4_x']}
-        strip_index(dic)
-        self.assertDictEqual(dic, {
-            'R1': ['G1', 'G1',   'G2', 'G3'],
-            'R2': ['G1', 'G1.3', 'G4', 'G4']})
-
-    def test_demultiplex(self):
-        # simple case
-        dic = {'S1_R1': 5,
-               'S1_R2': 12,
-               'S1_R3': 3,
-               'S2_R1': 10,
-               'S2_R2': 8,
-               'S2_R4': 7,
-               'S3_R2': 15,
-               'S3_R3': 1,
-               'S3_R4': 5}
-        obs = demultiplex(dic)
-        exp = {'S1': {'R1': 5, 'R2': 12, 'R3': 3},
-               'S2': {'R1': 10, 'R2': 8, 'R4': 7},
-               'S3': {'R2': 15, 'R3': 1, 'R4': 5}}
-        self.assertDictEqual(obs, exp)
-
-        # change separator, no result
-        obs = demultiplex(dic, sep='.')
-        self.assertDictEqual(obs, {'': dic})
-
-        # enforce sample Ids
-        obs = demultiplex(dic, samples=['S1', 'S2', 'SX'])
-        exp = {x: exp[x] for x in ['S1', 'S2']}
-        self.assertDictEqual(obs, exp)
 
 
 if __name__ == '__main__':
