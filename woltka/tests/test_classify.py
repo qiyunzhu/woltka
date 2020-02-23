@@ -9,14 +9,13 @@
 # ----------------------------------------------------------------------------
 
 from unittest import TestCase, main
-from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.classify import (
-    classify, assign, assign_none, assign_free, assign_rank, count, majority,
-    write_profile, prep_table)
+    assign, assign_none, assign_free, assign_rank, count, majority,
+    strip_index, demultiplex)
 
 
 class ClassifyTests(TestCase):
@@ -26,20 +25,6 @@ class ClassifyTests(TestCase):
 
     def tearDown(self):
         rmtree(self.tmpdir)
-
-    def test_classify(self):
-        # simplest gotu workflow
-        # for other tests see test_cli.classify
-        input_path = join(self.datdir, 'align', 'bowtie2')
-        output_path = join(self.tmpdir, 'tmp.tsv')
-        classify(input_path, output_path)
-        with open(output_path, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'bowtie2.gotu.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
-        remove(output_path)
 
     def test_assign(self):
         # count subjects
@@ -162,81 +147,39 @@ class ClassifyTests(TestCase):
         obs = majority([1, 2, 3])
         self.assertIsNone(obs)
 
-    def test_write_profile(self):
-        # default mode
-        data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
-                'S2': {'G1': 2, 'G4': 3, 'G5': 7},
-                'S3': {'G2': 3, 'G5': 5}}
-        fp = join(self.tmpdir, 'profile.tsv')
-        with open(fp, 'w') as f:
-            write_profile(f, data)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'G1\t4\t2\t0',
-               'G2\t5\t0\t3',
-               'G3\t8\t0\t0',
-               'G4\t0\t3\t0',
-               'G5\t0\t7\t5']
-        self.assertListEqual(obs, exp)
+    def test_strip_index(self):
+        dic = {'R1': ['G1_1', 'G1_2', 'G2_3', 'G3'],
+               'R2': ['G1_1', 'G1.3', 'G4_5', 'G4_x']}
+        strip_index(dic)
+        self.assertDictEqual(dic, {
+            'R1': ['G1', 'G1',   'G2', 'G3'],
+            'R2': ['G1', 'G1.3', 'G4', 'G4']})
 
-        # with taxon names
-        named = {'G1': 'Actinobacteria',
-                 'G2': 'Firmicutes',
-                 'G3': 'Bacteroidetes',
-                 'G4': 'Cyanobacteria'}
-        with open(fp, 'w') as f:
-            write_profile(f, data, named=named)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'Actinobacteria\t4\t2\t0',
-               'Firmicutes\t5\t0\t3',
-               'Bacteroidetes\t8\t0\t0',
-               'Cyanobacteria\t0\t3\t0',
-               'G5\t0\t7\t5']
-        self.assertListEqual(obs, exp)
+    def test_demultiplex(self):
+        # simple case
+        dic = {'S1_R1': 5,
+               'S1_R2': 12,
+               'S1_R3': 3,
+               'S2_R1': 10,
+               'S2_R2': 8,
+               'S2_R4': 7,
+               'S3_R2': 15,
+               'S3_R3': 1,
+               'S3_R4': 5}
+        obs = demultiplex(dic)
+        exp = {'S1': {'R1': 5, 'R2': 12, 'R3': 3},
+               'S2': {'R1': 10, 'R2': 8, 'R4': 7},
+               'S3': {'R2': 15, 'R3': 1, 'R4': 5}}
+        self.assertDictEqual(obs, exp)
 
-        # with sample Ids
-        samples = ['S3', 'S1']
-        with open(fp, 'w') as f:
-            write_profile(f, data, samples=samples)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS3\tS1',
-               'G1\t0\t4',
-               'G2\t3\t5',
-               'G3\t0\t8',
-               'G4\t0\t0',
-               'G5\t5\t0']
-        self.assertListEqual(obs, exp)
-        remove(fp)
+        # change separator, no result
+        obs = demultiplex(dic, sep='.')
+        self.assertDictEqual(obs, {'': dic})
 
-    def test_prep_table(self):
-        # default mode
-        data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
-                'S2': {'G1': 2, 'G4': 3, 'G5': 7},
-                'S3': {'G2': 3, 'G5': 5}}
-        obs0, obs1, obs2 = prep_table(data)
-        exp0 = [[4, 2, 0],
-                [5, 0, 3],
-                [8, 0, 0],
-                [0, 3, 0],
-                [0, 7, 5]]
-        self.assertListEqual(obs0, exp0)
-        self.assertListEqual(obs1, ['G1', 'G2', 'G3', 'G4', 'G5'])
-        self.assertListEqual(obs2, ['S1', 'S2', 'S3'])
-
-        # with sample Ids
-        samples = ['S3', 'S1']
-        obs0, _, obs2 = prep_table(data, samples=samples)
-        exp0 = [[0, 4],
-                [3, 5],
-                [0, 8],
-                [0, 0],
-                [5, 0]]
-        self.assertListEqual(obs0, exp0)
-        self.assertListEqual(obs2, ['S3', 'S1'])
+        # enforce sample Ids
+        obs = demultiplex(dic, samples=['S1', 'S2', 'SX'])
+        exp = {x: exp[x] for x in ['S1', 'S2']}
+        self.assertDictEqual(obs, exp)
 
 
 if __name__ == '__main__':

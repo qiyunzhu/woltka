@@ -20,13 +20,14 @@ Minimum requirement: QIIME 2 2019.1
 import numpy as np
 import biom
 
-from woltka.classify import classify, prep_table
+from woltka.util import prep_table
+from woltka.workflow import workflow
 
 
 def gotu(input_path: str) -> biom.Table:
     """Generate a gOTU table based on sequence alignments.
     """
-    profile = classify(input_path, None)['none']
+    profile = workflow(input_path, None)['none']
     return make_biom(profile)
 
 

@@ -14,7 +14,9 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.util import readzip
-from woltka.ordinal import match_read_gene, read_gene_coords, whether_prefix
+from woltka.align import parse_b6o_line, parse_sam_line
+from woltka.ordinal import (
+    Ordinal, match_read_gene, read_gene_coords, whether_prefix)
 
 
 class OrdinalTests(TestCase):
@@ -89,6 +91,111 @@ class OrdinalTests(TestCase):
                'r8': {'g3'},
                'r9': {'g3'}}
         self.assertDictEqual(obs, exp)
+
+    def test_ordinal_init(self):
+        proc = Ordinal({}, True, 0.75)
+        self.assertDictEqual(proc.coords, {})
+        self.assertEqual(proc.prefix, True)
+        self.assertEqual(proc.th, 0.75)
+        self.assertIsNone(proc.buf)
+
+    def test_ordinal_parse(self):
+        proc = Ordinal({})
+
+        # b6o (BLAST, DIAMOND, BURST, etc.)
+        parser = parse_b6o_line
+        b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+               'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+        self.assertEqual(proc.parse(b6o[0], parser), 'S1/1')
+        self.assertTupleEqual(
+            proc.buf, ('S1/1', 'NC_123456', 345.0, 100, 225, 324))
+
+        # sam (Bowtie2, BWA, etc.)
+        parser = parse_sam_line
+        sam = (
+            '@HD	VN:1.0	SO:unsorted',
+            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
+            'S2	16	*	0	0	*	*	0	0	*	*')
+        self.assertEqual(proc.parse(sam[1], parser), 'S1/1')
+        self.assertTupleEqual(
+            proc.buf, ('S1/1', 'NC_123456', None, 100, 26, 125))
+
+        # header
+        with self.assertRaises(TypeError):
+            proc.parse(sam[0], parser)
+
+        # not aligned
+        with self.assertRaises(TypeError):
+            proc.parse(sam[4], parser)
+
+    def test_ordinal_append(self):
+        proc = Ordinal({})
+
+        # b6o (BLAST, DIAMOND, BURST, etc.)
+        parser = parse_b6o_line
+        b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+               'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+
+        # first line
+        proc.parse(b6o[0], parser)
+        proc.append()
+        self.assertListEqual(proc.rids, ['S1/1'])
+        self.assertDictEqual(proc.lenmap, {'NC_123456': {0: 100}})
+        self.assertDictEqual(proc.locmap, {'NC_123456': [
+            (225, True, False, 0), (324, False, False, 0)]})
+
+        # second line
+        proc.parse(b6o[1], parser)
+        proc.append()
+        self.assertListEqual(proc.rids, ['S1/1', 'S1/2'])
+        self.assertDictEqual(proc.lenmap, {'NC_123456': {0: 100, 1: 98}})
+        self.assertDictEqual(proc.locmap, {'NC_123456': [
+            (225, True, False, 0), (324, False, False, 0),
+            (608, True, False, 1), (708, False, False, 1)]})
+
+        # sam (Bowtie2, BWA, etc.)
+        proc.clear()
+        parser = parse_sam_line
+        sam = (
+            '@HD	VN:1.0	SO:unsorted',
+            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
+            'S2	16	*	0	0	*	*	0	0	*	*')
+
+        # normal, fully-aligned, forward strand
+        proc.parse(sam[1], parser)
+        proc.append()
+        self.assertListEqual(proc.rids, ['S1/1'])
+        self.assertDictEqual(proc.lenmap, {'NC_123456': {0: 100}})
+        self.assertDictEqual(proc.locmap, {'NC_123456': [
+            (26, True, False, 0), (125, False, False, 0)]})
+
+        # shortened, reverse strand
+        proc.parse(sam[2], parser)
+        proc.append()
+        self.assertListEqual(proc.rids, ['S1/1', 'S1/2'])
+        self.assertDictEqual(proc.lenmap, {'NC_123456': {
+            0: 100, 1: 80}})
+        self.assertDictEqual(proc.locmap, {'NC_123456': [
+            (26,  True, False, 0), (125, False, False, 0),
+            (151, True, False, 1), (230, False, False, 1)]})
+
+        # not perfectly aligned, unpaired
+        proc.parse(sam[3], parser)
+        proc.append()
+        self.assertListEqual(proc.rids, ['S1/1', 'S1/2', 'S2'])
+        self.assertEqual(proc.lenmap['NC_789012'][2], 90)
+        self.assertTupleEqual(
+            proc.locmap['NC_789012'][0], (186,  True, False, 2))
+        self.assertTupleEqual(
+            proc.locmap['NC_789012'][1], (280, False, False, 2))
+
+    def test_ordinal_flush(self):
+        # TODO
+        pass
 
     def test_read_gene_coords(self):
         # simple case

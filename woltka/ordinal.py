@@ -11,90 +11,133 @@
 """Functions for matching reads and genes using an ordinal system.
 """
 
-from .align import infer_align_format, parse_line_ordinal, assign_parser
 
+class Ordinal(object):
+    """Processor for matching reads and genes in an ordinal system.
 
-def ordinal(fh, coords, fmt=None, th=0.8, lines=1000000, prefix=False):
-    """Match reads and genes in an ordinal scale on the genome.
-
-    Parameters
+    Attributes
     ----------
-    fh : file handle
-        Input alignment file.
     coords : dict
         Gene coordinates table.
-    fmt : str, optional
-        Alignment file format.
-    th : float, optional
-        Minimum ratio of overlap length vs. alignment length to qualify for a
-        match.
-    lines : int, optional
-        Number of lines per chunck for parsing; higher value improves time
-        efficiency but consumes more memory.
-    prefix : bool, optional
-        Nucleotide Id to gene Id in the format of "nucl_gene".
+    prefix : bool
+        Prefix gene IDs with Nucleotide IDs.
+    th : float
+        Minimum threshold of overlap length : alignment length for a match.
+    buf : list
+        Buffer of last alignment.
+    rids : list
+        Read identifiers in cache.
+    lenmap : dict
+        Alignment length map in cache.
+    locmap : dict
+        Alignment location map in cache.
 
-    Returns
-    -------
-    dict
-        Read-to-gene(s) mapping.
+    See Also
+    --------
+    align.Plain
+
+    Notes
+    -----
+    For a read, "id" is the identifier (a free text), "idx" is the index (an
+    incremental integer for all reads of the current chunk).
     """
-    res = {}
 
-    # identifiers, alignment lengths and coordinates of reads
-    # note: for a read, "id" is the identifier (a free text), "idx" is the
-    # index (an incremental integer for all reads of the current chunck)
-    rids, lenmap, locmap = [], {}, {}
+    def __init__(self, coords, prefix=False, th=0.8):
+        """Initiate processor.
 
-    # line counter
-    ii = 0
+        Parameters
+        ----------
+        coords : dict
+            Gene coordinates table.
+        prefix : bool
+            Whether prefix gene IDs.
+        th : float
+            Overlap : alignment threshold.
+        """
+        self.coords = coords
+        self.prefix = prefix
+        self.th = th
+        self.buf = None
+        self.clear()
 
-    # associate reads with genes for current chunck
-    def _match_reads_genes():
-        nonlocal rids, lenmap, locmap
-        for nucl, loci in locmap.items():
+    def parse(self, line, parser):
+        """Parse one line in alignment file.
+
+        Parameters
+        ----------
+        line : str
+            Line in alignment file.
+        parser : callable
+            Function to parse the line.
+
+        Returns
+        -------
+        str
+            Query identifier.
+
+        Raises
+        ------
+        TypeError
+            Necessary information cannot be extracted from line.
+        """
+        self.buf = parser(line)[:6]
+        return self.buf[0]
+
+    def append(self):
+        """Append buffered last line to cached alignment map.
+
+        See Also
+        --------
+        read_gene_coords
+        """
+        try:
+            query, subject, _, length, start, end = self.buf
+        except (AttributeError, TypeError):
+            return
+        idx = len(self.rids)
+        self.rids.append(query)
+        self.lenmap.setdefault(subject, {})[idx] = length
+        self.locmap.setdefault(subject, []).extend((
+            (start, True, False, idx),
+            (end,  False, False, idx)))
+
+    def flush(self):
+        """Process, return and clear read map.
+
+        Returns
+        -------
+        Processed read-to-gene(s) map.
+        """
+        res = {}
+        for nucl, loci in self.locmap.items():
 
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
             # Python's built-in "timesort" algorithm is efficient at this
             try:
-                queue = sorted(coords[nucl] + loci, key=lambda x: x[0])
+                queue = sorted(self.coords[nucl] + loci, key=lambda x: x[0])
 
             # it's possible that no gene was annotated on the nucleotide
             except KeyError:
                 continue
 
             # map reads to genes
-            res_ = match_read_gene(queue, lenmap[nucl], th)
+            res_ = match_read_gene(queue, self.lenmap[nucl], self.th)
 
             # prefix
-            pref = nucl if prefix else None
+            pref = nucl if self.prefix else None
 
-            # merge into master read map (of current chunck)
+            # merge into master read map (of current chunk)
             add_match_to_readmap(res, res_, pref)
 
         # free memory
-        lenmap, locmap = {}, {}
+        self.clear()
+        return res
 
-    # determine alignment format
-    if fmt is None:  # auto-determine
-        line = fh.readline()
-        fmt = infer_align_format(line)
-        parser = assign_parser(fmt)
-        parse_line_ordinal(line, parser, rids, lenmap, locmap)
-        ii += 1
-    else:
-        parser = assign_parser(fmt)
-
-    # parse remaining content in chuncks
-    for line in fh:
-        parse_line_ordinal(line, parser, rids, lenmap, locmap)
-        ii += 1
-        if lines and ii % lines == 0:
-            _match_reads_genes()
-    _match_reads_genes()
-
-    return res
+    def clear(self):
+        self.rids = []
+        self.lenmap = {}
+        self.locmap = {}
 
 
 def read_gene_coords(fh, sort=False):
@@ -261,12 +304,12 @@ def match_read_gene(queue, lens, th=0.8):
     return match
 
 
-def add_match_to_readmap(readmap, match, nucl=None):
+def add_match_to_readmap(rmap, match, nucl=None):
     """Merge current read-gene matches to master read map.
 
     Parameters
     ----------
-    readmap : dict
+    rmap : dict
         Master read map.
     match : dict
         Current read map.
@@ -276,4 +319,4 @@ def add_match_to_readmap(readmap, match, nucl=None):
     for rid, genes in match.items():
         if nucl:
             genes = {'{}_{}'.format(nucl, x) for x in genes}
-        readmap.setdefault(rid, set()).update(genes)
+        rmap.setdefault(rid, set()).update(genes)
