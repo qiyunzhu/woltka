@@ -140,7 +140,10 @@ class WorkflowTests(TestCase):
         # simplest gotu workflow
         input_path = join(self.datdir, 'align', 'bowtie2')
         output_path = join(self.tmpdir, 'tmp.tsv')
-        workflow(input_path, output_path)
+        obs = workflow(input_path, output_path)['none']
+        self.assertEqual(obs['S01']['G000011545'], 48)
+        self.assertNotIn('G000007145', obs['S02'])
+        self.assertEqual(obs['S03']['G000009345'], 640)
         with open(output_path, 'r') as f:
             obs = f.read().splitlines()
         exp_fp = join(self.datdir, 'output', 'bowtie2.gotu.tsv')
@@ -150,6 +153,7 @@ class WorkflowTests(TestCase):
         remove(output_path)
 
     def test_classify(self):
+        # simplest gotu workflow
         input_path = join(self.datdir, 'align', 'bowtie2')
         samples, files, demux = parse_samples(input_path)
         proc = build_align_proc()

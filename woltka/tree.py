@@ -26,7 +26,7 @@ can be anything or left empty).
 
 import re
 
-from .util import readzip, path2stem, update_dict, last_value
+from .util import last_value
 
 
 # standard taxonomic ranks
@@ -43,86 +43,6 @@ code2rank['d'] = 'kingdom'
 
 # unclassified taxon names
 notax = {'', '0', 'unclassified', 'unassigned'}
-
-
-def build_tree(names_fp:   str = None,
-               nodes_fp:   str = None,
-               newick_fp:  str = None,
-               lineage_fp: str = None,
-               ranktb_fp:  str = None,
-               map_fps:   list = None,
-               map_rank:  bool = False) -> (dict, dict, dict, str):
-    """Construct a tree to represent the hierarchical classification system.
-
-    Parameters
-    ----------
-    names_fp : str, optional
-        Taxonomic names file.
-    nodes_fp : str, optional
-        Taxonomic nodes file.
-    newick_fp : str, optional
-        Newick tree file.
-    lineage_fp : str, optional
-        Lineage strings file.
-    ranktb_fp : str, optional
-        Rank table file.
-    map_fps : list of str, optional
-        Mapping files.
-    map_rank : bool, optional
-        Mapping filename is rank.
-
-    Returns
-    -------
-    dict, dict, dict, str
-        Taxonomic tree.
-        Rank dictionary.
-        Name dictionary.
-        Root identifier.
-    """
-    tree, rankd, named = {}, {}, {}
-
-    # taxonomy names
-    if names_fp:
-        with readzip(names_fp) as f:
-            named = read_names(f)
-
-    # taxonomy nodes
-    if nodes_fp:
-        with readzip(nodes_fp) as f:
-            tree_, rankd_ = read_nodes(f)
-        update_dict(tree, tree_)
-        update_dict(rankd, rankd_)
-
-    # Newick-format tree
-    if newick_fp:
-        with readzip(newick_fp) as f:
-            update_dict(tree, read_newick(f))
-
-    # lineage strings file
-    if lineage_fp:
-        with readzip(lineage_fp) as f:
-            tree_, rankd_ = read_lineage(f)
-        update_dict(tree, tree_)
-        update_dict(rankd, rankd_)
-
-    # rank table file
-    if ranktb_fp:
-        with readzip(ranktb_fp) as f:
-            update_dict(tree, read_ranktb(f))
-
-    # plain mapping files
-    for fp in map_fps:
-        rank = path2stem(fp)  # filename stem as rank
-        with readzip(fp) as f:
-            map_ = read_map(f)
-        update_dict(tree, map_)
-        if map_rank:
-            update_dict(rankd, {k: rank for k in set(map_.values())})
-
-    # fill root
-    root = fill_root(tree)
-
-    return tree, rankd, named, root
 
 
 def read_map(fh):

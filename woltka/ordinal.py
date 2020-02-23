@@ -204,7 +204,7 @@ def read_gene_coords(fh, sort=False):
 
 
 def whether_prefix(coords):
-    """determine whether gene Ids should be prefixed with nucleotide Ids.
+    """determine whether gene IDs should be prefixed with nucleotide IDs.
 
     Parameters
     ----------
@@ -223,7 +223,7 @@ def whether_prefix(coords):
     Notes
     -----
     It is based on a simple mechanism which checks whether there are duplicate
-    gene Ids, and if so, all gene Ids should be prefixed to avoid confusion.
+    gene IDs, and if so, all gene IDs should be prefixed to avoid confusion.
     """
     genes = {}
     for nucl, queue in coords.items():

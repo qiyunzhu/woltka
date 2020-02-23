@@ -70,6 +70,7 @@ def workflow(input_path, output_path,
     # write output profiles
     write_profiles(output_path, data, named, samples)
     click.echo('Task completed.')
+    return data
 
 
 def classify(proc:    object,
