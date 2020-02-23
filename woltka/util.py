@@ -289,6 +289,31 @@ def id2file_map(dir_, ext=None, ids=None):
     return res
 
 
+def write_map(fh, map_, named=None):
+    """Write profile to a tab-delimited file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Output file.
+    map_ : dict
+        Map data.
+    named : dict, optional
+        Taxon name dictionary.
+    """
+    for query, taxa in map_.items():
+        try:
+            row = [named[query]]
+        except (TypeError, KeyError):
+            row = [query]
+        if isinstance(taxa, dict):
+            for taxon, count in taxa.items():
+                row.append(f'{taxon}:{count}')
+        else:
+            row.append(taxa)
+        print('\t'.join(row), file=fh)
+
+
 def write_table(fh, data, named=None, samples=None):
     """Write profile to a tab-delimited file.
 

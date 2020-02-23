@@ -191,9 +191,10 @@ def read_align(fh, fmt=None):
         parser = assign_parser(fmt)
         try:
             query, subject = parser(line)[:2]
-            res.setdefault(query, []).append(subject)
         except TypeError:
             pass
+        else:
+            res.setdefault(query, []).append(subject)
     else:
         parser = assign_parser(fmt)
 
@@ -203,7 +204,8 @@ def read_align(fh, fmt=None):
             query, subject = parser(line)[:2]
         except TypeError:
             continue
-        res.setdefault(query, []).append(subject)
+        else:
+            res.setdefault(query, []).append(subject)
 
     return res
 

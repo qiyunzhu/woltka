@@ -158,7 +158,8 @@ class WorkflowTests(TestCase):
         samples, files, demux = parse_samples(input_path)
         proc = build_align_proc()
         ranks = ['none']
-        obs = classify(proc, files, samples, demux=demux, ranks=ranks)['none']
+        obs = classify(proc, files, samples=samples, demux=demux,
+                       ranks=ranks)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)

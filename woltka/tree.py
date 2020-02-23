@@ -526,17 +526,11 @@ def find_lca(taxa, tree):
         except KeyError:
             return
         this = taxon
-
         while True:
 
-            # if shared lineage found
+            # look for shared lineage
             try:
                 idx = lineage.index(this)
-
-                # trim shared lineage
-                if idx + 1 < len(lineage):
-                    lineage = lineage[slice(idx + 1)]
-                break
 
             # if not found
             except ValueError:
@@ -545,6 +539,12 @@ def find_lca(taxa, tree):
                 this = parent
                 parent = tree[this]
                 continue
+
+            # trim shared lineage
+            else:
+                if idx + 1 < len(lineage):
+                    lineage = lineage[slice(idx + 1)]
+                break
 
     # LCA is the last of shared lineage
     return lineage[-1]

@@ -22,7 +22,7 @@ import click
 
 from .util import (
     readzip, path2stem, update_dict, allkeys, read_ids, add_dict, intize,
-    delnone, id2file_map, write_table)
+    delnone, id2file_map, write_map, write_table)
 from .align import Plain, parse_align_file
 from .classify import assign, count, strip_index, demultiplex
 from .tree import (
@@ -31,7 +31,7 @@ from .tree import (
 from .ordinal import Ordinal, read_gene_coords, whether_prefix
 
 
-def workflow(input_path, output_path,
+def workflow(input_path, output_path, outmap_dir=None,
              input_fmt=None, input_ext=None, sample_ids=None, demux=None,
              ranks=None, above=False, major=None, ambig=True, subok=True,
              deidx=False, coords_fp=None, names_fp=None, nodes_fp=None,
@@ -57,15 +57,12 @@ def workflow(input_path, output_path,
     proc = build_align_proc(coords_fp)
 
     # target classification ranks
-    ranks = ['none'] if ranks is None else ranks.split(',')
-
-    # majority-rule threshold
-    major = major and major / 100
+    ranks, rank2dir = prep_ranks(ranks, outmap_dir)
 
     # classify query sequences
     data = classify(
-        proc, files, samples, input_fmt, demux, tree, rankd, root, ranks,
-        above, major, ambig, subok, deidx)
+        proc, files, samples, input_fmt, demux, tree, rankd, named, root,
+        ranks, rank2dir, above, major and major / 100, ambig, subok, deidx)
 
     # write output profiles
     write_profiles(output_path, data, named, samples)
@@ -80,8 +77,10 @@ def classify(proc:    object,
              demux:     bool = None,
              tree:      dict = None,
              rankd:     dict = None,
+             named:     dict = None,
              root:       str = None,
              ranks:      str = None,
+             rank2dir:  dict = None,
              above:     bool = False,
              major:      int = None,
              ambig:      str = True,
@@ -112,6 +111,8 @@ def classify(proc:    object,
         Taxonomic tree.
     rankd : dict, optional
         Rank dictionary.
+    named : dict, optional
+        Taxon name dictionary.
     root : str, optional
         Root identifier.
 
@@ -120,6 +121,9 @@ def classify(proc:    object,
         be "none" to omit classification (simply report subject IDs) or "free"
         to perform free-rank classification (LCA of subjects regardless of rank
         will be reported).
+    rank2dir : dict, otional
+        Write classification map per rank to directory.
+
     above : bool, optional
         Allow assigning to a classification unit higher than given rank.
     major : int, optional
@@ -144,7 +148,8 @@ def classify(proc:    object,
 
     # assignment parameters
     kwargs = {'tree':   tree, 'rankd': rankd,  'root':  root, 'above': above,
-              'major': major, 'ambig': ambig, 'subok': subok}
+              'major': major, 'ambig': ambig, 'subok': subok, 'named': named,
+              'rank2dir': rank2dir}
 
     # parse input maps and generate profile
     for fp in sorted(files):
@@ -421,6 +426,8 @@ def assign_rmap(rmap:     dict,
                 data:     dict,
                 rank:     str,
                 sample:   str,
+                rank2dir: dict,
+                named:    dict,
                 **kwargs: dict):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
@@ -433,13 +440,22 @@ def assign_rmap(rmap:     dict,
         Master data structure.
     rank : str
         Target rank to assign to.
-    sample : str,
+    sample : str
         Sample ID.
+    rank2dir : dict
+        Directory of output maps per rank.
+    named : dict
+        Taxon name directory.
     kwargs : dict
         Keyword arguments for `assign` function.
     """
     # call assignment workflow
     asgmt = {k: assign(v, rank, **kwargs) for k, v in rmap.items()}
+
+    # write classification map
+    if rank2dir is not None:
+        with open(join(rank2dir[rank], f'{sample}.tsv'), 'a') as f:
+            write_map(f, asgmt, named)
 
     # count taxa
     counts = count(asgmt)
@@ -451,9 +467,9 @@ def assign_rmap(rmap:     dict,
     delnone(counts)
 
     # combine old and new counts
-    try:
+    if sample in data[rank]:
         add_dict(data[rank][sample], counts)
-    except KeyError:
+    else:
         data[rank][sample] = counts
 
 
@@ -493,3 +509,41 @@ def write_profiles(path_:    str,
         with open(fp, 'w') as fh:
             write_table(fh, data[rank], named, samples)
     click.echo(' Done.')
+
+
+def prep_ranks(ranks=None, outmap_dir=None):
+    """Prepare directory of output classification maps.
+
+    Parameters
+    ----------
+    ranks : list, optional
+        Target ranks.
+    outmap_dir : str, optional
+        Path to output file or directory.
+
+    Returns
+    -------
+    list, dict or None
+        Ranks, rank-to-directory map (or None if not necessary).
+    """
+    # determine ranks
+    if ranks is None:
+        ranks = ['none']
+    else:
+        ranks = ranks.split(',')
+
+    # check output directory
+    if not outmap_dir:
+        return ranks, None
+    makedirs(outmap_dir, exist_ok=True)
+
+    # determine output map directory per rank
+    if len(ranks) == 1:
+        rank2dir = {ranks[0]: outmap_dir}
+    else:
+        rank2dir = {}
+        for rank in ranks:
+            dir_ = join(outmap_dir, rank)
+            makedirs(dir_, exist_ok=True)
+            rank2dir[rank] = dir_
+    return ranks, rank2dir

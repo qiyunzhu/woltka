@@ -19,10 +19,6 @@ from .workflow import workflow
 
 class NatOrder(click.Group):
     """Natural ordering of click command groups.
-
-    See Also
-    --------
-    https://github.com/pallets/click/issues/513
     """
     def list_commands(self, ctx):
         return self.commands.keys()
@@ -72,6 +68,10 @@ def gotu(ctx, **kwargs):
     '--output', '-o', 'output_path', required=True,
     type=click.Path(writable=True),
     help='Path to output profile file or directory of profile files.')
+@click.option(
+    '--outmap', 'outmap_dir',
+    type=click.Path(dir_okay=True),
+    help='Write per-sample per-read classification maps to this directory.')
 # input information
 @click.option(
     '--format', '-f', 'input_fmt',
