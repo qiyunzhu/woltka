@@ -16,59 +16,6 @@ from .util import count_list
 from .tree import find_rank, find_lca
 
 
-def assign(subs:    set,
-           rank:    str = None,
-           tree:   dict = None,
-           rankd:  dict = None,
-           root:    str = None,
-           above:  bool = False,
-           major: float = None,
-           ambig:  bool = False,
-           subok:  bool = False):
-    """Assign a query sequence to a classification unit based on its subjects.
-
-    Parameters
-    ----------
-    subs : set of str
-        Subject(s) of a query sequence.
-    rank : str, optional
-        Rank to assign to, or "free" for rank-free LCA assignment.
-    tree : dict, optional
-        Hierarchical classification system.
-    rankd : dict, optional
-        Rank dictionary.
-    root : str, optional
-        Root identifier.
-    above : bool, optional
-        Assignment above given rank is acceptable (for fixed ranks).
-    major : float, optional
-        Majority-rule assignment threshold (available only with a fixed rank
-        and not above or ambig).
-    ambig : bool, optional
-        Count occurrence of each possible assignment instead of targeting one
-        assignment (available only with a fixed rank and not above).
-    subok : bool, optional
-        Allow assignment to subject(s) itself instead of higher classification
-        units.
-
-    Returns
-    -------
-    str or dict
-        Unique assignment or assignment-to-count map.
-    """
-    # no classification, just subject(s) itself
-    if rank is None or rank == 'none' or tree is None:
-        return assign_none(subs, ambig)
-
-    # free rank classification: find LCA
-    elif rank == 'free':
-        return assign_free(subs, tree, root, subok)
-
-    # fixed rank classification
-    else:
-        return assign_rank(subs, rank, tree, rankd, root, above, major, ambig)
-
-
 def assign_none(subs, ambig=False):
     """Assign query to subjects without using a classification system.
 
@@ -217,7 +164,7 @@ def strip_index(readmap):
         Read map to manipulate.
     """
     for query, subjects in readmap.items():
-        readmap[query] = [x.rsplit('_', 1)[0] for x in subjects]
+        readmap[query] = set(x.rsplit('_', 1)[0] for x in subjects)
 
 
 def demultiplex(dic, samples=None, sep='_'):

@@ -39,56 +39,56 @@ class AlignTests(TestCase):
                'R4	G4',
                'R5	G5')
         obs = list(parse_align_file(iter(aln), proc))
-        exp = [{'R1': ['G1'],
-                'R2': ['G1', 'G2'],
-                'R3': ['G1', 'G3'],
-                'R4': ['G4'],
-                'R5': ['G5']}]
+        exp = [{'R1': {'G1'},
+                'R2': {'G1', 'G2'},
+                'R3': {'G1', 'G3'},
+                'R4': {'G4'},
+                'R5': {'G5'}}]
         self.assertListEqual(obs, exp)
 
         # chunk of 1
         obs = list(parse_align_file(iter(aln), proc, n=1))
-        exp = [{'R1': ['G1']},
-               {'R2': ['G1', 'G2']},
-               {'R3': ['G1', 'G3']},
-               {'R4': ['G4']},
-               {'R5': ['G5']}]
+        exp = [{'R1': {'G1'}},
+               {'R2': {'G1', 'G2'}},
+               {'R3': {'G1', 'G3'}},
+               {'R4': {'G4'}},
+               {'R5': {'G5'}}]
         self.assertListEqual(obs, exp)
 
         # chunk of 2
         obs = list(parse_align_file(iter(aln), proc, n=2))
-        exp = [{'R1': ['G1']},
-               {'R2': ['G1', 'G2']},
-               {'R3': ['G1', 'G3']},
-               {'R4': ['G4'],
-                'R5': ['G5']}]
+        exp = [{'R1': {'G1'}},
+               {'R2': {'G1', 'G2'}},
+               {'R3': {'G1', 'G3'}},
+               {'R4': {'G4'},
+                'R5': {'G5'}}]
         self.assertListEqual(obs, exp)
 
         # chunk of 3
         obs = list(parse_align_file(iter(aln), proc, n=3))
-        exp = [{'R1': ['G1'],
-                'R2': ['G1', 'G2']},
-               {'R3': ['G1', 'G3'],
-                'R4': ['G4']},
-               {'R5': ['G5']}]
+        exp = [{'R1': {'G1'},
+                'R2': {'G1', 'G2'}},
+               {'R3': {'G1', 'G3'},
+                'R4': {'G4'}},
+               {'R5': {'G5'}}]
         self.assertListEqual(obs, exp)
 
         # chunk of 4
         obs = list(parse_align_file(iter(aln), proc, n=4))
-        exp = [{'R1': ['G1'],
-                'R2': ['G1', 'G2']},
-               {'R3': ['G1', 'G3'],
-                'R4': ['G4'],
-                'R5': ['G5']}]
+        exp = [{'R1': {'G1'},
+                'R2': {'G1', 'G2'}},
+               {'R3': {'G1', 'G3'},
+                'R4': {'G4'},
+                'R5': {'G5'}}]
         self.assertListEqual(obs, exp)
 
         # chunk of 5
         obs = list(parse_align_file(iter(aln), proc, n=5))
-        exp = [{'R1': ['G1'],
-                'R2': ['G1', 'G2'],
-                'R3': ['G1', 'G3']},
-               {'R4': ['G4'],
-                'R5': ['G5']}]
+        exp = [{'R1': {'G1'},
+                'R2': {'G1', 'G2'},
+                'R3': {'G1', 'G3'}},
+               {'R4': {'G4'},
+                'R5': {'G5'}}]
         self.assertListEqual(obs, exp)
 
         # format is given
@@ -140,11 +140,11 @@ class AlignTests(TestCase):
             proc.parse(line, parser)
             proc.append()
         obs = proc.flush()
-        exp = {'R1': ['G1'],
-               'R2': ['G1', 'G2'],
-               'R3': ['G1', 'G3'],
-               'R4': ['G4'],
-               'R5': ['G5']}
+        exp = {'R1': {'G1'},
+               'R2': {'G1', 'G2'},
+               'R3': {'G1', 'G3'},
+               'R4': {'G4'},
+               'R5': {'G5'}}
         self.assertDictEqual(obs, exp)
 
     def test_infer_align_format(self):

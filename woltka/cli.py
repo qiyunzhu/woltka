@@ -114,6 +114,9 @@ def gotu(ctx, **kwargs):
 @click.option(
     '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
     help='Table of gene coordinates of  on reference genomes.')
+@click.option(
+    '--overlap', type=click.IntRange(1, 100), default=80, show_default=True,
+    help='Read/gene overlapping percentage threshold.')
 # tree information
 @click.option(
     '--names', 'names_fp', type=click.Path(exists=True),
@@ -138,6 +141,10 @@ def gotu(ctx, **kwargs):
 @click.option(
     '--map-is-rank', 'map_rank', is_flag=True,
     help='Map filename stem is rank name.')
+# performance
+@click.option(
+    '--lines', type=click.INT, default=1000000, show_default=True,
+    help=('Number of lines to read from alignment file per chunk.'))
 def classify(**kwargs):
     """Generate a profile of samples based on a classification system.
     """

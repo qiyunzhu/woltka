@@ -128,7 +128,7 @@ class Ordinal(object):
             pref = nucl if self.prefix else None
 
             # merge into master read map (of current chunk)
-            add_match_to_readmap(res, res_, pref)
+            add_match_to_readmap(res, res_, self.rids, pref)
 
         # free memory
         self.clear()
@@ -304,7 +304,7 @@ def match_read_gene(queue, lens, th=0.8):
     return match
 
 
-def add_match_to_readmap(rmap, match, nucl=None):
+def add_match_to_readmap(rmap, match, rids, nucl=None):
     """Merge current read-gene matches to master read map.
 
     Parameters
@@ -313,10 +313,12 @@ def add_match_to_readmap(rmap, match, nucl=None):
         Master read map.
     match : dict
         Current read map.
+    rids : list
+        Read ID list.
     nucl : str, optional
         Prefix nucleotide Id to gene Ids.
     """
-    for rid, genes in match.items():
+    for idx, genes in match.items():
         if nucl:
             genes = {'{}_{}'.format(nucl, x) for x in genes}
-        rmap.setdefault(rid, set()).update(genes)
+        rmap.setdefault(rids[idx], set()).update(genes)

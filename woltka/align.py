@@ -24,7 +24,7 @@ A parser function returns a tuple of:
 """
 
 
-def parse_align_file(fh, proc, fmt=None, n=1000000):
+def parse_align_file(fh, proc, fmt=None, n=None):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
     Parameters
@@ -33,14 +33,14 @@ def parse_align_file(fh, proc, fmt=None, n=1000000):
         Alignment file to parse.
     proc : object
         Module for handling alignments.
-    fmt : str
+    fmt : str, optional
         Format of mapping file.
     n : int, optional
         Number of lines per chunck.
 
     Yields
     ------
-    dict of list
+    dict of set
         Query-to-subject(s) map.
 
     Notes
@@ -50,6 +50,7 @@ def parse_align_file(fh, proc, fmt=None, n=1000000):
     processes current cache for every _n_ lines, yields and clears cache, then
     proceeds.
     """
+    n = n or 1000000  # default chunk size: 1 million
     i = 0        # current line number
     j = n        # target line number at end of current chunk
     last = None  # last query Id
@@ -156,58 +157,13 @@ class Plain(object):
 
         Returns
         -------
-        Processed read map.
+        dict of set
+            Processed read map.
         """
+        for query, subjects in self.map.items():
+            self.map[query] = set(subjects)
         res, self.map = self.map, {}
         return res
-
-
-def read_align(fh, fmt=None):
-    """Read an alignment file into a query-to-subject(s) map.
-
-    Parameters
-    ----------
-    fh : file handle
-        Mapping file to read.
-    fmt : str
-        Format of mapping file.
-
-    Returns
-    -------
-    dict of list
-        Query-to-subject(s) map.
-
-    Notes
-    -----
-    When one query occurs multiple times, all its subjects, including
-    duplicates, are added to the result.
-    """
-    res = {}
-
-    # determine file format based on first line
-    if fmt is None:  # auto-determine
-        line = fh.readline()
-        fmt = infer_align_format(line)
-        parser = assign_parser(fmt)
-        try:
-            query, subject = parser(line)[:2]
-        except TypeError:
-            pass
-        else:
-            res.setdefault(query, []).append(subject)
-    else:
-        parser = assign_parser(fmt)
-
-    # parse remaining content
-    for line in fh:
-        try:
-            query, subject = parser(line)[:2]
-        except TypeError:
-            continue
-        else:
-            res.setdefault(query, []).append(subject)
-
-    return res
 
 
 def infer_align_format(line):

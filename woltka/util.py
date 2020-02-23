@@ -311,7 +311,10 @@ def write_map(fh, map_, named=None):
                 row.append(f'{taxon}:{count}')
         else:
             row.append(taxa)
-        print('\t'.join(row), file=fh)
+        try:
+            print('\t'.join(row), file=fh)
+        except TypeError:
+            raise ValueError(row)
 
 
 def write_table(fh, data, named=None, samples=None):

@@ -24,7 +24,8 @@ from .util import (
     readzip, path2stem, update_dict, allkeys, read_ids, add_dict, intize,
     delnone, id2file_map, write_map, write_table)
 from .align import Plain, parse_align_file
-from .classify import assign, count, strip_index, demultiplex
+from .classify import (
+    assign_none, assign_free, assign_rank, count, strip_index, demultiplex)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_ranktb, read_map,
     fill_root)
@@ -34,9 +35,9 @@ from .ordinal import Ordinal, read_gene_coords, whether_prefix
 def workflow(input_path, output_path, outmap_dir=None,
              input_fmt=None, input_ext=None, sample_ids=None, demux=None,
              ranks=None, above=False, major=None, ambig=True, subok=True,
-             deidx=False, coords_fp=None, names_fp=None, nodes_fp=None,
-             newick_fp=None, lineage_fp=None, ranktb_fp=None,
-             map_fps=[], map_rank=False):
+             deidx=False, coords_fp=None, overlap=80, names_fp=None,
+             nodes_fp=None, newick_fp=None, lineage_fp=None, ranktb_fp=None,
+             map_fps=[], map_rank=False, lines=1000000):
     """Main classification workflow which accepts command-line arguments.
 
     See Also
@@ -54,7 +55,7 @@ def workflow(input_path, output_path, outmap_dir=None,
         map_rank)
 
     # build processor for alignment
-    proc = build_align_proc(coords_fp)
+    proc = build_align_proc(coords_fp, overlap)
 
     # target classification ranks
     ranks, rank2dir = prep_ranks(ranks, outmap_dir)
@@ -62,7 +63,8 @@ def workflow(input_path, output_path, outmap_dir=None,
     # classify query sequences
     data = classify(
         proc, files, samples, input_fmt, demux, tree, rankd, named, root,
-        ranks, rank2dir, above, major and major / 100, ambig, subok, deidx)
+        ranks, rank2dir, above, major and major / 100, ambig, subok, deidx,
+        lines)
 
     # write output profiles
     write_profiles(output_path, data, named, samples)
@@ -85,7 +87,8 @@ def classify(proc:    object,
              major:      int = None,
              ambig:      str = True,
              subok:     bool = None,
-             deidx:     bool = False) -> dict:
+             deidx:     bool = False,
+             lines:      int = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -139,6 +142,9 @@ def classify(proc:    object,
     deidx : bool, optional
         Strip "underscore index" suffixes from subject IDs.
 
+    lines : int, optional
+        Number of lines to read from alignment file per chunk.
+
     Returns
     -------
     dict of dict
@@ -160,7 +166,7 @@ def classify(proc:    object,
         with readzip(fp) as fh:
 
             # parse alignment file by chunk
-            for rmap in parse_align_file(fh, proc, input_fmt):
+            for rmap in parse_align_file(fh, proc, input_fmt, lines):
                 click.echo('.', nl=False)
                 n += len(rmap)
 
@@ -259,13 +265,16 @@ def parse_samples(path_:  str,
     return samples, files, demux
 
 
-def build_align_proc(coords_fp: str = None) -> object:
+def build_align_proc(coords_fp: str = None,
+                     overlap:   int = None) -> object:
     """Build alignment processor.
 
     Parameters
     ----------
     coords_fp : str, optional
         Path to gene coordinates file.
+    overlap : int, optional
+        Read/gene overlapping percentage threshold
 
     Returns
     -------
@@ -286,7 +295,8 @@ def build_align_proc(coords_fp: str = None) -> object:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'Total host sequences: {len(coords)}.')
-        return Ordinal(coords, whether_prefix(coords))
+        return Ordinal(coords, whether_prefix(coords),
+                       overlap and overlap / 100)
     else:
         return Plain()
 
@@ -410,9 +420,6 @@ def reshape_rmap(rmap:    dict,
     if deidx:
         strip_index(rmap)
 
-    # merge duplicate subjects per query
-    rmap = {k: set(v) for k, v in rmap.items()}
-
     # demultiplex into multiple samples
     if demux:
         return demultiplex(rmap, samples)
@@ -426,9 +433,15 @@ def assign_rmap(rmap:     dict,
                 data:     dict,
                 rank:     str,
                 sample:   str,
-                rank2dir: dict,
-                named:    dict,
-                **kwargs: dict):
+                rank2dir: dict = None,
+                tree:     dict = None,
+                rankd:    dict = None,
+                named:    dict = None,
+                root:      str = None,
+                above:    bool = False,
+                major:     int = None,
+                ambig:     str = True,
+                subok:    bool = None):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
 
@@ -442,15 +455,43 @@ def assign_rmap(rmap:     dict,
         Target rank to assign to.
     sample : str
         Sample ID.
-    rank2dir : dict
+    rank2dir : dict, optional
         Directory of output maps per rank.
+
+    tree : dict, optional
+        Hierarchical classification system.
+    rankd : dict, optional
+        Rank dictionary.
     named : dict
         Taxon name directory.
-    kwargs : dict
-        Keyword arguments for `assign` function.
+    root : str, optional
+        Root identifier.
+
+    above : bool, optional
+        Assignment above given rank is acceptable (for fixed ranks).
+    major : float, optional
+        Majority-rule assignment threshold (available only with a fixed rank
+        and not above or ambig).
+    ambig : bool, optional
+        Count occurrence of each possible assignment instead of targeting one
+        assignment (available only with a fixed rank and not above).
+    subok : bool, optional
+        Allow assignment to subject(s) itself instead of higher classification
+        units.
     """
-    # call assignment workflow
-    asgmt = {k: assign(v, rank, **kwargs) for k, v in rmap.items()}
+    # determine assigner
+    if rank is None or rank == 'none' or tree is None:
+        assigner = assign_none
+        args = (ambig,)
+    elif rank == 'free':
+        assigner = assign_free
+        args = (tree, root, subok)
+    else:
+        assigner = assign_rank
+        args = (rank, tree, rankd, root, above, major, ambig)
+
+    # call assigner
+    asgmt = {k: assigner(v, *args) for k, v in rmap.items()}
 
     # write classification map
     if rank2dir is not None:

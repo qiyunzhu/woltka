@@ -14,7 +14,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.classify import (
-    assign, assign_none, assign_free, assign_rank, count, majority,
+    assign_none, assign_free, assign_rank, count, majority,
     strip_index, demultiplex)
 
 
@@ -25,29 +25,6 @@ class ClassifyTests(TestCase):
 
     def tearDown(self):
         rmtree(self.tmpdir)
-
-    def test_assign(self):
-        # count subjects
-        obs = assign({'G1', 'G2', 'G3'}, rank='none', ambig=True)
-        self.assertDictEqual(obs, {'G1': 1, 'G2': 1, 'G3': 1})
-
-        # free-rank assign
-        tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
-                'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
-        obs = assign({'G1', 'G2', 'G3'}, rank='free', tree=tree)
-        self.assertEqual(obs, 'T0')
-        obs = assign({'G1', 'G2', 'G3'}, rank='free', tree=tree, root='T0')
-        self.assertIsNone(obs)
-
-        # fixed rank assign
-        rankd = {'T1': 'general', 'T2': 'general', 'T0': 'marshal'}
-        kwargs = {'tree': tree, 'rankd': rankd, 'root': 'T0'}
-        obs = assign({'G1', 'G2', 'G3'}, 'marshal', **kwargs)
-        self.assertEqual(obs, 'T0')
-        obs = assign({'G1', 'G2', 'G3'}, 'general', **kwargs)
-        self.assertIsNone(obs)
-        obs = assign({'G1', 'G2'}, 'general', **kwargs)
-        self.assertEqual(obs, 'T1')
 
     def test_assign_none(self):
         # assign to self
@@ -148,12 +125,12 @@ class ClassifyTests(TestCase):
         self.assertIsNone(obs)
 
     def test_strip_index(self):
-        dic = {'R1': ['G1_1', 'G1_2', 'G2_3', 'G3'],
-               'R2': ['G1_1', 'G1.3', 'G4_5', 'G4_x']}
+        dic = {'R1': {'G1_1', 'G1_2', 'G2_3', 'G3'},
+               'R2': {'G1_1', 'G1.3', 'G4_5', 'G4_x'}}
         strip_index(dic)
         self.assertDictEqual(dic, {
-            'R1': ['G1', 'G1',   'G2', 'G3'],
-            'R2': ['G1', 'G1.3', 'G4', 'G4']})
+            'R1': {'G1', 'G2', 'G3'},
+            'R2': {'G1', 'G1.3', 'G4', 'G4'}})
 
     def test_demultiplex(self):
         # simple case
