@@ -192,7 +192,7 @@ One may restrict this behavior to avoid confusions (e.g., there are unwanted fil
 
 Woltka supports convenient demultiplexing. If the input path (specified by `--input` or `-i`) points to a file instead of a directory, Woltka will treat it as a multiplexed alignment file.
 
-Specifically, the program divides sample ID and read ID by the first underscore in each query identifier in the alignment file (i.e., a pattern of `sample_read`).
+Specifically, the program divides sample ID and read ID by the first underscore in each query identifier in the alignment file (i.e., a pattern of `sampleID_readID`).
 
 One may manually switch on or off the demultiplexing function by adding flag `--demux` or `--no-demux` to the command. This is useful when there are several multiplexed alignment files (e.g., each from one sequencing lane) in one **directory**, or the only input alignment **file** provided is not multiplexed but just for a single sample.
 
@@ -272,7 +272,7 @@ woltka classify \
 
 Woltka combines the two fundamental analyses in metagenomics: taxonomic profiling (mapping reads to genomes) and functional profiling (mapping reads to functional genes) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
 
-This is achieve by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
+This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
 
 The coordinates of read-to-genome alignments are provided in the alignment files. One needs to provide Woltka with a table of gene coordinates. The format is like:
 
