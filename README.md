@@ -16,6 +16,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - [Input files](#input-files)
 - [Tree-based classification](#tree-based-classification)
 - [Combined taxonomic & functional analyses](#combined-taxonomic--functional-analyses)
+- For users of [QIIME 2](woltka/q2), [Qiita], [SHOGUN]
 
 
 ## Installation
@@ -35,11 +36,7 @@ woltka
 
 ## Example usage
 
-Woltka ships with small test datasets under this directory:
-
-```
-<program_dir>/woltka/tests/data
-```
+Woltka ships with several small test datasets under `woltka/tests/data`. One needs to manually download them from this GitHub repo.
 
 One can execute the following commands to make sure that Woltka functions correctly, and to get an impression of the basic usage of Woltka.
 
@@ -121,7 +118,7 @@ qiime tools import --type FeatureTable[Frequency] --input-path table.biom --outp
 
 These intermediate steps are automated if you use the [QIIME 2 plugin of Woltka](woltka/q2).
 
-One can then investigate the microbiome by applying classical QIIME analyses on the gOTU table. For example, with the [WoL reference phylogeny](https://biocore.github.io/wol/), one can do:
+One can then investigate the microbiome by applying classical QIIME analyses on the gOTU table. For example, with the [WoL reference phylogeny](https://biocore.github.io/wol/) (direct download link: [tree.qza](https://biocore.github.io/wol/data/trees/tree.qza)), one can do:
 
 ```bash
 qiime diversity core-metrics-phylogenetic \
@@ -154,7 +151,7 @@ bwa mem refseq.fna input.R1.fq input.R2.fq > output.sam
 blastn -db refseq_genomes -query input.fa -max_target_seqs 1 -outfmt 6 -out output.txt
 ```
 
-However, most of these protocols generate mappings of reads to nucleotides (e.g., chromosomes or scaffolds), rather than to genomes. In order to produce gOTUs, one needs to supply Woltka with a nucleotide-to-genome mapping file:
+However, most of these protocols generate mappings of reads to nucleotides (e.g., chromosomes or scaffolds), rather than to genomes. In order to produce gOTUs, one needs to supply Woltka with a nucleotide-to-genome mapping file (`nucl2g.txt`, example provided under [`taxonomy/nucl`](woltka/tests/data/taxonomy/nucl)):
 
 ```bash
 woltka gotu --map nucl2g.txt ...
@@ -239,20 +236,18 @@ If no classification file is provided, Woltka will automatically build a classif
 
 Subjects themselves are part of the classification system. A map of subject to taxon (e.g., a genome ID to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
 
-Furthermore, one can supply Woltka with a taxon name dictionary, and the output profile will show taxon names instead of taxon IDs:
-
-* `--names`: NCBI-style `names.dmp` or a simple taxon-to-name map.
-
-Classification files are **additive** --- unless they conflict --- which will be noted by Woltka. Example command:
+Classification files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies --- unless they conflict --- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
 
 ```bash
 woltka classify \
   --map nucl2g.txt \
   --map g2taxid.txt \
-  --names taxdump/names.dmp \
   --nodes taxdump/nodes.dmp \
+  --names taxdump/names.dmp \
   ...
 ```
+
+In this command, three layers of hierarchies are provided: 1) nucleotide ID to genome ID (`nucl2g.txt`), 2) genome ID to taxonomy ID (`g2taxid.txt`), 3) NCBI taxonomy tree (`nodes.dmp`).
 
 Again, compressed files are supported and automatically recognized. The following command works:
 
@@ -262,6 +257,16 @@ woltka classify \
   ...
 ```
 
+Furthermore, one can supply Woltka with a taxon name dictionary, and the output profile will show taxon names instead of taxon IDs:
+
+* `--names`: NCBI-style `names.dmp` or a simple taxon-to-name map. Example:
+
+```bash
+woltka classify \
+  --nodes taxdump/nodes.dmp \
+  --names taxdump/names.dmp \
+  ...
+```
 
 ## Combined taxonomic & functional analyses
 
