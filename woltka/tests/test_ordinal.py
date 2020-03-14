@@ -93,22 +93,22 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(obs, exp)
 
     def test_ordinal_init(self):
-        proc = Ordinal({}, True, 0.75)
-        self.assertDictEqual(proc.coords, {})
-        self.assertEqual(proc.prefix, True)
-        self.assertEqual(proc.th, 0.75)
-        self.assertIsNone(proc.buf)
+        mapper = Ordinal({}, True, 0.75)
+        self.assertDictEqual(mapper.coords, {})
+        self.assertEqual(mapper.prefix, True)
+        self.assertEqual(mapper.th, 0.75)
+        self.assertIsNone(mapper.buf)
 
     def test_ordinal_parse(self):
-        proc = Ordinal({})
+        mapper = Ordinal({})
 
         # b6o (BLAST, DIAMOND, BURST, etc.)
         parser = parse_b6o_line
         b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
                'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        self.assertEqual(proc.parse(b6o[0], parser), 'S1/1')
+        self.assertEqual(mapper.parse(b6o[0], parser), 'S1/1')
         self.assertTupleEqual(
-            proc.buf, ('S1/1', 'NC_123456', 345.0, 100, 225, 324))
+            mapper.buf, ('S1/1', 'NC_123456', 345.0, 100, 225, 324))
 
         # sam (Bowtie2, BWA, etc.)
         parser = parse_sam_line
@@ -118,20 +118,20 @@ class OrdinalTests(TestCase):
             'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
             'S2	16	*	0	0	*	*	0	0	*	*')
-        self.assertEqual(proc.parse(sam[1], parser), 'S1/1')
+        self.assertEqual(mapper.parse(sam[1], parser), 'S1/1')
         self.assertTupleEqual(
-            proc.buf, ('S1/1', 'NC_123456', None, 100, 26, 125))
+            mapper.buf, ('S1/1', 'NC_123456', None, 100, 26, 125))
 
         # header
         with self.assertRaises(TypeError):
-            proc.parse(sam[0], parser)
+            mapper.parse(sam[0], parser)
 
         # not aligned
         with self.assertRaises(TypeError):
-            proc.parse(sam[4], parser)
+            mapper.parse(sam[4], parser)
 
     def test_ordinal_append(self):
-        proc = Ordinal({})
+        mapper = Ordinal({})
 
         # b6o (BLAST, DIAMOND, BURST, etc.)
         parser = parse_b6o_line
@@ -139,24 +139,24 @@ class OrdinalTests(TestCase):
                'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
 
         # first line
-        proc.parse(b6o[0], parser)
-        proc.append()
-        self.assertListEqual(proc.rids, ['S1/1'])
-        self.assertDictEqual(proc.lenmap, {'NC_123456': {0: 100}})
-        self.assertDictEqual(proc.locmap, {'NC_123456': [
+        mapper.parse(b6o[0], parser)
+        mapper.append()
+        self.assertListEqual(mapper.rids, ['S1/1'])
+        self.assertDictEqual(mapper.lenmap, {'NC_123456': {0: 100}})
+        self.assertDictEqual(mapper.locmap, {'NC_123456': [
             (225, True, False, 0), (324, False, False, 0)]})
 
         # second line
-        proc.parse(b6o[1], parser)
-        proc.append()
-        self.assertListEqual(proc.rids, ['S1/1', 'S1/2'])
-        self.assertDictEqual(proc.lenmap, {'NC_123456': {0: 100, 1: 98}})
-        self.assertDictEqual(proc.locmap, {'NC_123456': [
+        mapper.parse(b6o[1], parser)
+        mapper.append()
+        self.assertListEqual(mapper.rids, ['S1/1', 'S1/2'])
+        self.assertDictEqual(mapper.lenmap, {'NC_123456': {0: 100, 1: 98}})
+        self.assertDictEqual(mapper.locmap, {'NC_123456': [
             (225, True, False, 0), (324, False, False, 0),
             (608, True, False, 1), (708, False, False, 1)]})
 
         # sam (Bowtie2, BWA, etc.)
-        proc.clear()
+        mapper.clear()
         parser = parse_sam_line
         sam = (
             '@HD	VN:1.0	SO:unsorted',
@@ -166,32 +166,32 @@ class OrdinalTests(TestCase):
             'S2	16	*	0	0	*	*	0	0	*	*')
 
         # normal, fully-aligned, forward strand
-        proc.parse(sam[1], parser)
-        proc.append()
-        self.assertListEqual(proc.rids, ['S1/1'])
-        self.assertDictEqual(proc.lenmap, {'NC_123456': {0: 100}})
-        self.assertDictEqual(proc.locmap, {'NC_123456': [
+        mapper.parse(sam[1], parser)
+        mapper.append()
+        self.assertListEqual(mapper.rids, ['S1/1'])
+        self.assertDictEqual(mapper.lenmap, {'NC_123456': {0: 100}})
+        self.assertDictEqual(mapper.locmap, {'NC_123456': [
             (26, True, False, 0), (125, False, False, 0)]})
 
         # shortened, reverse strand
-        proc.parse(sam[2], parser)
-        proc.append()
-        self.assertListEqual(proc.rids, ['S1/1', 'S1/2'])
-        self.assertDictEqual(proc.lenmap, {'NC_123456': {
+        mapper.parse(sam[2], parser)
+        mapper.append()
+        self.assertListEqual(mapper.rids, ['S1/1', 'S1/2'])
+        self.assertDictEqual(mapper.lenmap, {'NC_123456': {
             0: 100, 1: 80}})
-        self.assertDictEqual(proc.locmap, {'NC_123456': [
+        self.assertDictEqual(mapper.locmap, {'NC_123456': [
             (26,  True, False, 0), (125, False, False, 0),
             (151, True, False, 1), (230, False, False, 1)]})
 
         # not perfectly aligned, unpaired
-        proc.parse(sam[3], parser)
-        proc.append()
-        self.assertListEqual(proc.rids, ['S1/1', 'S1/2', 'S2'])
-        self.assertEqual(proc.lenmap['NC_789012'][2], 90)
+        mapper.parse(sam[3], parser)
+        mapper.append()
+        self.assertListEqual(mapper.rids, ['S1/1', 'S1/2', 'S2'])
+        self.assertEqual(mapper.lenmap['NC_789012'][2], 90)
         self.assertTupleEqual(
-            proc.locmap['NC_789012'][0], (186,  True, False, 2))
+            mapper.locmap['NC_789012'][0], (186,  True, False, 2))
         self.assertTupleEqual(
-            proc.locmap['NC_789012'][1], (280, False, False, 2))
+            mapper.locmap['NC_789012'][1], (280, False, False, 2))
 
     def test_ordinal_flush(self):
         # TODO

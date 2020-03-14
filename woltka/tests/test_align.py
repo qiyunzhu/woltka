@@ -28,7 +28,7 @@ class AlignTests(TestCase):
         rmtree(self.tmpdir)
 
     def test_parse_align_file(self):
-        proc = Plain()
+        mapper = Plain()
 
         # simple case
         aln = ('R1	G1',
@@ -38,7 +38,7 @@ class AlignTests(TestCase):
                'R3	G3',
                'R4	G4',
                'R5	G5')
-        obs = list(parse_align_file(iter(aln), proc))
+        obs = list(parse_align_file(iter(aln), mapper))
         exp = [{'R1': {'G1'},
                 'R2': {'G1', 'G2'},
                 'R3': {'G1', 'G3'},
@@ -47,7 +47,7 @@ class AlignTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # chunk of 1
-        obs = list(parse_align_file(iter(aln), proc, n=1))
+        obs = list(parse_align_file(iter(aln), mapper, n=1))
         exp = [{'R1': {'G1'}},
                {'R2': {'G1', 'G2'}},
                {'R3': {'G1', 'G3'}},
@@ -56,7 +56,7 @@ class AlignTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # chunk of 2
-        obs = list(parse_align_file(iter(aln), proc, n=2))
+        obs = list(parse_align_file(iter(aln), mapper, n=2))
         exp = [{'R1': {'G1'}},
                {'R2': {'G1', 'G2'}},
                {'R3': {'G1', 'G3'}},
@@ -65,7 +65,7 @@ class AlignTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # chunk of 3
-        obs = list(parse_align_file(iter(aln), proc, n=3))
+        obs = list(parse_align_file(iter(aln), mapper, n=3))
         exp = [{'R1': {'G1'},
                 'R2': {'G1', 'G2'}},
                {'R3': {'G1', 'G3'},
@@ -74,7 +74,7 @@ class AlignTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # chunk of 4
-        obs = list(parse_align_file(iter(aln), proc, n=4))
+        obs = list(parse_align_file(iter(aln), mapper, n=4))
         exp = [{'R1': {'G1'},
                 'R2': {'G1', 'G2'}},
                {'R3': {'G1', 'G3'},
@@ -83,7 +83,7 @@ class AlignTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # chunk of 5
-        obs = list(parse_align_file(iter(aln), proc, n=5))
+        obs = list(parse_align_file(iter(aln), mapper, n=5))
         exp = [{'R1': {'G1'},
                 'R2': {'G1', 'G2'},
                 'R3': {'G1', 'G3'}},
@@ -92,42 +92,42 @@ class AlignTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # format is given
-        obs = list(parse_align_file(iter(aln), proc, fmt='map', n=5))
+        obs = list(parse_align_file(iter(aln), mapper, fmt='map', n=5))
         self.assertListEqual(obs, exp)
 
         # empty alignment
-        obs = list(parse_align_file(iter([]), proc))
+        obs = list(parse_align_file(iter([]), mapper))
         self.assertListEqual(obs, [])
 
         # bad alignment
         with self.assertRaises(ValueError) as ctx:
-            list(parse_align_file(iter(('Hi there!',)), proc))
+            list(parse_align_file(iter(('Hi there!',)), mapper))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
 
     def test_plain_parse(self):
-        proc = Plain()
+        mapper = Plain()
         parser = assign_parser('map')
-        self.assertEqual(proc.parse('R1	G1', parser), 'R1')
+        self.assertEqual(mapper.parse('R1	G1', parser), 'R1')
         with self.assertRaises(TypeError):
-            proc.parse('Hi there!', parser)
+            mapper.parse('Hi there!', parser)
 
     def test_plain_append(self):
-        proc = Plain()
+        mapper = Plain()
         parser = assign_parser('map')
-        proc.parse('R1	G1', parser)
-        proc.append()
-        self.assertDictEqual(proc.map, {'R1': ['G1']})
-        proc.parse('R2	G1', parser)
-        proc.append()
-        self.assertDictEqual(proc.map, {'R1': ['G1'], 'R2': ['G1']})
-        proc.parse('R2	G2', parser)
-        proc.append()
+        mapper.parse('R1	G1', parser)
+        mapper.append()
+        self.assertDictEqual(mapper.map, {'R1': ['G1']})
+        mapper.parse('R2	G1', parser)
+        mapper.append()
+        self.assertDictEqual(mapper.map, {'R1': ['G1'], 'R2': ['G1']})
+        mapper.parse('R2	G2', parser)
+        mapper.append()
         self.assertDictEqual(
-            proc.map, {'R1': ['G1'], 'R2': ['G1', 'G2']})
+            mapper.map, {'R1': ['G1'], 'R2': ['G1', 'G2']})
 
     def test_plain_flush(self):
-        proc = Plain()
+        mapper = Plain()
         parser = assign_parser('map')
         aln = ('R1	G1',
                'R2	G1',
@@ -137,9 +137,9 @@ class AlignTests(TestCase):
                'R4	G4',
                'R5	G5')
         for line in aln:
-            proc.parse(line, parser)
-            proc.append()
-        obs = proc.flush()
+            mapper.parse(line, parser)
+            mapper.append()
+        obs = mapper.flush()
         exp = {'R1': {'G1'},
                'R2': {'G1', 'G2'},
                'R3': {'G1', 'G3'},

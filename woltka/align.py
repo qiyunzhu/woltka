@@ -24,14 +24,14 @@ A parser function returns a tuple of:
 """
 
 
-def parse_align_file(fh, proc, fmt=None, n=None):
+def parse_align_file(fh, mapper, fmt=None, n=None):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
     Parameters
     ----------
     fh : file handle
         Alignment file to parse.
-    proc : object
+    mapper : object
         Module for handling alignments.
     fmt : str, optional
         Format of mapping file.
@@ -64,18 +64,18 @@ def parse_align_file(fh, proc, fmt=None, n=None):
         fmt = infer_align_format(line)
         parser = assign_parser(fmt)
         try:
-            last = proc.parse(line, parser)
+            last = mapper.parse(line, parser)
             i = 1
         except TypeError:
             pass
-        proc.append()
+        mapper.append()
     else:
         parser = assign_parser(fmt)
 
     # parse remaining content
     for line in fh:
         try:
-            query = proc.parse(line, parser)
+            query = mapper.parse(line, parser)
             i += 1
         except TypeError:
             continue
@@ -83,17 +83,17 @@ def parse_align_file(fh, proc, fmt=None, n=None):
         # flush when query Id changes and chunk size was already reached
         if query != last:
             if i >= j:
-                yield proc.flush()
+                yield mapper.flush()
                 j = i + n
             last = query
-        proc.append()
+        mapper.append()
 
     # finish last chunk
-    yield proc.flush()
+    yield mapper.flush()
 
 
 class Plain(object):
-    """Processor of plain sequence alignments.
+    """Mapping module for plain sequence alignments.
 
     Attributes
     ----------
@@ -116,7 +116,7 @@ class Plain(object):
     """
 
     def __init__(self):
-        """Initiate processor.
+        """Initiate mapper.
         """
         self.map = {}
 

@@ -17,7 +17,7 @@ from . import __version__
 from .workflow import workflow
 
 
-class NatOrder(click.Group):
+class NaturalOrderGroup(click.Group):
     """Natural ordering of click command groups.
     """
     def list_commands(self, ctx):

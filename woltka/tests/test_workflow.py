@@ -15,7 +15,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.workflow import (
-    parse_samples, build_align_proc, classify, workflow)
+    parse_samples, build_mapper, classify, workflow)
 
 
 class WorkflowTests(TestCase):
@@ -156,9 +156,9 @@ class WorkflowTests(TestCase):
         # simplest gotu workflow
         input_path = join(self.datdir, 'align', 'bowtie2')
         samples, files, demux = parse_samples(input_path)
-        proc = build_align_proc()
+        mapper = build_mapper()
         ranks = ['none']
-        obs = classify(proc, files, samples=samples, demux=demux,
+        obs = classify(mapper, files, samples=samples, demux=demux,
                        ranks=ranks)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])

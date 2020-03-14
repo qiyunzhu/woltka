@@ -55,15 +55,15 @@ def workflow(input_path, output_path, outmap_dir=None,
         names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
         map_rank)
 
-    # build processor for alignment
-    proc = build_align_proc(coords_fp, overlap)
+    # build mapping module
+    mapper = build_mapper(coords_fp, overlap)
 
     # target classification ranks
     ranks, rank2dir = prep_ranks(ranks, outmap_dir)
 
     # classify query sequences
     data = classify(
-        proc, files, samples, input_fmt, demux, tree, rankd, named, root,
+        mapper, files, samples, input_fmt, demux, tree, rankd, named, root,
         ranks, rank2dir, above, major and major / 100, ambig, subok, deidx,
         lines)
 
@@ -73,7 +73,7 @@ def workflow(input_path, output_path, outmap_dir=None,
     return data
 
 
-def classify(proc:    object,
+def classify(mapper:  object,
              files:     list or dict,
              samples:   list = None,
              input_fmt:  str = None,
@@ -94,8 +94,8 @@ def classify(proc:    object,
 
     Parameters
     ----------
-    proc : object
-        Alignment processing module.
+    mapper : object
+        Mapping module (Plain or Ordinal).
     files : list or dict
         Paths to input alignment files, if multiplexed, or dictionary of file
         paths to sample IDs, if per-sample.
@@ -167,7 +167,7 @@ def classify(proc:    object,
         with readzip(fp) as fh:
 
             # parse alignment file by chunk
-            for rmap in parse_align_file(fh, proc, input_fmt, lines):
+            for rmap in parse_align_file(fh, mapper, input_fmt, lines):
                 click.echo('.', nl=False)
                 n += len(rmap)
 
@@ -266,9 +266,9 @@ def parse_samples(path_:  str,
     return samples, files, demux
 
 
-def build_align_proc(coords_fp: str = None,
-                     overlap:   int = None) -> object:
-    """Build alignment processor.
+def build_mapper(coords_fp: str = None,
+                 overlap:   int = None) -> object:
+    """Build mapping module (Plain or Ordinal).
 
     Parameters
     ----------
@@ -280,11 +280,11 @@ def build_align_proc(coords_fp: str = None,
     Returns
     -------
     object
-        Alignment processor.
+        Mapping module.
 
     Notes
     -----
-    Currently two processors are supported: Plain() for regular alignments
+    Currently two mappers are supported: Plain() for regular alignments
     (i.e., simple query-to-subject maps), Ordinal() for alignments with
     coordinates which will be used to match queries (reads) and genes. The
     presence of a gene coordinates file (`coords_fp`) is an indicator for
