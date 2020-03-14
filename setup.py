@@ -47,7 +47,6 @@ setup(
     author_email='qiyunzhu@gmail.com',
     url=f'https://github.com/qiyunzhu/{name}',
     packages=find_packages(),
-    package_data={name: ['config.yml']},
     include_package_data=True,
     install_requires=[
         'biom-format',
