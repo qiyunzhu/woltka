@@ -172,14 +172,14 @@ def classify(mapper:  object,
                 n += len(rmap)
 
                 # reshape read map
-                rmap = reshape_rmap(rmap, deidx, demux, samples, files, fp)
+                rmap = reshape_readmap(rmap, deidx, demux, samples, files, fp)
 
                 # assign reads at each rank
                 for sample, map_ in rmap.items():
                     for rank in ranks:
 
                         # call assignment workflow
-                        assign_rmap(map_, data, rank, sample, **kwargs)
+                        assign_readmap(map_, data, rank, sample, **kwargs)
 
         click.echo(' Done.')
         click.echo(f'Query sequences: {n}.')
@@ -389,12 +389,12 @@ def build_hierarchy(names_fp:   str = None,
     return tree, rankd, named, root
 
 
-def reshape_rmap(rmap:    dict,
-                 deidx:   bool = None,
-                 demux:   bool = None,
-                 samples: list = None,
-                 files:   dict = None,
-                 fp:      str = None) -> dict:
+def reshape_readmap(rmap:    dict,
+                    deidx:   bool = None,
+                    demux:   bool = None,
+                    samples: list = None,
+                    files:   dict = None,
+                    fp:      str = None) -> dict:
     """Reshape a read map.
 
     Parameters
@@ -430,19 +430,19 @@ def reshape_rmap(rmap:    dict,
         return {files[fp]: rmap}
 
 
-def assign_rmap(rmap:     dict,
-                data:     dict,
-                rank:     str,
-                sample:   str,
-                rank2dir: dict = None,
-                tree:     dict = None,
-                rankd:    dict = None,
-                named:    dict = None,
-                root:      str = None,
-                above:    bool = False,
-                major:     int = None,
-                ambig:     str = True,
-                subok:    bool = None):
+def assign_readmap(rmap:     dict,
+                   data:     dict,
+                   rank:     str,
+                   sample:   str,
+                   rank2dir: dict = None,
+                   tree:     dict = None,
+                   rankd:    dict = None,
+                   named:    dict = None,
+                   root:      str = None,
+                   above:    bool = False,
+                   major:     int = None,
+                   ambig:     str = True,
+                   subok:    bool = None):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
 
