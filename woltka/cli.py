@@ -25,7 +25,7 @@ class NatOrder(click.Group):
 
 
 @click.version_option(__version__)
-@click.group(cls=NatOrder)
+@click.group(cls=NaturalOrderGroup)
 def cli():
     pass
 
