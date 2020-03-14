@@ -195,7 +195,7 @@ One may restrict this behavior to avoid confusions (e.g., there are unwanted fil
 
 Woltka supports convenient demultiplexing. If the input path (specified by `--input` or `-i`) points to a file instead of a directory, Woltka will treat it as a multiplexed alignment file.
 
-Specifically, the program divides sample ID and read ID by the first underscore in each query identifier in the alignment file (i.e., a pattern of `sample_read`).
+Specifically, the program divides sample ID and read ID by the first underscore in each query identifier in the alignment file (i.e., a pattern of `sampleID_readID`).
 
 One may manually switch on or off the demultiplexing function by adding flag `--demux` or `--no-demux` to the command. This is useful when there are several multiplexed alignment files (e.g., each from one sequencing lane) in one **directory**, or the only input alignment **file** provided is not multiplexed but just for a single sample.
 
