@@ -267,7 +267,7 @@ woltka classify \
 
 Woltka combines the two fundamental analyses in metagenomics: taxonomic profiling (mapping reads to genomes) and functional profiling (mapping reads to functional genes) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
 
-This is achieve by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
+This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
 
 The coordinates of read-to-genome alignments are provided in the alignment files. One needs to provide Woltka with a table of gene coordinates. The format is like:
 
