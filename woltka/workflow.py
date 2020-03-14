@@ -215,7 +215,7 @@ def parse_samples(path_:  str,
     # read sample Ids
     if ids:
         samples = read_ids(ids)
-        click.echo(f'Samples to include: {len(samples)}.')
+        click.echo(f'Number of samples to include: {len(samples)}.')
     else:
         samples = None
 
