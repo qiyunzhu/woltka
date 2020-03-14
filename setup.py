@@ -50,7 +50,8 @@ setup(
     package_data={name: ['config.yml']},
     include_package_data=True,
     install_requires=[
-        'click',
+        'biom-format',
+        'cython'
     ],
     classifiers=classifiers,
     python_requires='>=3.6',

@@ -22,7 +22,7 @@ import click
 
 from .util import (
     readzip, path2stem, update_dict, allkeys, read_ids, add_dict, intize,
-    delnone, id2file_map, write_map, write_table)
+    delnone, id2file_map, write_map)
 from .align import Plain, parse_align_file
 from .classify import (
     assign_none, assign_free, assign_rank, count, strip_index, demultiplex)
@@ -30,6 +30,7 @@ from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_ranktb, read_map,
     fill_root)
 from .ordinal import Ordinal, read_gene_coords, whether_prefix
+from .biom import profile_to_biom, write_biom
 
 
 def workflow(input_path, output_path, outmap_dir=None,
@@ -516,9 +517,11 @@ def assign_rmap(rmap:     dict,
 
 def write_profiles(path_:    str,
                    data:    dict,
-                   named:   dict = None,
-                   samples: list = None):
-    """Write profile to a tab-delimited file.
+                   samples: list = None,
+                   tree:    dict = None,
+                   rankd:   dict = None,
+                   named:   dict = None):
+    """Write profile to an output file.
 
     Parameters
     ----------
@@ -526,10 +529,14 @@ def write_profiles(path_:    str,
         Profile data.
     path_ : str
         Path to output file or directory.
-    named : dict, optional
-        Taxon name dictionary.
     samples : list, optional
         Ordered sample ID list.
+    tree : dict, optional
+        Taxonomic tree.
+    rankd : dict, optional
+        Rank dictionary.
+    named : dict, optional
+        Taxon name dictionary.
     """
     if not path_:
         return
@@ -543,12 +550,12 @@ def write_profiles(path_:    str,
         rank2fp = {ranks[0]: path_}
     else:
         makedirs(path_, exist_ok=True)
-        rank2fp = {x: join(path_, f'{x}.tsv') for x in ranks}
+        rank2fp = {x: join(path_, f'{x}.biom') for x in ranks}
 
     # write output profile(s)
     for rank, fp in rank2fp.items():
-        with open(fp, 'w') as fh:
-            write_table(fh, data[rank], named, samples)
+        write_biom(profile_to_biom(
+            data[rank], samples, tree, rankd, named), fp)
     click.echo(' Done.')
 
 

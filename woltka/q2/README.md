@@ -2,6 +2,7 @@
 
 **q2-woltka** is a QIIME 2 plugin for Woltka, the metagenome data analysis tool.
 
+We recommend that you use Woltka with the WoL reference phylogeny ([**tree.qza**](https://biocore.github.io/wol/data/trees/tree.qza)) and taxonomy ([**taxonomy.qza**](https://biocore.github.io/wol/data/taxonomy/ncbi/taxonomy.qza)). However we note that Woltka is highly flexible and it supports custom classification systems.
 
 ## Installation
 

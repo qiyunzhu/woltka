@@ -290,7 +290,7 @@ def id2file_map(dir_, ext=None, ids=None):
 
 
 def write_map(fh, map_, named=None):
-    """Write profile to a tab-delimited file.
+    """Write a read map to a tab-delimited file.
 
     Parameters
     ----------
@@ -318,7 +318,7 @@ def write_map(fh, map_, named=None):
 
 
 def write_table(fh, data, named=None, samples=None):
-    """Write profile to a tab-delimited file.
+    """Write a profile to a tab-delimited file.
 
     Parameters
     ----------

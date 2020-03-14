@@ -46,7 +46,7 @@ One can execute the following commands to make sure that Woltka functions correc
 gOTU table generation:
 
 ```bash
-woltka gotu -i align/bowtie2 -o table.tsv
+woltka gotu -i align/bowtie2 -o table.biom
 ```
 
 Taxonomic profiling at the ranks of phylum, genus and species as defined in NCBI taxdump:
@@ -98,22 +98,22 @@ shogun align -a bowtie2 -d WoLr1 -i input.fasta -o .
 Then one can run Woltka to convert the alignment file(s) into a gOTU table:
 
 ```bash
-woltka gotu -i alignment.bowtie2.sam -o table.tsv
+woltka gotu -i alignment.bowtie2.sam -o table.biom
 ```
 
-The output file `table.tsv` is a table with rows as genome IDs (gOTUs), columns as sample IDs, and cell values as counts of gOTUs in samples.
+The output file `table.biom` is a BIOM table with rows as genome IDs (gOTUs), columns as sample IDs, and cell values as counts of gOTUs in samples.
+
+If necessary, you may convert a BIOM table into tab-delimited file:
+
+```bash
+biom convert --to-tsv -i table.biom -o table.tsv
+```
 
 Note: Both SHOGUN and WoL are available at the [**Qiita**](https://qiita.ucsd.edu/) server. If you are a Qiita user, the alignment file can be automatically generated and downloaded from the Qiita interface.
 
 ### gOTU analysis using QIIME 2
 
-With QIIME, the gOTU table can be converted into BIOM format:
-
-```bash
-biom convert --to-hdf5 -i table.tsv -o table.biom
-```
-
-The BIOM table can be imported into a QIIME artifact:
+The generated BIOM table can be imported into a QIIME artifact:
 
 ```bash
 qiime tools import --type FeatureTable[Frequency] --input-path table.biom --output-path table.qza
@@ -208,7 +208,7 @@ woltka classify \
   --filext .blast6out.gz \
   --sample-ids ids.txt \
   --no-demux \
-  --output profile.tsv \
+  --output profile.biom \
   ...
 ```
 

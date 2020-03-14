@@ -17,10 +17,9 @@ Minimum requirement: QIIME 2 2019.1
     QIIME 2 since 2019.1.
 """
 
-import numpy as np
 import biom
 
-from woltka.util import prep_table
+from woltka.biom import profile_to_biom
 from woltka.workflow import workflow
 
 
@@ -28,7 +27,7 @@ def gotu(input_path: str) -> biom.Table:
     """Generate a gOTU table based on sequence alignments.
     """
     profile = workflow(input_path, None)['none']
-    return make_biom(profile)
+    return profile_to_biom(profile)
 
 
 def filter_values(table: biom.Table, th: float) -> biom.Table:
@@ -42,10 +41,3 @@ def filter_values(table: biom.Table, th: float) -> biom.Table:
     table.transform(filter_otus, axis='sample')
     table.remove_empty(axis='observation')
     return table
-
-
-def make_biom(profile: dict) -> biom.Table:
-    """Convert a profile into a BIOM table.
-    """
-    data, index, columns = prep_table(profile)
-    return biom.Table(np.array(data), index, columns)
