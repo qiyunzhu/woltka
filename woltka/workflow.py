@@ -182,7 +182,7 @@ def classify(mapper:  object,
                         assign_readmap(map_, data, rank, sample, **kwargs)
 
         click.echo(' Done.')
-        click.echo(f'Query sequences: {n}.')
+        click.echo(f'Number of query sequences: {n}.')
 
     click.echo('Task completed.')
     return data
@@ -261,7 +261,7 @@ def parse_samples(path_:  str,
     else:
         raise ValueError(f'"{path_}" is not a valid file or directory.')
 
-    click.echo(f'Alignment files to read: {len(files)}.')
+    click.echo(f'Number of alignment files to read: {len(files)}.')
     click.echo(f'Demultiplexing: {"on" if demux else "off"}.')
     return samples, files, demux
 
@@ -295,7 +295,7 @@ def build_mapper(coords_fp: str = None,
         with readzip(coords_fp) as fh:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
-        click.echo(f'Total host sequences: {len(coords)}.')
+        click.echo(f'Total number of host sequences: {len(coords)}.')
         return Ordinal(coords, whether_prefix(coords),
                        overlap and overlap / 100)
     else:
@@ -385,7 +385,7 @@ def build_hierarchy(names_fp:   str = None,
 
     if is_build:
         click.echo(' Done.')
-        click.echo(f'Total classification units: {len(tree)}.')
+        click.echo(f'Total number of classification units: {len(tree)}.')
     return tree, rankd, named, root
 
 

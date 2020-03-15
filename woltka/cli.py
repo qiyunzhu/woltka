@@ -45,7 +45,8 @@ def cli():
 @click.option(
     '--ambig/--no-ambig', default=True,
     help=('Allow one sequence to be assigned to multiple gOTUs. Each hit '
-          'will be counted as 1 / k (k is the totally number of hits).'))
+          'will be counted as 1 / k (k is the totally number of hits). '
+          'Otherwise, sequences with multiple matches will be dropped.'))
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of nucleotides to genomes.'))
