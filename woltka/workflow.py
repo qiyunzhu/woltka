@@ -79,8 +79,8 @@ def classify(mapper:  object,
              input_fmt:  str = None,
              demux:     bool = None,
              tree:      dict = None,
-             rankdic:     dict = None,
-             namedic:     dict = None,
+             rankdic:   dict = None,
+             namedic:   dict = None,
              root:       str = None,
              ranks:      str = None,
              rank2dir:  dict = None,
@@ -207,9 +207,11 @@ def parse_samples(path_:  str,
 
     Returns
     -------
-    list, list or dict, bool
+    list
         Sample IDs to include.
+    list or dict
         Filepaths if demultiplexing, or filepath to sample ID map if not.
+    bool
         Whether perform demultiplexing.
     """
     # read sample Ids
@@ -330,10 +332,13 @@ def build_hierarchy(names_fp:   str = None,
 
     Returns
     -------
-    dict, dict, dict, str
+    dict
         Taxonomic tree.
+    dict
         Rank dictionary.
+    dict
         Name dictionary.
+    str
         Root identifier.
     """
     tree, rankdic, namedic = {}, {}, {}
@@ -394,7 +399,7 @@ def reshape_readmap(rmap:    dict,
                     demux:   bool = None,
                     samples: list = None,
                     files:   dict = None,
-                    fp:      str = None) -> dict:
+                    fp:       str = None) -> dict:
     """Reshape a read map.
 
     Parameters
@@ -436,8 +441,8 @@ def assign_readmap(rmap:     dict,
                    sample:   str,
                    rank2dir: dict = None,
                    tree:     dict = None,
-                   rankdic:    dict = None,
-                   namedic:    dict = None,
+                   rankdic:  dict = None,
+                   namedic:  dict = None,
                    root:      str = None,
                    above:    bool = False,
                    major:     int = None,
@@ -519,8 +524,8 @@ def write_profiles(path_:    str,
                    data:    dict,
                    samples: list = None,
                    tree:    dict = None,
-                   rankdic:   dict = None,
-                   namedic:   dict = None):
+                   rankdic: dict = None,
+                   namedic: dict = None):
     """Write profile to an output file.
 
     Parameters
@@ -571,8 +576,10 @@ def prep_ranks(ranks=None, outmap_dir=None):
 
     Returns
     -------
-    list, dict or None
-        Ranks, rank-to-directory map (or None if not necessary).
+    list
+        Ranks.
+    dict or None
+        Rank-to-directory map (or None if not necessary).
     """
     # determine ranks
     if ranks is None:

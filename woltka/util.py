@@ -182,7 +182,7 @@ def allkeys(dic):
     Returns
     -------
     set
-        keys
+        Keys.
     """
     return set().union(*dic.values())
 
@@ -273,7 +273,7 @@ def id2file_map(dir_, ext=None, ids=None):
     Returns
     -------
     dict
-        Id-to-file map.
+        ID-to-file map.
     """
     res = {}
     for fname in listdir(dir_):
@@ -360,9 +360,11 @@ def prep_table(profile, samples=None):
 
     Returns
     -------
-    list of list, list, list
+    list of list
         Data (2D array of values).
+    list
         Index (observation Ids).
+    list
         Columns (sample Ids).
     """
     index = sorted(allkeys(profile))

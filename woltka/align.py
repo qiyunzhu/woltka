@@ -238,7 +238,7 @@ def parse_map_line(line, *args):
 
     Returns
     -------
-    str, str
+    tuple of (str, str)
         Query and subject.
 
     Notes
@@ -341,8 +341,9 @@ def cigar_to_lens(cigar):
 
     Returns
     -------
-    int, int
+    int
         Alignment length.
+    int
         Offset in subject sequence.
 
     Raises
@@ -378,7 +379,7 @@ def parse_kraken(line):
     Returns
     -------
     tuple of (str, str)
-        Query, subject.
+        Query and subject.
 
     Notes
     -----

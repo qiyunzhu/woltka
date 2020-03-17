@@ -107,8 +107,10 @@ def read_nodes(fh):
 
     Returns
     -------
-    dict, dict
-        Taxonomy tree, taxonomic rank map.
+    dict
+        Taxonomy tree.
+    dict
+        Taxonomic rank map.
 
     Notes
     -----
@@ -143,6 +145,7 @@ def read_newick(fh):
     ------
     ValueError
         Missing internal node Id.
+    ValueError
         Found non-unique node Id.
 
     Notes
@@ -202,8 +205,10 @@ def read_ranktb(fh):
 
     Returns
     -------
-    dict, dict
-        Taxonomy tree, rank dictionary.
+    dict
+        Taxonomy tree
+    dict
+        Rank dictionary.
 
     Notes
     -----
@@ -259,8 +264,10 @@ def read_lineage(fh):
 
     Returns
     -------
-    dict, dict
-        Taxonomy tree, rank dictionary.
+    dict
+        Taxonomy tree.
+    dict
+        Rank dictionary.
 
     Raises
     ------
