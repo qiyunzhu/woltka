@@ -99,7 +99,6 @@ def classify(mapper:  object,
     files : list or dict
         Paths to input alignment files, if multiplexed, or dictionary of file
         paths to sample IDs, if per-sample.
-
     samples : list of str, optional
         Sample ID list to include.
     input_fmt : str, optional
@@ -110,7 +109,6 @@ def classify(mapper:  object,
         If None, program will automatically infer from file content.
     demux : bool, optional
         Whether perform demultiplexing.
-
     tree : dict, optional
         Taxonomic tree.
     rankdic : dict, optional
@@ -119,7 +117,6 @@ def classify(mapper:  object,
         Taxon name dictionary.
     root : str, optional
         Root identifier.
-
     ranks: list of str, optional
         List of ranks at each of which sequences are to be classified. Can also
         be "none" to omit classification (simply report subject IDs) or "free"
@@ -127,7 +124,6 @@ def classify(mapper:  object,
         will be reported).
     rank2dir : dict, otional
         Write classification map per rank to directory.
-
     above : bool, optional
         Allow assigning to a classification unit higher than given rank.
     major : int, optional
@@ -142,7 +138,6 @@ def classify(mapper:  object,
         to any higher classification unit.
     deidx : bool, optional
         Strip "underscore index" suffixes from subject IDs.
-
     lines : int, optional
         Number of lines to read from alignment file per chunk.
 
@@ -463,7 +458,6 @@ def assign_readmap(rmap:     dict,
         Sample ID.
     rank2dir : dict, optional
         Directory of output maps per rank.
-
     tree : dict, optional
         Hierarchical classification system.
     rankdic : dict, optional
@@ -472,7 +466,6 @@ def assign_readmap(rmap:     dict,
         Taxon name directory.
     root : str, optional
         Root identifier.
-
     above : bool, optional
         Assignment above given rank is acceptable (for fixed ranks).
     major : float, optional
