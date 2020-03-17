@@ -115,15 +115,15 @@ def read_nodes(fh):
     Input file can be NCBI-style nodes.dmp or a plain map of Id to parent and
     (optional) rank.
     """
-    tree, rankd = {}, {}
+    tree, rankdic = {}, {}
     for line in fh:
         x = line.rstrip().replace('\t|', '').split('\t')
         tree[x[0]] = x[1]
         try:
-            rankd[x[0]] = x[2]
+            rankdic[x[0]] = x[2]
         except IndexError:
             pass
-    return tree, rankd
+    return tree, rankdic
 
 
 def read_newick(fh):
@@ -214,7 +214,7 @@ def read_ranktb(fh):
     Add support for same taxon name but different ranks. This may be useful.
     For example, "Actinobacteria" is both a phylum and a class.
     """
-    tree, rankd = {}, {}
+    tree, rankdic = {}, {}
     ranks = None
     for line in fh:
         row = line.rstrip().split('\t')
@@ -239,14 +239,14 @@ def read_ranktb(fh):
 
             # check existing relationship
             try:
-                if tree[taxon] != parent or rankd[taxon] != rank:
+                if tree[taxon] != parent or rankdic[taxon] != rank:
                     raise ValueError(f'Conflict at taxon "{taxon}".')
 
             # add current taxon to dictionary
             except KeyError:
-                tree[taxon], rankd[taxon] = parent, rank
+                tree[taxon], rankdic[taxon] = parent, rank
 
-    return tree, rankd
+    return tree, rankdic
 
 
 def read_lineage(fh):
@@ -283,7 +283,7 @@ def read_lineage(fh):
     "k__Bacteria;p__" is considered a valid phylum).
     """
     p = re.compile(r'([a-z])__.*')
-    tree, rankd = {}, {}
+    tree, rankdic = {}, {}
     for line in fh:
         if line.startswith('#'):
             continue
@@ -310,7 +310,7 @@ def read_lineage(fh):
 
                 # get rank from prefix (e.g., "k__")
                 try:
-                    rankd[this] = code2rank[p.match(taxon).group(1)]
+                    rankdic[this] = code2rank[p.match(taxon).group(1)]
                 except (AttributeError, KeyError):
                     pass
 
@@ -319,7 +319,7 @@ def read_lineage(fh):
         # add entry to whole lineage
         tree[id_] = parent
 
-    return tree, rankd
+    return tree, rankdic
 
 
 def fill_root(tree):
@@ -446,7 +446,7 @@ def get_lineage(taxon, tree):
     return list(reversed(lineage))
 
 
-def find_rank(taxon, rank, tree, rankd):
+def find_rank(taxon, rank, tree, rankdic):
     """Find ancestor at a given rank by stepping up the classification
     hierarchy.
 
@@ -458,7 +458,7 @@ def find_rank(taxon, rank, tree, rankd):
         Target rank.
     tree : dict
         Taxonomy tree.
-    rankd : dict
+    rankdic : dict
         Taxon-to-rank map.
 
     Returns
@@ -478,7 +478,7 @@ def find_rank(taxon, rank, tree, rankd):
 
         # check rank of current taxon
         try:
-            if rankd[this] == rank:
+            if rankdic[this] == rank:
                 return this
         except KeyError:
             pass

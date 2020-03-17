@@ -289,7 +289,7 @@ def id2file_map(dir_, ext=None, ids=None):
     return res
 
 
-def write_map(fh, map_, named=None):
+def write_map(fh, map_, namedic=None):
     """Write a read map to a tab-delimited file.
 
     Parameters
@@ -298,12 +298,12 @@ def write_map(fh, map_, named=None):
         Output file.
     map_ : dict
         Map data.
-    named : dict, optional
+    namedic : dict, optional
         Taxon name dictionary.
     """
     for query, taxa in map_.items():
         try:
-            row = [named[query]]
+            row = [namedic[query]]
         except (TypeError, KeyError):
             row = [query]
         if isinstance(taxa, dict):
@@ -317,7 +317,7 @@ def write_map(fh, map_, named=None):
             raise ValueError(row)
 
 
-def write_table(fh, data, named=None, samples=None):
+def write_table(fh, data, namedic=None, samples=None):
     """Write a profile to a tab-delimited file.
 
     Parameters
@@ -326,7 +326,7 @@ def write_table(fh, data, named=None, samples=None):
         Output file.
     data : dict
         Profile data.
-    named : dict, optional
+    namedic : dict, optional
         Taxon name dictionary.
     samples : list, optional
         Ordered sample ID list.
@@ -337,7 +337,7 @@ def write_table(fh, data, named=None, samples=None):
     for key in sorted(allkeys(data)):
         # get feature name
         try:
-            row = [named[key]]
+            row = [namedic[key]]
         except (TypeError, KeyError):
             row = [key]
         # get feature count

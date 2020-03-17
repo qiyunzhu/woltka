@@ -65,7 +65,7 @@ def assign_free(subs, tree, root, subok=False):
         return None if lca == root else lca
 
 
-def assign_rank(subs, rank, tree, rankd, root, above=False, major=None,
+def assign_rank(subs, rank, tree, rankdic, root, above=False, major=None,
                 ambig=False):
     """Assign query to a fixed rank in a classification system.
 
@@ -77,7 +77,7 @@ def assign_rank(subs, rank, tree, rankd, root, above=False, major=None,
         Target rank.
     tree : dict
         Hierarchical classification system.
-    rankd : dict, optional
+    rankdic : dict, optional
         Rank dictionary.
     root : str, optional
         Root identifier.
@@ -93,7 +93,7 @@ def assign_rank(subs, rank, tree, rankd, root, above=False, major=None,
     str or dict
         Unique assignment or assignment-to-count map.
     """
-    taxa = [find_rank(x, rank, tree, rankd) for x in subs]
+    taxa = [find_rank(x, rank, tree, rankdic) for x in subs]
     tset = set(taxa)
     if len(tset) == 1:
         return taxa[0]

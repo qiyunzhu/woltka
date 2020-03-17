@@ -51,7 +51,7 @@ def workflow(input_path, output_path, outmap_dir=None,
         input_path, input_ext, sample_ids, demux)
 
     # build classification system
-    tree, rankd, named, root = build_hierarchy(
+    tree, rankdic, namedic, root = build_hierarchy(
         names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
         map_rank)
 
@@ -63,12 +63,12 @@ def workflow(input_path, output_path, outmap_dir=None,
 
     # classify query sequences
     data = classify(
-        mapper, files, samples, input_fmt, demux, tree, rankd, named, root,
+        mapper, files, samples, input_fmt, demux, tree, rankdic, namedic, root,
         ranks, rank2dir, above, major and major / 100, ambig, subok, deidx,
         lines)
 
     # write output profiles
-    write_profiles(output_path, data, named, samples)
+    write_profiles(output_path, data, namedic, samples)
     click.echo('Task completed.')
     return data
 
@@ -79,8 +79,8 @@ def classify(mapper:  object,
              input_fmt:  str = None,
              demux:     bool = None,
              tree:      dict = None,
-             rankd:     dict = None,
-             named:     dict = None,
+             rankdic:     dict = None,
+             namedic:     dict = None,
              root:       str = None,
              ranks:      str = None,
              rank2dir:  dict = None,
@@ -113,9 +113,9 @@ def classify(mapper:  object,
 
     tree : dict, optional
         Taxonomic tree.
-    rankd : dict, optional
+    rankdic : dict, optional
         Rank dictionary.
-    named : dict, optional
+    namedic : dict, optional
         Taxon name dictionary.
     root : str, optional
         Root identifier.
@@ -154,9 +154,9 @@ def classify(mapper:  object,
     data = {x: {} for x in ranks}
 
     # assignment parameters
-    kwargs = {'tree':   tree, 'rankd': rankd,  'root':  root, 'above': above,
-              'major': major, 'ambig': ambig, 'subok': subok, 'named': named,
-              'rank2dir': rank2dir}
+    kwargs = {'tree': tree, 'rankdic': rankdic, 'root':  root, 'above': above,
+              'major': major, 'ambig': ambig, 'subok': subok,
+              'namedic': namedic, 'rank2dir': rank2dir}
 
     # parse input maps and generate profile
     for fp in sorted(files):
@@ -336,7 +336,7 @@ def build_hierarchy(names_fp:   str = None,
         Name dictionary.
         Root identifier.
     """
-    tree, rankd, named = {}, {}, {}
+    tree, rankdic, namedic = {}, {}, {}
     is_build = any([
         names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps])
     if is_build:
@@ -345,14 +345,14 @@ def build_hierarchy(names_fp:   str = None,
     # taxonomy names
     if names_fp:
         with readzip(names_fp) as f:
-            named = read_names(f)
+            namedic = read_names(f)
 
     # taxonomy nodes
     if nodes_fp:
         with readzip(nodes_fp) as f:
-            tree_, rankd_ = read_nodes(f)
+            tree_, rankdic_ = read_nodes(f)
         update_dict(tree, tree_)
-        update_dict(rankd, rankd_)
+        update_dict(rankdic, rankdic_)
 
     # Newick-format tree
     if newick_fp:
@@ -362,9 +362,9 @@ def build_hierarchy(names_fp:   str = None,
     # lineage strings file
     if lineage_fp:
         with readzip(lineage_fp) as f:
-            tree_, rankd_ = read_lineage(f)
+            tree_, rankdic_ = read_lineage(f)
         update_dict(tree, tree_)
-        update_dict(rankd, rankd_)
+        update_dict(rankdic, rankdic_)
 
     # rank table file
     if ranktb_fp:
@@ -378,7 +378,7 @@ def build_hierarchy(names_fp:   str = None,
             map_ = read_map(f)
         update_dict(tree, map_)
         if map_rank:
-            update_dict(rankd, {k: rank for k in set(map_.values())})
+            update_dict(rankdic, {k: rank for k in set(map_.values())})
 
     # fill root
     root = fill_root(tree)
@@ -386,7 +386,7 @@ def build_hierarchy(names_fp:   str = None,
     if is_build:
         click.echo(' Done.')
         click.echo(f'Total number of classification units: {len(tree)}.')
-    return tree, rankd, named, root
+    return tree, rankdic, namedic, root
 
 
 def reshape_readmap(rmap:    dict,
@@ -436,8 +436,8 @@ def assign_readmap(rmap:     dict,
                    sample:   str,
                    rank2dir: dict = None,
                    tree:     dict = None,
-                   rankd:    dict = None,
-                   named:    dict = None,
+                   rankdic:    dict = None,
+                   namedic:    dict = None,
                    root:      str = None,
                    above:    bool = False,
                    major:     int = None,
@@ -461,9 +461,9 @@ def assign_readmap(rmap:     dict,
 
     tree : dict, optional
         Hierarchical classification system.
-    rankd : dict, optional
+    rankdic : dict, optional
         Rank dictionary.
-    named : dict
+    namedic : dict
         Taxon name directory.
     root : str, optional
         Root identifier.
@@ -489,7 +489,7 @@ def assign_readmap(rmap:     dict,
         args = (tree, root, subok)
     else:
         assigner = assign_rank
-        args = (rank, tree, rankd, root, above, major, ambig)
+        args = (rank, tree, rankdic, root, above, major, ambig)
 
     # call assigner
     asgmt = {k: assigner(v, *args) for k, v in rmap.items()}
@@ -497,7 +497,7 @@ def assign_readmap(rmap:     dict,
     # write classification map
     if rank2dir is not None:
         with open(join(rank2dir[rank], f'{sample}.tsv'), 'a') as f:
-            write_map(f, asgmt, named)
+            write_map(f, asgmt, namedic)
 
     # count taxa
     counts = count(asgmt)
@@ -519,8 +519,8 @@ def write_profiles(path_:    str,
                    data:    dict,
                    samples: list = None,
                    tree:    dict = None,
-                   rankd:   dict = None,
-                   named:   dict = None):
+                   rankdic:   dict = None,
+                   namedic:   dict = None):
     """Write profile to an output file.
 
     Parameters
@@ -533,9 +533,9 @@ def write_profiles(path_:    str,
         Ordered sample ID list.
     tree : dict, optional
         Taxonomic tree.
-    rankd : dict, optional
+    rankdic : dict, optional
         Rank dictionary.
-    named : dict, optional
+    namedic : dict, optional
         Taxon name dictionary.
     """
     if not path_:
@@ -555,7 +555,7 @@ def write_profiles(path_:    str,
     # write output profile(s)
     for rank, fp in rank2fp.items():
         write_biom(profile_to_biom(
-            data[rank], samples, tree, rankd, named), fp)
+            data[rank], samples, tree, rankdic, namedic), fp)
     click.echo(' Done.')
 
 

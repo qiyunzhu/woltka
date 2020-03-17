@@ -228,12 +228,12 @@ class UtilTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # with taxon names
-        named = {'G1': 'Actinobacteria',
-                 'G2': 'Firmicutes',
-                 'G3': 'Bacteroidetes',
-                 'G4': 'Cyanobacteria'}
+        namedic = {'G1': 'Actinobacteria',
+                   'G2': 'Firmicutes',
+                   'G3': 'Bacteroidetes',
+                   'G4': 'Cyanobacteria'}
         with open(fp, 'w') as f:
-            write_table(f, data, named=named)
+            write_table(f, data, namedic=namedic)
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
         exp = ['#FeatureID\tS1\tS2\tS3',

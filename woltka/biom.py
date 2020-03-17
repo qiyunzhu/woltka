@@ -18,8 +18,8 @@ from .tree import get_lineage
 from .__init__ import __version__
 
 
-def profile_to_biom(profile, samples=None, tree=None, rankd=None, named=None,
-                    add_lineage=False):
+def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
+                    namedic=None, add_lineage=False):
     """Convert a profile into a BIOM table.
 
     Parameters
@@ -30,9 +30,9 @@ def profile_to_biom(profile, samples=None, tree=None, rankd=None, named=None,
         Sample ID list to include.
     tree : dict, optional
         Taxonomic tree.
-    rankd : dict, optional
+    rankdic : dict, optional
         Rank dictionary.
-    named : dict, optional
+    namedic : dict, optional
         Taxon name dictionary.
     add_lineage : bool, optional
         Append lineage (root-to-current hierarchies) to metadata.
@@ -54,9 +54,12 @@ def profile_to_biom(profile, samples=None, tree=None, rankd=None, named=None,
                 row.append(0)
         data.append(row)
         metadata.append({
-            'Name': named[feature] if named and feature in named else None,
-            'Rank': rankd[feature] if rankd and feature in rankd else None,
-            'Lineage': get_lineage(feature, tree) if add_lineage else None})
+            'Name': (
+                namedic[feature] if namedic and feature in namedic else None),
+            'Rank': (
+                rankdic[feature] if rankdic and feature in rankdic else None),
+            'Lineage': (
+                get_lineage(feature, tree) if add_lineage else None)})
     return biom.Table(np.array(data), features, samples, metadata,
                       generated_by=f'woltka-{__version__}')
 

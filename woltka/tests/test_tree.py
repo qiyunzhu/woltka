@@ -296,18 +296,18 @@ class TreeTests(TestCase):
                'seq2	k1	p1	c2	o2',
                'seq3	k1	p2	c3	',
                'seq4	k2		c4	o3']
-        tree_obs, rankd_obs = read_ranktb(tsv)
+        tree_obs, rankdic_obs = read_ranktb(tsv)
         tree_exp = {'seq1': 'o1', 'o1': 'c1', 'c1': 'p1', 'p1': 'k1',
                     'seq2': 'o2', 'o2': 'c2', 'c2': 'p1',
                     'seq3': 'c3', 'c3': 'p2', 'p2': 'k1',
                     'seq4': 'o3', 'o3': 'c4', 'c4': 'k2',
                     'k1': None, 'k2': None}
-        rankd_exp = {'k1': 'k', 'k2': 'k',
-                     'p1': 'p', 'p2': 'p',
-                     'c1': 'c', 'c2': 'c', 'c3': 'c', 'c4': 'c',
-                     'o1': 'o', 'o2': 'o', 'o3': 'o'}
+        rankdic_exp = {'k1': 'k', 'k2': 'k',
+                       'p1': 'p', 'p2': 'p',
+                       'c1': 'c', 'c2': 'c', 'c3': 'c', 'c4': 'c',
+                       'o1': 'o', 'o2': 'o', 'o3': 'o'}
         self.assertDictEqual(tree_obs, tree_exp)
-        self.assertDictEqual(rankd_obs, rankd_exp)
+        self.assertDictEqual(rankdic_obs, rankdic_exp)
 
         # inconsistent tree
         with self.assertRaises(ValueError) as ctx:
@@ -322,13 +322,13 @@ class TreeTests(TestCase):
         # real rank table file
         fp = join(self.datdir, 'taxonomy', 'rank_tids.tsv')
         with open(fp, 'r') as f:
-            tree, rankd = read_ranktb(f)
+            tree, rankdic = read_ranktb(f)
         self.assertEqual(len(tree), 426)
-        self.assertEqual(len(rankd), 319)
+        self.assertEqual(len(rankdic), 319)
         self.assertEqual(tree['562'], '561')
         self.assertEqual(tree['356'], '28211')
-        self.assertEqual(rankd['543'], 'family')
-        self.assertEqual(rankd['1224'], 'phylum')
+        self.assertEqual(rankdic['543'], 'family')
+        self.assertEqual(rankdic['1224'], 'phylum')
         self.assertIsNone(tree['2'])
 
     def test_read_lineage(self):
@@ -368,7 +368,7 @@ class TreeTests(TestCase):
                'G2	k__Bacteria; p__Firmicutes; c__Clostridia',
                'G3	k__Bacteria; p__Tenericutes; c__Mollicutes',
                'G4	k__Viruses; p__; c__Inoviridae')
-        tree_obs, rankd_obs = read_lineage(tsv)
+        tree_obs, rankdic_obs = read_lineage(tsv)
         tree_exp = {'k__Bacteria': None,
                     'k__Viruses': None,
                     'k__Bacteria;p__Firmicutes': 'k__Bacteria',
@@ -386,25 +386,25 @@ class TreeTests(TestCase):
                     'G3': 'k__Bacteria;p__Tenericutes;c__Mollicutes',
                     'G4': 'k__Viruses;p__;c__Inoviridae'}
         self.assertDictEqual(tree_obs, tree_exp)
-        rankd_exp = {'k__Bacteria': 'kingdom',
-                     'k__Viruses': 'kingdom',
-                     'k__Bacteria;p__Firmicutes': 'phylum',
-                     'k__Bacteria;p__Tenericutes': 'phylum',
-                     'k__Viruses;p__': 'phylum',
-                     'k__Bacteria;p__Firmicutes;c__Bacilli': 'class',
-                     'k__Bacteria;p__Firmicutes;c__Clostridia': 'class',
-                     'k__Bacteria;p__Tenericutes;c__Mollicutes': 'class',
-                     'k__Viruses;p__;c__Inoviridae': 'class'}
-        self.assertDictEqual(rankd_obs, rankd_exp)
+        rankdic_exp = {'k__Bacteria': 'kingdom',
+                       'k__Viruses': 'kingdom',
+                       'k__Bacteria;p__Firmicutes': 'phylum',
+                       'k__Bacteria;p__Tenericutes': 'phylum',
+                       'k__Viruses;p__': 'phylum',
+                       'k__Bacteria;p__Firmicutes;c__Bacilli': 'class',
+                       'k__Bacteria;p__Firmicutes;c__Clostridia': 'class',
+                       'k__Bacteria;p__Tenericutes;c__Mollicutes': 'class',
+                       'k__Viruses;p__;c__Inoviridae': 'class'}
+        self.assertDictEqual(rankdic_obs, rankdic_exp)
 
         # real lineage file
         fp = join(self.datdir, 'taxonomy', 'lineage.txt')
         with open(fp, 'r') as f:
-            tree, rankd = read_lineage(f)
+            tree, rankdic = read_lineage(f)
         self.assertEqual(len(tree), 429)
-        self.assertEqual(len(rankd), 322)
+        self.assertEqual(len(rankdic), 322)
         self.assertEqual(tree['k__Bacteria;p__Firmicutes'], 'k__Bacteria')
-        self.assertEqual(rankd['k__Bacteria;p__Firmicutes'], 'phylum')
+        self.assertEqual(rankdic['k__Bacteria;p__Firmicutes'], 'phylum')
         self.assertIsNone(tree['k__Bacteria'])
 
     def test_get_lineage(self):
@@ -516,7 +516,7 @@ class TreeTests(TestCase):
         self.assertEqual(find_rank('632', 'species', *args), '632')
         # Rickettsiales (order) is already above genus
         self.assertIsNone(find_rank('766', 'genus', *args))
-        # no rank is named "tribe"
+        # no rank is namedic "tribe"
         self.assertIsNone(find_rank('317', 'tribe', *args))
 
     def test_find_lca(self):

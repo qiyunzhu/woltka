@@ -63,8 +63,8 @@ class ClassifyTests(TestCase):
     def test_assign_rank(self):
         tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
                 'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
-        rankd = {'T1': 'general', 'T2': 'general', 'T0': 'marshal'}
-        kwargs = {'tree': tree, 'rankd': rankd, 'root': 'T0'}
+        rankdic = {'T1': 'general', 'T2': 'general', 'T0': 'marshal'}
+        kwargs = {'tree': tree, 'rankdic': rankdic, 'root': 'T0'}
 
         # fixed-rank assignment
         obs = assign_rank({'G1', 'G2', 'G3'}, 'marshal', **kwargs)
@@ -93,7 +93,7 @@ class ClassifyTests(TestCase):
 
         # assign above rank
         obs = assign_rank({'G1', 'G2', 'G3'}, 'general', tree=tree,
-                          rankd=rankd, root=None, above=True)
+                          rankdic=rankdic, root=None, above=True)
         self.assertEqual(obs, 'T0')
 
     def test_count(self):
