@@ -12,19 +12,32 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 
 - [Installation](#installation)
 - [Example usage](#example-usage)
-- [gOTU analysis](#gotu-analysis)
-- [Input files](#input-files)
-- [Tree-based classification](#tree-based-classification)
-- [Combined taxonomic & functional analyses](#combined-taxonomic--functional-analyses)
-- For users of [QIIME 2](woltka/q2), [Qiita], [SHOGUN]
-
+- Details
+  - [Input files](doc/input)
+  - [Output files](doc/output)
+  - [Classification system](doc/classify)
+  - [Ordinal matching](doc/ordinal)
+  - [Stratification](doc/stratify)
+- Tutorials
+  - [gOTU analysis](doc/gotu)
+  - [Tree-based classification](#tree-based-classification)
+  - [Combined taxonomic & functional analyses](#combined-taxonomic--functional-analyses)
+- For users of
+  - [QIIME 2](woltka/q2), Qiita, SHOGUN
+  - Bowtie2, BWA, Minimap2
+  - BLAST, DIAMOND, VSEARCH
+- References
+  - [Command-line interface](doc/cli)
+  - [Parameter auto-decision](doc/auto)
+  - [Developer's guidlines](doc/dev)
+- [Notes](#notes)
 
 ## Installation
 
 Requirement: Python 3.6 or above.
 
 ```bash
-pip install git+https://github.com/qiyunzhu/woltka.git@dev
+pip install git+https://github.com/qiyunzhu/woltka.git
 ```
 
 After installation, launch the program by executing:
@@ -33,31 +46,39 @@ After installation, launch the program by executing:
 woltka
 ```
 
-
 ## Example usage
 
-Woltka ships with several small test datasets under `woltka/tests/data`. One needs to manually download them from this GitHub repo.
+Woltka provides several small test datasets under [woltka/tests/data](woltka/tests/data). To access them, [download](https://github.com/qiyunzhu/woltka/archive/master.zip) this GitHub repo, unzip, and navigate to this directory.
 
 One can execute the following commands to make sure that Woltka functions correctly, and to get an impression of the basic usage of Woltka.
 
-gOTU table generation:
+1\. gOTU table generation ([details](doc/gotu)):
 
 ```bash
 woltka gotu -i align/bowtie2 -o table.biom
 ```
 
-Taxonomic profiling at the ranks of phylum, genus and species as defined in NCBI taxdump:
+The input path, [`align/bowtie2`](woltka/tests/data/align/bowtie2), is a directory containing five Bowtie2 alignment files (SAM format, xzipped), each representing the mapping of shotgun metagenomic sequences per sample against a reference genome database.
+
+The output file, `table.biom`, is a feature table in BIOM format, which can then be analyzed using various bioformatics programs such as [QIIME 2](https://qiime2.org/).
+
+2\. Taxonomic profiling at the ranks of phylum, genus and species ([details](doc/classify)):
 
 ```bash
 woltka classify \
   -i align/bowtie2 \
+  --map taxonomy/g2tid.txt \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
   --rank phylum,genus,species \
   -o output_dir
 ```
 
-Functional profiling by UniRef entries then by GO terms (molecular process):
+The mapping file (`g2tid.txt`) translates genome IDs to taxonomic IDs, which then allows Woltka to classify query sequences based on the NCBI taxonomy (`nodes.dmp` and `names.dmp`).
+
+The output directory (`output_dir`) will contain three feature tables: `phylum.biom`, `genus.biom` and `species.biom`, each representing a taxonomic profile at one of the three ranks.
+
+3\. Functional profiling by UniRef entries then by GO terms (molecular process):
 
 ```bash
 woltka classify \
@@ -70,243 +91,24 @@ woltka classify \
   -o output_dir
 ```
 
+Here, the input files are still read-to-genome alignments, instead of read-to-gene ones, but Woltka matches reads to genes based on their coordinates on the genomes (as indicated by the file `coords.txt`). This ensures consistency between taxonomic and functional classifications.
 
-## gOTU analysis
+Subsequently, Woltka is able to assign query sequences to functional units, as defined in mapping files (`uniref.map` and `go/process.tsv`). As you can see, compressed files are supported and auto-detected.
 
-The Woltka interface provides two commands:
+Similarly, the output files are two functional profiles: `uniref.biom` and `process.biom`.
 
-- **gotu**: gOTU table generation.
-- **classify**: Complete classification workflow with all parameters.
+## Notes
 
-The command specialized for gOTU analysis, **gotu**, is a simplified wrapper of the full-power command, **classify**, which has more parameters to allow for extended features and controls. We will start with this simple analysis before diving into the complex and flexible usages.
+### Citation
 
-### Background
+Woltka is currently under development. Please directly cite this GitHub repository:
 
-The notion of “gOTU” (pronounced as "go-to") is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. It is in constrast to conventional practices, in which taxonomic units such as genera or species were used. Therefore,  gOTU is analogous to sOTU in 16S rRNA studies. The advantage of using gOTU includes 1) highest-possible resolution, 2) independent from taxonomy which is coarse and error-prone as a classification system. 3) allowing for phylogeny-based analysis such as Faith’s PD and UniFrac. The last part is enhanced by the “web of life” reference phylogeny.
+- https://github.com/qiyunzhu/woltka
 
-### gOTU table generation
+### Grants
 
-To generate a gOTU table, one needs a multiplexed alignment file, or a directory of per-sample alignment files. These files can be generated by aligning sequencing data against a reference genome database. We recommend using [**SHOGUN**](https://github.com/knights-lab/SHOGUN) with the "Web of Life" database (**WoL**, available for download at: https://biocore.github.io/wol/). For example:
+The development of Woltka is supported by: (to be added).
 
-```bash
-shogun align -a bowtie2 -d WoLr1 -i input.fasta -o .
-```
+### Contact
 
-Then one can run Woltka to convert the alignment file(s) into a gOTU table:
-
-```bash
-woltka gotu -i alignment.bowtie2.sam -o table.biom
-```
-
-The output file `table.biom` is a BIOM table with rows as genome IDs (gOTUs), columns as sample IDs, and cell values as counts of gOTUs in samples.
-
-If necessary, you may convert a BIOM table into tab-delimited file:
-
-```bash
-biom convert --to-tsv -i table.biom -o table.tsv
-```
-
-Note: Both SHOGUN and WoL are available at the [**Qiita**](https://qiita.ucsd.edu/) server. If you are a Qiita user, the alignment file can be automatically generated and downloaded from the Qiita interface.
-
-### gOTU analysis using QIIME 2
-
-The generated BIOM table can be imported into a QIIME artifact:
-
-```bash
-qiime tools import --type FeatureTable[Frequency] --input-path table.biom --output-path table.qza
-```
-
-These intermediate steps are automated if you use the [QIIME 2 plugin of Woltka](woltka/q2).
-
-One can then investigate the microbiome by applying classical QIIME analyses on the gOTU table. For example, with the [WoL reference phylogeny](https://biocore.github.io/wol/) (direct download link: [tree.qza](https://biocore.github.io/wol/data/trees/tree.qza)), one can do:
-
-```bash
-qiime diversity core-metrics-phylogenetic \
-  --i-phylogeny tree.qza \
-  --i-table table.qza \
-  --p-sampling-depth 1000 \
-  --m-metadata-file metadata.tsv \
-  --output-dir .
-```
-
-### Alignment ambiguity
-
-It is quite common that one query sequence can be aligned to multiple reference genomes. In such cases, Woltka by default counts each gOTU as 1 / _k_, where _k_ is the total number of matching genomes.
-
-Alternatively, one may choose to discard all non-unique matches, by adding a flag:
-
-```bash
-woltka gotu --no-ambig ...
-```
-
-### Custom alignment
-
-Technically, one can use any sequence aligners and reference genome databases to generate alignment files which can then be converted into a gOTU table. We cannot validate the goodness of outcome, but understand that you may have this intention considering the consistency with existing parts of your analytical pipeline. For examples:
-
-```bash
-bwa mem refseq.fna input.R1.fq input.R2.fq > output.sam
-```
-
-```bash
-blastn -db refseq_genomes -query input.fa -max_target_seqs 1 -outfmt 6 -out output.txt
-```
-
-However, most of these protocols generate mappings of reads to nucleotides (e.g., chromosomes or scaffolds), rather than to genomes. In order to produce gOTUs, one needs to supply Woltka with a nucleotide-to-genome mapping file (`nucl2g.txt`, example provided under [`taxonomy/nucl`](woltka/tests/data/taxonomy/nucl)):
-
-```bash
-woltka gotu --map nucl2g.txt ...
-```
-
-
-## Input files
-
-The input files for Woltka are sequence **alignment** files. The term "alignment" here describes the operation of aligning short sequencing reads against long reference sequences. The basic information an alignment file provides is the **mapping** between queries and subjects. In addition, the position and quality of alignments are available in some formats, which are useful in some applications.
-
-### File formats
-
-Woltka supports the following alignment formats (specified by parameter `--format` or `-f`):
-
-- `map`: Simple mapping of query \<tab\> subject.
-- `sam`: SAM format. Supported by multiple tools such as Bowtie2 and BWA.
-- `b6o`: BLAST tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by multiple tools such as BLAST, DIAMOND, VSEARCH, BURST, etc.
-
-If not specified, Woltka will automatically infer the format of input alignment files.
-
-Woltka supports and automatically detects common file compression formats including `gzip`, `bzip2` and `xz`.
-
-### Filename patterns
-
-In the default mode, Woltka treats every file under the directory specified by the `--input` or `-i` parameter as an alignment file for one sample. The sample ID is automatically extracted from the filename, with filename extension stripped. Compression file extensions are automatically recognized. For example, the sample IDs for `S01.sam` and `S02.m8.gz` are `S01` and `S02`, respectively.
-
-One may restrict this behavior to avoid confusions (e.g., there are unwanted files) by the following two parameters:
-
-- `--filext` or `-e`: A suffix to be stripped from filenames, and the remaining part is considered a sample ID.
-
-  For example, if valid alignment filenames have the pattern of `ID_L001.aln.bz2`, one may specify `-e _L001.aln.bz2`, so that only `ID` is retained, and filenames which do not have this suffix (e.g., `ID.bt2.log` or`readme.txt`) are ignored.
-
-- `--sample-ids` or `-s`: A file containing valid sample IDs (one ID per line) to include in the current analysis. This list also specifies the order of sample IDs in the output profile.
-
-  Only the first column before \<tab\> is considered. Lines starting with `#` are omitted. Therefore, a metadata table may also serve as a valid sample ID list.
-
-### Demultiplexing
-
-Woltka supports convenient demultiplexing. If the input path (specified by `--input` or `-i`) points to a file instead of a directory, Woltka will treat it as a multiplexed alignment file.
-
-Specifically, the program divides sample ID and read ID by the first underscore in each query identifier in the alignment file (i.e., a pattern of `sampleID_readID`).
-
-One may manually switch on or off the demultiplexing function by adding flag `--demux` or `--no-demux` to the command. This is useful when there are several multiplexed alignment files (e.g., each from one sequencing lane) in one **directory**, or the only input alignment **file** provided is not multiplexed but just for a single sample.
-
-Example of a complete command:
-
-```bash
-woltka classify \
-  --input blast_output/ \
-  --format b6o \
-  --filext .blast6out.gz \
-  --sample-ids ids.txt \
-  --no-demux \
-  --output profile.biom \
-  ...
-```
-
-
-## Tree-based classification
-
-Woltka features a highly flexible hierarchical classification system. It is represented by a **tree** structure instead of a fixed number of levels (e.g., the eight standard taxonomic ranks). In another word, it is **rank-free**.
-
-Wolkta supports various formats of classification systems, specifically:
-
-1. `--nodes`: NCBI-style `nodes.dmp` or a simple map, in which each taxon points to its parent taxon (2nd column). Rank (3rd column) is optional.
-
-2. `--newick`: Newick-format tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
-
-3. `--ranktb`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
-
-4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
-
-   Can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
-
-   Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
-
-5. `--map` or `-m`: Simple map of lower taxon to higher taxon. Filename stem represents rank name.
-
-   Can supply multiple maps (by typing multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
-
-If no classification file is provided, Woltka will automatically build a classification system from the alignment files, in which subject identifiers will be parsed as lineage strings.
-
-Subjects themselves are part of the classification system. A map of subject to taxon (e.g., a genome ID to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
-
-Classification files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies --- unless they conflict --- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
-
-```bash
-woltka classify \
-  --map nucl2g.txt \
-  --map g2taxid.txt \
-  --nodes taxdump/nodes.dmp \
-  --names taxdump/names.dmp \
-  ...
-```
-
-In this command, three layers of hierarchies are provided: 1) nucleotide ID to genome ID (`nucl2g.txt`), 2) genome ID to taxonomy ID (`g2taxid.txt`), 3) NCBI taxonomy tree (`nodes.dmp`).
-
-Again, compressed files are supported and automatically recognized. The following command works:
-
-```bash
-woltka classify \
-  --lineage gg_13_5_taxonomy.txt.gz
-  ...
-```
-
-Furthermore, one can supply Woltka with a taxon name dictionary, and the output profile will show taxon names instead of taxon IDs:
-
-* `--names`: NCBI-style `names.dmp` or a simple taxon-to-name map. Example:
-
-```bash
-woltka classify \
-  --nodes taxdump/nodes.dmp \
-  --names taxdump/names.dmp \
-  ...
-```
-
-## Combined taxonomic & functional analyses
-
-Woltka combines the two fundamental analyses in metagenomics: taxonomic profiling (mapping reads to genomes) and functional profiling (mapping reads to functional genes) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
-
-This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
-
-The coordinates of read-to-genome alignments are provided in the alignment files. One needs to provide Woltka with a table of gene coordinates. The format is like:
-
-WoL reannotations (available for [download](https://biocore.github.io/wol/)):
-
-```
->G000006745
-1       806     372
-2       2177    816
-3       3896    2271
-4       4446    4123
-5       4629    4492
-```
-
-Native NCBI annotations and accessions:
-
-```
-## GCF_000005825.2
-# NC_013791.2
-WP_012957018.1  816 2168
-WP_012957019.1  2348    3490
-WP_012957020.1  3744    3959
-WP_012957021.1  3971    5086
-...
-```
-
-Again, compressed files are supported.
-
-With the coordinates file, one can streamline the read-to-gene matching step into a Woltka protocol. Here is an example for functional profiling:
-
-```bash
-woltka classify \
-  --coords coords.txt \
-  --map gene2function.txt \
-  --map function2pathway.txt \
-  ...
-```
+Please forward any questions to the project leader: Dr. Qiyun Zhu (qiz173@ucsd.edu) or the senior PI: Dr. Rob Knight (robknight@ucsd.edu).
