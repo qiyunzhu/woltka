@@ -23,7 +23,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Tree-based classification](#tree-based-classification)
   - [Combined taxonomic & functional analyses](#combined-taxonomic--functional-analyses)
 - For users of
-  - [QIIME 2](woltka/q2), Qiita, SHOGUN
+  - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), SHOGUN
   - Bowtie2, BWA, Minimap2
   - BLAST, DIAMOND, VSEARCH
 - References
