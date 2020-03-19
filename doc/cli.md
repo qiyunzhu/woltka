@@ -17,18 +17,18 @@ Option | Description
 
 ### Input files
 
-* See [input files](input) for details.
+* See [input files](input.md) for details.
 
 Option | Description
 --- | ---
-`--format`, `-f` | Format of read alignments. Options: <ul><li>`b6o`: BLAST tabular format.</li><li>`sam`: SAM format.</li><li>`map`: Simple map of query \<tab\> subject</li></ul>If not specified, program will automatically infer from file content.
+`--format`, `-f` | Format of read alignments. Options: <ul><li>`b6o`: [BLAST tabular format](https://www.ncbi.nlm.nih.gov/books/NBK279684/).</li><li>`sam`: [SAM format](https://samtools.github.io/hts-specs/SAMv1.pdf).</li><li>`map`: Simple map of query \<tab\> subject</li></ul>If not specified, program will automatically infer from file content.
 `--filext`, `-e` | Input filename extension following sample ID.
 `--sample-ids`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
 
-### classification
+### Classification
 
-* See [classification system](classify) for details.
+* See [classification system](classify.md) for details.
 
 Option | Description
 --- | ---
@@ -39,14 +39,14 @@ Option | Description
 `--subok/--no-subok` | Can report subject IDs in classification result. Default: True.
 `--deidx/--no-deidx` | Strip "underscore index" suffixes from subject IDs. Default: False.
 
-### gene information
+### Gene information
 
 Option | Description
 --- | ---
 `--coords`, `-c` | Table of gene coordinates of  on reference genomes.
 `--overlap`, | Read/gene overlapping percentage threshold. Default: 80.
 
-### tree information
+### Tree information
 
 Option | Description
 --- | ---
@@ -58,5 +58,5 @@ Option | Description
 `--map`, `-m` | 'Map(s) of subjects or lower classification units to higher ones. Can accept multiple maps.
 `--map-is-rank` | Map filename stem is rank name.
 
-### performance
+### Performance
 `--lines` | Number of lines to read from alignment file per chunk. Default: 1000000.

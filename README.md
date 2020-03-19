@@ -13,13 +13,13 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - [Installation](#installation)
 - [Example usage](#example-usage)
 - Details
-  - [Input files](doc/input)
-  - [Output files](doc/output)
-  - [Classification system](doc/classify)
-  - [Ordinal matching](doc/ordinal)
-  - [Stratification](doc/stratify)
+  - [Input files](doc/input.md)
+  - [Output files](doc/output.md)
+  - [Classification system](doc/classify.md)
+  - [Ordinal matching](doc/ordinal.md)
+  - [Stratification](doc/stratify.md)
 - Tutorials
-  - [gOTU analysis](doc/gotu)
+  - [gOTU analysis](doc/gotu.md)
   - [Tree-based classification](#tree-based-classification)
   - [Combined taxonomic & functional analyses](#combined-taxonomic--functional-analyses)
 - For users of
@@ -27,9 +27,9 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - Bowtie2, BWA, Minimap2
   - BLAST, DIAMOND, VSEARCH
 - References
-  - [Command-line interface](doc/cli)
-  - [Parameter auto-decision](doc/auto)
-  - [Developer's guidlines](doc/dev)
+  - [Command-line interface](doc/cli.md)
+  - [Parameter auto-decision](doc/auto.md)
+  - [Developer's guidlines](doc/dev.md)
 - [Notes](#notes)
 
 ## Installation

@@ -131,6 +131,11 @@ class ClassifyTests(TestCase):
         self.assertDictEqual(dic, {
             'R1': {'G1', 'G2', 'G3'},
             'R2': {'G1', 'G1.3', 'G4', 'G4'}})
+        dic = {'R1': {'G1.1', 'G1.2', 'G2'},
+               'R2': {'G1.1', 'G1.3', 'G3_x'}}
+        strip_index(dic, '.')
+        self.assertDictEqual(dic, {
+            'R1': {'G1', 'G2'}, 'R2': {'G1', 'G3_x'}})
 
     def test_demultiplex(self):
         # simple case

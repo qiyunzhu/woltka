@@ -248,7 +248,7 @@ def read_ids(fh):
     res = []
     for line in fh:
         if not line.startswith('#'):
-            id_ = line.strip().split('\t', 1)[0]
+            id_ = line.strip().partition('\t')[0]
             if id_:
                 res.append(id_)
     if not res:

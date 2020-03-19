@@ -155,16 +155,18 @@ def majority(taxa, th=0.8):
         return taxon if n >= len(taxa) * th else None
 
 
-def strip_index(readmap):
+def strip_index(readmap, sep='_'):
     """Remove "underscore index" suffixes from subject IDs.
 
     Parameters
     ----------
     readmap : dict
         Read map to manipulate.
+    sep : str, optional
+        Separator between subject ID and index.
     """
     for query, subjects in readmap.items():
-        readmap[query] = set(x.rsplit('_', 1)[0] for x in subjects)
+        readmap[query] = set(x.rsplit(sep)[0] for x in subjects)
 
 
 def demultiplex(dic, samples=None, sep='_'):
@@ -188,10 +190,8 @@ def demultiplex(dic, samples=None, sep='_'):
         samset = set(samples)
     res = {}
     for key, value in dic.items():
-        try:
-            sample, read = key.split(sep, 1)
-        except ValueError:
-            sample, read = '', key
+        left, _, right = key.partition(sep)
+        sample, read = right and left, right or left
         if not samples or sample in samset:
             res.setdefault(sample, {})[read] = value
     return res
