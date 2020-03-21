@@ -13,9 +13,9 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.util import readzip
-from woltka.align import parse_b6o_line, parse_sam_line
-from woltka.ordinal import (
+from .file import readzip
+from .align import parse_b6o_line, parse_sam_line
+from .ordinal import (
     Ordinal, match_read_gene, read_gene_coords, whether_prefix)
 
 

@@ -20,9 +20,9 @@ from os import makedirs
 from os.path import join, basename, isfile, isdir
 import click
 
-from .util import (
-    readzip, path2stem, update_dict, allkeys, read_ids, add_dict, intize,
-    delnone, id2file_from_dir, id2file_from_map, write_map)
+from .util import update_dict, allkeys, read_ids, add_dict, intize, delnone
+from .file import (
+    readzip, path2stem, id2file_from_dir, id2file_from_map, write_readmap)
 from .align import Plain, parse_align_file
 from .classify import (
     assign_none, assign_free, assign_rank, count, strip_index, demultiplex)
@@ -68,7 +68,7 @@ def workflow(input_path, output_path, outmap_dir=None,
         lines)
 
     # write output profiles
-    write_profiles(output_path, data, namedic, samples)
+    write_profiles(data, output_path, namedic, samples)
     click.echo('Task completed.')
     return data
 
@@ -515,8 +515,8 @@ def assign_readmap(rmap:     dict,
 
     # write classification map
     if rank2dir is not None:
-        with open(join(rank2dir[rank], f'{sample}.tsv'), 'a') as f:
-            write_map(f, asgmt, namedic)
+        with open(join(rank2dir[rank], f'{sample}.txt'), 'a') as f:
+            write_readmap(f, asgmt, namedic)
 
     # count taxa
     counts = count(asgmt)
@@ -534,8 +534,8 @@ def assign_readmap(rmap:     dict,
         data[rank][sample] = counts
 
 
-def write_profiles(path_:    str,
-                   data:    dict,
+def write_profiles(data:    dict,
+                   path_:    str,
                    samples: list = None,
                    tree:    dict = None,
                    rankdic: dict = None,
@@ -559,8 +559,12 @@ def write_profiles(path_:    str,
     """
     if not path_:
         return
+
+    # determine sample order
     if not samples:
         samples = sorted(allkeys(data))
+
+    # determine ranks
     ranks = sorted(data.keys())
 
     # determine output filenames

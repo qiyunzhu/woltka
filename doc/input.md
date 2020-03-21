@@ -18,7 +18,7 @@ Parameter `--input` or `-i` is to let Woltka know where to find the input alignm
 
 2\. A single **alignment file**. Woltka considers it as a _multiplexed_ alignment file. Sample IDs will be extracted from sequence identifiers (see [demultiplexing](#demultiplexing) below).
 
-3\. A **mapping file** of sample ID \<tab\> alignment file path. The paths must point to existing files. They can either be full paths, or simple filenames under the same directory as the mapping file. For example, one can place a `map.txt` of the following content to where alignment files are located.
+3\. A **mapping file** of sample ID \<tab\> alignment file path. The paths must point to existing files. They can either be full paths, or simply filenames under the same directory as the mapping file. For example, one can place a `map.txt` of the following content to where alignment files are located.
 
 ```
 S01 S01.sam
