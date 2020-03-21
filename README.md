@@ -58,7 +58,7 @@ One can execute the following commands to make sure that Woltka functions correc
 woltka gotu -i align/bowtie2 -o table.biom
 ```
 
-The input path, [`align/bowtie2`](woltka/tests/data/align/bowtie2), is a directory containing five Bowtie2 alignment files (SAM format, xzipped), each representing the mapping of shotgun metagenomic sequences per sample against a reference genome database.
+The input path, [`align/bowtie2`](woltka/tests/data/align/bowtie2), is a directory containing five Bowtie2 alignment files (`S01.sam.xz`, `S02.sam.xz`,... `S05.sam.xz`) (SAM format, xzipped), each representing the mapping of shotgun metagenomic sequences per sample against a reference genome database.
 
 The output file, `table.biom`, is a feature table in BIOM format, which can then be analyzed using various bioformatics programs such as [QIIME 2](https://qiime2.org/).
 

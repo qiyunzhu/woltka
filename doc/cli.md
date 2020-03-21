@@ -21,9 +21,9 @@ Option | Description
 
 Option | Description
 --- | ---
-`--format`, `-f` | Format of read alignments. Options: <ul><li>`b6o`: [BLAST tabular format](https://www.ncbi.nlm.nih.gov/books/NBK279684/).</li><li>`sam`: [SAM format](https://samtools.github.io/hts-specs/SAMv1.pdf).</li><li>`map`: Simple map of query \<tab\> subject</li></ul>If not specified, program will automatically infer from file content.
+`--format`, `-f` | Format of read alignments. Options: <ul><li>`b6o`: [BLAST tabular format](https://www.ncbi.nlm.nih.gov/books/NBK279684/).</li><li>`sam`: [SAM format](https://samtools.github.io/hts-specs/SAMv1.pdf).</li><li>`map`: A simple map of query \<tab\> subject</li></ul>If not specified, program will automatically infer from file content.
 `--filext`, `-e` | Input filename extension following sample ID.
-`--sample-ids`, `-s` | List of sample IDs to be included.
+`--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
 
 ### Classification

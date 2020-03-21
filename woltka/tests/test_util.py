@@ -17,7 +17,8 @@ import gzip
 
 from woltka.util import (
     readzip, file2stem, path2stem, update_dict, intize, delnone, allkeys,
-    count_list, last_value, read_ids, id2file_map, write_table, prep_table)
+    count_list, last_value, read_ids, id2file_from_dir, id2file_from_map,
+    write_table, prep_table)
 
 
 class UtilTests(TestCase):
@@ -145,13 +146,13 @@ class UtilTests(TestCase):
             read_ids(['S01', 'S02', 'S01', 'S03'])
         self.assertEqual(str(ctx.exception), 'Duplicate IDs found.')
 
-    def test_id2file_map(self):
+    def test_id2file_from_dir(self):
         ids = ['a', 'b', 'c']
 
         # regular Fasta files
         for id_ in ids:
             open(join(self.tmpdir, '{}.faa'.format(id_)), 'a').close()
-        obs = id2file_map(self.tmpdir)
+        obs = id2file_from_dir(self.tmpdir)
         exp = {x: '{}.faa'.format(x) for x in ids}
         self.assertDictEqual(obs, exp)
         for id_ in ids:
@@ -160,7 +161,7 @@ class UtilTests(TestCase):
         # gzipped Fasta files
         for id_ in ids:
             open(join(self.tmpdir, '{}.faa.gz'.format(id_)), 'a').close()
-        obs = id2file_map(self.tmpdir)
+        obs = id2file_from_dir(self.tmpdir)
         exp = {x: '{}.faa.gz'.format(x) for x in ids}
         self.assertDictEqual(obs, exp)
         for id_ in ids:
@@ -171,14 +172,14 @@ class UtilTests(TestCase):
             open(join(self.tmpdir, '{}.faa'.format(id_)), 'a').close()
         open(join(self.tmpdir, 'readme.txt'), 'a').close()
         open(join(self.tmpdir, 'taxdump'), 'a').close()
-        obs = id2file_map(self.tmpdir, ext='.faa')
+        obs = id2file_from_dir(self.tmpdir, ext='.faa')
         exp = {x: '{}.faa'.format(x) for x in ids}
         self.assertDictEqual(obs, exp)
         remove(join(self.tmpdir, 'readme.txt'))
         remove(join(self.tmpdir, 'taxdump'))
 
         # user-defined Id list
-        obs = id2file_map(self.tmpdir, ids=['a', 'b'])
+        obs = id2file_from_dir(self.tmpdir, ids=['a', 'b'])
         exp = {x: '{}.faa'.format(x) for x in ['a', 'b']}
         self.assertDictEqual(obs, exp)
         for id_ in ids:
@@ -188,26 +189,93 @@ class UtilTests(TestCase):
         open(join(self.tmpdir, 'x.faa'), 'a').close()
         open(join(self.tmpdir, 'x.tsv'), 'a').close()
         with self.assertRaises(ValueError) as ctx:
-            id2file_map(self.tmpdir)
+            id2file_from_dir(self.tmpdir)
         msg = 'Ambiguous files for ID: "x".'
         self.assertEqual(str(ctx.exception), msg)
         remove(join(self.tmpdir, 'x.faa'))
         remove(join(self.tmpdir, 'x.tsv'))
 
-        # read files
+        # real files
         dir_ = join(self.datdir, 'align', 'bowtie2')
 
-        obs = id2file_map(dir_)
+        obs = id2file_from_dir(dir_)
         exp = {f'S0{i}': f'S0{i}.sam.xz' for i in range(1, 6)}
         self.assertDictEqual(obs, exp)
 
-        obs = id2file_map(dir_, ext='.xz')
+        obs = id2file_from_dir(dir_, ext='.xz')
         exp = {f'S0{i}.sam': f'S0{i}.sam.xz' for i in range(1, 6)}
         self.assertDictEqual(obs, exp)
 
-        obs = id2file_map(dir_, ids=['S01', 'S02', 'S03'])
+        obs = id2file_from_dir(dir_, ids=['S01', 'S02', 'S03'])
         exp = {f'S0{i}': f'S0{i}.sam.xz' for i in range(1, 4)}
         self.assertDictEqual(obs, exp)
+
+    def test_id2file_from_map(self):
+        # mock alignment files
+        ids = ['a', 'b', 'c']
+        fps = [join(self.tmpdir, '{}.fq'.format(x)) for x in ids]
+        for fp in fps:
+            open(fp, 'a').close()
+
+        # mapping file with absolute paths
+        mapfile = join(self.tmpdir, 'map.tmp')
+        with open(mapfile, 'w') as f:
+            for id_, fp in zip(ids, fps):
+                f.write('{}\t{}\n'.format(id_, fp))
+        obs = id2file_from_map(mapfile)
+        exp = [pair for pair in zip(ids, fps)]
+        self.assertListEqual(obs, exp)
+
+        # relative paths to same directory
+        with open(mapfile, 'w') as f:
+            f.write('# This is a mapping file!\n\n')
+            for id_ in ids:
+                f.write('{}\t{}.fq\n'.format(id_, id_))
+        obs = id2file_from_map(mapfile)
+        self.assertListEqual(obs, exp)
+
+        # not a mapping file
+        with open(mapfile, 'w') as f:
+            f.write('This is NOT a mapping file!\n\n')
+        obs = id2file_from_map(mapfile)
+        self.assertIsNone(obs)
+
+        # incorrect filepaths starting from 1st line
+        with open(mapfile, 'w') as f:
+            for id_ in ids:
+                f.write('{}\t{}.pdf\n'.format(id_, id_))
+        obs = id2file_from_map(mapfile)
+        self.assertIsNone(obs)
+
+        # incorrect filepath(s) in middle of file
+        with open(mapfile, 'w') as f:
+            f.write('a\ta.fq\n')
+            f.write('b\tb.fq\n')
+            f.write('d\td.fq\n')
+        with self.assertRaises(ValueError) as ctx:
+            id2file_from_map(mapfile)
+        self.assertEqual(str(ctx.exception), (
+            'Alignment file "d.fq" does not exist.'))
+
+        # empty mapping file
+        open(mapfile, 'w').close()
+        obs = id2file_from_map(mapfile)
+        self.assertIsNone(obs)
+        for fp in fps:
+            remove(fp)
+
+        # real files
+        dir_ = join(self.datdir, 'align', 'bowtie2')
+        exp = []
+        with open(mapfile, 'w') as f:
+            for i in range(1, 6):
+                id_ = f'S0{i}'
+                fp = join(dir_, f'{id_}.sam.xz')
+                f.write(f'{id_}\t{fp}\n')
+                exp.append((id_, fp))
+        obs = id2file_from_map(mapfile)
+        self.assertListEqual(obs, exp)
+        remove(mapfile)
 
     def test_write_write_table(self):
         # default mode

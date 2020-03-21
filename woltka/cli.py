@@ -84,7 +84,7 @@ def gotu(ctx, **kwargs):
     '--filext', '-e', 'input_ext',
     help='Input filename extension following sample ID.')
 @click.option(
-    '--sample-ids', '-s', type=click.File('r'),
+    '--samples', '-s', type=click.STRING,
     help='List of sample IDs to be included.')
 @click.option(
     '--demux/--no-demux', default=None,

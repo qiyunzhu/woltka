@@ -22,7 +22,7 @@ import click
 
 from .util import (
     readzip, path2stem, update_dict, allkeys, read_ids, add_dict, intize,
-    delnone, id2file_map, write_map)
+    delnone, id2file_from_dir, id2file_from_map, write_map)
 from .align import Plain, parse_align_file
 from .classify import (
     assign_none, assign_free, assign_rank, count, strip_index, demultiplex)
@@ -34,7 +34,7 @@ from .biom import profile_to_biom, write_biom
 
 
 def workflow(input_path, output_path, outmap_dir=None,
-             input_fmt=None, input_ext=None, sample_ids=None, demux=None,
+             input_fmt=None, input_ext=None, samples=None, demux=None,
              ranks=None, above=False, major=None, ambig=True, subok=True,
              deidx=False, coords_fp=None, overlap=80, names_fp=None,
              nodes_fp=None, newick_fp=None, lineage_fp=None, ranktb_fp=None,
@@ -48,7 +48,7 @@ def workflow(input_path, output_path, outmap_dir=None,
     """
     # parse input samples
     samples, files, demux = parse_samples(
-        input_path, input_ext, sample_ids, demux)
+        input_path, input_ext, samples, demux)
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
@@ -183,10 +183,10 @@ def classify(mapper:  object,
     return data
 
 
-def parse_samples(path_:  str,
-                  ext:    str = None,
-                  ids:   list = None,
-                  demux: bool = None) -> (list, list or dict, bool):
+def parse_samples(path_:   str,
+                  ext:     str = None,
+                  samples: str = None,
+                  demux:  bool = None) -> (list, list or dict, bool):
     """Determine sample IDs, aligment files, and multiplex status.
 
     Parameters
@@ -195,8 +195,8 @@ def parse_samples(path_:  str,
         Path to a file or a directory.
     ext : str, optional
         Filename extension.
-    ids : iterable of str, optional
-        List of sample IDs.
+    samples : str, optional
+        Comma-separated list of sample IDs, or path to sample ID list file.
     demux : bool, optional
         Whether perform demultiplexing.
 
@@ -210,38 +210,20 @@ def parse_samples(path_:  str,
         Whether perform demultiplexing.
     """
     # read sample Ids
-    if ids:
-        samples = read_ids(ids)
+    if samples:
+        samples = read_ids(samples) if isfile(samples) else samples.split(',')
         click.echo(f'Number of samples to include: {len(samples)}.')
-    else:
-        samples = None
 
     errmsg = 'Provided sample IDs and actual files are inconsistent.'
 
-    # path is an alignment file
-    if isfile(path_):
-
-        # turn on demultiplexing if not decided
-        demux = demux is not False
-        if demux:
-            files = [path_]
-
-        # validate with given sample Ids
-        else:
-            sample = path2stem(path_, ext)
-            if samples and samples != [sample]:
-                raise ValueError(errmsg)
-            files = {path_: sample}
-            samples = [sample]
-
-    # path is a directory of alignment files
-    elif isdir(path_):
+    # path is a directory
+    if isdir(path_):
 
         # turn off demultiplexing if not decided
         demux = demux or False
 
         # get a map of plausible sample Ids to files
-        map_ = id2file_map(path_, ext, not demux and samples)
+        map_ = id2file_from_dir(path_, ext, not demux and samples)
         if len(map_) == 0:
             raise ValueError('No valid file found in directory.')
         if demux:
@@ -254,6 +236,45 @@ def parse_samples(path_:  str,
             elif len(map_) < len(samples):
                 raise ValueError(errmsg)
             files = {join(path_, map_[x]): x for x in samples}
+
+    # path is a file
+    elif isfile(path_):
+
+        # check if file is an Id-to-file map
+        map_ = id2file_from_map(path_)
+        if map_:
+
+            # turn off demultiplexing if not decided
+            demux = demux or False
+
+            # validate with given sample Ids
+            if samples:
+                map_ = dict(map_)
+                try:
+                    files = {map_[x]: x for x in samples}
+                except KeyError:
+                    raise ValueError(errmsg)
+
+            # sample order and files provided
+            else:
+                samples = [x[0] for x in map_]
+                files = {x[1]: x[0] for x in map_}
+
+        # treat file as a single alignment file
+        else:
+
+            # turn on demultiplexing if not decided
+            demux = demux is not False
+            if demux:
+                files = [path_]
+
+            # validate with given sample Ids
+            else:
+                sample = path2stem(path_, ext)
+                if samples and samples != [sample]:
+                    raise ValueError(errmsg)
+                files = {path_: sample}
+                samples = [sample]
 
     else:
         raise ValueError(f'"{path_}" is not a valid file or directory.')

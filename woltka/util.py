@@ -13,7 +13,7 @@ operations.
 """
 
 from os import listdir
-from os.path import basename, splitext
+from os.path import basename, dirname, splitext, isfile, join
 import gzip
 import bz2
 import lzma
@@ -258,8 +258,8 @@ def read_ids(fh):
     return res
 
 
-def id2file_map(dir_, ext=None, ids=None):
-    """Generate a map of IDs to files.
+def id2file_from_dir(dir_, ext=None, ids=None):
+    """Generate an ID-to-file map from a directory.
 
     Parameters
     ----------
@@ -268,7 +268,7 @@ def id2file_map(dir_, ext=None, ids=None):
     ext : str, optional
         Filename extension.
     ids : iterable of str, optional
-        Id list.
+        ID list.
 
     Returns
     -------
@@ -287,6 +287,77 @@ def id2file_map(dir_, ext=None, ids=None):
             raise ValueError(f'Ambiguous files for ID: "{id_}".')
         res[id_] = fname
     return res
+
+
+def id2file_from_map(fp):
+    """Read ID-to-file mapping from a file.
+
+    Parameters
+    ----------
+    fp : str
+        Path to an ID-to-file mapping file (format: ID <tab> filepath).
+
+    Returns
+    -------
+    list of tuple, or None
+        Ordered ID-to-file map, or None if not a valid mapping file.
+
+    Raises
+    ------
+    ValueError
+        If any of 2nd to nth filepaths does not exist.
+
+    Notes
+    -----
+    This function checks every line of a file, except for empty lines and lines
+    starting with "#", to see if it suffices the format of sample ID <tab>
+    filepath.
+
+    The filepath must point to an existing file. The function first checks the
+    filepath as absolute, or relative to the current directory. If not found,
+    it then searches the same directory as the mapping file. Therefore, instead
+    of specifying full paths, one could also provide just filenames as long as
+    the mapping file and the alignment files are in the same directory.
+
+    If the filepath in the first line does not exist, the function will return
+    None, assuming this is not a mapping file. However if the first filepath
+    exists whereas any of the filepaths below does not exist, an error will be
+    raised, reminding user of the potentially incorrect filepath.
+    """
+    res = []
+    fdir = dirname(fp)
+    with readzip(fp) as fh:
+        for line in fh:
+            line = line.rstrip()
+
+            # skip empty or commented lines
+            if not line or line.startswith('#'):
+                continue
+
+            # a valid map must have exactly two columns per line
+            try:
+                id_, file_ = line.split('\t')
+            except ValueError:
+                return
+
+            # check full filepath
+            if isfile(file_):
+                res.append((id_, file_))
+                continue
+
+            # search same directory
+            path_ = join(fdir, file_)
+            if isfile(path_):
+                res.append((id_, path_))
+                continue
+
+            # if previous lines appear to be valid files, raise error
+            if res:
+                raise ValueError(f'Alignment file "{file_}" does not exist.')
+
+            # otherwise (i.e., this is the first line), return
+            return
+    return res or None
 
 
 def write_map(fh, map_, namedic=None):

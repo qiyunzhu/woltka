@@ -4,7 +4,7 @@ Woltka features a highly flexible hierarchical classification system. It is repr
 
 Wolkta supports various formats of classification systems, specifically:
 
-1. `--nodes`: NCBI-style `nodes.dmp` or a simple map, in which each taxon points to its parent taxon (2nd column). Rank (3rd column) is optional.
+1. `--nodes`: NCBI-style `nodes.dmp` (columns are delimited by "\<tab\>|\<tab\>") or a tab-delimited file, in which each taxon (1st column) points to its parent taxon (2nd column). Rank (3rd column) is optional.
 
 2. `--newick`: Newick-format tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
 
@@ -47,7 +47,7 @@ woltka classify \
 
 Furthermore, one can supply Woltka with a taxon name dictionary, and the output profile will show taxon names instead of taxon IDs:
 
-* `--names`: NCBI-style `names.dmp` or a simple taxon-to-name map. Example:
+* `--names`: NCBI-style `names.dmp` or a simple map of taxon \<tab\> name. Example:
 
 ```bash
 woltka classify \
