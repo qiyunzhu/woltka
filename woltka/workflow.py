@@ -20,9 +20,10 @@ from os import makedirs
 from os.path import join, basename, isfile, isdir
 import click
 
-from .util import update_dict, allkeys, read_ids, add_dict, intize, delnone
+from .util import update_dict, allkeys, add_dict, intize, delnone
 from .file import (
-    readzip, path2stem, id2file_from_dir, id2file_from_map, write_readmap)
+    readzip, path2stem, read_ids, id2file_from_dir, id2file_from_map,
+    write_readmap)
 from .align import Plain, parse_align_file
 from .classify import (
     assign_none, assign_free, assign_rank, count, strip_index, demultiplex)
@@ -33,13 +34,43 @@ from .ordinal import Ordinal, read_gene_coords, whether_prefix
 from .biom import profile_to_biom, write_biom
 
 
-def workflow(input_path, output_path, outmap_dir=None,
-             input_fmt=None, input_ext=None, samples=None, demux=None,
-             ranks=None, above=False, major=None, ambig=True, subok=True,
-             deidx=False, coords_fp=None, overlap=80, names_fp=None,
-             nodes_fp=None, newick_fp=None, lineage_fp=None, ranktb_fp=None,
-             map_fps=[], map_rank=False, lines=1000000):
+def workflow(input_fp:   str,
+             output_fp:  str,
+             # input
+             input_fmt:    str = None,
+             input_ext:    str = None,
+             samples:      str = None,
+             demux:       bool = None,
+             lines:        int = 1000000,
+             # hierarchies
+             nodes_fp:     str = None,
+             newick_fp:    str = None,
+             lineage_fp:   str = None,
+             ranktb_fp:    str = None,
+             map_fps:     list = [],
+             names_fp:     str = None,
+             # assignment
+             ranks:        str = None,
+             above:       bool = False,
+             major:       bool = None,
+             ambig:       bool = True,
+             subok:       bool = True,
+             deidx:       bool = False,
+             # gene matching
+             coords_fp:    str = None,
+             overlap:      int = 80,
+             # output
+             output_fmt:   str = None,
+             name_as_id:  bool = False,
+             add_lineage: bool = False,
+             outmap_dir:   str = None,
+             outmap_zip:   str = 'gz') -> dict:
     """Main classification workflow which accepts command-line arguments.
+
+    Returns
+    -------
+    dict
+        Resulting profile.
 
     See Also
     --------
@@ -48,12 +79,11 @@ def workflow(input_path, output_path, outmap_dir=None,
     """
     # parse input samples
     samples, files, demux = parse_samples(
-        input_path, input_ext, samples, demux)
+        input_fp, input_ext, samples, demux)
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
-        map_rank)
+        names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps)
 
     # build mapping module
     mapper = build_mapper(coords_fp, overlap)
@@ -68,7 +98,9 @@ def workflow(input_path, output_path, outmap_dir=None,
         lines)
 
     # write output profiles
-    write_profiles(data, output_path, namedic, samples)
+    write_profiles(
+        data, output_fp, output_fmt, namedic, samples, name_as_id, add_lineage)
+
     click.echo('Task completed.')
     return data
 
@@ -183,7 +215,7 @@ def classify(mapper:  object,
     return data
 
 
-def parse_samples(path_:   str,
+def parse_samples(fp:      str,
                   ext:     str = None,
                   samples: str = None,
                   demux:  bool = None) -> (list, list or dict, bool):
@@ -191,7 +223,7 @@ def parse_samples(path_:   str,
 
     Parameters
     ----------
-    path_ : str
+    fp : str
         Path to a file or a directory.
     ext : str, optional
         Filename extension.
@@ -217,17 +249,17 @@ def parse_samples(path_:   str,
     errmsg = 'Provided sample IDs and actual files are inconsistent.'
 
     # path is a directory
-    if isdir(path_):
+    if isdir(fp):
 
         # turn off demultiplexing if not decided
         demux = demux or False
 
         # get a map of plausible sample Ids to files
-        map_ = id2file_from_dir(path_, ext, not demux and samples)
+        map_ = id2file_from_dir(fp, ext, not demux and samples)
         if len(map_) == 0:
             raise ValueError('No valid file found in directory.')
         if demux:
-            files = sorted([join(path_, x) for x in map_.values()])
+            files = sorted([join(fp, x) for x in map_.values()])
 
         # validate with given sample Ids
         else:
@@ -235,13 +267,13 @@ def parse_samples(path_:   str,
                 samples = sorted(map_.keys())
             elif len(map_) < len(samples):
                 raise ValueError(errmsg)
-            files = {join(path_, map_[x]): x for x in samples}
+            files = {join(fp, map_[x]): x for x in samples}
 
     # path is a file
-    elif isfile(path_):
+    elif isfile(fp):
 
         # check if file is an Id-to-file map
-        map_ = id2file_from_map(path_)
+        map_ = id2file_from_map(fp)
         if map_:
 
             # turn off demultiplexing if not decided
@@ -266,18 +298,18 @@ def parse_samples(path_:   str,
             # turn on demultiplexing if not decided
             demux = demux is not False
             if demux:
-                files = [path_]
+                files = [fp]
 
             # validate with given sample Ids
             else:
-                sample = path2stem(path_, ext)
+                sample = path2stem(fp, ext)
                 if samples and samples != [sample]:
                     raise ValueError(errmsg)
-                files = {path_: sample}
+                files = {fp: sample}
                 samples = [sample]
 
     else:
-        raise ValueError(f'"{path_}" is not a valid file or directory.')
+        raise ValueError(f'"{fp}" is not a valid file or directory.')
 
     click.echo(f'Number of alignment files to read: {len(files)}.')
     click.echo(f'Demultiplexing: {"on" if demux else "off"}.')
@@ -325,8 +357,7 @@ def build_hierarchy(names_fp:   str = None,
                     newick_fp:  str = None,
                     lineage_fp: str = None,
                     ranktb_fp:  str = None,
-                    map_fps:   list = None,
-                    map_rank:  bool = False) -> (dict, dict, dict, str):
+                    map_fps:   list = None) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
     Parameters
@@ -343,8 +374,6 @@ def build_hierarchy(names_fp:   str = None,
         Rank table file.
     map_fps : list of str, optional
         Mapping files.
-    map_rank : bool, optional
-        Mapping filename is rank.
 
     Returns
     -------
@@ -398,8 +427,7 @@ def build_hierarchy(names_fp:   str = None,
         with readzip(fp) as f:
             map_ = read_map(f)
         update_dict(tree, map_)
-        if map_rank:
-            update_dict(rankdic, {k: rank for k in set(map_.values())})
+        update_dict(rankdic, {k: rank for k in set(map_.values())})
 
     # fill root
     root = fill_root(tree)
@@ -534,20 +562,25 @@ def assign_readmap(rmap:     dict,
         data[rank][sample] = counts
 
 
-def write_profiles(data:    dict,
-                   path_:    str,
-                   samples: list = None,
-                   tree:    dict = None,
-                   rankdic: dict = None,
-                   namedic: dict = None):
+def write_profiles(data:        dict,
+                   fp:           str,
+                   fmt:         bool = None,
+                   samples:     list = None,
+                   tree:        dict = None,
+                   rankdic:     dict = None,
+                   namedic:     dict = None,
+                   name_as_id:  bool = False,
+                   add_lineage: bool = False):
     """Write profile to an output file.
 
     Parameters
     ----------
     data : dict
         Profile data.
-    path_ : str
+    fp : str
         Path to output file or directory.
+    fmt : bool, optional
+        Output file format.
     samples : list, optional
         Ordered sample ID list.
     tree : dict, optional
@@ -556,8 +589,13 @@ def write_profiles(data:    dict,
         Rank dictionary.
     namedic : dict, optional
         Taxon name dictionary.
+    name_as_id : bool, optional
+        Replace feature IDs with names, if available;
+        otherwise, append names as a metadata column.
+    add_lineage: bool optional
+        Append lineage strings as a metadata column.
     """
-    if not path_:
+    if not fp:
         return
 
     # determine sample order
@@ -567,13 +605,14 @@ def write_profiles(data:    dict,
     # determine ranks
     ranks = sorted(data.keys())
 
-    # determine output filenames
+    # determine output filename and format
     click.echo('Writing output profiles...', nl=False)
     if len(ranks) == 1:
-        rank2fp = {ranks[0]: path_}
+        rank2fp = {ranks[0]: fp}
+
     else:
-        makedirs(path_, exist_ok=True)
-        rank2fp = {x: join(path_, f'{x}.biom') for x in ranks}
+        makedirs(fp, exist_ok=True)
+        rank2fp = {x: join(fp, f'{x}.biom') for x in ranks}
 
     # write output profile(s)
     for rank, fp in rank2fp.items():

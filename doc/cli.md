@@ -13,7 +13,6 @@ Option | Description
 --- | ---
 `--input`, `-i` (required) | Path to input alignment file or directory of alignment files.
 `--output`, `-o` (required) | Path to output profile file or directory of profile files.
-`--outmap` | Write per-sample per-read classification maps to this directory.
 
 ### Input files
 
@@ -25,10 +24,22 @@ Option | Description
 `--filext`, `-e` | Input filename extension following sample ID.
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
+`--lines` | Number of lines to read from alignment file per chunk. Default: 1000000.
 
-### Classification
+### Hierarchies
 
 * See [classification system](classify.md) for details.
+
+Option | Description
+--- | ---
+`--nodes` | Hierarchies defined by NCBI nodes.dmp or compatible formats.
+`--newick` | Hierarchies defined by a tree in Newick format.
+`--lineage` | Map of lineage strings. Can accept Greengenes-style rank prefix.
+`--rank-table` | Table of classification units at each rank (column).
+`--map`, `-m` | 'Map(s) of subjects or lower classification units to higher ones. Can accept multiple maps.
+`--names` | Names of classification units as defined by NCBI names.dmp or a plain map.
+
+### Assignment
 
 Option | Description
 --- | ---
@@ -39,24 +50,19 @@ Option | Description
 `--subok/--no-subok` | Can report subject IDs in classification result. Default: True.
 `--deidx/--no-deidx` | Strip "underscore index" suffixes from subject IDs. Default: False.
 
-### Gene information
+### Gene matching
 
 Option | Description
 --- | ---
-`--coords`, `-c` | Table of gene coordinates of  on reference genomes.
+`--coords`, `-c` | Reference gene coordinates on genomes.
 `--overlap`, | Read/gene overlapping percentage threshold. Default: 80.
 
-### Tree information
+### Output files
 
 Option | Description
 --- | ---
-`--names` | Names of classification units as defined by NCBI names.dmp or a plain map.
-`--nodes` | Hierarchies defined by NCBI nodes.dmp or compatible formats.
-`--newick` | Hierarchies defined by a tree in Newick format.
-`--lineage` | Map of lineage strings. Can accept Greengenes-style rank prefix.
-`--rank-table` | Table of classification units at each rank (column).
-`--map`, `-m` | 'Map(s) of subjects or lower classification units to higher ones. Can accept multiple maps.
-`--map-is-rank` | Map filename stem is rank name.
-
-### Performance
-`--lines` | Number of lines to read from alignment file per chunk. Default: 1000000.
+`--to-biom/--to-tsv` | Force output feature table format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is one rank.
+`--name-as-id` | Output classification unit names instead of IDs.
+`--add-lineage` | Append lineage string to feature table.
+`--outmap`, `-u` | Write read-to-feature maps to directory.
+`--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.

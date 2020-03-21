@@ -34,6 +34,8 @@ woltka classify ... -r phylum,genus,species -o .
 
 ## File formats
 
+### BIOM
+
 The default output feature table format is [**BIOM**](http://biom-format.org/), a general format for efficiently storing and accessing omics data tables. A feature table file will have the extension name `.biom`.
 
 A BIOM table not only stores feature counts per sample, but also allows appending feature metadata to it. Woltka appends the following three metadata columns to a BIOM table:
@@ -62,12 +64,13 @@ Optionally, one can append a metadata column to the right of the table. For exam
 biom convert --to-tsv -i input.biom -o output.tsv --header-key Name
 ```
 
-
 Additionally, one can export all metadata as a separate table, with:
 
 ```
 biom export-metadata -i input.biom -m metadata.tsv
 ```
+
+### TSV
 
 In addition to BIOM, Woltka supports directly outputing the old-style tab-separated files (**TSV**). This can be toggled as follows:
 
@@ -77,6 +80,14 @@ Alternatively, use `--to-biom` or `--to-tsv` to force a specific output format. 
 
 ```
 woltka classify ... -r phylum,genus,species -o . --to-tsv
+```
+
+Metadata (see above) will be appended as extra columns to the right of the table.
+
+Likewise, one can convert a TSV file (without metadata) to BIOM format:
+
+```
+biom convert --to-hdf5 -i input.tsv -o output.biom
 ```
 
 

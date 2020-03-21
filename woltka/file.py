@@ -222,9 +222,9 @@ def id2file_from_map(fp):
                 continue
 
             # search same directory
-            path_ = join(fdir, file_)
-            if isfile(path_):
-                res.append((id_, path_))
+            fp = join(fdir, file_)
+            if isfile(fp):
+                res.append((id_, fp))
                 continue
 
             # if previous lines appear to be valid files, raise error

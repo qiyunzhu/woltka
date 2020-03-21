@@ -64,15 +64,15 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
                       generated_by=f'woltka-{__version__}')
 
 
-def write_biom(table: biom.Table, path_: str):
+def write_biom(table: biom.Table, fp: str):
     """Write a BIOM table to file.
 
     Parameters
     ----------
     table : biom.Table
         BIOM table to write.
-    path_ : str
+    fp : str
         Output filepath.
     """
-    with biom.util.biom_open(path_, 'w') as f:
+    with biom.util.biom_open(fp, 'w') as f:
         table.to_hdf5(f, table.generated_by)

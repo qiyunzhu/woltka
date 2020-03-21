@@ -62,18 +62,14 @@ def gotu(ctx, **kwargs):
 @cli.command('classify')
 # input and output
 @click.option(
-    '--input', '-i', 'input_path', required=True,
+    '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, file_okay=True, dir_okay=True),
     help='Path to input alignment file or directory of alignment files.')
 @click.option(
-    '--output', '-o', 'output_path', required=True,
+    '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True),
     help='Path to output profile file or directory of profile files.')
-@click.option(
-    '--outmap', 'outmap_dir',
-    type=click.Path(dir_okay=True),
-    help='Write per-sample per-read classification maps to this directory.')
-# input information
+# input files
 @click.option(
     '--format', '-f', 'input_fmt',
     type=click.Choice(['b6o', 'sam', 'map'], case_sensitive=False),
@@ -89,40 +85,10 @@ def gotu(ctx, **kwargs):
 @click.option(
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
-# classification
 @click.option(
-    '--rank', '-r', 'ranks', type=click.STRING,
-    help=('Classify sequences at this rank. Ignore or enter "none" to omit '
-          'classification; enter "free" for free-rank classification. Can '
-          'specify multiple comma-delimited ranks and one profile will be '
-          'generated for each rank.'))
-@click.option(
-    '--above/--no-above', default=False,
-    help='Allow assigning to a classification unit higher than given rank.')
-@click.option(
-    '--major', type=click.IntRange(51, 99),
-    help='Majority-rule assignment percentage threshold.')
-@click.option(
-    '--ambig/--no-ambig', default=True,
-    help='Allow assigning one sequence to multiple classification units.')
-@click.option(
-    '--subok/--no-subok', default=True,
-    help='Can report subject IDs in classification result.')
-@click.option(
-    '--deidx/--no-deidx', default=False,
-    help='Strip "underscore index" suffixes from subject IDs.')
-# gene information
-@click.option(
-    '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
-    help='Table of gene coordinates of  on reference genomes.')
-@click.option(
-    '--overlap', type=click.IntRange(1, 100), default=80, show_default=True,
-    help='Read/gene overlapping percentage threshold.')
-# tree information
-@click.option(
-    '--names', 'names_fp', type=click.Path(exists=True),
-    help=('Names of classification units as defined by NCBI names.dmp or a '
-          'plain map.'))
+    '--lines', type=click.INT, default=1000000, show_default=True,
+    help=('Number of lines to read from alignment file per chunk.'))
+# hierarchies
 @click.option(
     '--nodes', 'nodes_fp', type=click.Path(exists=True),
     help='Hierarchies defined by NCBI nodes.dmp or compatible formats.')
@@ -140,12 +106,56 @@ def gotu(ctx, **kwargs):
     help=('Map(s) of subjects or lower classification units to higher ones. '
           'Can accept multiple maps.'))
 @click.option(
-    '--map-is-rank', 'map_rank', is_flag=True,
-    help='Map filename stem is rank name.')
-# performance
+    '--names', 'names_fp', type=click.Path(exists=True),
+    help=('Names of classification units as defined by NCBI names.dmp or a '
+          'simple map.'))
+# assignment
 @click.option(
-    '--lines', type=click.INT, default=1000000, show_default=True,
-    help=('Number of lines to read from alignment file per chunk.'))
+    '--rank', '-r', 'ranks', type=click.STRING,
+    help=('Classify sequences at this rank. Ignore or enter "none" to omit '
+          'classification; enter "free" for free-rank classification. Can '
+          'specify multiple comma-separated ranks and one profile will be '
+          'generated for each rank.'))
+@click.option(
+    '--above/--no-above', default=False,
+    help='Allow assigning to a classification unit higher than given rank.')
+@click.option(
+    '--major', type=click.IntRange(51, 99),
+    help='Majority-rule assignment percentage threshold.')
+@click.option(
+    '--ambig/--no-ambig', default=True,
+    help='Allow assigning one sequence to multiple classification units.')
+@click.option(
+    '--subok/--no-subok', default=True,
+    help='Allow assigning sequences to their subjects.')
+@click.option(
+    '--deidx/--no-deidx', default=False,
+    help='Strip "_index" suffixes from subject IDs.')
+# gene matching
+@click.option(
+    '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
+    help='Reference gene coordinates on genomes.')
+@click.option(
+    '--overlap', type=click.IntRange(1, 100), default=80, show_default=True,
+    help='Read/gene overlapping percentage threshold.')
+# output files
+@click.option(
+    '--to-biom/--to-tsv', 'output_fmt', default=None,
+    help='Output feature table format (BIOM or TSV).')
+@click.option(
+    '--name-as-id', is_flag=True,
+    help='Output feature names instead of IDs.')
+@click.option(
+    '--add-lineage', is_flag=True,
+    help='Append lineage string to feature table.')
+@click.option(
+    '--outmap', '-u', 'outmap_dir',
+    type=click.Path(dir_okay=True),
+    help='Write read-to-feature maps to this directory.')
+@click.option(
+    '--outmap-zip', default='gz',
+    type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
+    help=('Compress read maps using this algorithm.'))
 def classify(**kwargs):
     """Generate a profile of samples based on a classification system.
     """
