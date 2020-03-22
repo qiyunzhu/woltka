@@ -23,7 +23,7 @@ import click
 from .util import update_dict, allkeys, add_dict, intize, delnone
 from .file import (
     readzip, path2stem, read_ids, id2file_from_dir, id2file_from_map,
-    write_readmap)
+    write_readmap, write_table)
 from .align import Plain, parse_align_file
 from .classify import (
     assign_none, assign_free, assign_rank, count, strip_index, demultiplex)
@@ -72,6 +72,12 @@ def workflow(input_fp:   str,
     dict
         Resulting profile.
 
+    Notes
+    -----
+    This function directly parses groups of command-line parameters to the
+    following sub-workflows. Paramters are briefly explained in `cli.classify`
+    and detailed in individual sub-workflows.
+
     See Also
     --------
     .cli.classify
@@ -89,7 +95,7 @@ def workflow(input_fp:   str,
     mapper = build_mapper(coords_fp, overlap)
 
     # target classification ranks
-    ranks, rank2dir = prep_ranks(ranks, outmap_dir)
+    ranks, rank2dir = prepare_ranks(ranks, outmap_dir)
 
     # classify query sequences
     data = classify(
@@ -195,6 +201,8 @@ def classify(mapper:  object,
 
             # parse alignment file by chunk
             for rmap in parse_align_file(fh, mapper, input_fmt, lines):
+
+                # show progress
                 click.echo('.', nl=False)
                 n += len(rmap)
 
@@ -268,6 +276,8 @@ def parse_samples(fp:      str,
             elif len(map_) < len(samples):
                 raise ValueError(errmsg)
             files = {join(fp, map_[x]): x for x in samples}
+        click.echo(f'Input directory: {fp}.')
+        click.echo(f'Number of alignment files to read: {len(files)}.')
 
     # path is a file
     elif isfile(fp):
@@ -291,6 +301,7 @@ def parse_samples(fp:      str,
             else:
                 samples = [x[0] for x in map_]
                 files = {x[1]: x[0] for x in map_}
+            click.echo(f'Number of alignment files to read: {len(files)}.')
 
         # treat file as a single alignment file
         else:
@@ -307,6 +318,7 @@ def parse_samples(fp:      str,
                     raise ValueError(errmsg)
                 files = {fp: sample}
                 samples = [sample]
+            click.echo(f'Input alignment file: {fp}.')
 
     else:
         raise ValueError(f'"{fp}" is not a valid file or directory.')
@@ -325,7 +337,7 @@ def build_mapper(coords_fp: str = None,
     coords_fp : str, optional
         Path to gene coordinates file.
     overlap : int, optional
-        Read/gene overlapping percentage threshold
+        Read/gene overlapping percentage threshold.
 
     Returns
     -------
@@ -350,6 +362,47 @@ def build_mapper(coords_fp: str = None,
                        overlap and overlap / 100)
     else:
         return Plain()
+
+
+def prepare_ranks(ranks:      str = None,
+                  outmap_dir: str = None) -> (list, dict or None):
+    """Prepare classification ranks and directories of read-to-feature maps.
+
+    Parameters
+    ----------
+    ranks : str, optional
+        Target ranks (comma-separated).
+    outmap_dir : str, optional
+        Path to output read map directory.
+
+    Returns
+    -------
+    list
+        Ranks.
+    dict or None
+        Rank-to-directory map (or None if not necessary).
+    """
+    # determine ranks
+    ranks = ['none'] if ranks is None else ranks.split(',')
+    click.echo('Classification will operate on these ranks: {}.'.format(
+        ', '.join(ranks)))
+
+    # check output directory
+    if not outmap_dir:
+        return ranks, None
+    makedirs(outmap_dir, exist_ok=True)
+    click.echo(f'Read-to-feature maps will be saved to: {outmap_dir}.')
+
+    # determine output read map directory per rank
+    if len(ranks) == 1:
+        rank2dir = {ranks[0]: outmap_dir}
+    else:
+        rank2dir = {}
+        for rank in ranks:
+            dir_ = join(outmap_dir, rank)
+            makedirs(dir_, exist_ok=True)
+            rank2dir[rank] = dir_
+    return ranks, rank2dir
 
 
 def build_hierarchy(names_fp:   str = None,
@@ -390,50 +443,62 @@ def build_hierarchy(names_fp:   str = None,
     is_build = any([
         names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps])
     if is_build:
-        click.echo(f'Reading classification system...', nl=False)
+        click.echo('Constructing classification system...')
 
     # taxonomy names
     if names_fp:
+        click.echo(f'  Parsing taxonomy names file: {names_fp}...', nl=False)
         with readzip(names_fp) as f:
             namedic = read_names(f)
+        click.echo(' Done.')
 
     # taxonomy nodes
     if nodes_fp:
+        click.echo(f'  Parsing taxonomy nodes file: {nodes_fp}...', nl=False)
         with readzip(nodes_fp) as f:
             tree_, rankdic_ = read_nodes(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
+        click.echo(' Done.')
 
     # Newick-format tree
     if newick_fp:
+        click.echo(f'  Parsing Newick tree file: {newick_fp}...', nl=False)
         with readzip(newick_fp) as f:
             update_dict(tree, read_newick(f))
+        click.echo(' Done.')
 
     # lineage strings file
     if lineage_fp:
+        click.echo(f'  Parsing lineage file: {lineage_fp}...', nl=False)
         with readzip(lineage_fp) as f:
             tree_, rankdic_ = read_lineage(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
+        click.echo(' Done.')
 
     # rank table file
     if ranktb_fp:
+        click.echo(f'  Parsing rank table file: {ranktb_fp}...', nl=False)
         with readzip(ranktb_fp) as f:
             update_dict(tree, read_ranktb(f))
+        click.echo(' Done.')
 
     # plain mapping files
     for fp in map_fps:
+        click.echo(f'  Parsing simple map file: {fp}...', nl=False)
         rank = path2stem(fp)  # filename stem as rank
         with readzip(fp) as f:
             map_ = read_map(f)
         update_dict(tree, map_)
         update_dict(rankdic, {k: rank for k in set(map_.values())})
+        click.echo(' Done.')
 
     # fill root
     root = fill_root(tree)
 
     if is_build:
-        click.echo(' Done.')
+        click.echo('Classification system constructed.')
         click.echo(f'Total number of classification units: {len(tree)}.')
     return tree, rankdic, namedic, root
 
@@ -564,7 +629,7 @@ def assign_readmap(rmap:     dict,
 
 def write_profiles(data:        dict,
                    fp:           str,
-                   fmt:         bool = None,
+                   is_biom:     bool = None,
                    samples:     list = None,
                    tree:        dict = None,
                    rankdic:     dict = None,
@@ -579,8 +644,8 @@ def write_profiles(data:        dict,
         Profile data.
     fp : str
         Path to output file or directory.
-    fmt : bool, optional
-        Output file format.
+    is_biom : bool, optional
+        Output BIOM instead of TSV format.
     samples : list, optional
         Ordered sample ID list.
     tree : dict, optional
@@ -606,56 +671,26 @@ def write_profiles(data:        dict,
     ranks = sorted(data.keys())
 
     # determine output filename and format
-    click.echo('Writing output profiles...', nl=False)
     if len(ranks) == 1:
+        # single output file
         rank2fp = {ranks[0]: fp}
-
+        if is_biom is None:
+            is_biom = fp.endswith('.biom')
     else:
+        # multiple output files
         makedirs(fp, exist_ok=True)
         rank2fp = {x: join(fp, f'{x}.biom') for x in ranks}
+        is_biom = is_biom is not False
+    click.echo('Format of output feature table(s): {}.'.format(
+        'BIOM' if is_biom else 'TSV'))
 
     # write output profile(s)
+    click.echo('Writing output profiles...', nl=False)
     for rank, fp in rank2fp.items():
-        write_biom(profile_to_biom(
-            data[rank], samples, tree, rankdic, namedic), fp)
+        if is_biom:
+            write_biom(profile_to_biom(
+                data[rank], samples, tree, rankdic, namedic), fp)
+        else:
+            with open(fp, 'w') as fh:
+                write_table(fh, data[rank], namedic, samples)
     click.echo(' Done.')
-
-
-def prep_ranks(ranks=None, outmap_dir=None):
-    """Prepare directory of output classification maps.
-
-    Parameters
-    ----------
-    ranks : list, optional
-        Target ranks.
-    outmap_dir : str, optional
-        Path to output file or directory.
-
-    Returns
-    -------
-    list
-        Ranks.
-    dict or None
-        Rank-to-directory map (or None if not necessary).
-    """
-    # determine ranks
-    if ranks is None:
-        ranks = ['none']
-    else:
-        ranks = ranks.split(',')
-
-    # check output directory
-    if not outmap_dir:
-        return ranks, None
-    makedirs(outmap_dir, exist_ok=True)
-
-    # determine output map directory per rank
-    if len(ranks) == 1:
-        rank2dir = {ranks[0]: outmap_dir}
-    else:
-        rank2dir = {}
-        for rank in ranks:
-            dir_ = join(outmap_dir, rank)
-            makedirs(dir_, exist_ok=True)
-            rank2dir[rank] = dir_
-    return ranks, rank2dir

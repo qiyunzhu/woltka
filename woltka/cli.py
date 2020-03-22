@@ -158,6 +158,14 @@ def gotu(ctx, **kwargs):
     help=('Compress read maps using this algorithm.'))
 def classify(**kwargs):
     """Generate a profile of samples based on a classification system.
+
+    Notes
+    -----
+    Details of parameters are provided in `workflow.py` and `doc/cli.md`.
+
+    See Also
+    --------
+    workflow.workflow
     """
     workflow(**kwargs)
 
