@@ -59,18 +59,18 @@ class WorkflowTests(TestCase):
             'Filepath and filename extension do not match.'))
 
         # provide Id list (no effect since demux)
-        obs = parse_samples(fp, ids=['input'])
+        obs = parse_samples(fp, samples='input')
         self.assertListEqual(obs[0], ['input'])
         self.assertListEqual(obs[1], [fp])
 
         # provide correct Id list
-        obs = parse_samples(fp, ids=['input'], demux=False)
+        obs = parse_samples(fp, samples='input', demux=False)
         self.assertListEqual(obs[0], ['input'])
         self.assertDictEqual(obs[1], {fp: 'input'})
 
         # provide wrong Id list
         with self.assertRaises(ValueError) as ctx:
-            parse_samples(fp, ids=['hello'], demux=False)
+            parse_samples(fp, samples='hello', demux=False)
         self.assertEqual(str(ctx.exception), (
             'Provided sample IDs and actual files are inconsistent.'))
 
@@ -107,13 +107,13 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(obs, exp)
 
         # specify sample Ids
-        obs = parse_samples(self.tmpdir, ids=['S1', 'S2', 'S3'])[1]
+        obs = parse_samples(self.tmpdir, samples='S1,S2,S3')[1]
         self.assertDictEqual(obs, exp)
 
         # some samples are not found
         remove(fp)
         with self.assertRaises(ValueError) as ctx:
-            parse_samples(self.tmpdir, ids=['S1', 'S2', 'S4'])
+            parse_samples(self.tmpdir, samples='S1,S2,S4')
         self.assertEqual(str(ctx.exception), (
             'Provided sample IDs and actual files are inconsistent.'))
 
@@ -125,7 +125,7 @@ class WorkflowTests(TestCase):
         self.assertListEqual(obs[1], exp)
 
         # sample Ids are ignored when demux
-        obs = parse_samples(self.tmpdir, ids=['S1', 'S2', 'S4'], demux=True)
+        obs = parse_samples(self.tmpdir, samples='S1,S2,S4', demux=True)
         self.assertListEqual(obs[0], ['S1', 'S2', 'S4'])
         exp = [join(self.tmpdir, f'S{i}.sam') for i in range(1, 4)]
         self.assertListEqual(obs[1], exp)

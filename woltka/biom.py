@@ -35,7 +35,7 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
     namedic : dict, optional
         Taxon name dictionary.
     add_lineage : bool, optional
-        Append lineage (root-to-current hierarchies) to metadata.
+        Append lineage to metadata.
 
     Returns
     -------

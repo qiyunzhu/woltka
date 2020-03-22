@@ -13,7 +13,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.util import readzip
+from woltka.file import readzip
 from woltka.align import (
     parse_align_file, Plain, infer_align_format, assign_parser, parse_map_line,
     parse_b6o_line, parse_sam_line, cigar_to_lens)

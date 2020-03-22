@@ -60,7 +60,8 @@ class CliTests(TestCase):
                   '--names',  join(self.datdir, 'taxonomy', 'names.dmp'),
                   '--nodes',  join(self.datdir, 'taxonomy', 'nodes.dmp'),
                   '--map',    join(self.datdir, 'taxonomy', 'g2tid.txt'),
-                  '--rank',   'genus']
+                  '--rank',   'genus',
+                  '--name-as-id']
         res = self.runner.invoke(classify, params)
         self.assertEqual(res.exit_code, 0)
         with open(output_fp, 'r') as f:

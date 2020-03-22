@@ -34,12 +34,12 @@ def cli():
 
 @cli.command('gotu')
 @click.option(
-    '--input', '-i', 'input_path', required=True,
+    '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, file_okay=True, dir_okay=True),
     help=('Path to a multiplexed alignment file or a directory of per-sample '
           'alignment files.'))
 @click.option(
-    '--output', '-o', 'output_path', required=True,
+    '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True),
     help=('Path to output gOTU table.'))
 @click.option(
@@ -106,6 +106,10 @@ def gotu(ctx, **kwargs):
     help=('Map(s) of subjects or lower classification units to higher ones. '
           'Can accept multiple maps.'))
 @click.option(
+    '--map-file-name-as-rank', is_flag=True,
+    help=('Map(s) of subjects or lower classification units to higher ones. '
+          'Can accept multiple maps.'))
+@click.option(
     '--names', 'names_fp', type=click.Path(exists=True),
     help=('Names of classification units as defined by NCBI names.dmp or a '
           'simple map.'))
@@ -144,10 +148,13 @@ def gotu(ctx, **kwargs):
     help='Output feature table format (BIOM or TSV).')
 @click.option(
     '--name-as-id', is_flag=True,
-    help='Output feature names instead of IDs.')
+    help='Replace feature IDs with names.')
+@click.option(
+    '--add-rank', is_flag=True,
+    help='Append feature ranks to table.')
 @click.option(
     '--add-lineage', is_flag=True,
-    help='Append lineage string to feature table.')
+    help='Append lineage strings to table.')
 @click.option(
     '--outmap', '-u', 'outmap_dir',
     type=click.Path(dir_okay=True),

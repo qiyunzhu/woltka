@@ -38,19 +38,21 @@ woltka classify ... -r phylum,genus,species -o .
 
 The default output feature table format is [**BIOM**](http://biom-format.org/), a general format for efficiently storing and accessing omics data tables. A feature table file will have the extension name `.biom`.
 
-A BIOM table not only stores feature counts per sample, but also allows appending feature metadata to it. Woltka appends the following three metadata columns to a BIOM table:
+A BIOM table not only stores feature counts per sample, but also allows appending feature metadata to it. Woltka optionally appends the following three metadata columns to a BIOM table:
 
 - **Name**: The name of each classification unit, as defined in the file provided by `--names` (see [classification](classify.md) for details).
 
   Alternatively, instead of appending the name column, one may choose to replace unit IDs with their names, by using the `--name-as-id` flag. IDs without names will remain IDs. Note however, this will throw an error if multiple IDs correspond to the same name!
 
-- **Rank**: The rank of each classification unit, if available. This column is enabled only for free-rank classification (`--rank free`), and fixed-rank classification but allowing assigning to higher ranks (`--above`). See [classification](classify.md) for details.
+- **Rank**: The rank of each classification unit, if available. This column is disabled by default, and it can be enabled by using the `--add-rank` flag.
 
 - **Lineage**: A string of units ordered from high to low and joined by semicolon. This is also known as the "[Greengenes](https://greengenes.secondgenome.com/)"-style lineage string, which is widely used in bioinformatics. For example:
 
-  ```Viruses; Group II (ssDNA); Microviridae; Microvirus; Enterobacteria phage phiX174;```
+  ```Viruses;Microviridae;Bullavirinae;Sinsheimervirus;Escherichia_virus_phiX174```
 
   This column is disabled by default, and it can be enabled by using the `--add-lineage` flag.
+
+  The aforementioned `--name-as-id` flag also affects how the lineage strings are composed (IDs or names).
 
 A BIOM table can be directly parsed by many bioinformatics programs. It is typically not necessary to convert it back to plain text format (i.e., a tab-separated file). However if you do want to do so, the following command with do the job:
 

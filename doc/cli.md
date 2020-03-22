@@ -62,7 +62,8 @@ Option | Description
 Option | Description
 --- | ---
 `--to-biom/--to-tsv` | Force output feature table format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is one rank.
-`--name-as-id` | Output classification unit names instead of IDs.
-`--add-lineage` | Append lineage string to feature table.
+`--name-as-id` | Replace feature IDs with names.
+`--add-rank` | Append feature ranks to table.
+`--add-lineage` | Append lineage strings to table.
 `--outmap`, `-u` | Write read-to-feature maps to directory.
 `--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.

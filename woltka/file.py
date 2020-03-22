@@ -18,6 +18,7 @@ import bz2
 import lzma
 
 from .util import allkeys
+from .tree import get_lineage_gg
 
 
 ZIPDIC = {'.gz': gzip, '.gzip': gzip,
@@ -261,7 +262,8 @@ def write_readmap(fh, rmap, namedic=None):
             raise ValueError(row)
 
 
-def write_table(fh, data, namedic=None, samples=None):
+def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
+                name_as_id=False):
     """Write a profile to a tab-delimited file.
 
     Parameters
@@ -270,20 +272,53 @@ def write_table(fh, data, namedic=None, samples=None):
         Output file.
     data : dict
         Profile data.
-    namedic : dict, optional
-        Taxon name dictionary.
     samples : list, optional
         Ordered sample ID list.
+    tree : dict, optional
+        Taxonomic tree, to inform "Lineage" column.
+    rankdic : dict, optional
+        Rank dictionary, to inform "Rank" column.
+    namedic : dict, optional
+        Taxon name dictionary, to inform "Name" column.
+    name_as_id : bool, optional
+        Replace feature IDs with names. It applies to row headers and "Lineage"
+        column, and removes "Name" column.
     """
     if samples is None:
         samples = sorted(data)
-    print('#FeatureID\t{}'.format('\t'.join(samples)), file=fh)
+    if namedic is None:
+        name_as_id = False
+
+    # table header
+    header = ['#FeatureID'] + samples
+    if namedic and not name_as_id:
+        header.append('Name')
+    if rankdic:
+        header.append('Rank')
+    if tree:
+        header.append('Lineage')
+    print('\t'.join(header), file=fh)
+
+    # table body
     for key in sorted(allkeys(data)):
         # get feature name
-        row = [namedic[key]] if namedic and key in namedic else [key]
-        # get feature count
+        name = namedic[key] if namedic and key in namedic else None
+        # fill row header (feature Id or name)
+        row = [namedic[key]] if name_as_id and name else [key]
+        # fill cell values (feature counts)
         for sample in samples:
             row.append(str(data[sample][key]) if key in data[sample] else '0')
+        # fill name column
+        if namedic and not name_as_id:
+            row.append(name or '')
+        # fill rank column
+        if rankdic:
+            row.append(rankdic[key] if key in rankdic else '')
+        # fill lineage column
+        if tree:
+            row.append(get_lineage_gg(
+                key, tree, namedic if name_as_id else None))
+        # print row
         print('\t'.join(row), file=fh)
 
 

@@ -16,7 +16,7 @@ from tempfile import mkdtemp
 
 from woltka.tree import (
     read_names, read_nodes, read_lineage, read_newick, read_ranktb, read_map,
-    fill_root, get_lineage, find_rank, find_lca)
+    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca)
 
 
 # A small test taxon set containing 15 proteobacterial species
@@ -440,6 +440,22 @@ class TreeTests(TestCase):
         exp = ['1', '131567', '2', '1224', '1236', '72274', '135621', '286']
         self.assertListEqual(obs, exp)
 
+    def test_get_lineage_gg(self):
+        tree = self.proteo['tree']
+        obs = get_lineage_gg('561', tree)
+        self.assertEqual(obs, '1236;91347;543')
+        obs = get_lineage_gg('561', tree, include_root=True)
+        self.assertEqual(obs, '1224;1236;91347;543')
+        obs = get_lineage_gg('561', tree, include_self=True)
+        self.assertEqual(obs, '1236;91347;543;561')
+        obs = get_lineage_gg('561', tree, self.proteo['names'])
+        exp = 'Gammaproteobacteria;Enterobacterales;Enterobacteriaceae'
+        self.assertEqual(obs, exp)
+        obs = get_lineage_gg('1224', tree)
+        self.assertEqual(obs, '')
+        obs = get_lineage_gg('1236', tree)
+        self.assertEqual(obs, '')
+
     def test_fill_root(self):
         # already has root
         tree = {'root': 'root',
@@ -516,7 +532,7 @@ class TreeTests(TestCase):
         self.assertEqual(find_rank('632', 'species', *args), '632')
         # Rickettsiales (order) is already above genus
         self.assertIsNone(find_rank('766', 'genus', *args))
-        # no rank is namedic "tribe"
+        # no rank is named as "tribe"
         self.assertIsNone(find_rank('317', 'tribe', *args))
 
     def test_find_lca(self):

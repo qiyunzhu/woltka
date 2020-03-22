@@ -453,6 +453,41 @@ def get_lineage(taxon, tree):
     return list(reversed(lineage))
 
 
+def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
+                   include_root=False):
+    """Generate a Greengenes-style lineage string of a taxon.
+
+    Parameters
+    ----------
+    taxon : str
+        Query taxon.
+    tree : dict
+        Taxonomy tree.
+    namedic : dict, optional
+        Taxon name dictionary.
+    include_self : bool, optional
+        Include current taxon.
+    include_root : bool, optional
+        Include root.
+
+    Returns
+    -------
+    list of str
+        Lineage from root to query taxon.
+    """
+    lineage = get_lineage(taxon, tree)
+    if lineage is None:
+        return ''
+    start = 0 if include_root else 1
+    end = len(lineage) if include_self else len(lineage) - 1
+    try:
+        taxa = lineage[start:end]
+    except IndexError:
+        return ''
+    return ';'.join([
+        namedic[x] if namedic and x in namedic else x for x in taxa])
+
+
 def find_rank(taxon, rank, tree, rankdic):
     """Find ancestor at a given rank by stepping up the classification
     hierarchy.

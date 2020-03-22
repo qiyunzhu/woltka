@@ -238,23 +238,6 @@ class UtilTests(TestCase):
                'G5\t0\t7\t5']
         self.assertListEqual(obs, exp)
 
-        # with taxon names
-        namedic = {'G1': 'Actinobacteria',
-                   'G2': 'Firmicutes',
-                   'G3': 'Bacteroidetes',
-                   'G4': 'Cyanobacteria'}
-        with open(fp, 'w') as f:
-            write_table(f, data, namedic=namedic)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'Actinobacteria\t4\t2\t0',
-               'Firmicutes\t5\t0\t3',
-               'Bacteroidetes\t8\t0\t0',
-               'Cyanobacteria\t0\t3\t0',
-               'G5\t0\t7\t5']
-        self.assertListEqual(obs, exp)
-
         # with sample Ids
         samples = ['S3', 'S1']
         with open(fp, 'w') as f:
@@ -267,6 +250,88 @@ class UtilTests(TestCase):
                'G3\t0\t8',
                'G4\t0\t0',
                'G5\t5\t0']
+        self.assertListEqual(obs, exp)
+
+        # with taxon names
+        namedic = {'G1': 'Actinobacteria',
+                   'G2': 'Firmicutes',
+                   'G3': 'Bacteroidetes',
+                   'G4': 'Cyanobacteria'}
+        with open(fp, 'w') as f:
+            write_table(f, data, namedic=namedic)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3\tName',
+               'G1\t4\t2\t0\tActinobacteria',
+               'G2\t5\t0\t3\tFirmicutes',
+               'G3\t8\t0\t0\tBacteroidetes',
+               'G4\t0\t3\t0\tCyanobacteria',
+               'G5\t0\t7\t5\t']
+        self.assertListEqual(obs, exp)
+
+        # with taxon names to replace Ids
+        with open(fp, 'w') as f:
+            write_table(f, data, namedic=namedic, name_as_id=True)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3',
+               'Actinobacteria\t4\t2\t0',
+               'Firmicutes\t5\t0\t3',
+               'Bacteroidetes\t8\t0\t0',
+               'Cyanobacteria\t0\t3\t0',
+               'G5\t0\t7\t5']
+        self.assertListEqual(obs, exp)
+
+        # with ranks
+        rankdic = {'G1': 'class', 'G2': 'phylum', 'G4': 'phylum'}
+        with open(fp, 'w') as f:
+            write_table(f, data, rankdic=rankdic)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3\tRank',
+               'G1\t4\t2\t0\tclass',
+               'G2\t5\t0\t3\tphylum',
+               'G3\t8\t0\t0\t',
+               'G4\t0\t3\t0\tphylum',
+               'G5\t0\t7\t5\t']
+        self.assertListEqual(obs, exp)
+
+        # with lineages
+        tree = {'G1': '74',  # Actinobacteria (phylum)
+                '74': '72',
+                'G2': '72',  # Terrabacteria group
+                'G3': '70',  # FCB group
+                'G4': '72',
+                'G5': '1',
+                '72': '2',
+                '70': '2',
+                '2':  '1',
+                '1':  '1'}
+        with open(fp, 'w') as f:
+            write_table(f, data, tree=tree)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3\tLineage',
+               'G1\t4\t2\t0\t2;72;74',
+               'G2\t5\t0\t3\t2;72',
+               'G3\t8\t0\t0\t2;70',
+               'G4\t0\t3\t0\t2;72',
+               'G5\t0\t7\t5\t']
+        self.assertListEqual(obs, exp)
+
+        # with lineages and names as Ids
+        namedic.update({
+            '74': 'Actino', '72': 'Terra', '70': 'FCB', '2': 'Bacteria'})
+        with open(fp, 'w') as f:
+            write_table(f, data, tree=tree, namedic=namedic, name_as_id=True)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3\tLineage',
+               'Actinobacteria\t4\t2\t0\tBacteria;Terra;Actino',
+               'Firmicutes\t5\t0\t3\tBacteria;Terra',
+               'Bacteroidetes\t8\t0\t0\tBacteria;FCB',
+               'Cyanobacteria\t0\t3\t0\tBacteria;Terra',
+               'G5\t0\t7\t5\t']
         self.assertListEqual(obs, exp)
         remove(fp)
 

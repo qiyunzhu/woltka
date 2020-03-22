@@ -62,6 +62,7 @@ def workflow(input_fp:   str,
              # output
              output_fmt:   str = None,
              name_as_id:  bool = False,
+             add_rank:    bool = False,
              add_lineage: bool = False,
              outmap_dir:   str = None,
              outmap_zip:   str = 'gz') -> dict:
@@ -105,7 +106,8 @@ def workflow(input_fp:   str,
 
     # write output profiles
     write_profiles(
-        data, output_fp, output_fmt, namedic, samples, name_as_id, add_lineage)
+        data, output_fp, output_fmt, samples, tree, rankdic, namedic,
+        name_as_id, add_rank, add_lineage)
 
     click.echo('Task completed.')
     return data
@@ -491,7 +493,7 @@ def build_hierarchy(names_fp:   str = None,
         with readzip(fp) as f:
             map_ = read_map(f)
         update_dict(tree, map_)
-        update_dict(rankdic, {k: rank for k in set(map_.values())})
+        # update_dict(rankdic, {k: rank for k in set(map_.values())})
         click.echo(' Done.')
 
     # fill root
@@ -635,8 +637,9 @@ def write_profiles(data:        dict,
                    rankdic:     dict = None,
                    namedic:     dict = None,
                    name_as_id:  bool = False,
+                   add_rank:    bool = False,
                    add_lineage: bool = False):
-    """Write profile to an output file.
+    """Write profile to an output table file.
 
     Parameters
     ----------
@@ -655,10 +658,11 @@ def write_profiles(data:        dict,
     namedic : dict, optional
         Taxon name dictionary.
     name_as_id : bool, optional
-        Replace feature IDs with names, if available;
-        otherwise, append names as a metadata column.
+        Replace feature IDs with names.
     add_lineage: bool optional
-        Append lineage strings as a metadata column.
+        Append feature ranks to table.
+    add_lineage: bool optional
+        Append lineage strings to table.
     """
     if not fp:
         return
@@ -692,5 +696,8 @@ def write_profiles(data:        dict,
                 data[rank], samples, tree, rankdic, namedic), fp)
         else:
             with open(fp, 'w') as fh:
-                write_table(fh, data[rank], namedic, samples)
+                write_table(fh, data[rank], samples,
+                            tree if add_lineage else None,
+                            rankdic if add_rank else None,
+                            namedic, name_as_id)
     click.echo(' Done.')
