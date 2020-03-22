@@ -206,7 +206,7 @@ def read_ranktb(fh):
     Returns
     -------
     dict
-        Taxonomy tree
+        Taxonomy tree.
     dict
         Rank dictionary.
 

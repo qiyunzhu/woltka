@@ -48,6 +48,7 @@ def workflow(input_fp:   str,
              lineage_fp:   str = None,
              ranktb_fp:    str = None,
              map_fps:     list = [],
+             map_as_rank: bool = False,
              names_fp:     str = None,
              # assignment
              ranks:        str = None,
@@ -90,7 +91,8 @@ def workflow(input_fp:   str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps)
+        names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
+        map_as_rank)
 
     # build mapping module
     mapper = build_mapper(coords_fp, overlap)
@@ -407,12 +409,13 @@ def prepare_ranks(ranks:      str = None,
     return ranks, rank2dir
 
 
-def build_hierarchy(names_fp:   str = None,
-                    nodes_fp:   str = None,
-                    newick_fp:  str = None,
-                    lineage_fp: str = None,
-                    ranktb_fp:  str = None,
-                    map_fps:   list = None) -> (dict, dict, dict, str):
+def build_hierarchy(names_fp:     str = None,
+                    nodes_fp:     str = None,
+                    newick_fp:    str = None,
+                    lineage_fp:   str = None,
+                    ranktb_fp:    str = None,
+                    map_fps:     list = None,
+                    map_as_rank: bool = False) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
     Parameters
@@ -429,6 +432,8 @@ def build_hierarchy(names_fp:   str = None,
         Rank table file.
     map_fps : list of str, optional
         Mapping files.
+    map_as_rank : bool, optional
+        Treat mapping filename stem as rank.
 
     Returns
     -------
@@ -489,11 +494,14 @@ def build_hierarchy(names_fp:   str = None,
     # plain mapping files
     for fp in map_fps:
         click.echo(f'  Parsing simple map file: {fp}...', nl=False)
-        rank = path2stem(fp)  # filename stem as rank
         with readzip(fp) as f:
             map_ = read_map(f)
         update_dict(tree, map_)
-        # update_dict(rankdic, {k: rank for k in set(map_.values())})
+
+        # filename stem as rank
+        if map_as_rank:
+            rank = path2stem(fp)
+            update_dict(rankdic, {k: rank for k in set(map_.values())})
         click.echo(' Done.')
 
     # fill root

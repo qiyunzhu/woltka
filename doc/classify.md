@@ -12,19 +12,21 @@ Wolkta supports various formats of classification systems, specifically:
 
 4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
 
-   Can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
+   It can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
 
    Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
 
-5. `--map` or `-m`: Simple map of lower taxon to higher taxon. Filename stem represents rank name.
+5. `--map` or `-m`: Simple map of lower taxon \<tab\> higher taxon.
 
-   Can supply multiple maps (by typing multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
+   One can supply multiple maps (by entering multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
+
+   Flag `--map-is-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
 
 If no classification file is provided, Woltka will automatically build a classification system from the alignment files, in which subject identifiers will be parsed as lineage strings.
 
 Subjects themselves are part of the classification system. A map of subject to taxon (e.g., a genome ID to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
 
-Classification files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies --- unless they conflict --- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
+Classification files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies -- unless they conflict -- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
 
 ```bash
 woltka classify \

@@ -106,9 +106,8 @@ def gotu(ctx, **kwargs):
     help=('Map(s) of subjects or lower classification units to higher ones. '
           'Can accept multiple maps.'))
 @click.option(
-    '--map-file-name-as-rank', is_flag=True,
-    help=('Map(s) of subjects or lower classification units to higher ones. '
-          'Can accept multiple maps.'))
+    '--map-as-rank', is_flag=True,
+    help='Map filename stem is rank name.')
 @click.option(
     '--names', 'names_fp', type=click.Path(exists=True),
     help=('Names of classification units as defined by NCBI names.dmp or a '

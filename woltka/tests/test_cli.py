@@ -109,7 +109,7 @@ class CliTests(TestCase):
                   '--map',    join(self.datdir, 'function', 'uniref.map.xz'),
                   '--map',    join(
                       self.datdir, 'function', 'go', 'process.tsv.xz'),
-                  '--map-is-rank']
+                  '--map-as-rank']
         res = self.runner.invoke(classify, params)
         self.assertEqual(res.exit_code, 0)
         with open(output_fp, 'r') as f:
