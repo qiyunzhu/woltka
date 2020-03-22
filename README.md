@@ -1,5 +1,6 @@
 # Woltka
 
+[![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Build Status](https://travis-ci.org/qiyunzhu/woltka.svg?branch=master)](https://travis-ci.org/qiyunzhu/woltka)
 [![Coverage Status](https://coveralls.io/repos/github/qiyunzhu/woltka/badge.svg?branch=master)](https://coveralls.io/github/qiyunzhu/woltka?branch=master)
 
