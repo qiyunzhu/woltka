@@ -34,7 +34,7 @@ params = {
     'author':           init.__author__,
     'author_email':     init.__email__,
     'url':              init.__url__,
-    'install_requires': ['biom-format', 'cython'],
+    'install_requires': ['biom-format'],
     'classifiers':      classes.strip().split('\n    '),
     'python_requires':  '>=3.6',
     'entry_points': {

@@ -1,5 +1,8 @@
 # Woltka
 
+[![Build Status](https://travis-ci.org/qiyunzhu/woltka.svg?branch=master)](https://travis-ci.org/qiyunzhu/woltka)
+[![Coverage Status](https://coveralls.io/repos/github/qiyunzhu/woltka/badge.svg?branch=master)](https://coveralls.io/github/qiyunzhu/woltka?branch=master)
+
 **Woltka** (Web of Life Toolkit App), is a bioinformatics package for shotgun metagenome data analysis. It takes full advantage of, and it not limited by, the [WoL](https://biocore.github.io/wol/) reference phylogeny. It bridges first-pass sequence aligners with advanced analytical platforms (such as QIIME 2). Highlights of this program include:
 
 - gOTU: fine-grain community ecology.
