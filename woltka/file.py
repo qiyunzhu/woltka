@@ -283,11 +283,14 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
     name_as_id : bool, optional
         Replace feature IDs with names. It applies to row headers and "Lineage"
         column, and removes "Name" column.
+
+    Notes
+    -----
+    The output table will have columns as samples and rows as features.
+    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
+    appended to the right of the table.
     """
-    if samples is None:
-        samples = sorted(data)
-    if namedic is None:
-        name_as_id = False
+    samples = samples or sorted(data)
 
     # table header
     header = ['#FeatureID'] + samples
@@ -339,6 +342,10 @@ def prep_table(profile, samples=None):
         Index (observation Ids).
     list
         Columns (sample Ids).
+
+    Notes
+    -----
+    This function is currently not in use.
     """
     index = sorted(allkeys(profile))
     columns = samples or sorted(profile)

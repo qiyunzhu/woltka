@@ -14,12 +14,12 @@
 import numpy as np
 import biom
 from .util import allkeys
-from .tree import get_lineage
+from .tree import get_lineage_gg
 from .__init__ import __version__
 
 
 def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
-                    namedic=None, add_lineage=False):
+                    namedic=None, name_as_id=False):
     """Convert a profile into a BIOM table.
 
     Parameters
@@ -34,8 +34,9 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
         Rank dictionary.
     namedic : dict, optional
         Taxon name dictionary.
-    add_lineage : bool, optional
-        Append lineage to metadata.
+    name_as_id : bool, optional
+        Replace feature IDs with names. It applies to row headers and "Lineage"
+        column, and removes "Name" column.
 
     Returns
     -------
@@ -44,24 +45,35 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
     """
     features = sorted(allkeys(profile))
     samples = samples or sorted(profile)
-    data, metadata = [], []
+    data, metadata, names = [], [], []
     for feature in features:
+
+        # generate data
         row = []
         for sample in samples:
-            try:
-                row.append(profile[sample][feature])
-            except KeyError:
-                row.append(0)
+            row.append(str(profile[sample][feature]) if feature in
+                       profile[sample] else 0)
         data.append(row)
-        metadata.append({
-            'Name': (
-                namedic[feature] if namedic and feature in namedic else None),
-            'Rank': (
-                rankdic[feature] if rankdic and feature in rankdic else None),
-            'Lineage': (
-                get_lineage(feature, tree) if add_lineage else None)})
-    return biom.Table(np.array(data), features, samples, metadata,
-                      generated_by=f'woltka-{__version__}')
+
+        # generate metadata
+        meta_ = {}
+        if namedic:
+            name = namedic[feature] if feature in namedic else None
+            if name_as_id:
+                names.append(name or feature)
+            else:
+                meta_['Name'] = name or None
+        if rankdic:
+            meta_['Rank'] = rankdic[feature] if feature in rankdic else None
+        if tree:
+            meta_['Lineage'] = get_lineage_gg(
+                feature, tree, namedic if name_as_id else None) or None
+        if meta_:
+            metadata.append(meta_)
+
+    # build biom table
+    return biom.Table(np.array(data), names or features, samples, metadata or
+                      None, generated_by=f'woltka-{__version__}')
 
 
 def write_biom(table: biom.Table, fp: str):

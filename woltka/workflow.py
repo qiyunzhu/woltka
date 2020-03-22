@@ -696,16 +696,20 @@ def write_profiles(data:        dict,
     click.echo('Format of output feature table(s): {}.'.format(
         'BIOM' if is_biom else 'TSV'))
 
+    # override Id-to-name conversion
+    if namedic is None:
+        name_as_id = False
+
     # write output profile(s)
     click.echo('Writing output profiles...', nl=False)
     for rank, fp in rank2fp.items():
         if is_biom:
             write_biom(profile_to_biom(
-                data[rank], samples, tree, rankdic, namedic), fp)
+                data[rank], samples, tree if add_lineage else None, rankdic
+                if add_rank else None, namedic, name_as_id), fp)
         else:
             with open(fp, 'w') as fh:
-                write_table(fh, data[rank], samples,
-                            tree if add_lineage else None,
-                            rankdic if add_rank else None,
-                            namedic, name_as_id)
+                write_table(
+                    fh, data[rank], samples, tree if add_lineage else None,
+                    rankdic if add_rank else None, namedic, name_as_id)
     click.echo(' Done.')

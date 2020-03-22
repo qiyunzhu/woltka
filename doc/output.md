@@ -63,13 +63,13 @@ biom convert --to-tsv -i input.biom -o output.tsv
 Optionally, one can append a metadata column to the right of the table. For example:
 
 ```
-biom convert --to-tsv -i input.biom -o output.tsv --header-key Name
+biom convert --to-tsv -i input.biom -o output.tsv --header-key Name --tsv-metadata-formatter naive
 ```
 
 Additionally, one can export all metadata as a separate table, with:
 
 ```
-biom export-metadata -i input.biom -m metadata.tsv
+biom export-metadata -i input.biom --observation-metadata-fp metadata.tsv
 ```
 
 ### TSV
