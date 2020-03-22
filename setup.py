@@ -35,7 +35,7 @@ params = {
     'author_email':     init.__email__,
     'url':              init.__url__,
     'install_requires': ['biom-format', 'cython'],
-    'classifiers':      [s.strip() for s in classes.split('\n') if s],
+    'classifiers':      classes.strip().split('\n    '),
     'python_requires':  '>=3.6',
     'entry_points': {
         'console_scripts': [f'{init.__name__}=woltka.cli:cli'],
@@ -44,27 +44,3 @@ params = {
 }
 
 setup(**params, packages=find_packages(), include_package_data=True)
-
-# setup(
-#     name=name,
-#     version=version,
-#     license='BSD-3-Clause',
-#     description=description,
-#     long_description=long_description,
-#     long_description_content_type='text/markdown',
-#     author='Qiyun Zhu',
-#     author_email='qiyunzhu@gmail.com',
-#     url=f'https://github.com/qiyunzhu/{name}',
-#     packages=find_packages(),
-#     include_package_data=True,
-#     install_requires=[
-#         'biom-format',
-#         'cython'
-#     ],
-#     classifiers=classifiers,
-#     python_requires='>=3.6',
-#     entry_points={
-#         'console_scripts': [f'{name}={name}.cli:cli'],
-#         'qiime2.plugins': [f'q2-{name}={name}.q2.plugin_setup:plugin']
-#     }
-# )
