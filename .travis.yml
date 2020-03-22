@@ -17,6 +17,7 @@ install:
   - conda install -q -c conda-forge biom-format flake8 coveralls
   - python setup.py install
 script:
-  - make all
+  - flake8
+  - coverage run -m unittest
 after_success:
   - coveralls
