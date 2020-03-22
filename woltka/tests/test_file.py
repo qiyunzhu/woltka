@@ -220,7 +220,7 @@ class UtilTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(mapfile)
 
-    def test_write_write_table(self):
+    def test_write_table(self):
         # default mode
         data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
                 'S2': {'G1': 2, 'G4': 3, 'G5': 7},

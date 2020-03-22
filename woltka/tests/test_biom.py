@@ -1,0 +1,112 @@
+#!/usr/bin/env python3
+
+# ----------------------------------------------------------------------------
+# Copyright (c) 2020--, Qiyun Zhu.
+#
+# Distributed under the terms of the Modified BSD License.
+#
+# The full license is in the file LICENSE, distributed with this software.
+# ----------------------------------------------------------------------------
+
+from unittest import TestCase, main
+from os import remove
+from os.path import join, dirname, realpath
+from shutil import rmtree
+from tempfile import mkdtemp
+
+import pandas as pd
+from biom import load_table
+from numpy.testing import assert_array_equal
+from pandas.testing import assert_frame_equal
+
+from woltka.biom import profile_to_biom, write_biom
+
+
+class BiomTests(TestCase):
+    def setUp(self):
+        self.tmpdir = mkdtemp()
+        self.datdir = join(dirname(realpath(__file__)), 'data')
+
+    def tearDown(self):
+        rmtree(self.tmpdir)
+
+    def test_profile_to_biom(self):
+        # default mode
+        profile = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+                   'S2': {'G1': 2, 'G4': 3, 'G5': 7},
+                   'S3': {'G2': 3, 'G5': 5}}
+        table = profile_to_biom(profile)
+        samples = ['S1', 'S2', 'S3']
+        assert_array_equal(table.ids('sample'), samples)
+        features = ['G1', 'G2', 'G3', 'G4', 'G5']
+        assert_array_equal(table.ids('observation'), features)
+        data = [[4, 2, 0], [5, 0, 3], [8, 0, 0], [0, 3, 0], [0, 7, 5]]
+        obs = table.to_dataframe(dense=True).astype(int).values
+        assert_array_equal(obs, data)
+
+        # with sample Ids
+        table = profile_to_biom(profile, samples=['S3', 'S1'])
+        obs = table.to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame([[0, 4], [3, 5], [0, 8], [0, 0], [5, 0]],
+                           index=features, columns=['S3', 'S1'])
+        assert_frame_equal(obs, exp)
+
+        # with taxon names
+        namedic = {'G1': 'Actinobacteria',
+                   'G2': 'Firmicutes',
+                   'G3': 'Bacteroidetes',
+                   'G4': 'Cyanobacteria'}
+        table = profile_to_biom(profile, namedic=namedic)
+        obs = table.to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame(data, features, samples)
+        assert_frame_equal(obs, exp)
+        obs = table.metadata_to_dataframe('observation')['Name']
+        names = ['Actinobacteria', 'Firmicutes', 'Bacteroidetes',
+                 'Cyanobacteria', None]
+        assert_array_equal(obs, names)
+
+        # with taxon names to replace Ids
+        table = profile_to_biom(profile, namedic=namedic, name_as_id=True)
+        obs = table.to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame(data, names[:4] + ['G5'], samples)
+        assert_frame_equal(obs, exp)
+
+        # with ranks
+        rankdic = {'G1': 'class', 'G2': 'phylum', 'G4': 'phylum'}
+        table = profile_to_biom(profile, rankdic=rankdic)
+        obs = table.metadata_to_dataframe('observation')['Rank']
+        exp = ['class', 'phylum', None, 'phylum', None]
+        assert_array_equal(obs, exp)
+
+        # with lineages
+        tree = {'G1': '74', '74': '72', 'G2': '72', 'G3': '70', 'G4': '72',
+                'G5':  '1', '72':  '2', '70':  '2',  '2':  '1',  '1':  '1'}
+        table = profile_to_biom(profile, tree=tree)
+        obs = table.metadata_to_dataframe('observation')['Lineage']
+        exp = ['2;72;74', '2;72', '2;70', '2;72', None]
+        assert_array_equal(obs, exp)
+
+        # with lineages and names as Ids
+        namedic.update({
+            '74': 'Actino', '72': 'Terra', '70': 'FCB', '2': 'Bacteria'})
+        table = profile_to_biom(
+            profile, tree=tree, namedic=namedic, name_as_id=True)
+        obs = table.metadata_to_dataframe('observation')['Lineage']
+        exp = ['Bacteria;Terra;Actino', 'Bacteria;Terra', 'Bacteria;FCB',
+               'Bacteria;Terra', None]
+        assert_array_equal(obs, exp)
+
+    def test_write_biom(self):
+        profile = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+                   'S2': {'G1': 2, 'G4': 3, 'G5': 7},
+                   'S3': {'G2': 3, 'G5': 5}}
+        exp = profile_to_biom(profile)
+        fp = join(self.tmpdir, 'tmp.biom')
+        write_biom(exp, fp)
+        obs = load_table(fp)
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        remove(fp)
+
+
+if __name__ == '__main__':
+    main()
