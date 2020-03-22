@@ -15,7 +15,7 @@ import numpy as np
 import biom
 from .util import allkeys
 from .tree import get_lineage_gg
-from .__init__ import __version__
+from .__init__ import __name__, __version__
 
 
 def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
@@ -73,7 +73,7 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
 
     # build biom table
     return biom.Table(np.array(data), names or features, samples, metadata or
-                      None, generated_by=f'woltka-{__version__}')
+                      None, generated_by=f'{__name__}-{__version__}')
 
 
 def write_biom(table: biom.Table, fp: str):

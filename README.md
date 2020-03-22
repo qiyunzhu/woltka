@@ -20,8 +20,8 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Stratification](doc/stratify.md)
 - Tutorials
   - [gOTU analysis](doc/gotu.md)
-  - [Tree-based classification](#tree-based-classification)
-  - [Combined taxonomic & functional analyses](#combined-taxonomic--functional-analyses)
+  - Tree-based classification
+  - Combined taxonomic & functional analyses
 - For users of
   - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), SHOGUN
   - Bowtie2, BWA, Minimap2
@@ -86,7 +86,7 @@ woltka classify \
   --coords function/coords.txt.xz \
   --map function/uniref.map.xz \
   --map function/go/process.tsv.xz \
-  --map-is-rank \
+  --map-as-rank \
   --rank uniref,process \
   -o output_dir
 ```

@@ -9,7 +9,8 @@
 # ----------------------------------------------------------------------------
 
 from setuptools import setup, find_packages
-from re import search
+
+import woltka.__init__ as init
 
 
 classes = """
@@ -24,38 +25,46 @@ classes = """
     Operating System :: MacOS
 """
 
-classifiers = [s.strip() for s in classes.split('\n') if s]
-
-
-name = 'woltka'
-
-description = 'Web of Life ToolKit App'
-
-long_description = open('README.md').read()
-
-with open(f'{name}/__init__.py', 'r') as f:
-    version = search(r'__version__ = (.*)', f.read()).group(1).strip('\'"')
-
-setup(
-    name=name,
-    version=version,
-    license='BSD-3-Clause',
-    description=description,
-    long_description=long_description,
-    long_description_content_type='text/markdown',
-    author='Qiyun Zhu',
-    author_email='qiyunzhu@gmail.com',
-    url=f'https://github.com/qiyunzhu/{name}',
-    packages=find_packages(),
-    include_package_data=True,
-    install_requires=[
-        'biom-format',
-        'cython'
-    ],
-    classifiers=classifiers,
-    python_requires='>=3.6',
-    entry_points={
-        'console_scripts': [f'{name}={name}.cli:cli'],
-        'qiime2.plugins': [f'q2-{name}={name}.q2.plugin_setup:plugin']
+params = {
+    'name':             init.__name__,
+    'version':          init.__version__,
+    'license':          init.__license__,
+    'long_description': open('README.md').read(),
+    'long_description_content_type': 'text/markdown',
+    'author':           init.__author__,
+    'author_email':     init.__email__,
+    'url':              init.__url__,
+    'install_requires': ['biom-format', 'cython'],
+    'classifiers':      [s.strip() for s in classes.split('\n') if s],
+    'python_requires':  '>=3.6',
+    'entry_points': {
+        'console_scripts': [f'{init.__name__}=woltka.cli:cli'],
+        'qiime2.plugins': [f'q2-{init.__name__}=woltka.q2.plugin_setup:plugin']
     }
-)
+}
+
+setup(**params, packages=find_packages(), include_package_data=True)
+
+# setup(
+#     name=name,
+#     version=version,
+#     license='BSD-3-Clause',
+#     description=description,
+#     long_description=long_description,
+#     long_description_content_type='text/markdown',
+#     author='Qiyun Zhu',
+#     author_email='qiyunzhu@gmail.com',
+#     url=f'https://github.com/qiyunzhu/{name}',
+#     packages=find_packages(),
+#     include_package_data=True,
+#     install_requires=[
+#         'biom-format',
+#         'cython'
+#     ],
+#     classifiers=classifiers,
+#     python_requires='>=3.6',
+#     entry_points={
+#         'console_scripts': [f'{name}={name}.cli:cli'],
+#         'qiime2.plugins': [f'q2-{name}={name}.q2.plugin_setup:plugin']
+#     }
+# )
