@@ -14,7 +14,7 @@ before_install:
 install:
   - conda create -q -n test-env python=$TRAVIS_PYTHON_VERSION
   - conda activate test-env
-  - conda install -q -c conda-forge biom-format flake8 coveralls
+  - conda install -q -c conda-forge biom-format flake8 nose coveralls
   - python setup.py install
 script:
   - flake8
