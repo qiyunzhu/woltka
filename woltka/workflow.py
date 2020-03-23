@@ -414,7 +414,7 @@ def build_hierarchy(names_fp:     str = None,
                     newick_fp:    str = None,
                     lineage_fp:   str = None,
                     ranktb_fp:    str = None,
-                    map_fps:     list = None,
+                    map_fps:     list = [],
                     map_as_rank: bool = False) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
@@ -488,7 +488,9 @@ def build_hierarchy(names_fp:     str = None,
     if ranktb_fp:
         click.echo(f'  Parsing rank table file: {ranktb_fp}...', nl=False)
         with readzip(ranktb_fp) as f:
-            update_dict(tree, read_ranktb(f))
+            tree_, rankdic_ = read_ranktb(f)
+            update_dict(tree, tree_)
+            update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
     # plain mapping files
@@ -551,7 +553,7 @@ def reshape_readmap(rmap:    dict,
 
     # sample Id from filename
     else:
-        return {files[fp]: rmap}
+        return {files[fp] if files else None: rmap}
 
 
 def assign_readmap(rmap:     dict,

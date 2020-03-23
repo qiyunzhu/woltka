@@ -235,7 +235,7 @@ class UtilTests(TestCase):
             write_readmap(f, rmap)
         with open(fp, 'r') as f:
             obs = sorted(f.read().splitlines())
-        exp = ['R1\tG1', 'R2\tG2', 'R3\tG1:1\tG2:2', 'R4\tG3:3']
+        exp = ['R1\tG1', 'R2\tG2', 'R3\tG2:2\tG1:1', 'R4\tG3:3']
         self.assertListEqual(obs, exp)
 
         # with name dict
@@ -244,7 +244,7 @@ class UtilTests(TestCase):
             write_readmap(f, rmap, namedic)
         with open(fp, 'r') as f:
             obs = sorted(f.read().splitlines())
-        exp = ['R1\tEcoli', 'R2\tStrep', 'R3\tEcoli:1\tStrep:2', 'R4\tKleb:3']
+        exp = ['R1\tEcoli', 'R2\tStrep', 'R3\tStrep:2\tEcoli:1', 'R4\tKleb:3']
         self.assertListEqual(obs, exp)
         remove(fp)
 

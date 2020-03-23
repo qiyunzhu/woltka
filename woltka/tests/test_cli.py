@@ -16,7 +16,7 @@ from tempfile import mkdtemp
 
 from click.testing import CliRunner
 
-from woltka.cli import gotu, classify
+from woltka.cli import cli, gotu, classify
 
 
 class CliTests(TestCase):
@@ -27,6 +27,9 @@ class CliTests(TestCase):
 
     def tearDown(self):
         rmtree(self.tmpdir)
+
+    def test_cli(self):
+        self.assertRaises(SystemExit, cli)
 
     def test_gotu(self):
         output_fp = join(self.tmpdir, 'output.tsv')

@@ -249,10 +249,11 @@ def write_readmap(fh, rmap, namedic=None):
     namedic : dict, optional
         Taxon name dictionary.
     """
+    def sortkey(x): return -x[1], x[0]
     for read, taxa in rmap.items():
         row = [read]
         if isinstance(taxa, dict):
-            for taxon, count in taxa.items():
+            for taxon, count in sorted(taxa.items(), key=sortkey):
                 if namedic and taxon in namedic:
                     taxon = namedic[taxon]
                 row.append(taxon + ':' + str(count))

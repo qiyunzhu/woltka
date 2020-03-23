@@ -376,34 +376,33 @@ class TreeTests(TestCase):
                'G1	k__Bacteria; p__Firmicutes; c__Bacilli',
                'G2	k__Bacteria; p__Firmicutes; c__Clostridia',
                'G3	k__Bacteria; p__Tenericutes; c__Mollicutes',
-               'G4	k__Viruses; p__; c__Inoviridae')
+               'G4	k__Viruses; x__; c__Inoviridae')
         tree_obs, rankdic_obs = read_lineage(tsv)
         tree_exp = {'k__Bacteria': None,
                     'k__Viruses': None,
                     'k__Bacteria;p__Firmicutes': 'k__Bacteria',
                     'k__Bacteria;p__Tenericutes': 'k__Bacteria',
-                    'k__Viruses;p__': 'k__Viruses',
+                    'k__Viruses;x__': 'k__Viruses',
                     'k__Bacteria;p__Firmicutes;c__Bacilli':
                     'k__Bacteria;p__Firmicutes',
                     'k__Bacteria;p__Firmicutes;c__Clostridia':
                     'k__Bacteria;p__Firmicutes',
                     'k__Bacteria;p__Tenericutes;c__Mollicutes':
                     'k__Bacteria;p__Tenericutes',
-                    'k__Viruses;p__;c__Inoviridae': 'k__Viruses;p__',
+                    'k__Viruses;x__;c__Inoviridae': 'k__Viruses;x__',
                     'G1': 'k__Bacteria;p__Firmicutes;c__Bacilli',
                     'G2': 'k__Bacteria;p__Firmicutes;c__Clostridia',
                     'G3': 'k__Bacteria;p__Tenericutes;c__Mollicutes',
-                    'G4': 'k__Viruses;p__;c__Inoviridae'}
+                    'G4': 'k__Viruses;x__;c__Inoviridae'}
         self.assertDictEqual(tree_obs, tree_exp)
         rankdic_exp = {'k__Bacteria': 'kingdom',
                        'k__Viruses': 'kingdom',
                        'k__Bacteria;p__Firmicutes': 'phylum',
                        'k__Bacteria;p__Tenericutes': 'phylum',
-                       'k__Viruses;p__': 'phylum',
                        'k__Bacteria;p__Firmicutes;c__Bacilli': 'class',
                        'k__Bacteria;p__Firmicutes;c__Clostridia': 'class',
                        'k__Bacteria;p__Tenericutes;c__Mollicutes': 'class',
-                       'k__Viruses;p__;c__Inoviridae': 'class'}
+                       'k__Viruses;x__;c__Inoviridae': 'class'}
         self.assertDictEqual(rankdic_obs, rankdic_exp)
 
         # real lineage file
