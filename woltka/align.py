@@ -223,7 +223,7 @@ def assign_parser(fmt):
     elif fmt == 'sam':  # SAM format
         return parse_sam_line
     else:
-        raise ValueError(f'Invalid format code: {fmt}.')
+        raise ValueError(f'Invalid format code: "{fmt}".')
 
 
 def parse_map_line(line, *args):
@@ -390,7 +390,7 @@ def parse_kraken(line):
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
     x = line.rstrip().split('\t')
-    return x[1], x[2] if x[0] == 'C' else None, None
+    return (x[1], x[2]) if x[0] == 'C' else (None, None)
 
 
 def parse_centrifuge(line):
@@ -418,4 +418,4 @@ def parse_centrifuge(line):
     if line.startswith('readID'):
         return None
     x = line.rstrip().split('\t')
-    return x[0], x[1], int(x[2]), int(x[3])
+    return x[0], x[1], int(x[3]), int(x[5])

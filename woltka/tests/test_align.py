@@ -16,7 +16,8 @@ from tempfile import mkdtemp
 from woltka.file import readzip
 from woltka.align import (
     parse_align_file, Plain, infer_align_format, assign_parser, parse_map_line,
-    parse_b6o_line, parse_sam_line, cigar_to_lens)
+    parse_b6o_line, parse_sam_line, cigar_to_lens, parse_kraken,
+    parse_centrifuge)
 
 
 class AlignTests(TestCase):
@@ -165,6 +166,13 @@ class AlignTests(TestCase):
         line = '@HD	VN:1.0	SO:unsorted'
         self.assertEqual(infer_align_format(line), 'sam')
 
+        # invalid sam
+        line = 'S1	*	*	*	*	*	*	0	0	*	*'
+        with self.assertRaises(ValueError) as ctx:
+            infer_align_format(line)
+        self.assertEqual(str(ctx.exception), (
+            'Cannot determine alignment file format.'))
+
         # cannot determine
         line = 'Hi there!'
         with self.assertRaises(ValueError) as ctx:
@@ -185,6 +193,10 @@ class AlignTests(TestCase):
         self.assertEqual(assign_parser('map'), parse_map_line)
         self.assertEqual(assign_parser('sam'), parse_sam_line)
         self.assertEqual(assign_parser('b6o'), parse_b6o_line)
+        with self.assertRaises(ValueError) as ctx:
+            assign_parser('xyz')
+        self.assertEqual(str(ctx.exception), (
+            'Invalid format code: "xyz".'))
 
     def test_parse_map_line(self):
         aln = ('R1	G1', 'R2	G2	# note', '# end of file')
@@ -249,6 +261,26 @@ class AlignTests(TestCase):
             cigar_to_lens('*')
         msg = 'Missing CIGAR string.'
         self.assertEqual(str(context.exception), msg)
+
+    def test_parse_kraken(self):
+        kra = ('C	S1	561	150	561:100 A:10 562:40',
+               'U	S2	0	150	1:80 A:40 0:20 A:10')
+        obs = parse_kraken(kra[0])
+        exp = ('S1', '561')
+        self.assertTupleEqual(obs, exp)
+        obs = parse_kraken(kra[1])
+        exp = (None, None)
+        self.assertTupleEqual(obs, exp)
+
+    def test_parse_centrifuge(self):
+        cen = ('readID	seqID	taxID	score	2ndBestScore	'
+               'hitLength	queryLength	numMatches',
+               'S1	NC_123456	561	125	0	50	150	1')
+        obs = parse_centrifuge(cen[0])
+        self.assertIsNone(obs)
+        obs = parse_centrifuge(cen[1])
+        exp = ('S1', 'NC_123456', 125, 50)
+        self.assertTupleEqual(obs, exp)
 
 
 if __name__ == '__main__':

@@ -16,7 +16,8 @@ from tempfile import mkdtemp
 from woltka.file import readzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
-    Ordinal, match_read_gene, read_gene_coords, whether_prefix)
+    Ordinal, match_read_gene, read_gene_coords, whether_prefix,
+    add_match_to_readmap)
 
 
 class OrdinalTests(TestCase):
@@ -133,6 +134,10 @@ class OrdinalTests(TestCase):
     def test_ordinal_append(self):
         mapper = Ordinal({})
 
+        # nothing
+        mapper.append()
+        self.assertListEqual(mapper.rids, [])
+
         # b6o (BLAST, DIAMOND, BURST, etc.)
         parser = parse_b6o_line
         b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
@@ -193,6 +198,12 @@ class OrdinalTests(TestCase):
         self.assertTupleEqual(
             mapper.locmap['NC_789012'][1], (280, False, False, 2))
 
+        # no "buf" attribute
+        mapper.clear()
+        delattr(mapper, 'buf')
+        mapper.append()
+        self.assertListEqual(mapper.rids, [])
+
     def test_ordinal_flush(self):
         # TODO
         pass
@@ -214,6 +225,26 @@ class OrdinalTests(TestCase):
             (75,  True, True, '2'), (529, False, True, '2'),
             (638, True, True, '1'), (912, False, True, '1')]}
         self.assertDictEqual(obs, exp)
+
+        # don't sort
+        obs = read_gene_coords(tbl, sort=False)['NC_789012']
+        exp = [(638, True, True, '1'), (912, False, True, '1'),
+               (75,  True, True, '2'), (529, False, True, '2')]
+        self.assertListEqual(obs, exp)
+
+        # incorrect formats
+        # only one column
+        with self.assertRaises(ValueError) as ctx:
+            read_gene_coords(('hello',))
+        self.assertEqual(str(ctx.exception), 'hello')
+        # only two columns
+        with self.assertRaises(ValueError) as ctx:
+            read_gene_coords(('hello\t100',))
+        self.assertEqual(str(ctx.exception), 'hello\t100')
+        # three columns but 3rd is string
+        with self.assertRaises(ValueError) as ctx:
+            read_gene_coords(('hello\t100\tthere',))
+        self.assertEqual(str(ctx.exception), 'hello\t100\tthere')
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
@@ -249,6 +280,25 @@ class OrdinalTests(TestCase):
             (638, True, True,  'NP_369258.2'),
             (912, False, True, 'NP_369258.2')]}
         self.assertFalse(whether_prefix(coords))
+
+    def test_add_match_to_readmap(self):
+        # default mode
+        rids = ['R1', 'R2', 'R3', 'R4']
+        rmap = {'R1': {'G1'},
+                'R2': {'G2'},
+                'R3': {'G2', 'G3'}}
+        match = {2: {'G4'}, 0: {'G1', 'G4'}}
+        add_match_to_readmap(rmap, match, rids)
+        exp = {'R1': {'G1', 'G4'},
+               'R2': {'G2'},
+               'R3': {'G2', 'G3', 'G4'}}
+        self.assertDictEqual(rmap, exp)
+
+        # append nucleotide Id
+        match = {1: {'G3'}, 3: {'G2'}}
+        add_match_to_readmap(rmap, match, rids, 'N')
+        self.assertSetEqual(rmap['R2'], {'G2', 'N_G3'})
+        self.assertSetEqual(rmap['R4'], {'N_G2'})
 
 
 if __name__ == '__main__':

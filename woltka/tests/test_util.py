@@ -14,7 +14,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.util import (
-    update_dict, intize, delnone, allkeys, count_list, last_value)
+    update_dict, add_dict, intize, delnone, allkeys, count_list, last_value)
 
 
 class UtilTests(TestCase):
@@ -38,6 +38,18 @@ class UtilTests(TestCase):
             update_dict(d0, d3)
         self.assertEqual(str(ctx.exception), (
             'Conflicting values found for "b".'))
+
+    def test_add_dict(self):
+        d0 = {'a': 1, 'b': 2}
+        d1 = {'c': 3, 'd': 4}
+        add_dict(d0, d1)
+        self.assertDictEqual(d0, {'a': 1, 'b': 2, 'c': 3, 'd': 4})
+        d2 = {'a': 1}
+        add_dict(d0, d2)
+        self.assertDictEqual(d0, {'a': 2, 'b': 2, 'c': 3, 'd': 4})
+        d3 = {'e': 5, 'b': 3}
+        add_dict(d0, d3)
+        self.assertDictEqual(d0, {'a': 2, 'b': 5, 'c': 3, 'd': 4, 'e': 5})
 
     def test_intize(self):
         dic = {'a': 1.0, 'b': 2.2, 'c': 3.6}

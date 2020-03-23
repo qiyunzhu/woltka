@@ -168,6 +168,15 @@ class TreeTests(TestCase):
         self.assertDictEqual(obs, exp)
         remove(fp)
 
+        # invalid format
+        with open(fp, 'w') as f:
+            print('hello', file=f)
+        with open(fp, 'r') as f:
+            with self.assertRaises(ValueError) as ctx:
+                obs = read_map(f)
+            self.assertEqual(str(ctx.exception), (
+                'Invalid mapping file format.'))
+
     def test_read_names(self):
         # simple map
         tsv = ('1	root',
@@ -455,6 +464,8 @@ class TreeTests(TestCase):
         self.assertEqual(obs, '')
         obs = get_lineage_gg('1236', tree)
         self.assertEqual(obs, '')
+        obs = get_lineage_gg('0000', tree)
+        self.assertEqual(obs, '')
 
     def test_fill_root(self):
         # already has root
@@ -550,6 +561,7 @@ class TreeTests(TestCase):
         self.assertEqual(find_lca(['1236', '2157'], tree), '1')
         self.assertEqual(find_lca(['1'], tree), '1')
         self.assertIsNone(find_lca(['1234'], tree))
+        self.assertIsNone(find_lca(['1234', '1'], tree))
 
         # proteo tree
         # Escherichia, Enterobacter => Enterobacteriaceae

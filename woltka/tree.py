@@ -306,20 +306,15 @@ def read_lineage(fh):
             # append entire ancestral lineage
             this = f'{parent};{taxon}' if parent else taxon
 
-            # check existing relationship
-            try:
-                if tree[this] != parent:
-                    raise ValueError(f'Conflict at taxon "{this}".')
-
             # add current taxon to dictionary
-            except KeyError:
-                tree[this] = parent
+            tree[this] = parent
 
-                # get rank from prefix (e.g., "k__")
-                try:
-                    rankdic[this] = code2rank[p.match(taxon).group(1)]
-                except (AttributeError, KeyError):
-                    pass
+            # get rank from prefix (e.g., "k__")
+            m = p.match(taxon)
+            if m:
+                rank = m.group(1)
+                if rank in code2rank:
+                    rankdic[this] = code2rank[rank]
 
             parent = this
 
@@ -480,10 +475,7 @@ def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
         return ''
     start = 0 if include_root else 1
     end = len(lineage) if include_self else len(lineage) - 1
-    try:
-        taxa = lineage[start:end]
-    except IndexError:
-        return ''
+    taxa = lineage[start:end]
     return ';'.join([
         namedic[x] if namedic and x in namedic else x for x in taxa])
 
