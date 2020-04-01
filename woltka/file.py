@@ -249,6 +249,7 @@ def write_readmap(fh, rmap, namedic=None):
     namedic : dict, optional
         Taxon name dictionary.
     """
+    # sort subjects by count (high-to-low) then by alphabet
     def sortkey(x): return -x[1], x[0]
     for read, taxa in rmap.items():
         row = [read]

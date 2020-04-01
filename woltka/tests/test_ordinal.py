@@ -234,17 +234,18 @@ class OrdinalTests(TestCase):
 
         # incorrect formats
         # only one column
+        msg = 'Cannot extract coordinates from line:'
         with self.assertRaises(ValueError) as ctx:
             read_gene_coords(('hello',))
-        self.assertEqual(str(ctx.exception), 'hello')
+        self.assertEqual(str(ctx.exception), f'{msg} "hello".')
         # only two columns
         with self.assertRaises(ValueError) as ctx:
             read_gene_coords(('hello\t100',))
-        self.assertEqual(str(ctx.exception), 'hello\t100')
+        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100".')
         # three columns but 3rd is string
         with self.assertRaises(ValueError) as ctx:
             read_gene_coords(('hello\t100\tthere',))
-        self.assertEqual(str(ctx.exception), 'hello\t100\tthere')
+        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100\tthere".')
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
