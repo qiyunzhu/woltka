@@ -123,6 +123,8 @@ class ClassifyTests(TestCase):
         self.assertIsNone(obs)
         obs = majority([1, 2, 3])
         self.assertIsNone(obs)
+        obs = majority([])
+        self.assertIsNone(obs)
 
     def test_strip_index(self):
         dic = {'R1': {'G1_1', 'G1_2', 'G2_3', 'G3'},

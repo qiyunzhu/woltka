@@ -249,17 +249,20 @@ def write_readmap(fh, rmap, namedic=None):
     namedic : dict, optional
         Taxon name dictionary.
     """
+    # sort subjects by count (high-to-low) then by alphabet
+    def sortkey(x): return -x[1], x[0]
     for read, taxa in rmap.items():
-        row = [namedic[read]] if namedic and read in namedic else [read]
+        row = [read]
         if isinstance(taxa, dict):
-            for taxon, count in taxa.items():
-                row.append(f'{taxon}:{count}')
+            for taxon, count in sorted(taxa.items(), key=sortkey):
+                if namedic and taxon in namedic:
+                    taxon = namedic[taxon]
+                row.append(taxon + ':' + str(count))
+        elif namedic and taxa in namedic:
+            row.append(namedic[taxa])
         else:
             row.append(taxa)
-        try:
-            print('\t'.join(row), file=fh)
-        except TypeError:
-            raise ValueError(row)
+        print('\t'.join(row), file=fh)
 
 
 def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,

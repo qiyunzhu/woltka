@@ -17,7 +17,7 @@ import gzip
 
 from woltka.file import (
     readzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, write_table, prep_table)
+    id2file_from_map, write_readmap, write_table, prep_table)
 
 
 class UtilTests(TestCase):
@@ -75,7 +75,8 @@ class UtilTests(TestCase):
         lines = ['#SampleID\tHeight\tWeight',
                  'S01\t120.5\t56.8',
                  'S02\t114.2\t52.5',
-                 'S03\t117.8\t55.0']
+                 'S03\t117.8\t55.0',
+                 '']
         obs = read_ids(lines)
         self.assertListEqual(obs, ['S01', 'S02', 'S03'])
 
@@ -88,6 +89,9 @@ class UtilTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             read_ids(['S01', 'S02', 'S01', 'S03'])
         self.assertEqual(str(ctx.exception), 'Duplicate IDs found.')
+
+        # nothing
+        self.assertIsNone(read_ids(None))
 
     def test_id2file_from_dir(self):
         ids = ['a', 'b', 'c']
@@ -219,6 +223,30 @@ class UtilTests(TestCase):
         obs = id2file_from_map(mapfile)
         self.assertListEqual(obs, exp)
         remove(mapfile)
+
+    def test_write_readmap(self):
+        # typical read map
+        rmap = {'R1': 'G1',
+                'R2': 'G2',
+                'R3': {'G1': 1, 'G2': 2},
+                'R4': {'G3': 3}}
+        fp = join(self.tmpdir, 'readmap.tsv')
+        with open(fp, 'w') as f:
+            write_readmap(f, rmap)
+        with open(fp, 'r') as f:
+            obs = sorted(f.read().splitlines())
+        exp = ['R1\tG1', 'R2\tG2', 'R3\tG2:2\tG1:1', 'R4\tG3:3']
+        self.assertListEqual(obs, exp)
+
+        # with name dict
+        namedic = {'G1': 'Ecoli', 'G2': 'Strep', 'G3': 'Kleb'}
+        with open(fp, 'w') as f:
+            write_readmap(f, rmap, namedic)
+        with open(fp, 'r') as f:
+            obs = sorted(f.read().splitlines())
+        exp = ['R1\tEcoli', 'R2\tStrep', 'R3\tStrep:2\tEcoli:1', 'R4\tKleb:3']
+        self.assertListEqual(obs, exp)
+        remove(fp)
 
     def test_write_table(self):
         # default mode

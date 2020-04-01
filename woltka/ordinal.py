@@ -189,8 +189,9 @@ def read_gene_coords(fh, sort=False):
             # start and end are based on genome, not gene itself
             try:
                 start, end = sorted([int(x[1]), int(x[2])])
-            except IndexError:
-                raise ValueError(line)
+            except (IndexError, ValueError):
+                raise ValueError(
+                    f'Cannot extract coordinates from line: "{line}".')
             res[nucl].extend((
                 (start, True, True, idx),
                 (end,  False, True, idx)))
@@ -320,5 +321,5 @@ def add_match_to_readmap(rmap, match, rids, nucl=None):
     """
     for idx, genes in match.items():
         if nucl:
-            genes = {'{}_{}'.format(nucl, x) for x in genes}
+            genes = {f'{nucl}_{x}' for x in genes}
         rmap.setdefault(rids[idx], set()).update(genes)
