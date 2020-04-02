@@ -9,14 +9,13 @@
 # ----------------------------------------------------------------------------
 
 from unittest import TestCase, main
-from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.tree import (
-    read_names, read_nodes, read_lineage, read_newick, read_ranktb, read_map,
-    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca)
+    read_names, read_nodes, read_lineage, read_newick, read_ranktb, fill_root,
+    get_lineage, get_lineage_gg, find_rank, find_lca)
 
 
 # A small test taxon set containing 15 proteobacterial species
@@ -152,30 +151,6 @@ class TreeTests(TestCase):
 
     def tearDown(self):
         rmtree(self.tmpdir)
-
-    def test_read_map(self):
-        # simple map
-        tsv = ('1	1',
-               '2	1',
-               '6	2	* notes')
-        fp = join(self.tmpdir, 'test.txt')
-        with open(fp, 'w') as f:
-            for line in tsv:
-                print(line, file=f)
-        with open(fp, 'r') as f:
-            obs = read_map(f)
-        exp = {'1': '1', '2': '1', '6': '2'}
-        self.assertDictEqual(obs, exp)
-        remove(fp)
-
-        # invalid format
-        with open(fp, 'w') as f:
-            print('hello', file=f)
-        with open(fp, 'r') as f:
-            with self.assertRaises(ValueError) as ctx:
-                obs = read_map(f)
-            self.assertEqual(str(ctx.exception), (
-                'Invalid mapping file format.'))
 
     def test_read_names(self):
         # simple map

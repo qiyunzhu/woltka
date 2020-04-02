@@ -141,6 +141,11 @@ def gotu(ctx, **kwargs):
 @click.option(
     '--overlap', type=click.IntRange(1, 100), default=80, show_default=True,
     help='Read/gene overlapping percentage threshold.')
+# stratification
+@click.option(
+    '--stratify', '-t', 'strata_dir',
+    type=click.Path(exists=True, file_okay=True, dir_okay=True),
+    help='Directory of read-to-feature maps for stratification.')
 # output files
 @click.option(
     '--to-biom/--to-tsv', 'output_fmt', default=None,

@@ -14,7 +14,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.classify import (
-    assign_none, assign_free, assign_rank, count, majority,
+    assign_none, assign_free, assign_rank, count, count_strata, majority,
     strip_index, demultiplex)
 
 
@@ -115,6 +115,40 @@ class ClassifyTests(TestCase):
                'd': 4 / 4}
         for key in obs:
             self.assertAlmostEqual(obs[key], exp[key])
+
+    def test_count_strata(self):
+        # unique match
+        strata = {'seq1': 'Ecoli',
+                  'seq2': 'Ecoli',
+                  'seq3': 'Cdiff',
+                  'seq4': 'Strep',
+                  'seq5': 'Strep',
+                  'seq6': 'Ecoli'}
+        matches = {'seq1': 'ligase',
+                   'seq2': 'polymerase',
+                   'seq3': 'nuclease',
+                   'seq4': 'ligase',
+                   'seq5': 'nuclease',
+                   'seq6': 'ligase',
+                   'seq0': 'nothing'}
+        obs = count_strata(matches, strata)
+        exp = {('Ecoli',     'ligase'): 2,
+               ('Ecoli', 'polymerase'): 1,
+               ('Cdiff',   'nuclease'): 1,
+               ('Strep',     'ligase'): 1,
+               ('Strep',   'nuclease'): 1}
+        self.assertDictEqual(obs, exp)
+
+        # multiple matches
+        strata['seq7'] = 'Ecoli'
+        matches['seq7'] = {'polymerase': 3, 'ligase': 1}
+        obs = count_strata(matches, strata)
+        exp = {('Ecoli',     'ligase'): 2.25,
+               ('Ecoli', 'polymerase'): 1.75,
+               ('Cdiff',   'nuclease'): 1,
+               ('Strep',     'ligase'): 1,
+               ('Strep',   'nuclease'): 1}
+        self.assertDictEqual(obs, exp)
 
     def test_majority(self):
         obs = majority([1, 1, 1, 2, 2], th=0.6)

@@ -14,7 +14,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.util import (
-    update_dict, add_dict, intize, delnone, allkeys, count_list, last_value)
+    add_dict, update_dict, sum_dict, intize, delnone, allkeys, count_list,
+    last_value, feat_n_cnt)
 
 
 class UtilTests(TestCase):
@@ -24,6 +25,17 @@ class UtilTests(TestCase):
 
     def tearDown(self):
         rmtree(self.tmpdir)
+
+    def test_add_dict(self):
+        d = {'a': 1, 'b': 2}
+        add_dict(d, 'c', 3)
+        self.assertDictEqual(d, {'a': 1, 'b': 2, 'c': 3})
+        add_dict(d, 'b', 2)
+        self.assertDictEqual(d, {'a': 1, 'b': 2, 'c': 3})
+        with self.assertRaises(AssertionError) as ctx:
+            add_dict(d, 'a', 0)
+        self.assertEqual(str(ctx.exception), (
+            'Conflicting values found for "a".'))
 
     def test_update_dict(self):
         d0 = {'a': 1, 'b': 2}
@@ -39,16 +51,16 @@ class UtilTests(TestCase):
         self.assertEqual(str(ctx.exception), (
             'Conflicting values found for "b".'))
 
-    def test_add_dict(self):
+    def test_sum_dict(self):
         d0 = {'a': 1, 'b': 2}
         d1 = {'c': 3, 'd': 4}
-        add_dict(d0, d1)
+        sum_dict(d0, d1)
         self.assertDictEqual(d0, {'a': 1, 'b': 2, 'c': 3, 'd': 4})
         d2 = {'a': 1}
-        add_dict(d0, d2)
+        sum_dict(d0, d2)
         self.assertDictEqual(d0, {'a': 2, 'b': 2, 'c': 3, 'd': 4})
         d3 = {'e': 5, 'b': 3}
-        add_dict(d0, d3)
+        sum_dict(d0, d3)
         self.assertDictEqual(d0, {'a': 2, 'b': 5, 'c': 3, 'd': 4, 'e': 5})
 
     def test_intize(self):
@@ -92,6 +104,16 @@ class UtilTests(TestCase):
         lst = ['a', 1, None, 'b', 2, None]
         self.assertEqual(last_value(lst), 2)
         self.assertIsNone(last_value([None, None]))
+
+    def test_feat_n_cnt(self):
+        self.assertTupleEqual(feat_n_cnt('A'),   ('A', 1))
+        self.assertTupleEqual(feat_n_cnt('A:1'), ('A', 1))
+        self.assertTupleEqual(feat_n_cnt('A:2'), ('A', 2))
+        self.assertTupleEqual(feat_n_cnt('A:0'), ('A:0', 1))
+        self.assertTupleEqual(feat_n_cnt('A:x'), ('A:x', 1))
+        self.assertTupleEqual(feat_n_cnt(':1'),  (':1', 1))
+        self.assertTupleEqual(feat_n_cnt('::'),  ('::', 1))
+        self.assertTupleEqual(feat_n_cnt(''),    ('', 1))
 
 
 if __name__ == '__main__':

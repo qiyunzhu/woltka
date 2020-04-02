@@ -15,8 +15,9 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.workflow import (
-    workflow, classify, parse_samples, build_mapper, prepare_ranks,
-    build_hierarchy, reshape_readmap, assign_readmap, write_profiles)
+    workflow, classify, parse_samples, parse_strata, build_mapper,
+    prepare_ranks, build_hierarchy, reshape_readmap, assign_readmap,
+    write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -166,6 +167,25 @@ class WorkflowTests(TestCase):
             parse_samples('im/not/path')
         self.assertEqual(str(ctx.exception), (
             '"im/not/path" is not a valid file or directory.'))
+
+    def test_parse_strata(self):
+        # default
+        for i in range(1, 4):
+            open(join(self.tmpdir, f'S{i}.txt'), 'a').close()
+        obs = parse_strata(self.tmpdir)
+        exp = {f'S{i}': join(self.tmpdir, f'S{i}.txt') for i in range(1, 4)}
+        self.assertDictEqual(obs, exp)
+
+        # with sample Ids
+        obs = parse_strata(self.tmpdir, samples=['S1', 'S2'])
+        exp = {f'S{i}': join(self.tmpdir, f'S{i}.txt') for i in range(1, 3)}
+        self.assertDictEqual(obs, exp)
+
+        # sample missing
+        with self.assertRaises(ValueError) as ctx:
+            parse_strata(self.tmpdir, samples=['S1', 'S2', 'Sx'])
+        self.assertEqual(str(ctx.exception), (
+            'Cannot locate stratification files for one or more samples.'))
 
     def test_build_mapper(self):
         # plain

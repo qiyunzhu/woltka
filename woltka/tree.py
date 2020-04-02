@@ -45,33 +45,6 @@ code2rank['d'] = 'kingdom'
 notax = {'', '0', 'unclassified', 'unassigned'}
 
 
-def read_map(fh):
-    """Read simple low-to-high map from file.
-
-    Parameters
-    ----------
-    fh : file handle
-        Simple mapping file.
-
-    Returns
-    -------
-    dict
-        Mapping (mutually identical to a taxonomy tree).
-
-    Notes
-    -----
-    Only first two columns are considered.
-
-    TODO
-    ----
-    Support for one-to-multiple mappings.
-    """
-    try:
-        return dict(x.split('\t', 2)[:2] for x in fh.read().splitlines())
-    except ValueError:
-        raise ValueError('Invalid mapping file format.')
-
-
 def read_names(fh):
     """Read taxonomic names from a file.
 
