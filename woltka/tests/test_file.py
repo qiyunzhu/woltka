@@ -14,9 +14,10 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 import gzip
+import bz2
 
 from woltka.file import (
-    readzip, file2stem, path2stem, read_ids, id2file_from_dir,
+    openzip, file2stem, path2stem, read_ids, id2file_from_dir,
     id2file_from_map, read_map, write_readmap, write_table, prep_table)
 
 
@@ -28,26 +29,42 @@ class UtilTests(TestCase):
     def tearDown(self):
         rmtree(self.tmpdir)
 
-    def test_readzip(self):
+    def test_openzip(self):
         text = 'Hello World!'
 
-        # regular file
+        # read regular file
         fp = join(self.tmpdir, 'test.txt')
         with open(fp, 'w') as f:
             f.write(text)
-        with readzip(fp) as f:
-            obs = f.read().rstrip()
+        with openzip(fp) as f:
+            obs = f.read()
         self.assertEqual(obs, text)
+
+        # write regular file
+        with openzip(fp, 'wt') as f:
+            f.write('Here I am!')
+        with open(fp, 'r') as f:
+            obs = f.read()
+        self.assertEqual(obs, 'Here I am!')
         remove(fp)
 
-        # compressed file
+        # read compressed file
         fpz = join(self.tmpdir, 'test.txt.gz')
         with gzip.open(fpz, 'wb') as f:
             f.write(text.encode())
-        with readzip(fpz) as f:
-            obs = f.read().rstrip()
+        with openzip(fpz) as f:
+            obs = f.read()
         self.assertEqual(obs, text)
         remove(fpz)
+
+        # write compressed file
+        fpb = join(self.tmpdir, 'test.txt.bz2')
+        with openzip(fpb, 'at') as f:
+            f.write('Here I am!')
+        with bz2.open(fpb, 'rt') as f:
+            obs = f.read()
+        self.assertEqual(obs, 'Here I am!')
+        remove(fpb)
 
     def test_file2stem(self):
         self.assertEqual(file2stem('input.txt'), 'input')

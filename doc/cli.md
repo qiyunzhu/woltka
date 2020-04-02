@@ -58,6 +58,12 @@ Option | Description
 `--coords`, `-c` | Reference gene coordinates on genomes.
 `--overlap`, | Read/gene overlapping percentage threshold. Default: 80.
 
+### Stratification
+
+Option | Description
+--- | ---
+`--stratify`, `-t` | Directory of read-to-feature maps for stratification. One file per sample.
+
 ### Output files
 
 Option | Description

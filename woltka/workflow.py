@@ -22,7 +22,7 @@ import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
-    readzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
+    openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
     write_readmap, write_table)
 from .align import Plain, parse_align_file
 from .classify import (
@@ -108,7 +108,8 @@ def workflow(input_fp:   str,
     # classify query sequences
     data = classify(
         mapper, files, samples, input_fmt, demux, tree, rankdic, namedic, root,
-        ranks, rank2dir, above, major, ambig, subok, deidx, lines, stratmap)
+        ranks, rank2dir, outmap_zip, above, major, ambig, subok, deidx, lines,
+        stratmap)
 
     # write output profiles
     write_profiles(
@@ -130,6 +131,7 @@ def classify(mapper:  object,
              root:       str = None,
              ranks:      str = None,
              rank2dir:  dict = None,
+             outzip:     str = None,
              above:     bool = False,
              major:      int = None,
              ambig:      str = True,
@@ -171,6 +173,8 @@ def classify(mapper:  object,
         will be reported).
     rank2dir : dict, otional
         Write classification map per rank to directory.
+    outzip : str, optional
+        Output read map compression method (gz, bz2, xz or None).
     above : bool, optional
         Allow assigning to a classification unit higher than given rank.
     major : int, optional
@@ -196,11 +200,13 @@ def classify(mapper:  object,
         Per-rank profiles generated from classification.
     """
     data = {x: {} for x in ranks}
+    if outzip == 'none':
+        outzip = None
 
     # assignment parameters
     kwargs = {'tree': tree, 'rankdic': rankdic, 'root':  root, 'above': above,
               'major': major and major / 100, 'ambig': ambig, 'subok': subok,
-              'namedic': namedic, 'rank2dir': rank2dir}
+              'namedic': namedic, 'rank2dir': rank2dir, 'outzip': outzip}
 
     # current sample Id
     csample = None
@@ -211,7 +217,7 @@ def classify(mapper:  object,
         click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
 
         # read alignment file into query-subject(s) map
-        with readzip(fp) as fh:
+        with openzip(fp) as fh:
 
             # parse alignment file by chunk
             for rmap in parse_align_file(fh, mapper, input_fmt, lines):
@@ -228,7 +234,7 @@ def classify(mapper:  object,
 
                     # read strata of current sample into cache
                     if stratmap and sample != csample:
-                        with readzip(stratmap[sample]) as fh:
+                        with openzip(stratmap[sample]) as fh:
                             kwargs['strata'] = dict(read_map(fh))
                         csample = sample
 
@@ -406,7 +412,7 @@ def build_mapper(coords_fp: str = None,
     """
     if coords_fp:
         click.echo(f'Reading gene coordinates...', nl=False)
-        with readzip(coords_fp) as fh:
+        with openzip(coords_fp) as fh:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'Total number of host sequences: {len(coords)}.')
@@ -503,14 +509,14 @@ def build_hierarchy(names_fp:     str = None,
     # taxonomy names
     if names_fp:
         click.echo(f'  Parsing taxonomy names file: {names_fp}...', nl=False)
-        with readzip(names_fp) as f:
+        with openzip(names_fp) as f:
             namedic = read_names(f)
         click.echo(' Done.')
 
     # taxonomy nodes
     if nodes_fp:
         click.echo(f'  Parsing taxonomy nodes file: {nodes_fp}...', nl=False)
-        with readzip(nodes_fp) as f:
+        with openzip(nodes_fp) as f:
             tree_, rankdic_ = read_nodes(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
@@ -519,14 +525,14 @@ def build_hierarchy(names_fp:     str = None,
     # Newick-format tree
     if newick_fp:
         click.echo(f'  Parsing Newick tree file: {newick_fp}...', nl=False)
-        with readzip(newick_fp) as f:
+        with openzip(newick_fp) as f:
             update_dict(tree, read_newick(f))
         click.echo(' Done.')
 
     # lineage strings file
     if lineage_fp:
         click.echo(f'  Parsing lineage file: {lineage_fp}...', nl=False)
-        with readzip(lineage_fp) as f:
+        with openzip(lineage_fp) as f:
             tree_, rankdic_ = read_lineage(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
@@ -535,7 +541,7 @@ def build_hierarchy(names_fp:     str = None,
     # rank table file
     if ranktb_fp:
         click.echo(f'  Parsing rank table file: {ranktb_fp}...', nl=False)
-        with readzip(ranktb_fp) as f:
+        with openzip(ranktb_fp) as f:
             tree_, rankdic_ = read_ranktb(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)
@@ -544,7 +550,7 @@ def build_hierarchy(names_fp:     str = None,
     # plain mapping files
     for fp in map_fps:
         click.echo(f'  Parsing simple map file: {fp}...', nl=False)
-        with readzip(fp) as f:
+        with openzip(fp) as f:
             map_ = dict(read_map(f, multi=False))
         update_dict(tree, map_)
 
@@ -609,6 +615,7 @@ def assign_readmap(rmap:     dict,
                    rank:     str,
                    sample:   str,
                    rank2dir: dict = None,
+                   outzip:    str = None,
                    tree:     dict = None,
                    rankdic:  dict = None,
                    namedic:  dict = None,
@@ -633,6 +640,8 @@ def assign_readmap(rmap:     dict,
         Sample ID.
     rank2dir : dict, optional
         Directory of output maps per rank.
+    outzip : str, optional
+        Output read map compression method (gz, bz2, xz or None).
     tree : dict, optional
         Hierarchical classification system.
     rankdic : dict, optional
@@ -675,8 +684,11 @@ def assign_readmap(rmap:     dict,
 
     # write classification map
     if rank2dir is not None:
-        with open(join(rank2dir[rank], f'{sample}.txt'), 'a') as f:
-            write_readmap(f, asgmt, namedic)
+        outfp = join(rank2dir[rank], f'{sample}.txt')
+        if outzip:
+            outfp = f'{outfp}.{outzip}'
+        with openzip(outfp, 'at') as fh:
+            write_readmap(fh, asgmt, namedic)
 
     # count taxa
     counts = count_strata(asgmt, strata) if strata else count(asgmt)

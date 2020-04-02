@@ -26,14 +26,16 @@ ZIPDIC = {'.gz': gzip, '.gzip': gzip,
           '.xz': lzma, '.lz': lzma, '.lzma': lzma}
 
 
-def readzip(fp):
-    """Read a regular or compressed file by matching filename extension to
+def openzip(fp, mode='rt'):
+    """Open a regular or compressed file by matching filename extension to
     proper library.
 
     Parameters
     ----------
     fp : str
         Input filepath.
+    mode : str, optional
+        Python file mode. Default: "rt" (read as text).
 
     Returns
     -------
@@ -42,7 +44,7 @@ def readzip(fp):
     """
     ext = splitext(fp)[1]
     zipfunc = getattr(ZIPDIC[ext], 'open') if ext in ZIPDIC else open
-    return zipfunc(fp, 'rt')
+    return zipfunc(fp, mode)
 
 
 def file2stem(fname, ext=None):
@@ -203,7 +205,7 @@ def id2file_from_map(fp):
     """
     res = []
     fdir = dirname(fp)
-    with readzip(fp) as fh:
+    with openzip(fp) as fh:
         for line in fh:
             line = line.rstrip()
 
