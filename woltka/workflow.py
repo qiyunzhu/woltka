@@ -200,13 +200,12 @@ def classify(mapper:  object,
         Per-rank profiles generated from classification.
     """
     data = {x: {} for x in ranks}
-    if outzip == 'none':
-        outzip = None
 
     # assignment parameters
     kwargs = {'tree': tree, 'rankdic': rankdic, 'root':  root, 'above': above,
               'major': major and major / 100, 'ambig': ambig, 'subok': subok,
-              'namedic': namedic, 'rank2dir': rank2dir, 'outzip': outzip}
+              'namedic': namedic, 'rank2dir': rank2dir, 'outzip': outzip if
+              outzip != 'none' else None}
 
     # current sample Id
     csample = None
@@ -685,9 +684,7 @@ def assign_readmap(rmap:     dict,
     # write classification map
     if rank2dir is not None:
         outfp = join(rank2dir[rank], f'{sample}.txt')
-        if outzip:
-            outfp = f'{outfp}.{outzip}'
-        with openzip(outfp, 'at') as fh:
+        with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
             write_readmap(fh, asgmt, namedic)
 
     # count taxa

@@ -162,6 +162,27 @@ class WorkflowTests(TestCase):
         exp = [join(self.tmpdir, f'S{i}.sam') for i in range(1, 4)]
         self.assertListEqual(obs[1], exp)
 
+        # sample-to-file map
+        fp = join(self.tmpdir, 'sample.list')
+        with open(fp, 'w') as f:
+            for i in (range(1, 4)):
+                print(f'S{i}\tS{i}.sam', file=f)
+        obs = parse_samples(fp)
+        self.assertListEqual(obs[0], ['S1', 'S2', 'S3'])
+        exp = {join(self.tmpdir, f'S{i}.sam'): f'S{i}' for i in range(1, 4)}
+        self.assertDictEqual(obs[1], exp)
+
+        # some samples only
+        obs = parse_samples(fp, samples='S1,S2')
+        self.assertListEqual(obs[0], ['S1', 'S2'])
+
+        # some samples are not found
+        with self.assertRaises(ValueError) as ctx:
+            parse_samples(fp, samples='S1,S2,S4')
+        self.assertEqual(str(ctx.exception), (
+            'Provided sample IDs and actual files are inconsistent.'))
+        remove(fp)
+
         # not a valid path
         with self.assertRaises(ValueError) as ctx:
             parse_samples('im/not/path')

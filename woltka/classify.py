@@ -154,16 +154,14 @@ def count_strata(matches, strata):
     for query, taxa in matches.items():
         if query in strata:
             feature = strata[query]
-        else:
-            continue
-        if isinstance(taxa, dict):
-            k = 1 / sum(taxa.values())
-            for taxon, n in taxa.items():
-                taxon = (feature, taxon)
-                res[taxon] = res.get(taxon, 0) + n * k
-        else:
-            taxon = (feature, taxa)
-            res[taxon] = res.get(taxon, 0) + 1
+            if isinstance(taxa, dict):
+                k = 1 / sum(taxa.values())
+                for taxon, n in taxa.items():
+                    taxon = (feature, taxon)
+                    res[taxon] = res.get(taxon, 0) + n * k
+            else:
+                taxon = (feature, taxa)
+                res[taxon] = res.get(taxon, 0) + 1
     return res
 
 
