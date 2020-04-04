@@ -6,7 +6,7 @@ Woltka enables this analysis through a "**stratification**" function. A stratum 
 
 Here is an example workflow, based on the commands and [sample data](../woltka/tests/data) introduced in the [quick-start guide](../README.md#example-usage), with merely two small modifications.
 
-Step 1: Taxonomic classification.
+## Step 1: Taxonomic classification.
 ```
 woltka classify \
   -i align/bowtie2 \
