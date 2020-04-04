@@ -21,7 +21,7 @@ from woltka.file import (
     id2file_from_map, read_map, write_readmap, write_table, prep_table)
 
 
-class UtilTests(TestCase):
+class FileTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.datdir = join(dirname(realpath(__file__)), 'data')

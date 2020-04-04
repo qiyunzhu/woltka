@@ -56,17 +56,21 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
         # generate metadata and observation
         stratum, feature = key if isinstance(key, tuple) else (None, key)
         obsrv, meta_ = feature, {}
+        # get feature name
         if namedic:
             name = namedic[feature] if feature in namedic else None
             if name_as_id:
                 obsrv = name or feature
             else:
                 meta_['Name'] = name or None
+        # prefix with stratum label
         if stratum:
             obsrv = f'{stratum}|{obsrv}'
         observations.append(obsrv)
+        # get feature rank
         if rankdic:
             meta_['Rank'] = rankdic[feature] if feature in rankdic else None
+        # get lineage string
         if tree:
             meta_['Lineage'] = get_lineage_gg(
                 feature, tree, namedic if name_as_id else None) or None
