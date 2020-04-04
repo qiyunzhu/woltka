@@ -19,7 +19,7 @@ woltka classify \
   -o taxonomy.biom
 ```
 
-The parameter `--outmap mapdir` will instruct Woltka to output read-to-taxon maps to directory `mapdir`. These maps will serve as stratum labels for the second run:
+The parameter `--outmap mapdir` will instruct Woltka to output read-to-taxon maps to the directory `mapdir`. These maps will serve as stratum labels for the second run:
 
 Step 2: Combined taxonomic/functional classification
 ```
