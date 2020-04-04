@@ -21,7 +21,7 @@ woltka classify \
 
 The parameter `--outmap mapdir` will instruct Woltka to output read-to-taxon maps to the directory `mapdir`. These maps will serve as stratum labels for the second run:
 
-Step 2: Combined taxonomic/functional classification
+## Step 2: Combined taxonomic/functional classification
 ```
 woltka classify \
   -i align/bowtie2 \
