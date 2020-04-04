@@ -36,7 +36,7 @@ woltka classify \
 
 The parameter `--stratify mapdir` will instruct Woltka to take the previously generated taxon maps under `mapdir` to label sequences during stratification.
 
-The output feature table is like:
+The output feature table, `taxfunc.biom`, is formatted like:
 
 Feature ID | Sample 1 | Sample 2 | Sample 3 | Sample 4 |
 --- | --- | --- | --- | --- |
