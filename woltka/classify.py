@@ -135,6 +135,36 @@ def count(matches):
     return res
 
 
+def count_strata(matches, strata):
+    """Stratify taxa in a map and count occurrences.
+
+    Parameters
+    ----------
+    matches : dict of str or dict
+        Query-to-taxon(a) map.
+    strata : dict, optional
+        Read-to-feature map for stratification.
+
+    Returns
+    -------
+    dict of tuple of (str, str): int
+        Stratified (feature, taxon): count map.
+    """
+    res = {}
+    for query, taxa in matches.items():
+        if query in strata:
+            feature = strata[query]
+            if isinstance(taxa, dict):
+                k = 1 / sum(taxa.values())
+                for taxon, n in taxa.items():
+                    taxon = (feature, taxon)
+                    res[taxon] = res.get(taxon, 0) + n * k
+            else:
+                taxon = (feature, taxa)
+                res[taxon] = res.get(taxon, 0) + 1
+    return res
+
+
 def majority(taxa, th=0.8):
     """Select taxon from list by majority rule.
 

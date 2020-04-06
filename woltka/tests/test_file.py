@@ -14,13 +14,14 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 import gzip
+import bz2
 
 from woltka.file import (
-    readzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, write_readmap, write_table, prep_table)
+    openzip, file2stem, path2stem, read_ids, id2file_from_dir,
+    id2file_from_map, read_map, write_readmap, write_table, prep_table)
 
 
-class UtilTests(TestCase):
+class FileTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.datdir = join(dirname(realpath(__file__)), 'data')
@@ -28,26 +29,42 @@ class UtilTests(TestCase):
     def tearDown(self):
         rmtree(self.tmpdir)
 
-    def test_readzip(self):
+    def test_openzip(self):
         text = 'Hello World!'
 
-        # regular file
+        # read regular file
         fp = join(self.tmpdir, 'test.txt')
         with open(fp, 'w') as f:
             f.write(text)
-        with readzip(fp) as f:
-            obs = f.read().rstrip()
+        with openzip(fp) as f:
+            obs = f.read()
         self.assertEqual(obs, text)
+
+        # write regular file
+        with openzip(fp, 'wt') as f:
+            f.write('Here I am!')
+        with open(fp, 'r') as f:
+            obs = f.read()
+        self.assertEqual(obs, 'Here I am!')
         remove(fp)
 
-        # compressed file
+        # read compressed file
         fpz = join(self.tmpdir, 'test.txt.gz')
         with gzip.open(fpz, 'wb') as f:
             f.write(text.encode())
-        with readzip(fpz) as f:
-            obs = f.read().rstrip()
+        with openzip(fpz) as f:
+            obs = f.read()
         self.assertEqual(obs, text)
         remove(fpz)
+
+        # write compressed file
+        fpb = join(self.tmpdir, 'test.txt.bz2')
+        with openzip(fpb, 'at') as f:
+            f.write('Here I am!')
+        with bz2.open(fpb, 'rt') as f:
+            obs = f.read()
+        self.assertEqual(obs, 'Here I am!')
+        remove(fpb)
 
     def test_file2stem(self):
         self.assertEqual(file2stem('input.txt'), 'input')
@@ -224,6 +241,59 @@ class UtilTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(mapfile)
 
+    def test_read_map(self):
+        # simplest map
+        tsv = ('R1	A',
+               'R2	B',
+               'R3	C')
+        obs = read_map(tsv)
+        exp = (('R1', 'A'), ('R2', 'B'), ('R3', 'C'))
+        for obs_, exp_ in zip(read_map(tsv), exp):
+            self.assertTupleEqual(obs_, exp_)
+
+        # specify separator
+        obs = read_map(('R1,A',), sep=',')
+        self.assertTupleEqual(next(obs), ('R1', 'A'))
+
+        # single column
+        obs = tuple(read_map(('Hello.',)))
+        self.assertTupleEqual(obs, ())
+
+        # more than two columns and line is skipped
+        obs = tuple(read_map(('Here\tit\tis.',)))
+        self.assertTupleEqual(obs, ())
+
+        # more than two columns and they are omitted
+        obs = next(read_map(('Here\tit\tis.',), multi=False))
+        exp = ('Here', 'it')
+        self.assertTupleEqual(obs, exp)
+
+        # multiple columns
+        tsv = ('R1	A	B	C',
+               'R2	D	E',
+               'R3	F')
+        obs = read_map(tsv, multi=True)
+        exp = (('R1', ('A', 'B', 'C')), ('R2', ('D', 'E')), ('R3', ('F',)))
+        self.assertTupleEqual(tuple(obs), exp)
+
+        # single column with count
+        tsv = ('R1	A',
+               'R2	B:2',
+               'R3	C:3')
+        obs = read_map(tsv, count=True)
+        exp = (('R1', ('A', 1)), ('R2', ('B', 2)), ('R3', ('C', 3)))
+        self.assertTupleEqual(tuple(obs), exp)
+
+        # multiple columns with count
+        tsv = ('R1	A:3	B:2	C',
+               'R2	D:4	E',
+               'R3	F')
+        obs = read_map(tsv, multi=True, count=True)
+        exp = (('R1', (('A', 3), ('B', 2), ('C', 1))),
+               ('R2', (('D', 4), ('E', 1))),
+               ('R3', (('F', 1),)))
+        self.assertTupleEqual(tuple(obs), exp)
+
     def test_write_readmap(self):
         # typical read map
         rmap = {'R1': 'G1',
@@ -361,6 +431,30 @@ class UtilTests(TestCase):
                'Cyanobacteria\t0\t3\t0\tBacteria;Terra',
                'G5\t0\t7\t5\t']
         self.assertListEqual(obs, exp)
+
+        # with stratification
+        sdata = {'S1': {('A', 'G1'): 4,
+                        ('A', 'G2'): 5,
+                        ('B', 'G1'): 8},
+                 'S2': {('A', 'G1'): 2,
+                        ('B', 'G1'): 3,
+                        ('B', 'G2'): 7},
+                 'S3': {('B', 'G3'): 3,
+                        ('C', 'G2'): 5}}
+        with open(fp, 'w') as f:
+            write_table(f, sdata)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3',
+               'A|G1\t4\t2\t0',
+               'A|G2\t5\t0\t0',
+               'B|G1\t8\t3\t0',
+               'B|G2\t0\t7\t0',
+               'B|G3\t0\t0\t3',
+               'C|G2\t0\t0\t5']
+        self.assertListEqual(obs, exp)
+
+        # clean up
         remove(fp)
 
     def test_prep_table(self):

@@ -43,28 +43,34 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
     biom.Table
         Converted BIOM table.
     """
-    features = sorted(allkeys(profile))
+    # features = sorted(allkeys(profile))
     samples = samples or sorted(profile)
-    data, metadata, names = [], [], []
-    for feature in features:
+    observations, data, metadata = [], [], []
 
+    for key in sorted(allkeys(profile)):
         # generate data
         row = []
         for sample in samples:
-            row.append(str(profile[sample][feature]) if feature in
-                       profile[sample] else 0)
+            row.append(profile[sample][key] if key in profile[sample] else 0)
         data.append(row)
-
-        # generate metadata
-        meta_ = {}
+        # generate metadata and observation
+        stratum, feature = key if isinstance(key, tuple) else (None, key)
+        obsrv, meta_ = feature, {}
+        # get feature name
         if namedic:
             name = namedic[feature] if feature in namedic else None
             if name_as_id:
-                names.append(name or feature)
+                obsrv = name or feature
             else:
                 meta_['Name'] = name or None
+        # prefix with stratum label
+        if stratum:
+            obsrv = f'{stratum}|{obsrv}'
+        observations.append(obsrv)
+        # get feature rank
         if rankdic:
             meta_['Rank'] = rankdic[feature] if feature in rankdic else None
+        # get lineage string
         if tree:
             meta_['Lineage'] = get_lineage_gg(
                 feature, tree, namedic if name_as_id else None) or None
@@ -72,8 +78,8 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
             metadata.append(meta_)
 
     # build biom table
-    return biom.Table(np.array(data), names or features, samples, metadata or
-                      None, generated_by=f'{__name__}-{__version__}')
+    return biom.Table(np.array(data), observations, samples, metadata or None,
+                      generated_by=f'{__name__}-{__version__}')
 
 
 def write_biom(table: biom.Table, fp: str):

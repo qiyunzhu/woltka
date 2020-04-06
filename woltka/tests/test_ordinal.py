@@ -13,7 +13,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.file import readzip
+from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
     Ordinal, match_read_gene, read_gene_coords, whether_prefix,
@@ -249,7 +249,7 @@ class OrdinalTests(TestCase):
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
-        with readzip(fp) as f:
+        with openzip(fp) as f:
             obs = read_gene_coords(f, sort=True)
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']

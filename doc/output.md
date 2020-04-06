@@ -110,9 +110,7 @@ The flag `--name-as-id` also applies to the read maps (see [above](#file-formats
 
 To enable writing of read maps, add `--outmap <directory>` to the command line. Woltka will write one read map file per sample, named after the sample ID, to the directory. If there are multiple ranks (`--rank`) to which reads are classified, Woltka will write read maps at each rank in a separate subdirectory named by the particular rank.
 
-Read maps are typically large -- comparable to the original alignment files, since each read occupies one line. Therefore, Woltka compresses them by default
-
-`--outmap-zip`. Values are `none`, `gz`, `bz2` and `xz`.
+Read maps are typically large -- comparable to the original alignment files, since each read occupies one line. Therefore, Woltka by default compresses them using the gzip algorithm (extension: `.gz`). One can select compression method using the `--outmap-zip` parameters. Choices are `none`, `gz`, `bz2` and `xz`.
 
 For example, with command:
 

@@ -101,6 +101,8 @@ Subsequently, Woltka is able to assign query sequences to functional units, as d
 
 Similarly, the output files are two functional profiles: `uniref.biom` and `process.biom`.
 
+One can also combine taxonomic and functional profilings in a **stratification** analysis. See [details](doc/stratify.md).
+
 ## Notes
 
 ### Citation

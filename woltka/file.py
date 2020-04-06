@@ -17,7 +17,7 @@ import gzip
 import bz2
 import lzma
 
-from .util import allkeys
+from .util import allkeys, feat_n_cnt
 from .tree import get_lineage_gg
 
 
@@ -26,14 +26,16 @@ ZIPDIC = {'.gz': gzip, '.gzip': gzip,
           '.xz': lzma, '.lz': lzma, '.lzma': lzma}
 
 
-def readzip(fp):
-    """Read a regular or compressed file by matching filename extension to
+def openzip(fp, mode='rt'):
+    """Open a regular or compressed file by matching filename extension to
     proper library.
 
     Parameters
     ----------
     fp : str
         Input filepath.
+    mode : str, optional
+        Python file mode. Default: "rt" (read as text).
 
     Returns
     -------
@@ -42,7 +44,7 @@ def readzip(fp):
     """
     ext = splitext(fp)[1]
     zipfunc = getattr(ZIPDIC[ext], 'open') if ext in ZIPDIC else open
-    return zipfunc(fp, 'rt')
+    return zipfunc(fp, mode)
 
 
 def file2stem(fname, ext=None):
@@ -203,7 +205,7 @@ def id2file_from_map(fp):
     """
     res = []
     fdir = dirname(fp)
-    with readzip(fp) as fh:
+    with openzip(fp) as fh:
         for line in fh:
             line = line.rstrip()
 
@@ -235,6 +237,74 @@ def id2file_from_map(fp):
             # otherwise (i.e., this is the first line), return
             return
     return res or None
+
+
+def read_map(fh, sep='\t', multi=None, count=False):
+    """Read a mapping file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file.
+    sep : str, optional
+        Separator between columns.
+    multi : bool, optional
+        Whether one key can correspond to multiple values.
+        - True: all values are parsed.
+        - False: only first value is parsed.
+        - None: skip if there are multiple values.
+    count : bool, optional
+        Values have counts after colon.
+
+    Yields
+    ------
+    tuple
+        Pair of key and value(s).
+
+    Notes
+    -----
+    A mapping file is a tab-delimited file (tab can be replaced by a custom
+    separator), where the first column is the key, and the remaining columns
+    are values.
+
+    In default mode, lines with only one or more than two columns are omitted.
+    With multi = False, only the 2nd column is parsed regardless of others.
+    With multi = True, 2nd to last columns are all parsed and combined in a
+    tuple.
+
+    Counts are numeric suffixes post a colon in a value. With count = True, a
+    "value:count" string will be converted into a tuple of (value, count). If
+    not applicable, the result will be a tuple of (value, 1).
+
+    This function is among the bottlenecking steps of the pipeline. Performance
+    is a major consideration.
+
+    See Also
+    --------
+    util.feat_n_cnt
+    """
+    for line in fh:
+        row = line.rstrip().split(sep)
+        n = len(row)
+        if n == 1:
+            continue
+        key = row[0]
+
+        # first value only
+        if not multi:
+            if n > 2 and multi is None:
+                continue
+            value = row[1]
+            if count:
+                value = feat_n_cnt(value)
+            yield key, value
+
+        # all values
+        else:
+            values = row[1:]
+            if count:
+                values = (feat_n_cnt(x) for x in values)
+            yield key, (*values,)
 
 
 def write_readmap(fh, rmap, namedic=None):
@@ -307,10 +377,13 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
 
     # table body
     for key in sorted(allkeys(data)):
+        # stratification
+        stratum, feature = key if isinstance(key, tuple) else (None, key)
         # get feature name
-        name = namedic[key] if namedic and key in namedic else None
+        name = namedic[feature] if namedic and feature in namedic else None
         # fill row header (feature Id or name)
-        row = [namedic[key]] if name_as_id and name else [key]
+        head = name if name_as_id and name else feature
+        row = [f'{stratum}|{head}'] if stratum else [head]
         # fill cell values (feature counts)
         for sample in samples:
             row.append(str(data[sample][key]) if key in data[sample] else '0')
@@ -319,11 +392,11 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
             row.append(name or '')
         # fill rank column
         if rankdic:
-            row.append(rankdic[key] if key in rankdic else '')
+            row.append(rankdic[feature] if feature in rankdic else '')
         # fill lineage column
         if tree:
             row.append(get_lineage_gg(
-                key, tree, namedic if name_as_id else None))
+                feature, tree, namedic if name_as_id else None))
         # print row
         print('\t'.join(row), file=fh)
 

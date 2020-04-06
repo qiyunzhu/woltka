@@ -13,7 +13,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
-from woltka.file import readzip
+from woltka.file import openzip
 from woltka.align import (
     parse_align_file, Plain, infer_align_format, assign_parser, parse_map_line,
     parse_b6o_line, parse_sam_line, cigar_to_lens, parse_kraken,
@@ -182,11 +182,11 @@ class AlignTests(TestCase):
 
         # real files
         # Bowtie2 (sam)
-        with readzip(join(self.datdir, 'align', 'bowtie2', 'S01.sam.xz')) as f:
+        with openzip(join(self.datdir, 'align', 'bowtie2', 'S01.sam.xz')) as f:
             self.assertEqual(infer_align_format(next(f)), 'sam')
 
         # BURST (b6o)
-        with readzip(join(self.datdir, 'align', 'burst', 'S01.b6.bz2')) as f:
+        with openzip(join(self.datdir, 'align', 'burst', 'S01.b6.bz2')) as f:
             self.assertEqual(infer_align_format(next(f)), 'b6o')
 
     def test_assign_parser(self):

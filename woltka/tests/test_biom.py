@@ -96,6 +96,23 @@ class BiomTests(TestCase):
                'Bacteria;Terra', None]
         assert_array_equal(obs, exp)
 
+        # with stratification
+        profile = {'S1': {('A', 'G1'): 4,
+                          ('A', 'G2'): 5,
+                          ('B', 'G1'): 8},
+                   'S2': {('A', 'G1'): 2,
+                          ('B', 'G1'): 3,
+                          ('B', 'G2'): 7},
+                   'S3': {('B', 'G3'): 3,
+                          ('C', 'G2'): 5}}
+        table = profile_to_biom(profile)
+        obs = table.to_dataframe(dense=True).astype(int)
+        data = [[4, 2, 0], [5, 0, 0], [8, 3, 0], [0, 7, 0], [0, 0, 3],
+                [0, 0, 5]]
+        index = ['A|G1', 'A|G2', 'B|G1', 'B|G2', 'B|G3', 'C|G2']
+        exp = pd.DataFrame(data, index=index, columns=samples)
+        assert_frame_equal(obs, exp)
+
     def test_write_biom(self):
         profile = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
                    'S2': {'G1': 2, 'G4': 3, 'G5': 7},
