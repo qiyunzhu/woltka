@@ -18,14 +18,14 @@ from .tree import get_lineage_gg
 from .__init__ import __name__, __version__
 
 
-def profile_to_biom(data, samples=None, tree=None, rankdic=None, namedic=None,
-                    name_as_id=False):
+def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
+                    namedic=None, name_as_id=False):
     """Convert a profile into a BIOM table.
 
     Parameters
     ----------
-    data : dict
-        Profile data to convert.
+    profile : dict
+        Profile to convert.
     samples : list of str, optional
         Sample ID list to include.
     tree : dict, optional
@@ -43,14 +43,15 @@ def profile_to_biom(data, samples=None, tree=None, rankdic=None, namedic=None,
     biom.Table
         Converted BIOM table.
     """
-    samples = [x for x in samples if x in data] if samples else sorted(data)
+    samples = [x for x in samples if x in profile] if samples else sorted(
+        profile)
     observations, data, metadata = [], [], []
 
-    for key in sorted(allkeys(data)):
+    for key in sorted(allkeys(profile)):
         # generate data
         row = []
         for sample in samples:
-            row.append(data[sample][key] if key in data[sample] else 0)
+            row.append(profile[sample][key] if key in profile[sample] else 0)
         data.append(row)
         # generate metadata and observation
         stratum, feature = key if isinstance(key, tuple) else (None, key)
