@@ -120,7 +120,7 @@ class FileTests(TestCase):
         exp = {x: '{}.faa'.format(x) for x in ids}
         self.assertDictEqual(obs, exp)
 
-        # skip subdirectory
+        # skip subdirectory and only consider files
         sdir = join(self.tmpdir, 'im_dir')
         makedirs(sdir)
         obs = id2file_from_dir(self.tmpdir)
@@ -355,6 +355,13 @@ class FileTests(TestCase):
                'G3\t0\t8',
                'G4\t0\t0',
                'G5\t5\t0']
+        self.assertListEqual(obs, exp)
+
+        # some sample Ids are not in data
+        with open(fp, 'w') as f:
+            write_table(f, data, samples=['S3', 'S0', 'S1'])
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
         self.assertListEqual(obs, exp)
 
         # with taxon names

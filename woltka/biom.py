@@ -43,8 +43,10 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
     biom.Table
         Converted BIOM table.
     """
-    samples = [x for x in samples if x in profile] if samples else sorted(
-        profile)
+    if samples:
+        samples = [x for x in samples if x in profile]
+    else:
+        samples = sorted(profile)
     observations, data, metadata = [], [], []
 
     for key in sorted(allkeys(profile)):

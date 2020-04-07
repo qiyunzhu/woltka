@@ -51,6 +51,11 @@ class BiomTests(TestCase):
                            index=features, columns=['S3', 'S1'])
         assert_frame_equal(obs, exp)
 
+        # some sample Ids are not in profile
+        table = profile_to_biom(profile, samples=['S3', 'S0', 'S1'])
+        obs = table.to_dataframe(dense=True).astype(int)
+        assert_frame_equal(obs, exp)
+
         # with taxon names
         namedic = {'G1': 'Actinobacteria',
                    'G2': 'Firmicutes',
