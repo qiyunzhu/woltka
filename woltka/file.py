@@ -156,15 +156,16 @@ def id2file_from_dir(dir_, ext=None, ids=None):
     """
     res = {}
     for fname in listdir(dir_):
-        try:
-            id_ = file2stem(fname, ext)
-        except ValueError:
-            continue
-        if ids and id_ not in ids:
-            continue
-        if id_ in res:
-            raise ValueError(f'Ambiguous files for ID: "{id_}".')
-        res[id_] = fname
+        if isfile(join(dir_, fname)):
+            try:
+                id_ = file2stem(fname, ext)
+            except ValueError:
+                continue
+            if ids and id_ not in ids:
+                continue
+            if id_ in res:
+                raise ValueError(f'Ambiguous files for ID: "{id_}".')
+            res[id_] = fname
     return res
 
 

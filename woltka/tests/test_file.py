@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------------
 
 from unittest import TestCase, main
-from os import remove
+from os import remove, makedirs
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -119,6 +119,13 @@ class FileTests(TestCase):
         obs = id2file_from_dir(self.tmpdir)
         exp = {x: '{}.faa'.format(x) for x in ids}
         self.assertDictEqual(obs, exp)
+
+        # skip subdirectory
+        sdir = join(self.tmpdir, 'im_dir')
+        makedirs(sdir)
+        obs = id2file_from_dir(self.tmpdir)
+        self.assertDictEqual(obs, exp)
+        rmtree(sdir)
         for id_ in ids:
             remove(join(self.tmpdir, '{}.faa'.format(id_)))
 
