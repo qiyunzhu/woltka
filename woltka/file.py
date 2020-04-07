@@ -363,7 +363,7 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
     Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
     appended to the right of the table.
     """
-    samples = samples or sorted(data)
+    samples = [x for x in samples if x in data] if samples else sorted(data)
 
     # table header
     header = ['#FeatureID'] + samples
