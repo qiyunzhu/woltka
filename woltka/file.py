@@ -153,6 +153,11 @@ def id2file_from_dir(dir_, ext=None, ids=None):
     ------
     ValueError
         Multiple files have the same stem filename.
+
+    Notes
+    -----
+    Only top-level directory is searched. Only files but not subdirectories are
+    considered.
     """
     res = {}
     for fname in listdir(dir_):
@@ -364,7 +369,10 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
     Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
     appended to the right of the table.
     """
-    samples = [x for x in samples if x in data] if samples else sorted(data)
+    if samples:
+        samples = [x for x in samples if x in data]
+    else:
+        samples = sorted(data)
 
     # table header
     header = ['#FeatureID'] + samples
