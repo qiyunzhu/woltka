@@ -38,7 +38,7 @@ def assign_none(subs, ambig=False):
         return count_list(subs) if ambig else None
 
 
-def assign_free(subs, tree, root, subok=False):
+def assign_free(subs, tree, root=None, subok=False):
     """Assign query based on a classification system in a rank-free manner.
 
     Parameters
@@ -65,7 +65,7 @@ def assign_free(subs, tree, root, subok=False):
         return None if lca == root else lca
 
 
-def assign_rank(subs, rank, tree, rankdic, root, above=False, major=None,
+def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
                 ambig=False):
     """Assign query to a fixed rank in a classification system.
 
@@ -77,7 +77,7 @@ def assign_rank(subs, rank, tree, rankdic, root, above=False, major=None,
         Target rank.
     tree : dict
         Hierarchical classification system.
-    rankdic : dict, optional
+    rankdic : dict
         Rank dictionary.
     root : str, optional
         Root identifier.
