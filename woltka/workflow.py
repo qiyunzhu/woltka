@@ -245,7 +245,7 @@ def classify(mapper:  object,
         click.echo(' Done.')
         click.echo(f'Number of query sequences: {n}.')
 
-    click.echo('Task completed.')
+    click.echo('Classification completed.')
     return data
 
 
