@@ -349,7 +349,6 @@ def parse_samples(fp:        str,
     else:
         raise ValueError(f'"{fp}" is not a valid file or directory.')
 
-    click.echo(f'Number of alignment files to read: {len(files)}.')
     click.echo(f'Demultiplexing: {"on" if demux else "off"}.')
 
     return samples, files, demux
