@@ -345,27 +345,19 @@ def cigar_to_lens(cigar):
         Alignment length.
     int
         Offset in subject sequence.
-
-    Raises
-    ------
-    ValueError
-        CIGAR string is missing.
     """
-    if cigar in ('', '*'):
-        raise ValueError('Missing CIGAR string.')
     align, offset = 0, 0
-    ops = 'DHIMNPSX='
     n = ''  # current step size
     for c in cigar:
-        if c in ops:
+        if c in 'MDIHNPSX=':
             if c in 'M=X':
                 align += int(n)
-            if c in 'MDN=X':
+            elif c in 'DN':
                 offset += int(n)
             n = ''
         else:
             n += c
-    return align, offset
+    return align, align + offset
 
 
 def parse_kraken(line):

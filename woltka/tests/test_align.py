@@ -257,11 +257,6 @@ class AlignTests(TestCase):
         self.assertTupleEqual(cigar_to_lens('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens('3M1I3M1D5M'), (11, 12))
 
-        with self.assertRaises(ValueError) as context:
-            cigar_to_lens('*')
-        msg = 'Missing CIGAR string.'
-        self.assertEqual(str(context.exception), msg)
-
     def test_parse_kraken(self):
         kra = ('C	S1	561	150	561:100 A:10 562:40',
                'U	S2	0	150	1:80 A:40 0:20 A:10')
