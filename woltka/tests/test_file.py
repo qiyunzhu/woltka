@@ -332,7 +332,8 @@ class FileTests(TestCase):
                 'S3': {'G2': 3, 'G5': 5}}
         fp = join(self.tmpdir, 'profile.tsv')
         with open(fp, 'w') as f:
-            write_table(f, data)
+            obs = write_table(f, data)
+        self.assertTupleEqual(obs, (3, 5))
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
         exp = ['#FeatureID\tS1\tS2\tS3',
@@ -346,7 +347,8 @@ class FileTests(TestCase):
         # with sample Ids
         samples = ['S3', 'S1']
         with open(fp, 'w') as f:
-            write_table(f, data, samples=samples)
+            obs = write_table(f, data, samples=samples)
+        self.assertTupleEqual(obs, (2, 5))
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
         exp = ['#FeatureID\tS3\tS1',
@@ -359,7 +361,8 @@ class FileTests(TestCase):
 
         # some sample Ids are not in data
         with open(fp, 'w') as f:
-            write_table(f, data, samples=['S3', 'S0', 'S1'])
+            obs = write_table(f, data, samples=['S3', 'S0', 'S1'])
+        self.assertTupleEqual(obs, (2, 5))
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
         self.assertListEqual(obs, exp)

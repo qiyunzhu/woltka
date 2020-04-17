@@ -243,7 +243,7 @@ def classify(mapper:  object,
                         assign_readmap(map_, data, rank, sample, **kwargs)
 
         click.echo(' Done.')
-        click.echo(f'Number of query sequences: {n}.')
+        click.echo(f'  Number of query sequences: {n}.')
 
     click.echo('Classification completed.')
     return data
@@ -763,15 +763,19 @@ def write_profiles(data:        dict,
         name_as_id = False
 
     # write output profile(s)
-    click.echo('Writing output profiles...', nl=False)
+    click.echo('Writing output profiles...')
     for rank, fp in rank2fp.items():
         if is_biom:
-            write_biom(profile_to_biom(
+            biom = profile_to_biom(
                 data[rank], samples, tree if add_lineage else None, rankdic
-                if add_rank else None, namedic, name_as_id), fp)
+                if add_rank else None, namedic, name_as_id)
+            write_biom(biom, fp)
+            m, n = biom.shape
         else:
             with open(fp, 'w') as fh:
-                write_table(
+                n, m = write_table(
                     fh, data[rank], samples, tree if add_lineage else None,
                     rankdic if add_rank else None, namedic, name_as_id)
-    click.echo(' Done.')
+        click.echo(f'  Rank: {rank}, samples: {n}, features: {m}.')
+
+    click.echo('Profiles written.')
