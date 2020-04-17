@@ -215,7 +215,7 @@ def whether_prefix(coords):
     Returns
     -------
     bool
-        Whether gene Ids should be prefixed.
+        Whether gene IDs should be prefixed.
 
     See Also
     --------
@@ -317,7 +317,7 @@ def add_match_to_readmap(rmap, match, rids, nucl=None):
     rids : list
         Read ID list.
     nucl : str, optional
-        Prefix nucleotide Id to gene Ids.
+        Prefix nucleotide ID to gene IDs.
     """
     for idx, genes in match.items():
         if nucl:

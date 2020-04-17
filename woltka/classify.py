@@ -100,10 +100,12 @@ def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
     elif major:
         return majority(taxa, major)
     elif above:
+        if None in tset:
+            return None
         lca = find_lca(tset, tree)
         return None if lca == root else lca
     elif ambig:
-        return count_list(taxa)
+        return count_list(filter(None, taxa))
     else:
         return None
 
