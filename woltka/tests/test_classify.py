@@ -96,6 +96,11 @@ class ClassifyTests(TestCase):
                           rankdic=rankdic, root=None, above=True)
         self.assertEqual(obs, 'T0')
 
+        # assign above rank but there is a None
+        obs = assign_rank({'G1', 'G2', 'G3', None}, 'general', tree=tree,
+                          rankdic=rankdic, root=None, above=True)
+        self.assertEqual(obs, None)
+
     def test_count(self):
         # unique match
         matches = {'seq1': 'a', 'seq2': 'a',  'seq3': 'b',

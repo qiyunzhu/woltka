@@ -14,6 +14,10 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
+import pandas as pd
+from biom import load_table
+from pandas.testing import assert_frame_equal
+
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
     prepare_ranks, build_hierarchy, reshape_readmap, assign_readmap,
@@ -403,7 +407,7 @@ class WorkflowTests(TestCase):
         # do nothing
         self.assertIsNone(write_profiles({}, None))
 
-        # simple
+        # single profile in TSV format
         fp = join(self.tmpdir, 'output.tsv')
         data = {'none': {'S1': {'G1': 1, 'G2': 2},
                          'S2': {'G1': 3, 'G3': 2}}}
@@ -412,6 +416,25 @@ class WorkflowTests(TestCase):
             obs = f.read().splitlines()
         exp = ['#FeatureID\tS1\tS2', 'G1\t1\t3', 'G2\t2\t0', 'G3\t0\t2']
         self.assertListEqual(obs, exp)
+        remove(fp)
+
+        # multiple profiles in BIOM format
+        data = {'none': {'S1': {'G1': 1, 'G2': 2},
+                         'S2': {'G1': 3, 'G3': 2}},
+                'free': {'S1': {'Ecoli': 3, 'Strep': 0},
+                         'S2': {'Ecoli': 1, 'Strep': 2}}}
+        write_profiles(data, self.tmpdir)
+        fp = join(self.tmpdir, 'none.biom')
+        obs = load_table(fp).to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame([[1, 3], [2, 0], [0, 2]], index=['G1', 'G2', 'G3'],
+                           columns=['S1', 'S2'])
+        assert_frame_equal(obs, exp)
+        remove(fp)
+        fp = join(self.tmpdir, 'free.biom')
+        obs = load_table(fp).to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame([[3, 1], [0, 2]], index=['Ecoli', 'Strep'],
+                           columns=['S1', 'S2'])
+        assert_frame_equal(obs, exp)
         remove(fp)
 
 
