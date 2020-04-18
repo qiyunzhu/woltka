@@ -29,7 +29,8 @@ from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata, strip_index,
     demultiplex)
 from .tree import (
-    read_names, read_nodes, read_lineage, read_newick, read_ranktb, fill_root)
+    read_names, read_nodes, read_lineage, read_newick, read_rank_table,
+    fill_root)
 from .ordinal import Ordinal, read_gene_coords, whether_prefix
 from .biom import profile_to_biom, write_biom
 
@@ -46,7 +47,7 @@ def workflow(input_fp:   str,
              nodes_fp:     str = None,
              newick_fp:    str = None,
              lineage_fp:   str = None,
-             ranktb_fp:    str = None,
+             ranktbl_fp:   str = None,
              map_fps:     list = [],
              map_as_rank: bool = False,
              names_fps:   list = [],
@@ -96,7 +97,7 @@ def workflow(input_fp:   str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fps, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
+        names_fps, nodes_fp, newick_fp, lineage_fp, ranktbl_fp, map_fps,
         map_as_rank)
 
     # build mapping module
@@ -465,7 +466,7 @@ def build_hierarchy(names_fps:   list = [],
                     nodes_fp:     str = None,
                     newick_fp:    str = None,
                     lineage_fp:   str = None,
-                    ranktb_fp:    str = None,
+                    ranktbl_fp:    str = None,
                     map_fps:     list = [],
                     map_as_rank: bool = False) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
@@ -480,7 +481,7 @@ def build_hierarchy(names_fps:   list = [],
         Newick tree file.
     lineage_fp : str, optional
         Lineage strings file.
-    ranktb_fp : str, optional
+    ranktbl_fp : str, optional
         Rank table file.
     map_fps : list of str, optional
         Mapping file(s).
@@ -500,7 +501,7 @@ def build_hierarchy(names_fps:   list = [],
     """
     tree, rankdic, namedic = {}, {}, {}
     is_build = any([
-        names_fps, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps])
+        names_fps, nodes_fp, newick_fp, lineage_fp, ranktbl_fp, map_fps])
     if is_build:
         click.echo('Constructing classification system...')
 
@@ -538,10 +539,10 @@ def build_hierarchy(names_fps:   list = [],
         click.echo(' Done.')
 
     # rank table file
-    if ranktb_fp:
-        click.echo(f'  Parsing rank table file: {ranktb_fp}...', nl=False)
-        with openzip(ranktb_fp) as f:
-            tree_, rankdic_ = read_ranktb(f)
+    if ranktbl_fp:
+        click.echo(f'  Parsing rank table file: {ranktbl_fp}...', nl=False)
+        with openzip(ranktbl_fp) as f:
+            tree_, rankdic_ = read_rank_table(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)
         click.echo(' Done.')

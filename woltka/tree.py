@@ -168,13 +168,13 @@ def read_newick(fh):
     return res
 
 
-def read_ranktb(fh):
+def read_rank_table(fh):
     """Read taxonomic information from a rank table.
 
     Parameters
     ----------
     fh : file handle
-        Taxonomic ranks file.
+        Rank table file.
 
     Returns
     -------
@@ -193,14 +193,13 @@ def read_ranktb(fh):
     For example, "Actinobacteria" is both a phylum and a class.
     """
     tree, rankdic = {}, {}
-    ranks = None
+
+    # get rank names from header
+    ranks = next(fh).rstrip().split('\t')[1:]
+
+    # ranks = None
     for line in fh:
         row = line.rstrip().split('\t')
-
-        # get rank names from header
-        if ranks is None:
-            ranks = row[1:]
-            continue
 
         # get lineage (taxa from high to low)
         lineage = [None if x in notax else x for x in row[1:]]
