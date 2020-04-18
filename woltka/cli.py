@@ -103,8 +103,8 @@ def gotu(ctx, **kwargs):
     help='Table of classification units at each rank (column).')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('Map of subjects or lower classification units to higher ones. '
-          'Can accept multiple files.'))
+    help=('Map of ower classification units to higher ones. Can accept '
+          'multiple files.'))
 @click.option(
     '--map-as-rank', is_flag=True,
     help='Map filename stem is rank name.')

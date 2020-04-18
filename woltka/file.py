@@ -365,8 +365,10 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
 
     Returns
     -------
-    int, int
-        Numbers of samples and features in the table, respectively.
+    int
+        Number of samples in the table.
+    int
+        Number of features in the table.
 
     Notes
     -----
