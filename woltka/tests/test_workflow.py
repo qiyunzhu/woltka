@@ -256,7 +256,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'names.dmp')
         with open(fp, 'w') as f:
             f.write('a\tHomo\nb\tPan\nc\tChimp\n')
-        obs = build_hierarchy(names_fp=fp)
+        obs = build_hierarchy(names_fps=[fp])
         self.assertDictEqual(obs[2], {'a': 'Homo', 'b': 'Pan', 'c': 'Chimp'})
         remove(fp)
 

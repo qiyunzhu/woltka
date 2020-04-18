@@ -49,7 +49,7 @@ def workflow(input_fp:   str,
              ranktb_fp:    str = None,
              map_fps:     list = [],
              map_as_rank: bool = False,
-             names_fp:     str = None,
+             names_fps:   list = [],
              # assignment
              ranks:        str = None,
              above:       bool = False,
@@ -96,7 +96,7 @@ def workflow(input_fp:   str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
+        names_fps, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps,
         map_as_rank)
 
     # build mapping module
@@ -461,7 +461,7 @@ def prepare_ranks(ranks:      str = None,
     return ranks, rank2dir
 
 
-def build_hierarchy(names_fp:     str = None,
+def build_hierarchy(names_fps:   list = [],
                     nodes_fp:     str = None,
                     newick_fp:    str = None,
                     lineage_fp:   str = None,
@@ -472,8 +472,8 @@ def build_hierarchy(names_fp:     str = None,
 
     Parameters
     ----------
-    names_fp : str, optional
-        Taxonomic names file.
+    names_fps : list of str, optional
+        Taxonomic names file(s).
     nodes_fp : str, optional
         Taxonomic nodes file.
     newick_fp : str, optional
@@ -483,7 +483,7 @@ def build_hierarchy(names_fp:     str = None,
     ranktb_fp : str, optional
         Rank table file.
     map_fps : list of str, optional
-        Mapping files.
+        Mapping file(s).
     map_as_rank : bool, optional
         Treat mapping filename stem as rank.
 
@@ -500,15 +500,16 @@ def build_hierarchy(names_fp:     str = None,
     """
     tree, rankdic, namedic = {}, {}, {}
     is_build = any([
-        names_fp, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps])
+        names_fps, nodes_fp, newick_fp, lineage_fp, ranktb_fp, map_fps])
     if is_build:
         click.echo('Constructing classification system...')
 
     # taxonomy names
-    if names_fp:
-        click.echo(f'  Parsing taxonomy names file: {names_fp}...', nl=False)
-        with openzip(names_fp) as f:
-            namedic = read_names(f)
+    for fp in names_fps:
+        click.echo(f'  Parsing taxonomy names file: {fp}...', nl=False)
+        with openzip(fp) as f:
+            names = read_names(f)
+        update_dict(namedic, names)
         click.echo(' Done.')
 
     # taxonomy nodes
