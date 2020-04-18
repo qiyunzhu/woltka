@@ -33,6 +33,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - References
   - [Command-line interface](doc/cli.md)
   - [Parameter auto-decision](doc/auto.md)
+  - [Computational performance](doc/perform.md)
   - [Developer's guidlines](doc/dev.md)
 - [Notes](#notes)
 
