@@ -754,8 +754,9 @@ def write_profiles(data:        dict,
     else:
         # multiple output files
         makedirs(fp, exist_ok=True)
-        rank2fp = {x: join(fp, f'{x}.biom') for x in ranks}
         is_biom = is_biom is not False
+        ext = 'biom' if is_biom else 'tsv'
+        rank2fp = {x: join(fp, f'{x}.{ext}') for x in ranks}
     click.echo('Format of output feature table(s): {}.'.format(
         'BIOM' if is_biom else 'TSV'))
 
