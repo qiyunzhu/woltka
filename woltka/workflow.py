@@ -35,41 +35,41 @@ from .ordinal import Ordinal, read_gene_coords, whether_prefix
 from .biom import profile_to_biom, write_biom
 
 
-def workflow(input_fp:   str,
-             output_fp:  str,
+def workflow(input_fp:      str,
+             output_fp:     str,
              # input
-             input_fmt:    str = None,
-             input_ext:    str = None,
-             samples:      str = None,
-             demux:       bool = None,
-             lines:        int = 1000000,
+             input_fmt:     str = None,
+             input_ext:     str = None,
+             samples:       str = None,
+             demux:        bool = None,
+             lines:         int = 1000000,
              # hierarchies
-             nodes_fp:     str = None,
-             newick_fp:    str = None,
-             lineage_fp:   str = None,
-             ranktbl_fp:   str = None,
-             map_fps:     list = [],
-             map_as_rank: bool = False,
-             names_fps:   list = [],
+             nodes_fp:      str = None,
+             newick_fp:     str = None,
+             lineage_fp:    str = None,
+             rank_table_fp: str = None,
+             map_fps:      list = [],
+             map_as_rank:  bool = False,
+             names_fps:    list = [],
              # assignment
-             ranks:        str = None,
-             above:       bool = False,
-             major:       bool = None,
-             ambig:       bool = True,
-             subok:       bool = True,
-             deidx:       bool = False,
+             ranks:         str = None,
+             above:        bool = False,
+             major:        bool = None,
+             ambig:        bool = True,
+             subok:        bool = True,
+             deidx:        bool = False,
              # gene matching
-             coords_fp:    str = None,
-             overlap:      int = 80,
+             coords_fp:     str = None,
+             overlap:       int = 80,
              # stratification
-             strata_dir:   str = None,
+             strata_dir:    str = None,
              # output
-             output_fmt:   str = None,
-             name_as_id:  bool = False,
-             add_rank:    bool = False,
-             add_lineage: bool = False,
-             outmap_dir:   str = None,
-             outmap_zip:   str = 'gz') -> dict:
+             output_fmt:    str = None,
+             name_as_id:   bool = False,
+             add_rank:     bool = False,
+             add_lineage:  bool = False,
+             outmap_dir:    str = None,
+             outmap_zip:    str = 'gz') -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -97,7 +97,7 @@ def workflow(input_fp:   str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fps, nodes_fp, newick_fp, lineage_fp, ranktbl_fp, map_fps,
+        names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps,
         map_as_rank)
 
     # build mapping module
@@ -462,13 +462,13 @@ def prepare_ranks(ranks:      str = None,
     return ranks, rank2dir
 
 
-def build_hierarchy(names_fps:   list = [],
-                    nodes_fp:     str = None,
-                    newick_fp:    str = None,
-                    lineage_fp:   str = None,
-                    ranktbl_fp:    str = None,
-                    map_fps:     list = [],
-                    map_as_rank: bool = False) -> (dict, dict, dict, str):
+def build_hierarchy(names_fps:    list = [],
+                    nodes_fp:      str = None,
+                    newick_fp:     str = None,
+                    lineage_fp:    str = None,
+                    rank_table_fp: str = None,
+                    map_fps:      list = [],
+                    map_as_rank:  bool = False) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
     Parameters
@@ -481,7 +481,7 @@ def build_hierarchy(names_fps:   list = [],
         Newick tree file.
     lineage_fp : str, optional
         Lineage strings file.
-    ranktbl_fp : str, optional
+    rank_table_fp : str, optional
         Rank table file.
     map_fps : list of str, optional
         Mapping file(s).
@@ -501,7 +501,7 @@ def build_hierarchy(names_fps:   list = [],
     """
     tree, rankdic, namedic = {}, {}, {}
     is_build = any([
-        names_fps, nodes_fp, newick_fp, lineage_fp, ranktbl_fp, map_fps])
+        names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps])
     if is_build:
         click.echo('Constructing classification system...')
 
@@ -539,9 +539,9 @@ def build_hierarchy(names_fps:   list = [],
         click.echo(' Done.')
 
     # rank table file
-    if ranktbl_fp:
-        click.echo(f'  Parsing rank table file: {ranktbl_fp}...', nl=False)
-        with openzip(ranktbl_fp) as f:
+    if rank_table_fp:
+        click.echo(f'  Parsing rank table file: {rank_table_fp}...', nl=False)
+        with openzip(rank_table_fp) as f:
             tree_, rankdic_ = read_rank_table(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)
@@ -735,6 +735,15 @@ def write_profiles(data:        dict,
         Append feature ranks to table.
     add_lineage: bool optional
         Append lineage strings to table.
+
+    Notes
+    -----
+    The boolean parameter `is_biom` can be one of the three values:
+    - `None` (default): To be auto-determined based on the user-supplied output
+    filename extension. If ".biom", do BIOM, otherwise do TSV. If output path is
+    a directory, do BIOM by default.
+    - `True` (command-line flag `--to-biom`): BIOM format.
+    - `False` (command-line flag `--to-tsv`): TSV format.
     """
     if not fp:
         return
