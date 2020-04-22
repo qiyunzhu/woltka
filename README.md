@@ -38,7 +38,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 
 ## Installation
 
-Requirement: Python 3.6 or above.
+Requirement: [Python](https://www.python.org/) 3.6 or above, with Python package [biom-format](http://biom-format.org/).
 
 ```bash
 pip install git+https://github.com/qiyunzhu/woltka.git
@@ -49,6 +49,8 @@ After installation, launch the program by executing:
 ```bash
 woltka
 ```
+
+[More details about installation](doc/install.md) are provided here.
 
 ## Example usage
 
