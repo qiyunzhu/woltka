@@ -60,7 +60,7 @@ def read_names(fh):
 
     Notes
     -----
-    Can be NCBI-style names.dmp or a plain map of Id to name.
+    Can be NCBI-style names.dmp or a plain map of ID to name.
     """
     names = {}
     for line in fh:
@@ -87,7 +87,7 @@ def read_nodes(fh):
 
     Notes
     -----
-    Input file can be NCBI-style nodes.dmp or a plain map of Id to parent and
+    Input file can be NCBI-style nodes.dmp or a plain map of ID to parent and
     (optional) rank.
     """
     tree, rankdic = {}, {}
@@ -117,9 +117,9 @@ def read_newick(fh):
     Raises
     ------
     ValueError
-        Missing internal node Id.
+        Missing internal node ID.
     ValueError
-        Found non-unique node Id.
+        Found non-unique node ID.
 
     Notes
     -----
@@ -152,12 +152,12 @@ def read_newick(fh):
         tail = nwk[m.end(0):]
         parent = _get_id(pend.split(tail, 1)[0])
         if parent == '':
-            raise ValueError('Missing internal node Id.')
+            raise ValueError('Missing internal node ID.')
 
         # get child Ids of current node
         for child in [_get_id(x) for x in m.group(0)[1:-1].split(',')]:
             if child in res:
-                raise ValueError(f'Found non-unique node Id: "{child}".')
+                raise ValueError(f'Found non-unique node ID: "{child}".')
             res[child] = parent
 
         # remove node from search string

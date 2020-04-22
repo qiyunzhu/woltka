@@ -242,13 +242,13 @@ class TreeTests(TestCase):
         nwk = '((a,b),(c,d));'
         with self.assertRaises(ValueError) as ctx:
             read_newick((nwk,))
-        self.assertEqual(str(ctx.exception), 'Missing internal node Id.')
+        self.assertEqual(str(ctx.exception), 'Missing internal node ID.')
 
         # tree with duplicate node Ids
         nwk = '((a,b)x,(c,d)x)y;'
         with self.assertRaises(ValueError) as ctx:
             read_newick((nwk,))
-        self.assertEqual(str(ctx.exception), 'Found non-unique node Id: "x".')
+        self.assertEqual(str(ctx.exception), 'Found non-unique node ID: "x".')
 
         # proteo tree
         obs = read_newick((PROTEO['phylogeny'],))

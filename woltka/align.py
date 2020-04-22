@@ -376,7 +376,7 @@ def parse_kraken(line):
     Notes
     -----
     Kraken2 output format:
-        C/U, sequence Id, taxonomy Id, length, LCA mapping
+        C/U, sequence ID, taxonomy ID, length, LCA mapping
 
     .. _Kraken2 manual:
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual

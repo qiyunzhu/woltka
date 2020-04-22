@@ -435,9 +435,9 @@ def prep_table(profile, samples=None):
     list of list
         Data (2D array of values).
     list
-        Index (observation Ids).
+        Index (observation IDs).
     list
-        Columns (sample Ids).
+        Columns (sample IDs).
 
     Notes
     -----

@@ -11,7 +11,7 @@ Requires: QIIME 2 2019.1 or above.
 First, install the standalone Woltka program:
 
 ```bash
-pip install git+https://github.com/qiyunzhu/woltka.git@dev
+pip install git+https://github.com/qiyunzhu/woltka.git
 ```
 
 Second, update QIIME 2 cache and the plugin will be automatically loaded into QIIME 2.

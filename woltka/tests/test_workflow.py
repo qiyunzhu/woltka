@@ -323,7 +323,7 @@ class WorkflowTests(TestCase):
                     'a\te\td\n'
                     'b\te\t\n'
                     'c\te\td\n')
-        obs = build_hierarchy(ranktbl_fp=fp)
+        obs = build_hierarchy(rank_table_fp=fp)
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertDictEqual(obs[1], {'d': 'lv2', 'e': 'lv1'})
