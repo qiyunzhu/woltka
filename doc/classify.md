@@ -8,7 +8,7 @@ Wolkta supports various formats of classification systems, specifically:
 
 2. `--newick`: Newick-format tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
 
-3. `--ranktb`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
+3. `--rank-table`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
 
 4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
 
@@ -20,7 +20,7 @@ Wolkta supports various formats of classification systems, specifically:
 
    One can supply multiple maps (by entering multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
 
-   Flag `--map-is-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
+   Flag `--map-as-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
 
 If no classification file is provided, Woltka will automatically build a classification system from the alignment files, in which subject identifiers will be parsed as lineage strings.
 
@@ -57,6 +57,9 @@ woltka classify \
   --names taxdump/names.dmp \
   ...
 ```
+
+One may supply multiple names files.
+
 
 ## Combined taxonomic & functional analyses
 

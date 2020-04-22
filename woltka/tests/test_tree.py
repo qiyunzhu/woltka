@@ -14,8 +14,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.tree import (
-    read_names, read_nodes, read_lineage, read_newick, read_ranktb, fill_root,
-    get_lineage, get_lineage_gg, find_rank, find_lca)
+    read_names, read_nodes, read_lineage, read_newick, read_rank_table,
+    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca)
 
 
 # A small test taxon set containing 15 proteobacterial species
@@ -242,13 +242,13 @@ class TreeTests(TestCase):
         nwk = '((a,b),(c,d));'
         with self.assertRaises(ValueError) as ctx:
             read_newick((nwk,))
-        self.assertEqual(str(ctx.exception), 'Missing internal node Id.')
+        self.assertEqual(str(ctx.exception), 'Missing internal node ID.')
 
         # tree with duplicate node Ids
         nwk = '((a,b)x,(c,d)x)y;'
         with self.assertRaises(ValueError) as ctx:
             read_newick((nwk,))
-        self.assertEqual(str(ctx.exception), 'Found non-unique node Id: "x".')
+        self.assertEqual(str(ctx.exception), 'Found non-unique node ID: "x".')
 
         # proteo tree
         obs = read_newick((PROTEO['phylogeny'],))
@@ -273,14 +273,14 @@ class TreeTests(TestCase):
         self.assertEqual(obs['N2'], 'N1')
         self.assertEqual(obs['N1'], 'N1')
 
-    def test_read_ranktb(self):
+    def test_read_rank_table(self):
         # simple case
         tsv = ['#seq	k	p	c	o',
                'seq1	k1	p1	c1	o1',
                'seq2	k1	p1	c2	o2',
                'seq3	k1	p2	c3	',
                'seq4	k2		c4	o3']
-        tree_obs, rankdic_obs = read_ranktb(tsv)
+        tree_obs, rankdic_obs = read_rank_table(iter(tsv))
         tree_exp = {'seq1': 'o1', 'o1': 'c1', 'c1': 'p1', 'p1': 'k1',
                     'seq2': 'o2', 'o2': 'c2', 'c2': 'p1',
                     'seq3': 'c3', 'c3': 'p2', 'p2': 'k1',
@@ -295,18 +295,18 @@ class TreeTests(TestCase):
 
         # inconsistent tree
         with self.assertRaises(ValueError) as ctx:
-            read_ranktb(tsv + ['seq5	k1	p2	c1	o1'])
+            read_rank_table(iter(tsv + ['seq5	k1	p2	c1	o1']))
         self.assertEqual(str(ctx.exception), 'Conflict at taxon "c1".')
 
         # inconsistent rank
         with self.assertRaises(ValueError) as ctx:
-            read_ranktb(tsv + ['seq5	k2	c4		o3'])
+            read_rank_table(iter(tsv + ['seq5	k2	c4		o3']))
         self.assertEqual(str(ctx.exception), 'Conflict at taxon "c4".')
 
         # real rank table file
         fp = join(self.datdir, 'taxonomy', 'rank_tids.tsv')
         with open(fp, 'r') as f:
-            tree, rankdic = read_ranktb(f)
+            tree, rankdic = read_rank_table(f)
         self.assertEqual(len(tree), 426)
         self.assertEqual(len(rankdic), 319)
         self.assertEqual(tree['562'], '561')

@@ -99,19 +99,19 @@ def gotu(ctx, **kwargs):
     '--lineage', 'lineage_fp', type=click.Path(exists=True),
     help='Map of lineage strings. Can accept Greengenes-style rank prefix.')
 @click.option(
-    '--rank-table', 'ranktb_fp', type=click.Path(exists=True),
+    '--rank-table', 'rank_table_fp', type=click.Path(exists=True),
     help='Table of classification units at each rank (column).')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('Map(s) of subjects or lower classification units to higher ones. '
-          'Can accept multiple maps.'))
+    help=('Map of lower classification units to higher ones. Can accept '
+          'multiple files.'))
 @click.option(
     '--map-as-rank', is_flag=True,
     help='Map filename stem is rank name.')
 @click.option(
-    '--names', 'names_fp', type=click.Path(exists=True),
+    '--names', 'names_fps', type=click.Path(exists=True), multiple=True,
     help=('Names of classification units as defined by NCBI names.dmp or a '
-          'simple map.'))
+          'simple map. Can accept multiple files.'))
 # assignment
 @click.option(
     '--rank', '-r', 'ranks', type=click.STRING,

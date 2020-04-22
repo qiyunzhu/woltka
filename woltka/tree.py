@@ -60,7 +60,7 @@ def read_names(fh):
 
     Notes
     -----
-    Can be NCBI-style names.dmp or a plain map of Id to name.
+    Can be NCBI-style names.dmp or a plain map of ID to name.
     """
     names = {}
     for line in fh:
@@ -87,7 +87,7 @@ def read_nodes(fh):
 
     Notes
     -----
-    Input file can be NCBI-style nodes.dmp or a plain map of Id to parent and
+    Input file can be NCBI-style nodes.dmp or a plain map of ID to parent and
     (optional) rank.
     """
     tree, rankdic = {}, {}
@@ -117,9 +117,9 @@ def read_newick(fh):
     Raises
     ------
     ValueError
-        Missing internal node Id.
+        Missing internal node ID.
     ValueError
-        Found non-unique node Id.
+        Found non-unique node ID.
 
     Notes
     -----
@@ -152,12 +152,12 @@ def read_newick(fh):
         tail = nwk[m.end(0):]
         parent = _get_id(pend.split(tail, 1)[0])
         if parent == '':
-            raise ValueError('Missing internal node Id.')
+            raise ValueError('Missing internal node ID.')
 
         # get child Ids of current node
         for child in [_get_id(x) for x in m.group(0)[1:-1].split(',')]:
             if child in res:
-                raise ValueError(f'Found non-unique node Id: "{child}".')
+                raise ValueError(f'Found non-unique node ID: "{child}".')
             res[child] = parent
 
         # remove node from search string
@@ -168,13 +168,13 @@ def read_newick(fh):
     return res
 
 
-def read_ranktb(fh):
+def read_rank_table(fh):
     """Read taxonomic information from a rank table.
 
     Parameters
     ----------
     fh : file handle
-        Taxonomic ranks file.
+        Rank table file.
 
     Returns
     -------
@@ -193,14 +193,13 @@ def read_ranktb(fh):
     For example, "Actinobacteria" is both a phylum and a class.
     """
     tree, rankdic = {}, {}
-    ranks = None
+
+    # get rank names from header
+    ranks = next(fh).rstrip().split('\t')[1:]
+
+    # ranks = None
     for line in fh:
         row = line.rstrip().split('\t')
-
-        # get rank names from header
-        if ranks is None:
-            ranks = row[1:]
-            continue
 
         # get lineage (taxa from high to low)
         lineage = [None if x in notax else x for x in row[1:]]
