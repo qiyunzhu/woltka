@@ -15,7 +15,8 @@ from tempfile import mkdtemp
 
 from woltka.tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
-    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca)
+    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca, dynamic_lca,
+    find_taxa_counts, majority_rules)
 
 
 # A small test taxon set containing 15 proteobacterial species
@@ -548,6 +549,52 @@ class TreeTests(TestCase):
         obs, exp = ['782', '382', '1063'], '28211'
         self.assertEqual(find_lca(obs, self.proteo['tree']), exp)
 
+    def test_dynamic_lca(self):
+        # simple tree
+        tsv = ('1	1',
+               '2	1',
+               '1224	2',
+               '1236	1224',
+               '28211	1224',
+               '32066	2',
+               '2157	1')
+        tree = read_nodes(tsv)[0]
+        obs = dynamic_lca(tree)
+        for taxa1 in tree.keys():
+            for taxa2 in tree.keys():
+                lca = {find_lca([taxa1, taxa2], tree)}
+                self.assertEqual(obs[taxa1][taxa2], lca)
+
+    def test_find_taxa_counts(self):
+        # simple tree
+        tsv = ('1	1',
+               '2	1',
+               '1224	2',
+               '1236	1224',
+               '28211	1224',
+               '32066	2',
+               '2157	1')
+        tree = read_nodes(tsv)[0]
+        # find_taxa_counts(tree.keys(), tree)
+        obs, exp = ['1'], [{'1': 1}]
+        self.assertEqual(find_taxa_counts(obs, tree), exp)
+        obs = ['1', '2', '1236']
+        exp = [{'1': 3}, {'2': 2}, {'1224': 1}, {'1236': 1}]
+        self.assertEqual(find_taxa_counts(obs, tree), exp)
+
+    def test_majority_rules(self):
+        # simple tree
+        tsv = ('1	1',
+               '2	1',
+               '1224	2',
+               '1236	1224',
+               '28211	1224',
+               '32066	2',
+               '2157	1')
+        tree = read_nodes(tsv)[0]
+        self.assertEqual(majority_rules(tree.keys(), tree), '1')
+        self.assertEqual(majority_rules(tree.keys(), tree, 1.01), None)
+        self.assertEqual(majority_rules(tree.keys(), tree, .4), '1224')
 
 if __name__ == '__main__':
     main()

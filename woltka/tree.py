@@ -554,3 +554,145 @@ def find_lca(taxa, tree):
 
     # LCA is the last of shared lineage
     return lineage[-1]
+
+
+def find_taxa_counts(taxa, tree):
+    """Count up the number of appearances of given taxa
+
+    Parameters
+    ----------
+    taxa : iterable of str
+        Query taxa.
+    tree : dict
+        Taxonomy tree.
+
+    Returns
+    -------
+    list of dict
+        Counts of lineage from root to query taxon.
+    """
+    taxa_ = list(taxa)
+
+    counts = []
+    for taxon in taxa_:
+        lineage = get_lineage(taxon, tree)
+        if lineage is None:
+            #todo: better handling for None values
+            continue
+        # if parent is self
+        if len(lineage) == 2 and lineage[0] == lineage[1]:
+            lineage.pop()
+        while len(counts) < len(lineage):
+            counts.append({})
+        for l in range(0, len(lineage)):
+            if lineage[l] in counts[l]:
+                counts[l][lineage[l]] += 1
+            else:
+                counts[l][lineage[l]] = 1
+    return counts
+
+
+def majority_rules(taxa, tree, th=.8):
+    """Select taxon from list by majority rule.
+
+    Parameters
+    ----------
+    taxa : list of str
+       Input taxon list.
+    tree : dict
+        Taxonomy tree.
+    th : float, optional
+       Threshold of majority, range = (0.5, 1.0].
+
+    Returns
+    -------
+    str or None
+       Selected taxon.
+
+    TODO
+    ----
+    Very similar to majority in classify.py
+    """
+    counts = find_taxa_counts(taxa, tree)
+    for i in range(0, len(counts)):
+        if all(v/len(taxa) < th for k, v in counts[i].items()):
+            break
+    for k, v in counts[i-1].items():
+        if v/len(taxa) >= th:
+            return k
+
+    # no taxon meets th requirements
+    return None
+
+
+def dynamic_lca(tree):
+    """Find lowest common ancestor (LCA) of all pairwise comparisons in tree
+
+    Parameters
+    ----------
+    tree : dict
+        Taxonomy tree.
+
+    Returns
+    -------
+    dict
+        LCA of all pairwise comparisons in tree
+    """
+    lca = dict()
+
+    def compute_lca(u, v):
+        """Find lowest common ancestor (LCA) of two given taxa (u and v)
+
+        Parameters
+        ----------
+        u : str
+            Query taxa.
+        v : str
+            Query taxa.
+
+        Returns
+        -------
+        set
+            LCA of u and v, or empty set if an LCA does not exist
+
+        TODO
+        ----
+        Could return a str instead of set, since we have a tree structure
+        """
+        if lca[u][v]:
+            return lca[u][v]
+        else:
+            if u == v:
+                lca[u][v] = set()
+                lca[u][v].add(u)
+            else:
+                a = set()
+                p = tree[u]
+                if p!=u:
+                    a.update(compute_lca(p, v))
+                q = tree[v]
+                if q!= v:
+                    a.update(compute_lca(u, q))
+                a.update(compute_lca(p, q))
+                b = set()
+                for a1 in a:
+                    for a2 in a:
+                        if a1 != a2:
+                            b.update(lca[a1][a2])
+                lca[u][v] = a.difference(b)
+                lca[v][u] = lca[u][v]
+                return lca[u][v]
+
+    # initialize
+    for u in tree:
+        lca[u] = dict()
+        for v in tree:
+            lca[u][v] = set()
+
+    # do pairwise comparisons
+    for u in tree:
+        for v in tree:
+            print("\t", end="")
+            compute_lca(u, v)
+
+    return lca
