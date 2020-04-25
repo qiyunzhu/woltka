@@ -577,7 +577,7 @@ def find_taxa_counts(taxa, tree):
     for taxon in taxa_:
         lineage = get_lineage(taxon, tree)
         if lineage is None:
-            #todo: better handling for None values
+            # todo: better handling for None values
             continue
         # if parent is self
         if len(lineage) == 2 and lineage[0] == lineage[1]:
@@ -668,10 +668,10 @@ def dynamic_lca(tree):
             else:
                 a = set()
                 p = tree[u]
-                if p!=u:
+                if p != u:
                     a.update(compute_lca(p, v))
                 q = tree[v]
-                if q!= v:
+                if q != v:
                     a.update(compute_lca(u, q))
                 a.update(compute_lca(p, q))
                 b = set()

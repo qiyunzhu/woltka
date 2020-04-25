@@ -596,5 +596,6 @@ class TreeTests(TestCase):
         self.assertEqual(majority_rules(tree.keys(), tree, 1.01), None)
         self.assertEqual(majority_rules(tree.keys(), tree, .4), '1224')
 
+
 if __name__ == '__main__':
     main()
