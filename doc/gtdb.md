@@ -1,6 +1,6 @@
 # Working with GTDB
 
-[**GTDB**](https://gtdb.ecogenomic.org/) (Genome Taxonomy Database) ([Parks et al., 2018](https://www.nature.com/articles/nbt.4229)) is a standardized taxonomy system for bacteria and archaea. It is based on the phylogenetic trees of genomes, hence better reflecting the evolutionary relationships among microorganisms, comparing to conventional taxonomy. Our research shows that GTDB shares high consistency with the [WoL](https://biocore.github.io/wol/) phylogeny (which was built using more marker genes and more expensive methods) ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)).
+[**GTDB**](https://gtdb.ecogenomic.org/) (Genome Taxonomy Database) ([Parks et al., 2018](https://www.nature.com/articles/nbt.4229)) is a standardized taxonomy system for bacteria and archaea. It is based on the phylogenetic trees of genomes, hence better reflecting the evolutionary relationships among microorganisms, compared to conventional taxonomy. Our research shows that GTDB shares high consistency with the [WoL](https://biocore.github.io/wol/) phylogeny (which was built using more marker genes and more expensive methods) ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)).
 
 The current release of GTDB is [**R04-RS89**](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/) (version 4, indexed to RefSeq release 89), when this tutorial is written, and on which the tutorial is based. This release contains 143,512 bacterial and 2,392 archaeal organisms in its taxonomy, or 23,458 bacterial and 1,248 archaeal genomes in its collection of actual genome sequences. These 24,706 "**species clusters**" cover the complete GTDB taxonomic framework ([Parks et al., 2020](https://www.nature.com/articles/s41587-020-0501-8)).
 
@@ -41,13 +41,7 @@ Note: The [GTDB-Tk](https://github.com/Ecogenomics/GtdbTk) database ([`gtdbtk_da
 
 ## Reformat GTDB as taxdump style
 
-Alternatively, you may consider converting GTDB taxonomy into the format of NCBI taxdump. This will allow you to connect GTDB to more bioinformatics tools such as BLAST and Kraken2 which favor the taxdump format. This will also make the Woltka output slimer, if that's your preference. For example, instead of:
-
-```
-d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Enterobacterales;f__Enterobacteriaceae;g__Escherichia;s__Escherichia
-```
-
-, you will get `Escherichia` as the feature name.
+Alternatively, you may consider converting GTDB taxonomy into the format of NCBI taxdump. This will allow you to connect GTDB to more bioinformatics tools such as BLAST and Kraken2 which favor the taxdump format. This will also make the Woltka output slimer, if that's your preference. For example, instead of the long lineage strings like `d__Bacteria;p__Proteobacteria;...`, you will get taxon names like `Escherichia` as the feature name.
 
 Three good things of the GTDB taxonomy (in addition to many others) are that:
 
@@ -55,7 +49,7 @@ Three good things of the GTDB taxonomy (in addition to many others) are that:
 2) All ranks are filled (i.e., no "gaps" such as `g__;` as multiple other systems do).
 3) At each rank, all taxon names are unique (but duplicate names are allowed at different ranks).
 
-These characteristics make it safe to collapse GTDB lineages into taxonomic units and index them in a way that resembles NCBI taxdump.
+These characteristics make it safe to collapse GTDB lineages into taxonomic units and index them in a way that resembles NCBI taxdump (I mean, in case you are thinking about whether this trick also applies to other taxonomies).
 
 We provide a script: [`gtdb_to_taxdump.py`](https://biocore.github.io/wol/code/scripts/gtdb_to_taxdump.py) to automate this conversion:
 
@@ -98,7 +92,7 @@ genomes_for_db.py --input input_dir --output output.fna --ext _genomic.fna.gz --
 
 This command will removing intra-sequence line breaks, concatenate multiple sequences in the same file (e.g., chromosomes or scaffolds of the same genome) with a linker of 20 "N" characters, and merge all genomes into one multi-Fasta file, in which sequence IDs are genome IDs.
 
-The output file `output.fna` can then be used for database building with choice of tools (e.g., BLAST, Bowtie2). The taxonomy files discussed above will match the results of sequence alignment using this database. For examples:
+The output file `output.fna` can then be used for database building with choice of tools. The taxonomy files discussed above will match the results of sequence alignment using this database. For examples:
 
 Bowtie2:
 
