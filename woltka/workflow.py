@@ -740,8 +740,8 @@ def write_profiles(data:        dict,
     -----
     The boolean parameter `is_biom` can be one of the three values:
     - `None` (default): To be auto-determined based on the user-supplied output
-    filename extension. If ".biom", do BIOM, otherwise do TSV. If output path is
-    a directory, do BIOM by default.
+    filename extension. If ".biom", do BIOM, otherwise do TSV. If output path
+    is a directory, do BIOM by default.
     - `True` (command-line flag `--to-biom`): BIOM format.
     - `False` (command-line flag `--to-tsv`): TSV format.
     """
