@@ -1,8 +1,8 @@
 # Working with GTDB
 
-[**GTDB**](https://gtdb.ecogenomic.org/) (Genome Taxonomy Database) ([Parks et al., 2018](https://www.nature.com/articles/nbt.4229)) is a standardized taxonomy system for bacteria and archaea. It is based on the phylogenetic trees of genomes, hence better reflecting the evolutionary relationships among microorganisms, compared to conventional taxonomy. Our research shows that GTDB shares high consistency with the [WoL](https://biocore.github.io/wol/) phylogeny (which was built using more marker genes and more expensive methods) ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)).
+[**GTDB**](https://gtdb.ecogenomic.org/) (Genome Taxonomy Database) ([Parks et al., 2018](https://www.nature.com/articles/nbt.4229)) is a standardized taxonomy system for bacteria and archaea. It is based on the phylogenetic trees of genomes, hence reflecting the evolutionary relationships among microorganisms better, compared to conventional taxonomy. Our research shows that GTDB shares high consistency with the [WoL](https://biocore.github.io/wol/) phylogeny (which was built using more marker genes and more expensive methods) ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)).
 
-The current release of GTDB is [**R04-RS89**](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/) (version 4, indexed to RefSeq release 89), when this tutorial is written, and on which the tutorial is based. This release contains 143,512 bacterial and 2,392 archaeal organisms in its taxonomy, or 23,458 bacterial and 1,248 archaeal genomes in its collection of actual genome sequences. These 24,706 "**species clusters**" cover the complete GTDB taxonomic framework ([Parks et al., 2020](https://www.nature.com/articles/s41587-020-0501-8)).
+This tutorial will be based on GTDB [**R04-RS89**](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/) (version 4, indexed to RefSeq release 89), which was the current release at the time of writing. This release contains 143,512 bacterial and 2,392 archaeal organisms in its taxonomy, or 23,458 bacterial and 1,248 archaeal genomes in its collection of actual genome sequences. These 24,706 "**species clusters**" cover the complete GTDB taxonomic framework ([Parks et al., 2020](https://www.nature.com/articles/s41587-020-0501-8)).
 
 This tutorial will explain various strategies of utilizing GTDB taxonomy / phylogeny in a meta'omics analysis with Woltka.
 
@@ -41,15 +41,15 @@ Note: The [GTDB-Tk](https://github.com/Ecogenomics/GtdbTk) database ([`gtdbtk_da
 
 ## Reformat GTDB as taxdump style
 
-Alternatively, you may consider converting GTDB taxonomy into the format of NCBI taxdump. This will allow you to connect GTDB to more bioinformatics tools such as BLAST and Kraken2 which favor the taxdump format. This will also make the Woltka output slimer, if that's your preference. For example, instead of the long lineage strings like `d__Bacteria;p__Proteobacteria;...`, you will get taxon names like `Escherichia` as the feature name.
+Alternatively, you may consider converting GTDB taxonomy into the format of NCBI taxdump. This will allow you to connect GTDB to more bioinformatics tools such as BLAST and Kraken2 which favor the taxdump format. This will also make the Woltka output slimmer, if that's your preference. For example, instead of the long lineage strings like `d__Bacteria;p__Proteobacteria;...`, you will get taxon names like `Escherichia` as the feature name.
 
-Three good things of the GTDB taxonomy (in addition to many others) are that:
+Three good characteristics of the GTDB taxonomy (in addition to many others) are that:
 
 1) All lineages have exactly seven ranks (`d`omain, `p`hylum, `c`lass, `o`rder, `f`amily, `g`enus and `s`pecies).
 2) All ranks are filled (i.e., no "gaps" such as `g__;` as multiple other systems do).
 3) At each rank, all taxon names are unique (but duplicate names are allowed at different ranks).
 
-These characteristics make it safe to collapse GTDB lineages into taxonomic units and index them in a way that resembles NCBI taxdump (I mean, in case you are thinking about whether this trick also applies to other taxonomies).
+These characteristics make it safe to collapse GTDB lineages into taxonomic units and index them in a way that resembles NCBI taxdump. (Meanwhile, in case you are thinking about whether the method explained here can also be applied to other taxonomies, you need to keep these in mind.)
 
 We provide a script: [`gtdb_to_taxdump.py`](https://biocore.github.io/wol/code/scripts/gtdb_to_taxdump.py) to automate this conversion:
 
@@ -63,9 +63,7 @@ If you start with `gtdb_taxonomy.tsv` from [GTDB-Tk](https://github.com/Ecogenom
 gtdb_to_taxdump.py gtdb_taxonomy.tsv
 ```
 
-This command will generate three files: `nodes.dmp`, `names.dmp` and `taxid.map`. You can probably already guess what's in them. But to make it explicit:
-
-Every taxon is given a taxonomy ID. This ID is an incremental integer, starting from "1" at the root, and increasing from higher ranks to lower ranks. So domains Bacteria and Archaea receive "2" and "3", respectively, followed by phyla, so on so forth.
+This command will generate three files: `nodes.dmp`, `names.dmp` and `taxid.map`. They constitute an NCBI-style taxonomy database (to learn more please refer to the official [NCBI taxonomy database](https://ftp.ncbi.nlm.nih.gov/pub/taxonomy/)), in which every taxon is given a taxonomy ID. This ID is an incremental integer, starting from "1" at the root, and increasing from higher ranks to lower ranks. So domains Bacteria and Archaea receive "2" and "3", respectively, followed by phyla, so on so forth.
 
 With these output files, you can simply do:
 
@@ -124,7 +122,7 @@ The "GTDB phylogeny" actually consists of two trees: one for Bacteria ([`bac120_
 
 ## Use WoL database with GTDB taxonomy
 
-If you decide to stick to the WoL genome database (we appreciate that!) but also want to embrace the GTDB taxonomy, we have a read-to-go solution for you:
+If you decide to stick to the WoL genome database (we appreciate that!) but also want to embrace the GTDB taxonomy, we have a ready-to-go solution for you:
 
 We provide original and curated NCBI and GTDB [taxonomies](https://biocore.github.io/wol/data/taxonomy/) based on the WoL phylogeny. For GTDB specifically, you may download this file: [`lineages.txt.bz2`](https://github.com/biocore/wol/raw/master/data/taxonomy/gtdb/curation/lineages.txt.bz2), which contains curated GTDB lineage strings for WoL genomes.
 

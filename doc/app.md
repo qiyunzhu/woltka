@@ -7,7 +7,7 @@
 - Sequence aligners: Bowtie2, BWA, Minimap2
 - Sequence aligners: BLAST, VSEARCH
 - Metagenomics profilers: Kraken/Bracken, Centrifuge, MetaPhlAn2, mOTUs2
-- Genome databases: WoL, RefSeq, GTDB
+- Genome databases: WoL, RefSeq, [GTDB](#gtdb)
 - Taxonomic databases: NCBI, [GTDB](#gtdb)
 - Functional databases: UniRef, GO, KEGG, BioCyc
 
