@@ -7,8 +7,8 @@
 - Sequence aligners: Bowtie2, BWA, Minimap2
 - Sequence aligners: BLAST, VSEARCH
 - Metagenomics profilers: Kraken/Bracken, Centrifuge, MetaPhlAn2, mOTUs2
-- Genome databases: WoL, RefSeq, GTDB
-- Taxonomic databases: NCBI, GTDB
+- Genome databases: WoL, RefSeq, [GTDB](#gtdb)
+- Taxonomic databases: NCBI, [GTDB](#gtdb)
 - Functional databases: UniRef, GO, KEGG, BioCyc
 
 Contents to be added. Some prelim documents are:
@@ -30,3 +30,16 @@ The WoL database and the SHOGUN workflow are available at the [**Qiita**](https:
 7. You may now run Woltka by executing `woltka classify -i alignment.bowtie2.sam.xz ...`
 
 ![Qiita](img/qiita.png)
+
+
+## GTDB
+
+[**GTDB**](https://gtdb.ecogenomic.org/) (Genome Taxonomy Database) ([Parks et al., 2018](https://www.nature.com/articles/nbt.4229)) is a phylogeny-based taxonomy system for bacteria and archaea.
+
+The GTDB taxonomy is provided as Greengenes-style lineage strings, therefore can be directly parsed by Woltka (the file `gtdb_taxonomy.tsv` can be found in the GTDB-Tk [database](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdbtk_r89_data.tar.gz)):
+
+```bash
+woltka classify --lineage gtdb_taxonomy.tsv --rank phylum,genus,species ...
+```
+
+[More details and various options of using GTDB](gtdb.md) are provided here.
