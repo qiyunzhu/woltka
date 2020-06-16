@@ -181,5 +181,33 @@ def classify(**kwargs):
     workflow(**kwargs)
 
 
+# `tools` provides utilities for working with alignments, maps and profiles
+
+@cli.group('tools', cls=NaturalOrderGroup)
+def tools():
+    """Utilities for working with alignments, maps and profiles.
+    """
+    pass
+
+
+@tools.command('filter')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Path to input feature table.'))
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help=('Path to output feature table.'))
+@click.option(
+    '--threshold', '-t', type=click.FLOAT, required=True,
+    help='Per-sample relative abundance percentage threshold.')
+@click.pass_context
+def filter(ctx, **kwargs):
+    """Filter a feature table by per-sample relative abundance.
+    """
+    pass
+
+
 if __name__ == '__main__':
     cli()
