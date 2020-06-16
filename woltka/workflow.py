@@ -410,7 +410,7 @@ def build_mapper(coords_fp: str = None,
     using the latter.
     """
     if coords_fp:
-        click.echo(f'Reading gene coordinates...', nl=False)
+        click.echo('Reading gene coordinates...', nl=False)
         with openzip(coords_fp) as fh:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
