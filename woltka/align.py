@@ -281,7 +281,7 @@ def parse_b6o_line(line):
 
 
 def parse_sam_line(line):
-    """Parse a line in a SAM format (sam).
+    """Parse a line in a SAM file (sam).
 
     Parameters
     ----------
