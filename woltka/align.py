@@ -189,7 +189,7 @@ def infer_align_format(line):
     parse_b6o_line
     parse_sam_line
     """
-    if line.split()[0] == '@HD':
+    if line.split()[0] in ('@HD', '@PG'):
         return 'sam'
     row = line.rstrip().split('\t')
     if len(row) == 2:
