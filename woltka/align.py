@@ -55,6 +55,11 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
     j = n        # target line number at end of current chunk
     last = None  # last query Id
 
+    # save attribute lookup overhead
+    parse = mapper.parse
+    append = mapper.append
+    flush = mapper.flush
+
     # determine file format based on first line
     if fmt is None:
         try:
@@ -64,18 +69,18 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
         fmt = infer_align_format(line)
         parser = assign_parser(fmt)
         try:
-            last = mapper.parse(line, parser)
+            last = parse(line, parser)
             i = 1
         except TypeError:
             pass
-        mapper.append()
+        append()
     else:
         parser = assign_parser(fmt)
 
     # parse remaining content
     for line in fh:
         try:
-            query = mapper.parse(line, parser)
+            query = parse(line, parser)
             i += 1
         except TypeError:
             continue
@@ -83,13 +88,13 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
         # flush when query Id changes and chunk size was already reached
         if query != last:
             if i >= j:
-                yield mapper.flush()
+                yield flush()
                 j = i + n
             last = query
-        mapper.append()
+        append()
 
     # finish last chunk
-    yield mapper.flush()
+    yield flush()
 
 
 class Plain(object):
