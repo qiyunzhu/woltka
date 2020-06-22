@@ -189,7 +189,7 @@ def infer_align_format(line):
     parse_b6o_line
     parse_sam_line
     """
-    if line.split()[0] == '@HD':
+    if line.split()[0] in ('@HD', '@PG'):
         return 'sam'
     row = line.rstrip().split('\t')
     if len(row) == 2:
@@ -281,7 +281,7 @@ def parse_b6o_line(line):
 
 
 def parse_sam_line(line):
-    """Parse a line in a SAM format (sam).
+    """Parse a line in a SAM file (sam).
 
     Parameters
     ----------
@@ -307,7 +307,7 @@ def parse_sam_line(line):
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
     """
     # skip header
-    if line.startswith('@'):
+    if line[0] == '@':
         return
     x = line.rstrip().split('\t')
     qname, rname = x[0], x[2]  # query and subject identifiers
