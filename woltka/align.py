@@ -307,7 +307,7 @@ def parse_sam_line(line):
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
     """
     # skip header
-    if line.startswith('@'):
+    if line[0] == '@':
         return
     x = line.rstrip().split('\t')
     qname, rname = x[0], x[2]  # query and subject identifiers
