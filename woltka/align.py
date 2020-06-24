@@ -75,7 +75,8 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
             i = 1
         except TypeError:
             pass
-        append()
+        else:
+            append()
     else:
         parser = assign_parser(fmt)
 
