@@ -23,6 +23,8 @@ A parser function returns a tuple of:
     start : alignment end (3') coordinate, optional
 """
 
+from collections import deque
+
 
 def parse_align_file(fh, mapper, fmt=None, n=None):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
@@ -123,7 +125,8 @@ class Plain(object):
     def __init__(self):
         """Initiate mapper.
         """
-        self.map = {}
+        self.this = None
+        self.qryque, self.subque = deque(), deque()
 
     def parse(self, line, parser):
         """Parse one line in alignment file.
@@ -155,7 +158,12 @@ class Plain(object):
             query, subject = self.buf
         except (AttributeError, TypeError):
             return
-        self.map.setdefault(query, []).append(subject)
+        if query == self.this:
+            self.subque[-1].add(subject)
+        else:
+            self.qryque.append(query)
+            self.subque.append({subject})
+            self.this = query
 
     def flush(self):
         """Process, return and clear read map.
@@ -165,9 +173,8 @@ class Plain(object):
         dict of set
             Processed read map.
         """
-        for query, subjects in self.map.items():
-            self.map[query] = set(subjects)
-        res, self.map = self.map, {}
+        res = dict(zip(self.qryque, self.subque))
+        self.__init__()
         return res
 
 

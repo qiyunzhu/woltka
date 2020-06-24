@@ -118,14 +118,20 @@ class AlignTests(TestCase):
         parser = assign_parser('map')
         mapper.parse('R1	G1', parser)
         mapper.append()
-        self.assertDictEqual(mapper.map, {'R1': ['G1']})
+        self.assertListEqual(list(mapper.qryque), ['R1'])
+        self.assertListEqual(list(mapper.subque), [{'G1'}])
+        # self.assertDictEqual(mapper.map, {'R1': ['G1']})
         mapper.parse('R2	G1', parser)
         mapper.append()
-        self.assertDictEqual(mapper.map, {'R1': ['G1'], 'R2': ['G1']})
+        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
+        self.assertListEqual(list(mapper.subque), [{'G1'}, {'G1'}])
+        # self.assertDictEqual(mapper.map, {'R1': ['G1'], 'R2': ['G1']})
         mapper.parse('R2	G2', parser)
         mapper.append()
-        self.assertDictEqual(
-            mapper.map, {'R1': ['G1'], 'R2': ['G1', 'G2']})
+        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
+        self.assertListEqual(list(mapper.subque), [{'G1'}, {'G1', 'G2'}])
+        # self.assertDictEqual(
+        #     mapper.map, {'R1': ['G1'], 'R2': ['G1', 'G2']})
 
     def test_plain_flush(self):
         mapper = Plain()
