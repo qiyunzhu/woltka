@@ -11,6 +11,8 @@
 """Functions for matching reads and genes using an ordinal system.
 """
 
+from itertools import chain
+
 
 class Ordinal(object):
     """Processor for matching reads and genes in an ordinal system.
@@ -111,31 +113,59 @@ class Ordinal(object):
         deque of set of str
             Subject(s) queue.
         """
-        res = {}
+        from_iterable = chain.from_iterable
+        th = self.th
+        rids = self.rids
+        coords = self.coords
+        lenmap = self.lenmap
+        prefix = self.prefix
+
+        matches = []
+        match_append = matches.append
         for nucl, loci in self.locmap.items():
 
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
             # Python's built-in "timesort" algorithm is efficient at this
             try:
-                queue = sorted(self.coords[nucl] + loci, key=lambda x: x[0])
+                queue = sorted(coords[nucl] + loci, key=lambda x: x[0])
 
             # it's possible that no gene was annotated on the nucleotide
             except KeyError:
                 continue
 
             # map reads to genes
-            res_ = match_read_gene(queue, self.lenmap[nucl], self.th)
+            match = match_read_gene(queue, lenmap[nucl], th)
 
-            # prefix
-            pref = nucl if self.prefix else None
+            # add nucleotide prefix
+            if prefix:
+                for idx, genes in match.items():
+                    match[idx] = [f'{nucl}_{x}' for x in genes]
 
-            # merge into master read map (of current chunk)
-            add_match_to_readmap(res, res_, self.rids, pref)
+            # add to matches
+            match_append(match)
 
-        # free memory
-        self.clear()
-        return zip(*res.items())
+        # generate query and subject(s) queues
+        # qryque, subque = deque(), deque()
+        # qry_append, sub_append = qryque.append, subque.append
+
+        # for idx in set(from_iterable(matches)):
+        #     qry_append(rids[idx])
+        #     sub_append(set(from_iterable(x.get(idx, []) for x in matches)))
+
+        # merge and de-duplicate matches
+        idxdic = {idx: i for i, idx in enumerate(sorted(set(from_iterable(
+            matches))))}
+        subque = [set() for _ in idxdic]
+        for match in matches:
+            for idx, genes in match.items():
+                subque[idxdic[idx]].update(genes)
+        qryque = [rids[idx] for idx in idxdic]
+
+        try:
+            return qryque, subque
+        finally:
+            self.clear()
 
     def clear(self):
         self.rids = []
@@ -292,7 +322,7 @@ def match_read_gene(queue, lens, th=0.8):
 
                     # add to match if read/gene overlap is long enough
                     if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
-                        add_to_match(rid, set()).add(id_)
+                        add_to_match(rid, []).append(id_)
 
                 # remove it from current genes
                 del(genes[id_])
@@ -304,25 +334,6 @@ def match_read_gene(queue, lens, th=0.8):
             else:
                 for gid, gloc in genes.items():
                     if loc - max(reads[id_], gloc) + 1 >= lens[id_] * th:
-                        add_to_match(id_, set()).add(gid)
+                        add_to_match(id_, []).append(gid)
                 del(reads[id_])
     return match
-
-
-def add_match_to_readmap(rmap, match, rids, nucl=None):
-    """Merge current read-gene matches to master read map.
-    Parameters
-    ----------
-    rmap : dict
-        Master read map.
-    match : dict
-        Current read map.
-    rids : list
-        Read ID list.
-    nucl : str, optional
-        Prefix nucleotide ID to gene IDs.
-    """
-    for idx, genes in match.items():
-        if nucl:
-            genes = {f'{nucl}_{x}' for x in genes}
-        rmap.setdefault(rids[idx], set()).update(genes)
