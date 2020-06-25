@@ -106,7 +106,10 @@ class Ordinal(object):
 
         Returns
         -------
-        Processed read-to-gene(s) map.
+        deque of str
+            Query queue.
+        deque of set of str
+            Subject(s) queue.
         """
         res = {}
         for nucl, loci in self.locmap.items():
@@ -132,7 +135,7 @@ class Ordinal(object):
 
         # free memory
         self.clear()
-        return res
+        return zip(*res.items())
 
     def clear(self):
         self.rids = []
@@ -253,7 +256,7 @@ def match_read_gene(queue, lens, th=0.8):
     Returns
     -------
     dict
-        Per-gene counts or read-to-gene map.
+        Read-to-gene(s) map.
 
     See Also
     --------
@@ -261,7 +264,7 @@ def match_read_gene(queue, lens, th=0.8):
 
     Notes
     -----
-    This algorithm is the core of the program. It uses a flattened, sorted
+    This algorithm is the core of this module. It uses a flattened, sorted
     list to store starting and ending coordinates of both genes and reads.
     Only one round of traversal (O(n)) of this list is needed to accurately
     find all gene-read matches.
@@ -270,9 +273,10 @@ def match_read_gene(queue, lens, th=0.8):
     genes = {}  # current genes
     reads = {}  # current reads
 
-    def _add_to_match(rid, gid):
-        match.setdefault(rid, set()).add(gid)
+    # cache function reference
+    add_to_match = match.setdefault
 
+    # walk through flattened queue of reads and genes
     for loc, is_start, is_gene, id_ in queue:
         if is_gene:
 
@@ -288,7 +292,7 @@ def match_read_gene(queue, lens, th=0.8):
 
                     # add to match if read/gene overlap is long enough
                     if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
-                        _add_to_match(rid, id_)
+                        add_to_match(rid, set()).add(id_)
 
                 # remove it from current genes
                 del(genes[id_])
@@ -300,14 +304,13 @@ def match_read_gene(queue, lens, th=0.8):
             else:
                 for gid, gloc in genes.items():
                     if loc - max(reads[id_], gloc) + 1 >= lens[id_] * th:
-                        _add_to_match(id_, gid)
+                        add_to_match(id_, set()).add(gid)
                 del(reads[id_])
     return match
 
 
 def add_match_to_readmap(rmap, match, rids, nucl=None):
     """Merge current read-gene matches to master read map.
-
     Parameters
     ----------
     rmap : dict

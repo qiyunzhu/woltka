@@ -42,8 +42,10 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
 
     Yields
     ------
-    dict of set
-        Query-to-subject(s) map.
+    deque of str
+        Query queue.
+    deque of set of str
+        Subject(s) queue.
 
     Notes
     -----
@@ -171,12 +173,15 @@ class Plain(object):
 
         Returns
         -------
-        dict of set
-            Processed read map.
+        deque of str
+            Query queue.
+        deque of set of str
+            Subject(s) queue.
         """
-        res = dict(zip(self.qryque, self.subque))
-        self.__init__()
-        return res
+        try:
+            return self.qryque, self.subque
+        finally:
+            self.__init__()
 
 
 def infer_align_format(line):

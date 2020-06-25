@@ -31,6 +31,9 @@ class AlignTests(TestCase):
     def test_parse_align_file(self):
         mapper = Plain()
 
+        def _res2lst(res):
+            return tuple(tuple(list(x) for x in y) for y in obs)
+
         # simple case
         aln = ('R1	G1',
                'R2	G1',
@@ -39,66 +42,54 @@ class AlignTests(TestCase):
                'R3	G3',
                'R4	G4',
                'R5	G5')
-        obs = list(parse_align_file(iter(aln), mapper))
-        exp = [{'R1': {'G1'},
-                'R2': {'G1', 'G2'},
-                'R3': {'G1', 'G3'},
-                'R4': {'G4'},
-                'R5': {'G5'}}]
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper)
+        exp = ((['R1', 'R2', 'R3', 'R4', 'R5'],
+                [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}, {'G5'}]),)
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 1
-        obs = list(parse_align_file(iter(aln), mapper, n=1))
-        exp = [{'R1': {'G1'}},
-               {'R2': {'G1', 'G2'}},
-               {'R3': {'G1', 'G3'}},
-               {'R4': {'G4'}},
-               {'R5': {'G5'}}]
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper, n=1)
+        exp = ((['R1'], [{'G1'}]),
+               (['R2'], [{'G1', 'G2'}]),
+               (['R3'], [{'G1', 'G3'}]),
+               (['R4'], [{'G4'}]),
+               (['R5'], [{'G5'}]))
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 2
-        obs = list(parse_align_file(iter(aln), mapper, n=2))
-        exp = [{'R1': {'G1'}},
-               {'R2': {'G1', 'G2'}},
-               {'R3': {'G1', 'G3'}},
-               {'R4': {'G4'},
-                'R5': {'G5'}}]
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper, n=2)
+        exp = ((['R1'], [{'G1'}]),
+               (['R2'], [{'G1', 'G2'}]),
+               (['R3'], [{'G1', 'G3'}]),
+               (['R4', 'R5'], [{'G4'}, {'G5'}]))
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 3
-        obs = list(parse_align_file(iter(aln), mapper, n=3))
-        exp = [{'R1': {'G1'},
-                'R2': {'G1', 'G2'}},
-               {'R3': {'G1', 'G3'},
-                'R4': {'G4'}},
-               {'R5': {'G5'}}]
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper, n=3)
+        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
+               (['R3', 'R4'], [{'G1', 'G3'}, {'G4'}]),
+               (['R5'], [{'G5'}]))
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 4
-        obs = list(parse_align_file(iter(aln), mapper, n=4))
-        exp = [{'R1': {'G1'},
-                'R2': {'G1', 'G2'}},
-               {'R3': {'G1', 'G3'},
-                'R4': {'G4'},
-                'R5': {'G5'}}]
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper, n=4)
+        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
+               (['R3', 'R4', 'R5'], [{'G1', 'G3'}, {'G4'}, {'G5'}]))
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 5
-        obs = list(parse_align_file(iter(aln), mapper, n=5))
-        exp = [{'R1': {'G1'},
-                'R2': {'G1', 'G2'},
-                'R3': {'G1', 'G3'}},
-               {'R4': {'G4'},
-                'R5': {'G5'}}]
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper, n=5)
+        exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
+               (['R4', 'R5'], [{'G4'}, {'G5'}]))
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # format is given
-        obs = list(parse_align_file(iter(aln), mapper, fmt='map', n=5))
-        self.assertListEqual(obs, exp)
+        obs = parse_align_file(iter(aln), mapper, fmt='map', n=5)
+        self.assertTupleEqual(_res2lst(obs), exp)
 
         # empty alignment
-        obs = list(parse_align_file(iter([]), mapper))
-        self.assertListEqual(obs, [])
+        obs = parse_align_file(iter([]), mapper)
+        self.assertTupleEqual(_res2lst(obs), ())
 
         # bad alignment
         with self.assertRaises(ValueError) as ctx:
@@ -120,18 +111,24 @@ class AlignTests(TestCase):
         mapper.append()
         self.assertListEqual(list(mapper.qryque), ['R1'])
         self.assertListEqual(list(mapper.subque), [{'G1'}])
-        # self.assertDictEqual(mapper.map, {'R1': ['G1']})
+
         mapper.parse('R2	G1', parser)
         mapper.append()
         self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
         self.assertListEqual(list(mapper.subque), [{'G1'}, {'G1'}])
-        # self.assertDictEqual(mapper.map, {'R1': ['G1'], 'R2': ['G1']})
+
         mapper.parse('R2	G2', parser)
         mapper.append()
         self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
         self.assertListEqual(list(mapper.subque), [{'G1'}, {'G1', 'G2'}])
-        # self.assertDictEqual(
-        #     mapper.map, {'R1': ['G1'], 'R2': ['G1', 'G2']})
+
+        mapper.buf = None
+        mapper.append()
+        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
+
+        delattr(mapper, 'buf')
+        mapper.append()
+        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
 
     def test_plain_flush(self):
         mapper = Plain()
@@ -147,12 +144,9 @@ class AlignTests(TestCase):
             mapper.parse(line, parser)
             mapper.append()
         obs = mapper.flush()
-        exp = {'R1': {'G1'},
-               'R2': {'G1', 'G2'},
-               'R3': {'G1', 'G3'},
-               'R4': {'G4'},
-               'R5': {'G5'}}
-        self.assertDictEqual(obs, exp)
+        exp = (['R1', 'R2', 'R3', 'R4', 'R5'],
+               [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}, {'G5'}])
+        self.assertTupleEqual(tuple(list(x) for x in obs), exp)
 
     def test_infer_align_format(self):
         # simple cases

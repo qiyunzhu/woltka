@@ -12,6 +12,8 @@
 hierarchical classification system.
 """
 
+from collections import deque
+
 from .util import count_list
 from .tree import find_rank, find_lca
 
@@ -187,27 +189,28 @@ def majority(taxa, th=0.8):
         return taxon if n >= len(taxa) * th else None
 
 
-def strip_index(readmap, sep='_'):
+def strip_index(subque, sep='_'):
     """Remove "underscore index" suffixes from subject IDs.
 
     Parameters
     ----------
-    readmap : dict
-        Read map to manipulate.
+    subque : deque
+        Subject(s) queue to manipulate.
     sep : str, optional
         Separator between subject ID and index.
     """
-    for query, subjects in readmap.items():
-        readmap[query] = set(x.rsplit(sep)[0] for x in subjects)
+    return deque(set(x.rsplit(sep)[0] for x in subs) for subs in subque)
 
 
-def demultiplex(dic, samples=None, sep='_'):
+def demultiplex(qryque, subque, samples=None, sep='_'):
     """Demultiplex a read-to-subject(s) map.
 
     Parameters
     ----------
-    map_ : str
-        Read-to-subject(s) map.
+    qryque : deque
+        Query queue to demultiplex.
+    subque : deque
+        Corresponding subject(s) queue.
     samples : iterable of str, optional
         Sample IDs to keep.
     sep : str, optional
@@ -215,15 +218,16 @@ def demultiplex(dic, samples=None, sep='_'):
 
     Returns
     -------
-    dict of dict
+    dict of (deque, deque)
         Per-sample read-to-subject(s) maps.
     """
     if samples:
         samset = set(samples)
-    res = {}
-    for key, value in dic.items():
-        left, _, right = key.partition(sep)
+    qryques, subques = {}, {}
+    for query, subjects in zip(qryque, subque):
+        left, _, right = query.partition(sep)
         sample, read = right and left, right or left
         if not samples or sample in samset:
-            res.setdefault(sample, {})[read] = value
-    return res
+            qryques.setdefault(sample, deque()).append(read)
+            subques.setdefault(sample, deque()).append(subjects)
+    return {x: (qryques[x], subques[x]) for x in qryques}

@@ -18,6 +18,7 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
+from collections import deque
 import click
 
 from .util import update_dict, allkeys, sum_dict, intize
@@ -124,7 +125,7 @@ def workflow(input_fp:      str,
 def classify(mapper:  object,
              files:     list or dict,
              samples:   list = None,
-             input_fmt:  str = None,
+             fmt:        str = None,
              demux:     bool = None,
              tree:      dict = None,
              rankdic:   dict = None,
@@ -151,7 +152,7 @@ def classify(mapper:  object,
         paths to sample IDs, if per-sample.
     samples : list of str, optional
         Sample ID list to include.
-    input_fmt : str, optional
+    fmt : str, optional
         Format of input alignment file. Options:
         - 'b6o': BLAST tabular format.
         - 'sam': SAM format.
@@ -220,17 +221,18 @@ def classify(mapper:  object,
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
-            for rmap in parse_align_file(fh, mapper, input_fmt, lines):
+            for qryque, subque in parse_align_file(fh, mapper, fmt, lines):
 
                 # show progress
                 click.echo('.', nl=False)
-                n += len(rmap)
+                n += len(qryque)
 
                 # reshape read map
-                rmap = reshape_readmap(rmap, deidx, demux, samples, files, fp)
+                rmap = reshape_readmap(
+                    qryque, subque, deidx, demux, samples, files, fp)
 
                 # assign reads at each rank
-                for sample, map_ in rmap.items():
+                for sample, (qryque, subque) in rmap.items():
 
                     # read strata of current sample into cache
                     if stratmap and sample != csample:
@@ -241,7 +243,8 @@ def classify(mapper:  object,
                     for rank in ranks:
 
                         # call assignment workflow
-                        assign_readmap(map_, data, rank, sample, **kwargs)
+                        assign_readmap(
+                            qryque, subque, data, rank, sample, **kwargs)
 
         click.echo(' Done.')
         click.echo(f'  Number of query sequences: {n}.')
@@ -569,7 +572,8 @@ def build_hierarchy(names_fps:    list = [],
     return tree, rankdic, namedic, root
 
 
-def reshape_readmap(rmap:    dict,
+def reshape_readmap(qryque: deque,
+                    subque: deque,
                     deidx:   bool = None,
                     demux:   bool = None,
                     samples: list = None,
@@ -579,8 +583,10 @@ def reshape_readmap(rmap:    dict,
 
     Parameters
     ----------
-    rmap : dict
-        Read map to manipulate.
+    qryque : deque
+        Query queue to manipulate.
+    subque : deque
+        Subject(s) queue to manipulate.
     deidx : bool, optional
         Strip suffixes from subject IDs.
     demux : bool, optional
@@ -599,21 +605,22 @@ def reshape_readmap(rmap:    dict,
     """
     # strip indices from subjects
     if deidx:
-        strip_index(rmap)
+        subque = strip_index(subque)
 
     # demultiplex into multiple samples
     if demux:
-        return demultiplex(rmap, samples)
+        return demultiplex(qryque, subque, samples)
 
     # sample Id from filename
     else:
-        return {files[fp] if files else None: rmap}
+        return {files[fp] if files else None: (qryque, subque)}
 
 
-def assign_readmap(rmap:     dict,
+def assign_readmap(qryque:  deque,
+                   subque:  deque,
                    data:     dict,
-                   rank:     str,
-                   sample:   str,
+                   rank:      str,
+                   sample:    str,
                    rank2dir: dict = None,
                    outzip:    str = None,
                    tree:     dict = None,
@@ -630,8 +637,10 @@ def assign_readmap(rmap:     dict,
 
     Parameters
     ----------
-    rmap : dict
-        Read map to assign.
+    qryque : deque
+        Query queue to assign.
+    subque : deque
+        Subject(s) queue for assignment.
     data : dict
         Master data structure.
     rank : str
@@ -677,7 +686,7 @@ def assign_readmap(rmap:     dict,
 
     # call assigner
     asgmt = {}
-    for query, subjects in rmap.items():
+    for query, subjects in zip(qryque, subque):
         res = assigner(subjects, *args)
         if res is not None:
             asgmt[query] = res

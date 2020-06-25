@@ -9,6 +9,7 @@
 # ----------------------------------------------------------------------------
 
 from unittest import TestCase, main
+from collections import deque
 from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
@@ -347,40 +348,43 @@ class WorkflowTests(TestCase):
 
     def test_reshape_readmap(self):
         # doing nothing
-        rmap = {'R1': {'G1'}, 'R2': {'G2'}, 'R3': {'G3', 'G4'}}
-        obs = reshape_readmap(rmap)
-        self.assertDictEqual(obs, {None: rmap})
+        qryq = ['R1', 'R2', 'R3']
+        subq = [{'G1'}, {'G2'}, {'G3', 'G4'}]
+        obs = reshape_readmap(qryq, subq)
+        self.assertDictEqual(obs, {None: (qryq, subq)})
 
         # with filename
-        obs = reshape_readmap(rmap, files={'fname': 'S1'}, fp='fname')
-        self.assertDictEqual(obs, {'S1': rmap})
+        obs = reshape_readmap(qryq, subq, files={'fname': 'S1'}, fp='fname')
+        self.assertDictEqual(obs, {'S1': (qryq, subq)})
 
         # remove index
-        rmap_ = {'R1': {'G1'}, 'R2': {'G2_1'}, 'R3': {'G3_1', 'G4_2'}}
-        obs = reshape_readmap(rmap_, deidx=True)
-        self.assertDictEqual(obs, {None: rmap})
+        subq_ = [{'G1'}, {'G2_1'}, {'G3_1', 'G4_2'}]
+        obs = reshape_readmap(qryq, subq_, deidx=True)
+        self.assertDictEqual(obs, {None: (qryq, deque(subq))})
 
         # demultiplex
-        rmap = {'S1_R1': {'G1'}, 'S1_R2': {'G2'}, 'S2_R3': {'G3', 'G4'}}
-        obs = reshape_readmap(rmap, demux=True)
-        self.assertDictEqual(obs, {'S1': {'R1': {'G1'}, 'R2': {'G2'}},
-                                   'S2': {'R3': {'G3', 'G4'}}})
+        qryq_ = ['S1_R1', 'S1_R2', 'S2_R3']
+        obs = reshape_readmap(qryq_, subq, demux=True)
+        self.assertDictEqual(obs, {
+            'S1': (deque(['R1', 'R2']), deque([{'G1'}, {'G2'}])),
+            'S2': (deque(['R3']), deque([{'G3', 'G4'}]))})
 
         # demultiplex to given sample Ids
-        rmap = {'S1_R1': {'G1'}, 'S1_R2': {'G2'}, 'S2_R3': {'G3', 'G4'}}
-        obs = reshape_readmap(rmap, demux=True, samples=['S1'])
-        self.assertDictEqual(obs, {'S1': {'R1': {'G1'}, 'R2': {'G2'}}})
+        obs = reshape_readmap(qryq_, subq, demux=True, samples=['S1'])
+        self.assertDictEqual(obs, {
+            'S1': (deque(['R1', 'R2']), deque([{'G1'}, {'G2'}]))})
 
     def test_assign_readmap(self):
         # simple gotu assignment
-        rmap = {'R1': {'G1'}, 'R2': {'G1', 'G2'}, 'R3': {'G2', 'G3'}}
+        qryq = ['R1', 'R2', 'R3']
+        subq = [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]
         data = {'none': {}}
-        assign_readmap(rmap, data, 'none', 'S1')
+        assign_readmap(qryq, subq, data, 'none', 'S1')
         self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
 
         # write read map
         data = {'none': {'S1': {}}}
-        assign_readmap(rmap, data, 'none', 'S1', rank2dir={
+        assign_readmap(qryq, subq, data, 'none', 'S1', rank2dir={
             'none': self.tmpdir})
         self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
         fp = join(self.tmpdir, 'S1.txt')
@@ -394,13 +398,14 @@ class WorkflowTests(TestCase):
         tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
                 'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
         data = {'free': {}}
-        assign_readmap(rmap, data, 'free', 'S1', tree=tree)
+        assign_readmap(qryq, subq, data, 'free', 'S1', tree=tree)
         self.assertDictEqual(data['free']['S1'], {'T0': 1, 'T1': 2})
 
         # fixed-rank assignment
         rankdic = {'T1': 'ko', 'T2': 'ko', 'T0': 'mo'}
         data = {'ko': {}}
-        assign_readmap(rmap, data, 'ko', 'S1', tree=tree, rankdic=rankdic)
+        assign_readmap(qryq, subq, data, 'ko', 'S1', tree=tree,
+                       rankdic=rankdic)
         self.assertDictEqual(data['ko']['S1'], {'T1': 2})
 
     def test_write_profiles(self):

@@ -166,43 +166,54 @@ class ClassifyTests(TestCase):
         self.assertIsNone(obs)
 
     def test_strip_index(self):
-        dic = {'R1': {'G1_1', 'G1_2', 'G2_3', 'G3'},
-               'R2': {'G1_1', 'G1.3', 'G4_5', 'G4_x'}}
-        strip_index(dic)
-        self.assertDictEqual(dic, {
-            'R1': {'G1', 'G2', 'G3'},
-            'R2': {'G1', 'G1.3', 'G4', 'G4'}})
-        dic = {'R1': {'G1.1', 'G1.2', 'G2'},
-               'R2': {'G1.1', 'G1.3', 'G3_x'}}
-        strip_index(dic, '.')
-        self.assertDictEqual(dic, {
-            'R1': {'G1', 'G2'}, 'R2': {'G1', 'G3_x'}})
+        subs = [{'G1_1', 'G1_2', 'G2_3', 'G3'},
+                {'G1_1', 'G1.3', 'G4_5', 'G4_x'}]
+        obs = strip_index(subs)
+        exp = [{'G1', 'G2', 'G3'},
+               {'G1', 'G1.3', 'G4', 'G4'}]
+        self.assertListEqual(list(obs), exp)
+        subs = [{'G1.1', 'G1.2', 'G2'},
+                {'G1.1', 'G1.3', 'G3_x'}]
+        obs = strip_index(subs, sep='.')
+        exp = [{'G1', 'G2'},
+               {'G1', 'G3_x'}]
+        self.assertListEqual(list(obs), exp)
 
     def test_demultiplex(self):
         # simple case
-        dic = {'S1_R1': 5,
-               'S1_R2': 12,
-               'S1_R3': 3,
-               'S2_R1': 10,
-               'S2_R2': 8,
-               'S2_R4': 7,
-               'S3_R2': 15,
-               'S3_R3': 1,
-               'S3_R4': 5}
-        obs = demultiplex(dic)
-        exp = {'S1': {'R1': 5, 'R2': 12, 'R3': 3},
-               'S2': {'R1': 10, 'R2': 8, 'R4': 7},
-               'S3': {'R2': 15, 'R3': 1, 'R4': 5}}
-        self.assertDictEqual(obs, exp)
+        rmap = [('S1_R1', 5),
+                ('S1_R2', 12),
+                ('S1_R3', 3),
+                ('S2_R1', 10),
+                ('S2_R2', 8),
+                ('S2_R4', 7),
+                ('S3_R2', 15),
+                ('S3_R3', 1),
+                ('S3_R4', 5)]
+        obs = demultiplex(*zip(*rmap))
+        exp = {'S1': [('R1',  5),
+                      ('R2', 12),
+                      ('R3',  3)],
+               'S2': [('R1', 10),
+                      ('R2',  8),
+                      ('R4',  7)],
+               'S3': [('R2', 15),
+                      ('R3',  1),
+                      ('R4',  5)]}
+        self.assertEqual(obs.keys(), exp.keys())
+        for s in obs:
+            self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
         # change separator, no result
-        obs = demultiplex(dic, sep='.')
-        self.assertDictEqual(obs, {'': dic})
+        obs = demultiplex(*zip(*rmap), sep='.')
+        self.assertEqual(obs.keys(), {''})
+        self.assertListEqual(list(map(tuple, obs[''])), list(zip(*rmap)))
 
         # enforce sample Ids
-        obs = demultiplex(dic, samples=['S1', 'S2', 'SX'])
-        exp = {x: exp[x] for x in ['S1', 'S2']}
-        self.assertDictEqual(obs, exp)
+        obs = demultiplex(*zip(*rmap), samples=['S1', 'S2', 'SX'])
+        self.assertEqual(obs.keys(), {'S1', 'S2'})
+        for s in ('S1', 'S2'):
+            self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
 
 if __name__ == '__main__':
