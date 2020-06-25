@@ -11,7 +11,8 @@
 """Functions for matching reads and genes using an ordinal system.
 """
 
-from itertools import chain
+from collections import defaultdict
+from operator import itemgetter
 
 
 class Ordinal(object):
@@ -108,62 +109,46 @@ class Ordinal(object):
 
         Returns
         -------
-        deque of str
+        iterable of str
             Query queue.
-        deque of set of str
+        iterable of set of str
             Subject(s) queue.
         """
-        from_iterable = chain.from_iterable
+        # preload references to class attributes
         th = self.th
         rids = self.rids
         coords = self.coords
         lenmap = self.lenmap
-        prefix = self.prefix
 
-        matches = []
-        match_append = matches.append
+        # master read-to-gene(s) map
+        res = defaultdict(set)
+
+        # decide matching function depending on whether prefix
+        match_func = match_read_gene_pfx if self.prefix else match_read_gene
+
         for nucl, loci in self.locmap.items():
 
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
             # Python's built-in "timesort" algorithm is efficient at this
             try:
-                queue = sorted(coords[nucl] + loci, key=lambda x: x[0])
+                queue = sorted(coords[nucl] + loci)
 
             # it's possible that no gene was annotated on the nucleotide
             except KeyError:
                 continue
 
-            # map reads to genes
-            match = match_read_gene(queue, lenmap[nucl], th)
+            # map reads to genes using the core algorithm
+            for read, gene in match_func(queue, lenmap[nucl], th, nucl):
 
-            # add nucleotide prefix
-            if prefix:
-                for idx, genes in match.items():
-                    match[idx] = [f'{nucl}_{x}' for x in genes]
+                # merge read-gene pairs to the master map
+                res[read].add(gene)
 
-            # add to matches
-            match_append(match)
-
-        # generate query and subject(s) queues
-        # qryque, subque = deque(), deque()
-        # qry_append, sub_append = qryque.append, subque.append
-
-        # for idx in set(from_iterable(matches)):
-        #     qry_append(rids[idx])
-        #     sub_append(set(from_iterable(x.get(idx, []) for x in matches)))
-
-        # merge and de-duplicate matches
-        idxdic = {idx: i for i, idx in enumerate(sorted(set(from_iterable(
-            matches))))}
-        subque = [set() for _ in idxdic]
-        for match in matches:
-            for idx, genes in match.items():
-                subque[idxdic[idx]].update(genes)
-        qryque = [rids[idx] for idx in idxdic]
-
+        # return read Ids (based on indices) and gene Ids
         try:
-            return qryque, subque
+            return itemgetter(*res)(rids), res.values()
+
+        # clean up
         finally:
             self.clear()
 
@@ -270,7 +255,7 @@ def whether_prefix(coords):
     return False
 
 
-def match_read_gene(queue, lens, th=0.8):
+def match_read_gene(queue, lens, th, pfx=None):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
@@ -280,16 +265,21 @@ def match_read_gene(queue, lens, th=0.8):
         (loc, is_start, is_gene, id)
     lens : dict
         Read-to-alignment length map.
-    th : float, optional
+    th : float
         Threshold for read/gene overlapping fraction.
+    pfx : str, optional
+        Placeholder for compatibility with match_read_gene_pfx
 
-    Returns
-    -------
-    dict
-        Read-to-gene(s) map.
+    Yields
+    ------
+    int
+        Read index.
+    str
+        Gene ID.
 
     See Also
     --------
+    match_read_gene_pfx
     read_gene_coords
 
     Notes
@@ -299,12 +289,12 @@ def match_read_gene(queue, lens, th=0.8):
     Only one round of traversal (O(n)) of this list is needed to accurately
     find all gene-read matches.
     """
-    match = {}  # read/gene match
     genes = {}  # current genes
     reads = {}  # current reads
 
-    # cache function reference
-    add_to_match = match.setdefault
+    # cache method references
+    reads_items = reads.items
+    genes_items = genes.items
 
     # walk through flattened queue of reads and genes
     for loc, is_start, is_gene, id_ in queue:
@@ -318,11 +308,11 @@ def match_read_gene(queue, lens, th=0.8):
             else:
 
                 # check current reads
-                for rid, rloc in reads.items():
+                for rid, rloc in reads_items():
 
                     # add to match if read/gene overlap is long enough
                     if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
-                        add_to_match(rid, []).append(id_)
+                        yield rid, id_
 
                 # remove it from current genes
                 del(genes[id_])
@@ -332,8 +322,59 @@ def match_read_gene(queue, lens, th=0.8):
             if is_start:
                 reads[id_] = loc
             else:
-                for gid, gloc in genes.items():
+                for gid, gloc in genes_items():
                     if loc - max(reads[id_], gloc) + 1 >= lens[id_] * th:
-                        add_to_match(id_, []).append(gid)
+                        yield id_, gid
                 del(reads[id_])
-    return match
+
+
+def match_read_gene_pfx(queue, lens, th, pfx):
+    """Associate reads with genes based on a sorted queue of coordinates.
+
+    Parameters
+    ----------
+    queue : list of tuple
+        Sorted list of elements.
+        (loc, is_start, is_gene, id)
+    lens : dict
+        Read-to-alignment length map.
+    th : float
+        Threshold for read/gene overlapping fraction.
+    pfx : str
+        Prefix to append to gene IDs.
+
+    Yields
+    ------
+    int
+        Read index.
+    str
+        Gene ID.
+
+    See Also
+    --------
+    match_read_gene
+
+    Notes
+    -----
+    This function is identical to `match_read_gene`, except for that it adds a
+    prefix (usually a nucleotide ID) to each gene ID.
+    """
+    genes, reads = {}, {}
+    reads_items, genes_items = reads.items, genes.items
+    for loc, is_start, is_gene, id_ in queue:
+        if is_gene:
+            if is_start:
+                genes[id_] = loc
+            else:
+                for rid, rloc in reads_items():
+                    if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
+                        yield rid, f'{pfx}_{id_}'
+                del(genes[id_])
+        else:
+            if is_start:
+                reads[id_] = loc
+            else:
+                for gid, gloc in genes_items():
+                    if loc - max(reads[id_], gloc) + 1 >= lens[id_] * th:
+                        yield id_, f'{pfx}_{gid}'
+                del(reads[id_])
