@@ -16,8 +16,8 @@ from tempfile import mkdtemp
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
-    Ordinal, match_read_gene, read_gene_coords, whether_prefix,
-    add_match_to_readmap)
+    Ordinal, match_read_gene, match_read_gene_pfx, read_gene_coords,
+    whether_prefix)
 
 
 class OrdinalTests(TestCase):
@@ -71,27 +71,40 @@ class OrdinalTests(TestCase):
                  ((start, True, False, id_),
                   (end,  False, False, id_))]
 
-        queue = sorted(genes + reads, key=lambda x: x[0])
+        queue = sorted(genes + reads)
 
         # default (threshold = 80%)
-        obs = match_read_gene(queue, lens, th=0.8)
-        exp = {'r1': {'g1'},
-               'r5': {'g2'},
-               'r6': {'g2'},
-               'r8': {'g3'}}
-        self.assertDictEqual(obs, exp)
+        obs = list(match_read_gene(queue, lens, th=0.8))
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
+        self.assertListEqual(obs, exp)
 
         # threashold = 50%
-        obs = match_read_gene(queue, lens, th=0.5)
-        exp = {'r1': {'g1'},
-               'r2': {'g1'},
-               'r3': {'g1'},
-               'r5': {'g2'},
-               'r6': {'g2'},
-               'r7': {'g3'},
-               'r8': {'g3'},
-               'r9': {'g3'}}
-        self.assertDictEqual(obs, exp)
+        obs = list(match_read_gene(queue, lens, th=0.5))
+        exp = [('r1', 'g1'),
+               ('r2', 'g1'),
+               ('r3', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r7', 'g3'),
+               ('r8', 'g3'),
+               ('r9', 'g3')]
+        self.assertListEqual(obs, exp)
+
+    def test_match_read_gene_pfx(self):
+        queue = [(1,  True,  True,  'g1'),
+                 (11, True,  False, 'r1'),
+                 (20, False, False, 'r1'),
+                 (26, True,  False, 'r2'),
+                 (35, False, False, 'r2'),
+                 (50, False, True,  'g1')]
+        lens = {'r1': 10, 'r2': 10}
+        obs = list(match_read_gene_pfx(queue, lens, th=0.8, pfx='test'))
+        exp = [('r1', 'test_g1'),
+               ('r2', 'test_g1')]
+        self.assertListEqual(obs, exp)
 
     def test_ordinal_init(self):
         mapper = Ordinal({}, True, 0.75)
@@ -281,25 +294,6 @@ class OrdinalTests(TestCase):
             (638, True, True,  'NP_369258.2'),
             (912, False, True, 'NP_369258.2')]}
         self.assertFalse(whether_prefix(coords))
-
-    def test_add_match_to_readmap(self):
-        # default mode
-        rids = ['R1', 'R2', 'R3', 'R4']
-        rmap = {'R1': {'G1'},
-                'R2': {'G2'},
-                'R3': {'G2', 'G3'}}
-        match = {2: {'G4'}, 0: {'G1', 'G4'}}
-        add_match_to_readmap(rmap, match, rids)
-        exp = {'R1': {'G1', 'G4'},
-               'R2': {'G2'},
-               'R3': {'G2', 'G3', 'G4'}}
-        self.assertDictEqual(rmap, exp)
-
-        # append nucleotide Id
-        match = {1: {'G3'}, 3: {'G2'}}
-        add_match_to_readmap(rmap, match, rids, 'N')
-        self.assertSetEqual(rmap['R2'], {'G2', 'N_G3'})
-        self.assertSetEqual(rmap['R4'], {'N_G2'})
 
 
 if __name__ == '__main__':
