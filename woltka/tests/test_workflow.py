@@ -216,19 +216,19 @@ class WorkflowTests(TestCase):
     def test_build_mapper(self):
         # plain
         obs = build_mapper()
-        self.assertEqual(obs.__class__.__name__, 'Plain')
+        self.assertEqual(obs.__name__, 'plain_mapper')
 
         # ordinal
         fp = join(self.tmpdir, 'coords.txt')
         with open(fp, 'w') as f:
             f.write('>G1\n1\t10\t20\n2\t35\t50\n')
         obs = build_mapper(fp)
-        self.assertEqual(obs.__class__.__name__, 'Ordinal')
+        self.assertEqual(obs.func.__name__, 'ordinal_mapper')
 
         # ordinal with overlap threshold
         obs = build_mapper(fp, 75)
-        self.assertEqual(obs.__class__.__name__, 'Ordinal')
-        self.assertEqual(obs.th, 0.75)
+        self.assertEqual(obs.func.__name__, 'ordinal_mapper')
+        self.assertEqual(obs.keywords['th'], 0.75)
         remove(fp)
 
     def test_prepare_ranks(self):

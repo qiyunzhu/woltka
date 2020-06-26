@@ -26,19 +26,17 @@ A parser function returns a tuple of:
 from collections import deque
 
 
-def parse_align_file(fh, mapper, fmt=None, n=None):
+def plain_mapper(fh, fmt=None, n=1000000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
     Parameters
     ----------
     fh : file handle
         Alignment file to parse.
-    mapper : object
-        Module for handling alignments.
     fmt : str, optional
-        Format of mapping file.
+        Alignment file format.
     n : int, optional
-        Number of lines per chunck.
+        Number of lines per chunk.
 
     Yields
     ------
@@ -54,151 +52,80 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
     processes current cache for every _n_ lines, yields and clears cache, then
     proceeds.
     """
-    n = n or 1000000  # default chunk size: 1 million
-    i = 0        # current line number
-    j = n        # target line number at end of current chunk
-    last = None  # last query Id
+    # determine alignment file format
+    fmt = fmt or infer_align_format(fh)
 
-    # save attribute lookup overhead
-    parse = mapper.parse
-    append = mapper.append
-    flush = mapper.flush
+    # assign parser for given format
+    parser = assign_parser(fmt)
 
-    # determine file format based on first line
-    if fmt is None:
-        try:
-            line = next(fh)
-        except StopIteration:
-            return
-        fmt = infer_align_format(line)
-        parser = assign_parser(fmt)
-        try:
-            last = parse(line, parser)
-            i = 1
-        except TypeError:
-            pass
-        else:
-            append()
-    else:
-        parser = assign_parser(fmt)
+    # query queue and subject(s) queue
+    qryque, subque = deque(), deque()
 
-    # parse remaining content
-    for line in fh:
+    # pre-load method references
+    qry_append, sub_append = qryque.append, subque.append
+
+    # parse alignment file
+    this = None  # current query Id
+    target = n   # target line number at end of current chunk
+    for i, line in enumerate(fh):
+
+        # parse current alignment line
         try:
-            query = parse(line, parser)
-            i += 1
-        except TypeError:
+            query, subject = parser(line)[:2]
+        except (TypeError, IndexError):
             continue
 
-        # flush when query Id changes and chunk size was already reached
-        if query != last:
-            if i >= j:
-                yield flush()
-                j = i + n
-            last = query
-        append()
+        # add subject to subject set of the same query Id
+        if query == this:
+            subque[-1].add(subject)
 
-    # finish last chunk
-    yield flush()
-
-
-class Plain(object):
-    """Mapping module for plain sequence alignments.
-
-    Attributes
-    ----------
-    map : dict
-        Cache of query-to-subject(s) map.
-    buf : (str, str)
-        Buffer of last (query, subject) pair.
-
-    See Also
-    --------
-    parse_align_file
-    ordinal.Ordinal
-
-    Notes
-    -----
-    The design of this class provides an interface for parsing extremely large
-    alignment files. The other class of the same type is `Ordinal`. They both
-    provide three instance methods: `parse`, `append` and `flush` which can be
-    called from parent process.
-    """
-
-    def __init__(self):
-        """Initiate mapper.
-        """
-        self.this = None
-        self.qryque, self.subque = deque(), deque()
-
-    def parse(self, line, parser):
-        """Parse one line in alignment file.
-
-        Parameters
-        ----------
-        line : str
-            Line in alignment file.
-        parser : callable
-            Function to parse the line.
-
-        Returns
-        -------
-        str
-            Query identifier.
-
-        Raises
-        ------
-        TypeError
-            Query and subject cannot be extracted from line.
-        """
-        self.buf = parser(line)[:2]
-        return self.buf[0]
-
-    def append(self):
-        """Append buffered last line to cached read map.
-        """
-        try:
-            query, subject = self.buf
-        except (AttributeError, TypeError):
-            return
-        if query == self.this:
-            self.subque[-1].add(subject)
+        # when query Id changes,
         else:
-            self.qryque.append(query)
-            self.subque.append({subject})
-            self.this = query
 
-    def flush(self):
-        """Process, return and clear read map.
+            # line number has reached target
+            if i >= target:
 
-        Returns
-        -------
-        deque of str
-            Query queue.
-        deque of set of str
-            Subject(s) queue.
-        """
-        try:
-            return self.qryque, self.subque
-        finally:
-            self.__init__()
+                # flush current queries and subject sets
+                # this happens only when: 1) query Id changes, and 2) line
+                # number has reached target, so that subjects of the same query
+                # won't be separated in multiple flushes
+                yield qryque, subque
+
+                # re-initiate queues and method references
+                qryque, subque = deque(), deque()
+                qry_append, sub_append = qryque.append, subque.append
+
+                # next target line number
+                target = i + n
+
+            # create new query and subject set pair
+            qry_append(query)
+            sub_append({subject})
+
+            # update current query Id
+            this = query
+
+    # final flush
+    yield qryque, subque
 
 
-def infer_align_format(line):
-    """Guess the format of an alignment file based on first line.
+def infer_align_format(fh):
+    """Guess the format of an alignment file based on content.
 
     Parameters
     ----------
-    line : str
-        First line of alignment file.
+    fh : file handle
+        Input alignment file.
 
     Returns
     -------
-    str or None
+    str
         Alignment file format (map, b6o or sam).
 
     Raises
     ------
+    ValueError
+        Alignment file cannot be read.
     ValueError
         Alignment file format cannot be determined.
 
@@ -207,17 +134,39 @@ def infer_align_format(line):
     parse_b6o_line
     parse_sam_line
     """
+    # read first line of file
+    try:
+        line = next(fh)
+
+    # file is empty or not readable
+    except StopIteration:
+        raise ValueError('Cannot read alignment file.')
+
+    # move pointer back to beginning of file
+    fh.seek(0)
+
+    # SAM file header
     if line.split()[0] in ('@HD', '@PG'):
         return 'sam'
+
+    # tab-delimited row
     row = line.rstrip().split('\t')
+
+    # simple query-to-subject map
     if len(row) == 2:
         return 'map'
+
+    # BLAST standard tabular format
     if len(row) >= 12:
         if all(row[i].isdigit() for i in range(3, 10)):
             return 'b6o'
+
+    # SAM format
     if len(row) >= 11:
         if all(row[i].isdigit() for i in (1, 3, 4)):
             return 'sam'
+
+    # cannot determine
     raise ValueError('Cannot determine alignment file format.')
 
 

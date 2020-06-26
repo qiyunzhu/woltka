@@ -19,20 +19,21 @@ output (via `click`) and file input/output, except for raising errors.
 from os import makedirs
 from os.path import join, basename, isfile, isdir
 from collections import deque
+from functools import partial
 import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
     openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
     write_readmap, write_table)
-from .align import Plain, parse_align_file
+from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata, strip_index,
     demultiplex)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
     fill_root)
-from .ordinal import Ordinal, read_gene_coords, whether_prefix
+from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
 from .biom import profile_to_biom, write_biom
 
 
@@ -139,7 +140,7 @@ def classify(mapper:  object,
              ambig:      str = True,
              subok:     bool = None,
              deidx:     bool = False,
-             lines:      int = None,
+             lines:      int = 1000000,
              stratmap:  dict = None) -> dict:
     """Core of the classification workflow.
 
@@ -221,7 +222,8 @@ def classify(mapper:  object,
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
-            for qryque, subque in parse_align_file(fh, mapper, fmt, lines):
+            # for qryque, subque in parse_align_file(fh, mapper, fmt, lines):
+            for qryque, subque in mapper(fh, fmt=fmt, n=lines):
 
                 # show progress
                 click.echo('.', nl=False)
@@ -389,8 +391,8 @@ def parse_strata(fp:       str = None,
 
 
 def build_mapper(coords_fp: str = None,
-                 overlap:   int = None) -> object:
-    """Build mapping module (Plain or Ordinal).
+                 overlap:   int = None) -> callable:
+    """Build mapper function (plain or ordinal).
 
     Parameters
     ----------
@@ -401,13 +403,13 @@ def build_mapper(coords_fp: str = None,
 
     Returns
     -------
-    object
-        Mapping module.
+    callable
+        Mapper function.
 
     Notes
     -----
-    Currently two mappers are supported: Plain() for regular alignments
-    (i.e., simple query-to-subject maps), Ordinal() for alignments with
+    Currently two mappers are supported: "plain" for regular alignments
+    (i.e., simple query-to-subject maps), "ordinal" for alignments with
     coordinates which will be used to match queries (reads) and genes. The
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
@@ -418,10 +420,11 @@ def build_mapper(coords_fp: str = None,
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'Total number of host sequences: {len(coords)}.')
-        return Ordinal(coords, whether_prefix(coords),
-                       overlap and overlap / 100)
+        return partial(ordinal_mapper, coords=coords,
+                       prefix=whether_prefix(coords),
+                       th=overlap and overlap / 100)
     else:
-        return Plain()
+        return plain_mapper
 
 
 def prepare_ranks(ranks:      str = None,
