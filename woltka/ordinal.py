@@ -14,6 +14,89 @@
 from collections import defaultdict
 from operator import itemgetter
 
+from .align import infer_align_format, assign_parser
+
+
+def ordinal_mapper(fh, coords, fmt=None, n=None, th=0.8, prefix=False):
+    n = n or 1000000  # default chunk size: 1 million
+    i = 0        # current line number
+    j = n        # target line number at end of current chunk
+
+    # determine file format based on first line
+    if fmt is None:
+        try:
+            line = next(fh)
+        except StopIteration:
+            return
+        fmt = infer_align_format(line)
+        fh.seek(0)
+
+    # assign parser for given format
+    parser = assign_parser(fmt)
+
+    rids = []
+    lenmap = {}
+    locmap = {}
+
+    def append(query, subject, length, start, end):
+        idx = len(rids)
+        rids.append(query)
+        lenmap.setdefault(subject, {})[idx] = length
+        locmap.setdefault(subject, []).extend((
+            (start, True, False, idx),
+            (end,  False, False, idx)))
+
+    def flush():
+
+        # master read-to-gene(s) map
+        res = defaultdict(set)
+
+        # decide matching function depending on whether prefix
+        match_func = match_read_gene_pfx if prefix else match_read_gene
+
+        for nucl, loci in locmap.items():
+
+            # merge and sort coordinates
+            # question is to merge an unsorted list into a sorted one
+            # Python's built-in "timesort" algorithm is efficient at this
+            try:
+                queue = sorted(coords[nucl] + loci)
+
+            # it's possible that no gene was annotated on the nucleotide
+            except KeyError:
+                continue
+
+            # map reads to genes using the core algorithm
+            for read, gene in match_func(queue, lenmap[nucl], th, nucl):
+
+                # merge read-gene pairs to the master map
+                res[read].add(gene)
+
+        # return read Ids (based on indices) and gene Ids
+        return itemgetter(*res)(rids), res.values()
+
+    # parse alignment file
+    this = None  # current query Id
+    for i, line in enumerate(fh):
+
+        try:
+            query, subject, _, length, start, end = parser(line)[:6]
+        except TypeError:
+            continue
+
+        if query == this:
+            append(query, subject, length, start, end)
+        else:
+            if i > j:
+                yield flush()
+                rids = []
+                lenmap = {}
+                locmap = {}
+                j = i + n
+            append(query, subject, length, start, end)
+            this = query
+    yield flush()
+
 
 class Ordinal(object):
     """Processor for matching reads and genes in an ordinal system.

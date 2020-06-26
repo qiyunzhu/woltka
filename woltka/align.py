@@ -26,6 +26,50 @@ A parser function returns a tuple of:
 from collections import deque
 
 
+def plain_mapper(fh, fmt=None, n=None):
+    n = n or 1000000  # default chunk size: 1 million
+    i = 0        # current line number
+    j = n        # target line number at end of current chunk
+
+    # determine file format based on first line
+    if fmt is None:
+        try:
+            line = next(fh)
+        except StopIteration:
+            return
+        fmt = infer_align_format(line)
+        fh.seek(0)
+
+    # assign parser for given format
+    parser = assign_parser(fmt)
+
+    qryque, subque = deque(), deque()
+    qry_append, sub_append = qryque.append, subque.append
+    qry_clear, sub_clear = qryque.clear, subque.clear
+
+    # parse alignment file
+    this = None  # current query Id
+    for i, line in enumerate(fh):
+
+        try:
+            query, subject = parser(line)[:2]
+        except TypeError:
+            continue
+
+        if query == this:
+            subque[-1].add(subject)
+        else:
+            if i > j:
+                yield qryque, subque
+                qry_clear()
+                sub_clear()
+                j = i + n
+            qry_append(query)
+            sub_append({subject})
+            this = query
+    yield qryque, subque
+
+
 def parse_align_file(fh, mapper, fmt=None, n=None):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
