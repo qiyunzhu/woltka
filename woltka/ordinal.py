@@ -17,42 +17,69 @@ from operator import itemgetter
 from .align import infer_align_format, assign_parser
 
 
-def ordinal_mapper(fh, coords, fmt=None, n=None, th=0.8, prefix=False):
-    n = n or 1000000  # default chunk size: 1 million
-    i = 0        # current line number
-    j = n        # target line number at end of current chunk
+def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
+    """Read an alignment file and match reads and genes in an ordinal system.
 
-    # determine file format based on first line
-    if fmt is None:
-        try:
-            line = next(fh)
-        except StopIteration:
-            return
-        fmt = infer_align_format(line)
-        fh.seek(0)
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    coords : dict
+        Gene coordinates table.
+    fmt : str, optional
+        Alignment file format.
+    n : int, optional
+        Number of lines per chunk.
+    th : float
+        Minimum threshold of overlap length : alignment length for a match.
+    prefix : bool
+        Prefix gene IDs with Nucleotide IDs.
+
+    See Also
+    --------
+    align.plain_mapper
+
+    Yields
+    ------
+    tuple of str
+        Query queue.
+    dictview of set of str
+        Subject(s) queue.
+    """
+    # determine file format
+    fmt = fmt or infer_align_format(fh)
 
     # assign parser for given format
     parser = assign_parser(fmt)
 
-    rids = []
-    lenmap = {}
-    locmap = {}
+    # choose match function depending on whether prefix
+    match_func = match_read_gene_pfx if prefix else match_read_gene
 
-    def append(query, subject, length, start, end):
-        idx = len(rids)
-        rids.append(query)
-        lenmap.setdefault(subject, {})[idx] = length
-        locmap.setdefault(subject, []).extend((
-            (start, True, False, idx),
-            (end,  False, False, idx)))
+    # cached list of query Ids for reverse look-up
+    # gene Ids are unique, but read Ids can have duplicates (i.e., one read is
+    # mapped to multiple loci on a genome), therefore an incremental integer
+    # here replaces the original read Id as its identifer
+    rids = []
+    rid_append = rids.append
+
+    # cached map of read to alignment length
+    lenmap = defaultdict(dict)
+
+    # cached map of read to coordinates
+    locmap = defaultdict(list)
 
     def flush():
+        """Match reads in current chunk with genes from all nucleotides.
 
+        Returns
+        -------
+        tuple of str
+            Query queue.
+        dictview of set of str
+            Subject(s) queue.
+        """
         # master read-to-gene(s) map
         res = defaultdict(set)
-
-        # decide matching function depending on whether prefix
-        match_func = match_read_gene_pfx if prefix else match_read_gene
 
         for nucl, loci in locmap.items():
 
@@ -75,26 +102,43 @@ def ordinal_mapper(fh, coords, fmt=None, n=None, th=0.8, prefix=False):
         # return read Ids (based on indices) and gene Ids
         return itemgetter(*res)(rids), res.values()
 
-    # parse alignment file
     this = None  # current query Id
+    target = n   # target line number at end of current chunk
+
+    # parse alignment file
     for i, line in enumerate(fh):
 
+        # parse current alignment line
         try:
             query, subject, _, length, start, end = parser(line)[:6]
         except TypeError:
             continue
 
-        if query == this:
-            append(query, subject, length, start, end)
-        else:
-            if i > j:
-                yield flush()
-                rids = []
-                lenmap = {}
-                locmap = {}
-                j = i + n
-            append(query, subject, length, start, end)
-            this = query
+        # when query Id changes and chunk limits has been reached
+        if query != this and i > target:
+
+            # flush: match currently cached reads with genes and yield
+            yield flush()
+
+            # re-initiate read Ids, length map and location map
+            rids = []
+            rid_append = rids.append
+            lenmap, locmap = defaultdict(dict), defaultdict(list)
+
+            # next target line number
+            target = i + n
+
+        # append read Id, alignment length and location
+        idx = len(rids)
+        rid_append(query)
+        lenmap[subject][idx] = length
+        locmap[subject].extend((
+            (start, True, False, idx),
+            (end,  False, False, idx)))
+
+        this = query
+
+    # final flush
     yield flush()
 
 
