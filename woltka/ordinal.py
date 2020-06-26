@@ -115,7 +115,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             continue
 
         # when query Id changes and chunk limits has been reached
-        if query != this and i > target:
+        if query != this and i >= target:
 
             # flush: match currently cached reads with genes and yield
             yield flush()

@@ -12,10 +12,11 @@ from unittest import TestCase, main
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+from io import StringIO
 
 from woltka.file import openzip
 from woltka.align import (
-    parse_align_file, Plain, infer_align_format, assign_parser, parse_map_line,
+    plain_mapper, infer_align_format, assign_parser, parse_map_line,
     parse_b6o_line, parse_sam_line, cigar_to_lens, parse_kraken,
     parse_centrifuge)
 
@@ -28,27 +29,28 @@ class AlignTests(TestCase):
     def tearDown(self):
         rmtree(self.tmpdir)
 
-    def test_parse_align_file(self):
-        mapper = Plain()
+    def test_plain_mapper(self):
 
         def _res2lst(res):
-            return tuple(tuple(list(x) for x in y) for y in obs)
+            return tuple(tuple(list(x) for x in y) for y in res)
 
         # simple case
-        aln = ('R1	G1',
-               'R2	G1',
-               'R2	G2',
-               'R3	G1',
-               'R3	G3',
-               'R4	G4',
-               'R5	G5')
-        obs = parse_align_file(iter(aln), mapper)
+        aln = StringIO('\n'.join((
+            'R1	G1',
+            'R2	G1',
+            'R2	G2',
+            'R3	G1',
+            'R3	G3',
+            'R4	G4',
+            'R5	G5')))
+        obs = plain_mapper(aln)
         exp = ((['R1', 'R2', 'R3', 'R4', 'R5'],
                 [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}, {'G5'}]),)
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 1
-        obs = parse_align_file(iter(aln), mapper, n=1)
+        aln.seek(0)
+        obs = plain_mapper(aln, n=1)
         exp = ((['R1'], [{'G1'}]),
                (['R2'], [{'G1', 'G2'}]),
                (['R3'], [{'G1', 'G3'}]),
@@ -57,137 +59,98 @@ class AlignTests(TestCase):
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 2
-        obs = parse_align_file(iter(aln), mapper, n=2)
-        exp = ((['R1'], [{'G1'}]),
-               (['R2'], [{'G1', 'G2'}]),
+        aln.seek(0)
+        obs = plain_mapper(aln, n=2)
+        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
                (['R3'], [{'G1', 'G3'}]),
                (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 3
-        obs = parse_align_file(iter(aln), mapper, n=3)
+        aln.seek(0)
+        obs = plain_mapper(aln, n=3)
         exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
                (['R3', 'R4'], [{'G1', 'G3'}, {'G4'}]),
                (['R5'], [{'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 4
-        obs = parse_align_file(iter(aln), mapper, n=4)
-        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
-               (['R3', 'R4', 'R5'], [{'G1', 'G3'}, {'G4'}, {'G5'}]))
+        aln.seek(0)
+        obs = plain_mapper(aln, n=4)
+        exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
+               (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 5
-        obs = parse_align_file(iter(aln), mapper, n=5)
+        aln.seek(0)
+        obs = plain_mapper(aln, n=5)
         exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
                (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # format is given
-        obs = parse_align_file(iter(aln), mapper, fmt='map', n=5)
+        aln.seek(0)
+        obs = plain_mapper(aln, fmt='map', n=5)
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # empty alignment
-        obs = parse_align_file(iter([]), mapper)
-        self.assertTupleEqual(_res2lst(obs), ())
+        with self.assertRaises(ValueError) as ctx:
+            list(plain_mapper(StringIO()))
+        self.assertEqual(str(ctx.exception), (
+            'Cannot read alignment file.'))
 
         # bad alignment
         with self.assertRaises(ValueError) as ctx:
-            list(parse_align_file(iter(('Hi there!',)), mapper))
+            list(plain_mapper(StringIO('Hi there!')))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
-
-    def test_plain_parse(self):
-        mapper = Plain()
-        parser = assign_parser('map')
-        self.assertEqual(mapper.parse('R1	G1', parser), 'R1')
-        with self.assertRaises(TypeError):
-            mapper.parse('Hi there!', parser)
-
-    def test_plain_append(self):
-        mapper = Plain()
-        parser = assign_parser('map')
-        mapper.parse('R1	G1', parser)
-        mapper.append()
-        self.assertListEqual(list(mapper.qryque), ['R1'])
-        self.assertListEqual(list(mapper.subque), [{'G1'}])
-
-        mapper.parse('R2	G1', parser)
-        mapper.append()
-        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
-        self.assertListEqual(list(mapper.subque), [{'G1'}, {'G1'}])
-
-        mapper.parse('R2	G2', parser)
-        mapper.append()
-        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
-        self.assertListEqual(list(mapper.subque), [{'G1'}, {'G1', 'G2'}])
-
-        mapper.buf = None
-        mapper.append()
-        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
-
-        delattr(mapper, 'buf')
-        mapper.append()
-        self.assertListEqual(list(mapper.qryque), ['R1', 'R2'])
-
-    def test_plain_flush(self):
-        mapper = Plain()
-        parser = assign_parser('map')
-        aln = ('R1	G1',
-               'R2	G1',
-               'R2	G2',
-               'R3	G1',
-               'R3	G3',
-               'R4	G4',
-               'R5	G5')
-        for line in aln:
-            mapper.parse(line, parser)
-            mapper.append()
-        obs = mapper.flush()
-        exp = (['R1', 'R2', 'R3', 'R4', 'R5'],
-               [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}, {'G5'}])
-        self.assertTupleEqual(tuple(list(x) for x in obs), exp)
 
     def test_infer_align_format(self):
         # simple cases
         # map
         line = 'S1/1	NC_123456'
-        self.assertEqual(infer_align_format(line), 'map')
+        self.assertEqual(infer_align_format(StringIO(line)), 'map')
 
         # b6o
         line = 'S1/1	NC_123456	100	100	0	0	1	100	25	124	0.1	100'
-        self.assertEqual(infer_align_format(line), 'b6o')
+        self.assertEqual(infer_align_format(StringIO(line)), 'b6o')
 
         # sam
         line = 'S1	77	NC_123456	26	0	100M	*	0	0	*	*'
-        self.assertEqual(infer_align_format(line), 'sam')
+        self.assertEqual(infer_align_format(StringIO(line)), 'sam')
 
         # sam header
         line = '@HD	VN:1.0	SO:unsorted'
-        self.assertEqual(infer_align_format(line), 'sam')
+        self.assertEqual(infer_align_format(StringIO(line)), 'sam')
+
+        # empty file
+        with self.assertRaises(ValueError) as ctx:
+            infer_align_format(StringIO())
+        self.assertEqual(str(ctx.exception), (
+            'Cannot read alignment file.'))
 
         # invalid sam
         line = 'S1	*	*	*	*	*	*	0	0	*	*'
         with self.assertRaises(ValueError) as ctx:
-            infer_align_format(line)
+            infer_align_format(StringIO(line))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
 
         # cannot determine
         line = 'Hi there!'
         with self.assertRaises(ValueError) as ctx:
-            infer_align_format(line)
+            infer_align_format(StringIO(line))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
 
         # real files
         # Bowtie2 (sam)
         with openzip(join(self.datdir, 'align', 'bowtie2', 'S01.sam.xz')) as f:
-            self.assertEqual(infer_align_format(next(f)), 'sam')
+            self.assertEqual(infer_align_format(f), 'sam')
 
         # BURST (b6o)
         with openzip(join(self.datdir, 'align', 'burst', 'S01.b6.bz2')) as f:
-            self.assertEqual(infer_align_format(next(f)), 'b6o')
+            self.assertEqual(infer_align_format(f), 'b6o')
 
     def test_assign_parser(self):
         self.assertEqual(assign_parser('map'), parse_map_line)
