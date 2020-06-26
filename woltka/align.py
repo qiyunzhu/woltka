@@ -349,7 +349,7 @@ def parse_kraken(line):
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
     x = line.rstrip().split('\t')
-    return x[1], x[2] if x[0] == 'C' else None, None
+    return (x[1], x[2]) if x[0] == 'C' else (None, None)
 
 
 def parse_centrifuge(line):
