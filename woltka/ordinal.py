@@ -111,7 +111,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         # parse current alignment line
         try:
             query, subject, _, length, start, end = parser(line)[:6]
-        except TypeError:
+        except (TypeError, IndexError):
             continue
 
         # when query Id changes and chunk limits has been reached
@@ -142,147 +142,56 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     yield flush()
 
 
-class Ordinal(object):
-    """Processor for matching reads and genes in an ordinal system.
+def ordinal_parser(fh, parser):
+    """Alignment parsing functionalities stripped from for `ordinal_mapper`.
 
-    Attributes
+    Parameters
     ----------
-    coords : dict
-        Gene coordinates table.
-    prefix : bool
-        Prefix gene IDs with Nucleotide IDs.
-    th : float
-        Minimum threshold of overlap length : alignment length for a match.
-    buf : list
-        Buffer of last alignment.
-    rids : list
-        Read identifiers in cache.
-    lenmap : dict
-        Alignment length map in cache.
-    locmap : dict
-        Alignment location map in cache.
+    fh : file handle
+        Alignment file to parse.
+    parser : callable
+        Function to parse alignment lines of certain format.
+
+    Returns
+    -------
+    list of str
+        Read Ids in same order as in alignment file.
+    defaultdict of dict of int
+        Map of read indices to alignment lengths per nucleotide.
+    defaultdict of list of (int, bool, bool, str)
+        Flattened list of read coordinates per nucleotide.
 
     See Also
     --------
-    align.Plain
+    ordinal_mapper
+    read_gene_coords
+    tests.test_ordinal.OrdinalTests.test_ordinal_parser
 
     Notes
     -----
-    For a read, "id" is the identifier (a free text), "idx" is the index (an
-    incremental integer for all reads of the current chunk).
+    This is a dummy function only for test and demonstration purpose but not
+    called anywhere in the program. See its unit test for details.
+
+    The data structure is central to the algorithm. See `read_gene_coords` for
+    details.
     """
+    rids = []
+    lenmap = defaultdict(dict)
+    locmap = defaultdict(list)
 
-    def __init__(self, coords, prefix=False, th=0.8):
-        """Initiate processor.
-
-        Parameters
-        ----------
-        coords : dict
-            Gene coordinates table.
-        prefix : bool
-            Whether prefix gene IDs.
-        th : float
-            Overlap : alignment threshold.
-        """
-        self.coords = coords
-        self.prefix = prefix
-        self.th = th
-        self.buf = None
-        self.clear()
-
-    def parse(self, line, parser):
-        """Parse one line in alignment file.
-
-        Parameters
-        ----------
-        line : str
-            Line in alignment file.
-        parser : callable
-            Function to parse the line.
-
-        Returns
-        -------
-        str
-            Query identifier.
-
-        Raises
-        ------
-        TypeError
-            Necessary information cannot be extracted from line.
-        """
-        self.buf = parser(line)[:6]
-        return self.buf[0]
-
-    def append(self):
-        """Append buffered last line to cached alignment map.
-
-        See Also
-        --------
-        read_gene_coords
-        """
+    for line in fh:
         try:
-            query, subject, _, length, start, end = self.buf
-        except (AttributeError, TypeError):
-            return
-        idx = len(self.rids)
-        self.rids.append(query)
-        self.lenmap.setdefault(subject, {})[idx] = length
-        self.locmap.setdefault(subject, []).extend((
+            query, subject, _, length, start, end = parser(line)[:6]
+        except (TypeError, IndexError):
+            continue
+        idx = len(rids)
+        rids.append(query)
+        lenmap[subject][idx] = length
+        locmap[subject].extend((
             (start, True, False, idx),
             (end,  False, False, idx)))
 
-    def flush(self):
-        """Process, return and clear read map.
-
-        Returns
-        -------
-        iterable of str
-            Query queue.
-        iterable of set of str
-            Subject(s) queue.
-        """
-        # preload references to class attributes
-        th = self.th
-        rids = self.rids
-        coords = self.coords
-        lenmap = self.lenmap
-
-        # master read-to-gene(s) map
-        res = defaultdict(set)
-
-        # decide matching function depending on whether prefix
-        match_func = match_read_gene_pfx if self.prefix else match_read_gene
-
-        for nucl, loci in self.locmap.items():
-
-            # merge and sort coordinates
-            # question is to merge an unsorted list into a sorted one
-            # Python's built-in "timesort" algorithm is efficient at this
-            try:
-                queue = sorted(coords[nucl] + loci)
-
-            # it's possible that no gene was annotated on the nucleotide
-            except KeyError:
-                continue
-
-            # map reads to genes using the core algorithm
-            for read, gene in match_func(queue, lenmap[nucl], th, nucl):
-
-                # merge read-gene pairs to the master map
-                res[read].add(gene)
-
-        # return read Ids (based on indices) and gene Ids
-        try:
-            return itemgetter(*res)(rids), res.values()
-
-        # clean up
-        finally:
-            self.clear()
-
-    def clear(self):
-        self.rids = []
-        self.lenmap = {}
-        self.locmap = {}
+    return rids, lenmap, locmap
 
 
 def read_gene_coords(fh, sort=False):
@@ -350,7 +259,7 @@ def read_gene_coords(fh, sort=False):
 
 
 def whether_prefix(coords):
-    """determine whether gene IDs should be prefixed with nucleotide IDs.
+    """Determine whether gene IDs should be prefixed with nucleotide IDs.
 
     Parameters
     ----------
@@ -408,6 +317,7 @@ def match_read_gene(queue, lens, th, pfx=None):
     --------
     match_read_gene_pfx
     read_gene_coords
+    tests.test_ordinal.OrdinalTests.test_match_read_gene
 
     Notes
     -----
@@ -415,6 +325,9 @@ def match_read_gene(queue, lens, th, pfx=None):
     list to store starting and ending coordinates of both genes and reads.
     Only one round of traversal (O(n)) of this list is needed to accurately
     find all gene-read matches.
+
+    Refer to its unit test `test_match_read_gene` for an actual example and
+    illustration.
     """
     genes = {}  # current genes
     reads = {}  # current reads

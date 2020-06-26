@@ -72,7 +72,7 @@ def plain_mapper(fh, fmt=None, n=1000000):
         # parse current alignment line
         try:
             query, subject = parser(line)[:2]
-        except TypeError:
+        except (TypeError, IndexError):
             continue
 
         # add subject to subject set of the same query Id

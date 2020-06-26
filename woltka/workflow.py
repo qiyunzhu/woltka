@@ -140,7 +140,7 @@ def classify(mapper:  object,
              ambig:      str = True,
              subok:     bool = None,
              deidx:     bool = False,
-             lines:      int = None,
+             lines:      int = 1000000,
              stratmap:  dict = None) -> dict:
     """Core of the classification workflow.
 
@@ -408,8 +408,8 @@ def build_mapper(coords_fp: str = None,
 
     Notes
     -----
-    Currently two mappers are supported: Plain() for regular alignments
-    (i.e., simple query-to-subject maps), Ordinal() for alignments with
+    Currently two mappers are supported: "plain" for regular alignments
+    (i.e., simple query-to-subject maps), "ordinal" for alignments with
     coordinates which will be used to match queries (reads) and genes. The
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
