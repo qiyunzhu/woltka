@@ -165,7 +165,7 @@ def ordinal_parser(fh, parser):
     --------
     ordinal_mapper
     read_gene_coords
-    tests.test_ordinal.OrdinalTests.test_ordinal_parser
+    .tests.test_ordinal.OrdinalTests.test_ordinal_parser
 
     Notes
     -----
@@ -317,7 +317,7 @@ def match_read_gene(queue, lens, th, pfx=None):
     --------
     match_read_gene_pfx
     read_gene_coords
-    tests.test_ordinal.OrdinalTests.test_match_read_gene
+    .tests.test_ordinal.OrdinalTests.test_match_read_gene
 
     Notes
     -----

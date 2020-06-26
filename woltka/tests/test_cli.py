@@ -57,6 +57,16 @@ class CliTests(TestCase):
     def test_classify(self):
         output_fp = join(self.tmpdir, 'output.tsv')
 
+        def _test_params(params, exp):
+            res = self.runner.invoke(classify, params)
+            self.assertEqual(res.exit_code, 0)
+            with open(output_fp, 'r') as f:
+                obs = f.read().splitlines()
+            exp_fp = join(self.datdir, 'output', exp)
+            with open(exp_fp, 'r') as f:
+                exp = f.read().splitlines()
+            self.assertListEqual(obs, exp)
+
         # burst, classification at genus level
         params = ['--input',  join(self.datdir, 'align', 'burst'),
                   '--output', output_fp,
@@ -65,14 +75,7 @@ class CliTests(TestCase):
                   '--map',    join(self.datdir, 'taxonomy', 'g2tid.txt'),
                   '--rank',   'genus',
                   '--name-as-id']
-        res = self.runner.invoke(classify, params)
-        self.assertEqual(res.exit_code, 0)
-        with open(output_fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'burst.genus.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
+        _test_params(params, 'burst.genus.tsv')
 
         # bowtie2, free-rank classification
         params = ['--input',  join(self.datdir, 'align', 'bowtie2'),
@@ -81,28 +84,14 @@ class CliTests(TestCase):
                   '--map',    join(self.datdir, 'taxonomy', 'g2tid.txt'),
                   '--rank',   'free',
                   '--no-subok']
-        res = self.runner.invoke(classify, params)
-        self.assertEqual(res.exit_code, 0)
-        with open(output_fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'bowtie2.free.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
+        _test_params(params, 'bowtie2.free.tsv')
 
         # bt2sho phylogeny-based classification
         params = ['--input',  join(self.datdir, 'align', 'bt2sho'),
                   '--output', output_fp,
                   '--newick', join(self.datdir, 'tree.nwk'),
                   '--rank',   'free']
-        res = self.runner.invoke(classify, params)
-        self.assertEqual(res.exit_code, 0)
-        with open(output_fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'bt2sho.phylo.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
+        _test_params(params, 'bt2sho.phylo.tsv')
 
         # burst, classification by GO process
         params = ['--input',  join(self.datdir, 'align', 'burst'),
@@ -113,14 +102,31 @@ class CliTests(TestCase):
                   '--map',    join(
                       self.datdir, 'function', 'go', 'process.tsv.xz'),
                   '--map-as-rank']
-        res = self.runner.invoke(classify, params)
-        self.assertEqual(res.exit_code, 0)
-        with open(output_fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'burst.process.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
+        _test_params(params, 'burst.process.tsv')
+
+        # simple map (from burst) against genes, classification at genus level
+        params = ['--input',  join(self.datdir, 'align', 'burst', 'split'),
+                  '--output', output_fp,
+                  '--rank',   'genus',
+                  '--map',    join(
+                      self.datdir, 'taxonomy', 'nucl', 'nucl2tid.txt'),
+                  '--names',  join(self.datdir, 'taxonomy', 'names.dmp'),
+                  '--nodes',  join(self.datdir, 'taxonomy', 'nodes.dmp'),
+                  '--name-as-id',
+                  '--deidx']
+        _test_params(params, 'split.genus.tsv')
+
+        # simple map against genes, classification by GO process
+        params = ['--input',  join(self.datdir, 'align', 'burst', 'split'),
+                  '--output', output_fp,
+                  '--rank',   'process',
+                  '--map',    join(
+                      self.datdir, 'function', 'nucl', 'uniref.map.xz'),
+                  '--map',    join(
+                      self.datdir, 'function', 'go', 'process.tsv.xz'),
+                  '--map-as-rank']
+        _test_params(params, 'split.process.tsv')
+
         remove(output_fp)
 
 

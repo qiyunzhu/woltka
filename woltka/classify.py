@@ -199,7 +199,7 @@ def strip_index(subque, sep='_'):
     sep : str, optional
         Separator between subject ID and index.
     """
-    return deque(set(x.rsplit(sep)[0] for x in subs) for subs in subque)
+    return deque(set(x.rsplit(sep, 1)[0] for x in subs) for subs in subque)
 
 
 def demultiplex(qryque, subque, samples=None, sep='_'):
@@ -224,10 +224,11 @@ def demultiplex(qryque, subque, samples=None, sep='_'):
     if samples:
         samset = set(samples)
     qryques, subques = {}, {}
+    qry_add, sub_add = qryques.setdefault, subques.setdefault
     for query, subjects in zip(qryque, subque):
         left, _, right = query.partition(sep)
         sample, read = right and left, right or left
         if not samples or sample in samset:
-            qryques.setdefault(sample, deque()).append(read)
-            subques.setdefault(sample, deque()).append(subjects)
+            qry_add(sample, deque()).append(read)
+            sub_add(sample, deque()).append(subjects)
     return {x: (qryques[x], subques[x]) for x in qryques}

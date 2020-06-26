@@ -172,6 +172,12 @@ class ClassifyTests(TestCase):
         exp = [{'G1', 'G2', 'G3'},
                {'G1', 'G1.3', 'G4', 'G4'}]
         self.assertListEqual(list(obs), exp)
+
+        subs = [{'NC_123456.1_300', 'ABCD000001.20_101'}]
+        obs = strip_index(subs)
+        exp = [{'NC_123456.1', 'ABCD000001.20'}]
+        self.assertListEqual(list(obs), exp)
+
         subs = [{'G1.1', 'G1.2', 'G2'},
                 {'G1.1', 'G1.3', 'G3_x'}]
         obs = strip_index(subs, sep='.')
