@@ -598,7 +598,8 @@ def strip_index(subque, sep='_'):
     generator of frozenset
         Processed subject(s) queue.
     """
-    return (frozenset(x.rsplit(sep, 1)[0] for x in subs) for subs in subque)
+    return map(frozenset, map(partial(
+        map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
 
 def demultiplex(qryque, subque, samples=None, sep='_'):
