@@ -13,6 +13,8 @@ from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+from filecmp import cmp
+import gzip
 
 from click.testing import CliRunner
 
@@ -60,22 +62,7 @@ class CliTests(TestCase):
         def _test_params(params, exp):
             res = self.runner.invoke(classify, params)
             self.assertEqual(res.exit_code, 0)
-            with open(output_fp, 'r') as f:
-                obs = f.read().splitlines()
-            exp_fp = join(self.datdir, 'output', exp)
-            with open(exp_fp, 'r') as f:
-                exp = f.read().splitlines()
-            self.assertListEqual(obs, exp)
-
-        # burst, classification at genus level
-        params = ['--input',  join(self.datdir, 'align', 'burst'),
-                  '--output', output_fp,
-                  '--names',  join(self.datdir, 'taxonomy', 'names.dmp'),
-                  '--nodes',  join(self.datdir, 'taxonomy', 'nodes.dmp'),
-                  '--map',    join(self.datdir, 'taxonomy', 'g2tid.txt'),
-                  '--rank',   'genus',
-                  '--name-as-id']
-        _test_params(params, 'burst.genus.tsv')
+            self.assertTrue(cmp(output_fp, join(self.datdir, 'output', exp)))
 
         # bowtie2, free-rank classification
         params = ['--input',  join(self.datdir, 'align', 'bowtie2'),
@@ -85,6 +72,28 @@ class CliTests(TestCase):
                   '--rank',   'free',
                   '--no-subok']
         _test_params(params, 'bowtie2.free.tsv')
+
+        # burst, classification at genus level
+        params = ['--input',  join(self.datdir, 'align', 'burst'),
+                  '--output', output_fp,
+                  '--outmap', self.tmpdir,
+                  '--names',  join(self.datdir, 'taxonomy', 'names.dmp'),
+                  '--nodes',  join(self.datdir, 'taxonomy', 'nodes.dmp'),
+                  '--map',    join(self.datdir, 'taxonomy', 'g2tid.txt'),
+                  '--rank',   'genus',
+                  '--name-as-id']
+        _test_params(params, 'burst.genus.tsv')
+
+        # check read maps
+        for i in range(1, 6):
+            outmap_fp = join(self.tmpdir, f'S0{i}.txt.gz')
+            with gzip.open(outmap_fp, 'r') as f:
+                obs = f.read()
+            with gzip.open(join(self.datdir, 'output', 'burst.genus.map',
+                                f'S0{i}.txt.gz'), 'r') as f:
+                exp = f.read()
+            self.assertEqual(obs, exp)
+            remove(outmap_fp)
 
         # bt2sho phylogeny-based classification
         params = ['--input',  join(self.datdir, 'align', 'bt2sho'),
@@ -103,6 +112,18 @@ class CliTests(TestCase):
                       self.datdir, 'function', 'go', 'process.tsv.xz'),
                   '--map-as-rank']
         _test_params(params, 'burst.process.tsv')
+
+        # burst, stratified genus/process classification
+        params = ['--input',  join(self.datdir, 'align', 'burst'),
+                  '--output', output_fp,
+                  '--rank',   'process',
+                  '--coords', join(self.datdir, 'function', 'coords.txt.xz'),
+                  '--map',    join(self.datdir, 'function', 'uniref.map.xz'),
+                  '--map',    join(
+                      self.datdir, 'function', 'go', 'process.tsv.xz'),
+                  '--map-as-rank',
+                  '--stratify', join(self.datdir, 'output', 'burst.genus.map')]
+        _test_params(params, 'burst.genus.process.tsv')
 
         # simple map (from burst) against genes, classification at genus level
         params = ['--input',  join(self.datdir, 'align', 'burst', 'split'),

@@ -14,6 +14,7 @@ from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+from filecmp import cmp
 
 import pandas as pd
 from biom import load_table
@@ -35,24 +36,20 @@ class WorkflowTests(TestCase):
 
     def test_workflow(self):
         # simplest gotu workflow
-        input_path = join(self.datdir, 'align', 'bowtie2')
-        output_path = join(self.tmpdir, 'tmp.tsv')
-        obs = workflow(input_path, output_path)['none']
+        input_fp = join(self.datdir, 'align', 'bowtie2')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        obs = workflow(input_fp, output_fp)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)
-        with open(output_path, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'bowtie2.gotu.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
-        remove(output_path)
+        self.assertTrue(cmp(output_fp, join(
+            self.datdir, 'output', 'bowtie2.gotu.tsv')))
+        remove(output_fp)
 
     def test_classify(self):
         # simplest gotu workflow
-        input_path = join(self.datdir, 'align', 'bowtie2')
-        samples, files, demux = parse_samples(input_path)
+        input_fp = join(self.datdir, 'align', 'bowtie2')
+        samples, files, demux = parse_samples(input_fp)
         mapper = build_mapper()
         ranks = ['none']
         obs = classify(mapper, files, samples=samples, demux=demux,
@@ -62,6 +59,26 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs['S03']['G000009345'], 640)
         self.assertEqual(obs['S04']['G000240185'], 4)
         self.assertEqual(obs['S05']['G000191145'], 10)
+
+        # complex genus/process stratification workflow
+        input_fp = join(self.datdir, 'align', 'burst')
+        coords_fp = join(self.datdir, 'function', 'coords.txt.xz')
+        map_fps = [join(self.datdir, 'function', 'uniref.map.xz'),
+                   join(self.datdir, 'function', 'go', 'process.tsv.xz')]
+        strata_dir = join(self.datdir, 'output', 'burst.genus.map')
+        samples, files, demux = parse_samples(input_fp)
+        tree, rankdic, namedic, root = build_hierarchy(
+            map_fps=map_fps, map_as_rank=True)
+        mapper = build_mapper(coords_fp=coords_fp, overlap=80)
+        stratmap = parse_strata(strata_dir, samples)
+        obs = classify(
+            mapper, files, samples=samples, demux=demux, tree=tree,
+            rankdic=rankdic, namedic=namedic, root=root, stratmap=stratmap,
+            ranks=['process'])['process']
+        self.assertEqual(obs['S01'][('Thermus', 'GO:0005978')], 2)
+        self.assertEqual(obs['S02'][('Bacteroides', 'GO:0006814')], 1)
+        self.assertEqual(obs['S03'][('Escherichia', 'GO:0006813')], 2)
+        self.assertEqual(len(obs['S04']), 39)
 
     def test_parse_samples(self):
         # file (assuming demultiplexed)
