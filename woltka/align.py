@@ -24,6 +24,7 @@ A parser function returns a tuple of:
 """
 
 from collections import deque
+from functools import lru_cache
 
 
 def plain_mapper(fh, fmt=None, n=1000000):
@@ -298,6 +299,7 @@ def parse_sam_line(line):
     return qname, rname, None, length, pos, pos + offset - 1
 
 
+@lru_cache(maxsize=128)
 def cigar_to_lens(cigar):
     """Extract lengths from a CIGAR string.
 
