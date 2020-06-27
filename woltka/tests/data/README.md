@@ -74,7 +74,7 @@ woltka classify \
 
 `bt2sho.phylo.tsv`
 
-```
+```bash
 woltka classify \
   --input align/bt2sho \
   --newick tree.nwk \

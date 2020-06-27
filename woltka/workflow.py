@@ -19,7 +19,7 @@ output (via `click`) and file input/output, except for raising errors.
 from os import makedirs
 from os.path import join, basename, isfile, isdir
 from collections import deque
-from functools import partial
+from functools import partial, lru_cache
 import click
 
 from .util import update_dict, allkeys, sum_dict, intize
@@ -678,21 +678,31 @@ def assign_readmap(qryque:  deque,
     """
     # determine assigner
     if rank is None or rank == 'none' or tree is None:
-        assigner = assign_none
-        args = (ambig,)
+        # assigner = assign_none
+        # args = (ambig,)
+        assigner = lru_cache(maxsize=128)(partial(assign_none, ambig=ambig))
     elif rank == 'free':
-        assigner = assign_free
-        args = (tree, root, subok)
+        assigner = lru_cache(maxsize=128)(partial(
+            assign_free, tree=tree, root=root, subok=subok))
+        # assigner = assign_free
+        # args = (tree, root, subok)
     else:
-        assigner = assign_rank
-        args = (rank, tree, rankdic, root, above, major, ambig)
+        assigner = lru_cache(maxsize=128)(partial(
+            assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
+            above=above, major=major, ambig=ambig))
+        # assigner = assign_rank
+        # args = (rank, tree, rankdic, root, above, major, ambig)
 
     # call assigner
     asgmt = {}
     for query, subjects in zip(qryque, subque):
-        res = assigner(subjects, *args)
+        # res = assigner(subjects, *args)
+        res = assigner(frozenset(subjects))
         if res is not None:
             asgmt[query] = res
+
+    # clear cache
+    # assigner.cache_clear()
 
     # write classification map
     if rank2dir is not None:
