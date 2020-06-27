@@ -678,20 +678,15 @@ def assign_readmap(qryque:  deque,
     """
     # determine assigner
     if rank is None or rank == 'none' or tree is None:
-        # assigner = assign_none
-        # args = (ambig,)
-        assigner = lru_cache(maxsize=128)(partial(assign_none, ambig=ambig))
+        assigner = lru_cache(maxsize=128)(partial(
+            assign_none, ambig=ambig))
     elif rank == 'free':
         assigner = lru_cache(maxsize=128)(partial(
             assign_free, tree=tree, root=root, subok=subok))
-        # assigner = assign_free
-        # args = (tree, root, subok)
     else:
         assigner = lru_cache(maxsize=128)(partial(
             assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
             above=above, major=major, ambig=ambig))
-        # assigner = assign_rank
-        # args = (rank, tree, rankdic, root, above, major, ambig)
 
     # call assigner
     asgmt = {}
@@ -700,9 +695,6 @@ def assign_readmap(qryque:  deque,
         res = assigner(frozenset(subjects))
         if res is not None:
             asgmt[query] = res
-
-    # clear cache
-    # assigner.cache_clear()
 
     # write classification map
     if rank2dir is not None:
