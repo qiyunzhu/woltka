@@ -602,7 +602,7 @@ def strip_index(subque, sep='_'):
 
 
 def demultiplex(qryque, subque, samples=None, sep='_'):
-    """Demultiplex a read-to-subject(s) map.
+    """Demultiplex a query-to-subject(s) map.
 
     Parameters
     ----------
@@ -619,17 +619,53 @@ def demultiplex(qryque, subque, samples=None, sep='_'):
     -------
     dict of (deque, deque)
         Per-sample read-to-subject(s) maps.
+
+    Notes
+    -----
+    In a multiplexed alignment file, query IDs are composed of sample ID and
+    read ID, separated by a character (default: "_"). This function separates
+    them at the first occurrence of the separator from left. If the separator
+    is not found, the entire query ID will be retained as read ID and sample
+    ID will be `None`.
     """
     if samples:
         samset = set(samples)
+
+    # per-sample read and subject(s) queues
     qryques, subques = {}, {}
-    qry_add, sub_add = qryques.setdefault, subques.setdefault
+
+    # current sample Id (it can be None so start with False)
+    csample = False
+
+    # list append method references
+    qry_add, sub_add = None, None
+
     for query, subjects in zip(qryque, subque):
+
+        # split query Id by first separator
         left, _, right = query.partition(sep)
+
+        # if separator if present, take left, right
+        # if there is no separator, take None, left
         sample, read = right and left, right or left
-        if not samples or sample in samset:
-            qry_add(sample, deque()).append(read)
-            sub_add(sample, deque()).append(subjects)
+
+        # append read Id and subject(s) to queues
+        if sample == csample:
+            qry_add(read)
+            sub_add(subjects)
+
+        # check if sample Id is to be included
+        elif not samples or sample in samset:
+            csample = sample
+
+            # create queues for current sample Id
+            qryques[sample] = deque([read])
+            subques[sample] = deque([subjects])
+
+            # (re-)assign method references to current sample
+            qry_add = qryques[sample].append
+            sub_add = subques[sample].append
+
     return {x: (qryques[x], subques[x]) for x in qryques}
 
 
