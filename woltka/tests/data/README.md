@@ -1,8 +1,9 @@
-# Test Datasets
+# Test Datasets and Commands
 
 Test datasets, including reference genome and taxonomy databases, query sequencing data are based on a a collection of 107 NCBI-defined "reference" bacterial genomes. The database is available for download at:
 
 ## Align
+
 *Sequence alignment** results.
 
 Here "alignment" refers to the operation of aligning short DNA sequences ("reads") against reference **genome** sequences.
@@ -57,6 +58,16 @@ woltka classify \
   --rank free \
   --no-subok \
   --output bowtie2.free.tsv
+```
+
+`blastn.species.tsv`:
+
+```bash
+woltka classify \
+  --input align/blastn/mux.b6o.xz \
+  --lineage taxonomy/lineage.txt \
+  --rank species \
+  --output blastn.species.tsv
 ```
 
 `burst.genus.tsv`:
