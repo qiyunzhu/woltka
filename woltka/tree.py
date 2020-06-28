@@ -429,8 +429,8 @@ def get_lineage(taxon, tree):
     return lineage[::-1]
 
 
-def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
-                   include_root=False):
+def lineage_str(taxon, tree, namedic=None, include_self=False,
+                include_root=False):
     """Generate a Greengenes-style lineage string of a taxon.
 
     Parameters
@@ -442,7 +442,7 @@ def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
     namedic : dict, optional
         Taxon name dictionary.
     include_self : bool, optional
-        Include current taxon.
+        Include self.
     include_root : bool, optional
         Include root.
 

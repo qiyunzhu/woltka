@@ -12,6 +12,8 @@
 hierarchical classification system.
 """
 
+from operator import itemgetter
+
 from .util import count_list
 from .tree import find_rank, find_lca
 
@@ -182,6 +184,6 @@ def majority(taxa, th=0.8):
     str or None
         Selected taxon.
     """
-    for taxon, n in sorted(count_list(taxa).items(), key=lambda x: x[1],
+    for taxon, n in sorted(count_list(taxa).items(), key=itemgetter(1),
                            reverse=True):
         return taxon if n >= len(taxa) * th else None
