@@ -28,8 +28,7 @@ from .file import (
     write_readmap, write_table)
 from .align import plain_mapper
 from .classify import (
-    assign_none, assign_free, assign_rank, count, count_strata, strip_index,
-    demultiplex)
+    assign_none, assign_free, assign_rank, count, count_strata)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
     fill_root)
@@ -201,6 +200,12 @@ def classify(mapper:  object,
     -------
     dict of dict
         Per-rank profiles generated from classification.
+
+    Notes
+    -----
+    Subject(s) of each query are converted into a frozenset. This is because
+    frozenset is hashable, a property necessary for subsequent assignment
+    result caching.
     """
     data = {x: {} for x in ranks}
 
@@ -222,19 +227,22 @@ def classify(mapper:  object,
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
-            # for qryque, subque in parse_align_file(fh, mapper, fmt, lines):
             for qryque, subque in mapper(fh, fmt=fmt, n=lines):
 
                 # show progress
                 click.echo('.', nl=False)
                 n += len(qryque)
 
-                # reshape read map
-                rmap = reshape_readmap(
-                    qryque, subque, deidx, demux, samples, files, fp)
+                # (optionally) strip indices and freeze sets
+                subque = deque(strip_index(subque) if deidx else map(
+                    frozenset, subque))
+
+                # (optionally) demultiplex and generate per-sample maps
+                rmaps = demultiplex(qryque, subque, samples) if demux else {
+                    files[fp] if files else None: (qryque, subque)}
 
                 # assign reads at each rank
-                for sample, (qryque, subque) in rmap.items():
+                for sample, (qryque, subque) in rmaps.items():
 
                     # read strata of current sample into cache
                     if stratmap and sample != csample:
@@ -575,52 +583,59 @@ def build_hierarchy(names_fps:    list = [],
     return tree, rankdic, namedic, root
 
 
-def reshape_readmap(qryque: deque,
-                    subque: deque,
-                    deidx:   bool = None,
-                    demux:   bool = None,
-                    samples: list = None,
-                    files:   dict = None,
-                    fp:       str = None) -> dict:
-    """Reshape a read map.
+def strip_index(subque, sep='_'):
+    """Remove "underscore index" suffixes from subject IDs.
+
+    Parameters
+    ----------
+    subque : iterable
+        Subject(s) queue to manipulate.
+    sep : str, optional
+        Separator between subject ID and index.
+
+    Returns
+    -------
+    generator of frozenset
+        Processed subject(s) queue.
+    """
+    return map(frozenset, map(partial(
+        map, lambda x: x.rsplit(sep, 1)[0]), subque))
+
+
+def demultiplex(qryque, subque, samples=None, sep='_'):
+    """Demultiplex a read-to-subject(s) map.
 
     Parameters
     ----------
     qryque : deque
-        Query queue to manipulate.
+        Query queue to demultiplex.
     subque : deque
-        Subject(s) queue to manipulate.
-    deidx : bool, optional
-        Strip suffixes from subject IDs.
-    demux : bool, optional
-        Whether perform demultiplexing.
-    samples : list of str, optional
-        Sample ID list to include.
-    files : list or dict
-        Map of filepaths to sample IDs.
-    fp : str
-        Path to current alignment file.
+        Corresponding subject(s) queue.
+    samples : iterable of str, optional
+        Sample IDs to keep.
+    sep : str, optional
+        Separator between sample ID and read ID.
 
     Returns
     -------
-    dict
-        Reshaped read map.
+    dict of (deque, deque)
+        Per-sample read-to-subject(s) maps.
     """
-    # strip indices from subjects
-    if deidx:
-        subque = strip_index(subque)
+    if samples:
+        samset = set(samples)
+    qryques, subques = {}, {}
+    qry_add, sub_add = qryques.setdefault, subques.setdefault
+    for query, subjects in zip(qryque, subque):
+        left, _, right = query.partition(sep)
+        sample, read = right and left, right or left
+        if not samples or sample in samset:
+            qry_add(sample, deque()).append(read)
+            sub_add(sample, deque()).append(subjects)
+    return {x: (qryques[x], subques[x]) for x in qryques}
 
-    # demultiplex into multiple samples
-    if demux:
-        return demultiplex(qryque, subque, samples)
 
-    # sample Id from filename
-    else:
-        return {files[fp] if files else None: (qryque, subque)}
-
-
-def assign_readmap(qryque:  deque,
-                   subque:  deque,
+def assign_readmap(qryque:   list,
+                   subque:   list,
                    data:     dict,
                    rank:      str,
                    sample:    str,
@@ -640,9 +655,9 @@ def assign_readmap(qryque:  deque,
 
     Parameters
     ----------
-    qryque : deque
+    qryque : iterable of str
         Query queue to assign.
-    subque : deque
+    subque : iterable of frozenset
         Subject(s) queue for assignment.
     data : dict
         Master data structure.
@@ -692,7 +707,7 @@ def assign_readmap(qryque:  deque,
     asgmt = {}
     for query, subjects in zip(qryque, subque):
         # res = assigner(subjects, *args)
-        res = assigner(frozenset(subjects))
+        res = assigner(subjects)
         if res is not None:
             asgmt[query] = res
 

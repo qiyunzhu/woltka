@@ -9,7 +9,6 @@
 # ----------------------------------------------------------------------------
 
 from unittest import TestCase, main
-from collections import deque
 from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
@@ -22,7 +21,7 @@ from pandas.testing import assert_frame_equal
 
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
-    prepare_ranks, build_hierarchy, reshape_readmap, assign_readmap,
+    prepare_ranks, build_hierarchy, assign_readmap, strip_index, demultiplex,
     write_profiles)
 
 
@@ -363,38 +362,66 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(obs[1], {'Bac': 'map', 'Arc': 'map'})
         remove(fp)
 
-    def test_reshape_readmap(self):
-        # doing nothing
-        qryq = ['R1', 'R2', 'R3']
-        subq = [{'G1'}, {'G2'}, {'G3', 'G4'}]
-        obs = reshape_readmap(qryq, subq)
-        self.assertDictEqual(obs, {None: (qryq, subq)})
+    def test_strip_index(self):
+        subs = [{'G1_1', 'G1_2', 'G2_3', 'G3'},
+                {'G1_1', 'G1.3', 'G4_5', 'G4_x'}]
+        obs = strip_index(subs)
+        exp = [{'G1', 'G2', 'G3'},
+               {'G1', 'G1.3', 'G4', 'G4'}]
+        self.assertListEqual(list(obs), exp)
 
-        # with filename
-        obs = reshape_readmap(qryq, subq, files={'fname': 'S1'}, fp='fname')
-        self.assertDictEqual(obs, {'S1': (qryq, subq)})
+        subs = [{'NC_123456.1_300', 'ABCD000001.20_101'}]
+        obs = strip_index(subs)
+        exp = [{'NC_123456.1', 'ABCD000001.20'}]
+        self.assertListEqual(list(obs), exp)
 
-        # remove index
-        subq_ = [{'G1'}, {'G2_1'}, {'G3_1', 'G4_2'}]
-        obs = reshape_readmap(qryq, subq_, deidx=True)
-        self.assertDictEqual(obs, {None: (qryq, deque(subq))})
+        subs = [{'G1.1', 'G1.2', 'G2'},
+                {'G1.1', 'G1.3', 'G3_x'}]
+        obs = strip_index(subs, sep='.')
+        exp = [{'G1', 'G2'},
+               {'G1', 'G3_x'}]
+        self.assertListEqual(list(obs), exp)
 
-        # demultiplex
-        qryq_ = ['S1_R1', 'S1_R2', 'S2_R3']
-        obs = reshape_readmap(qryq_, subq, demux=True)
-        self.assertDictEqual(obs, {
-            'S1': (deque(['R1', 'R2']), deque([{'G1'}, {'G2'}])),
-            'S2': (deque(['R3']), deque([{'G3', 'G4'}]))})
+    def test_demultiplex(self):
+        # simple case
+        rmap = [('S1_R1', 5),
+                ('S1_R2', 12),
+                ('S1_R3', 3),
+                ('S2_R1', 10),
+                ('S2_R2', 8),
+                ('S2_R4', 7),
+                ('S3_R2', 15),
+                ('S3_R3', 1),
+                ('S3_R4', 5)]
+        obs = demultiplex(*zip(*rmap))
+        exp = {'S1': [('R1',  5),
+                      ('R2', 12),
+                      ('R3',  3)],
+               'S2': [('R1', 10),
+                      ('R2',  8),
+                      ('R4',  7)],
+               'S3': [('R2', 15),
+                      ('R3',  1),
+                      ('R4',  5)]}
+        self.assertEqual(obs.keys(), exp.keys())
+        for s in obs:
+            self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
-        # demultiplex to given sample Ids
-        obs = reshape_readmap(qryq_, subq, demux=True, samples=['S1'])
-        self.assertDictEqual(obs, {
-            'S1': (deque(['R1', 'R2']), deque([{'G1'}, {'G2'}]))})
+        # change separator, no result
+        obs = demultiplex(*zip(*rmap), sep='.')
+        self.assertEqual(obs.keys(), {''})
+        self.assertListEqual(list(map(tuple, obs[''])), list(zip(*rmap)))
+
+        # enforce sample Ids
+        obs = demultiplex(*zip(*rmap), samples=['S1', 'S2', 'SX'])
+        self.assertEqual(obs.keys(), {'S1', 'S2'})
+        for s in ('S1', 'S2'):
+            self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
     def test_assign_readmap(self):
         # simple gotu assignment
         qryq = ['R1', 'R2', 'R3']
-        subq = [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]
+        subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
         data = {'none': {}}
         assign_readmap(qryq, subq, data, 'none', 'S1')
         self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
