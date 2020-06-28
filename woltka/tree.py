@@ -406,18 +406,27 @@ def get_lineage(taxon, tree):
     except KeyError:
         return None
 
-    # move up classification hierarchy till root
+    # initiate lineage and cache method reference
     lineage = [taxon]
+    add_taxon = lineage.append
+
+    # move up classification hierarchy till root
     this = taxon
     while True:
-        lineage.append(parent)
-        this = parent
-        parent = tree[this]
+
+        # stop when reaching root
         if parent == this:
             break
 
-    # reverse lineage so that it's high-to-low
-    return list(reversed(lineage))
+        # add current level to lineage
+        add_taxon(parent)
+
+        # move up to parent
+        this = parent
+        parent = tree[this]
+
+    # make lineage high-to-low
+    return lineage[::-1]
 
 
 def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
