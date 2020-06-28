@@ -467,7 +467,14 @@ class WorkflowTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(fp)
 
-        # multiple profiles in BIOM format
+        # force BIOM format (even if filename ends with .tsv)
+        write_profiles(data, fp, is_biom=True)
+        obs = load_table(fp).to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame([[1, 3], [2, 0], [0, 2]], index=['G1', 'G2', 'G3'],
+                           columns=['S1', 'S2'])
+        assert_frame_equal(obs, exp)
+
+        # multiple profiles in BIOM format (default)
         data = {'none': {'S1': {'G1': 1, 'G2': 2},
                          'S2': {'G1': 3, 'G3': 2}},
                 'free': {'S1': {'Ecoli': 3, 'Strep': 0},
@@ -475,8 +482,6 @@ class WorkflowTests(TestCase):
         write_profiles(data, self.tmpdir)
         fp = join(self.tmpdir, 'none.biom')
         obs = load_table(fp).to_dataframe(dense=True).astype(int)
-        exp = pd.DataFrame([[1, 3], [2, 0], [0, 2]], index=['G1', 'G2', 'G3'],
-                           columns=['S1', 'S2'])
         assert_frame_equal(obs, exp)
         remove(fp)
         fp = join(self.tmpdir, 'free.biom')
