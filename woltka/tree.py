@@ -527,15 +527,15 @@ def find_lca(taxa, tree):
     Combine LCA and majority rule, which is not trivial and requires careful
     reasoning and algorithm design.
     """
-    taxa_ = list(taxa)
+    itaxa = iter(taxa)
 
     # get lineage of first taxon
-    lineage = get_lineage(taxa_[0], tree)
+    lineage = get_lineage(next(itaxa), tree)
     if lineage is None:
         return
 
     # compare with remaining taxa
-    for taxon in taxa_[1:]:
+    for taxon in itaxa:
         try:
             parent = tree[taxon]
         except KeyError:
@@ -553,7 +553,6 @@ def find_lca(taxa, tree):
                     break
                 this = parent
                 parent = tree[this]
-                continue
 
             # trim shared lineage
             else:
