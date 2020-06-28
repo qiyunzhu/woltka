@@ -14,7 +14,7 @@
 import numpy as np
 import biom
 from .util import allkeys
-from .tree import get_lineage_gg
+from .tree import lineage_str
 from .__init__ import __name__, __version__
 
 
@@ -74,7 +74,7 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
             meta_['Rank'] = rankdic[feature] if feature in rankdic else None
         # get lineage string
         if tree:
-            meta_['Lineage'] = get_lineage_gg(
+            meta_['Lineage'] = lineage_str(
                 feature, tree, namedic if name_as_id else None) or None
         if meta_:
             metadata.append(meta_)

@@ -18,7 +18,7 @@ import bz2
 import lzma
 
 from .util import allkeys, feat_n_cnt
-from .tree import get_lineage_gg
+from .tree import lineage_str
 
 
 ZIPDIC = {'.gz': gzip, '.gzip': gzip,
@@ -412,7 +412,7 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
             row.append(rankdic[feature] if feature in rankdic else '')
         # fill lineage column
         if tree:
-            row.append(get_lineage_gg(
+            row.append(lineage_str(
                 feature, tree, namedic if name_as_id else None))
         # print row
         print('\t'.join(row), file=fh)

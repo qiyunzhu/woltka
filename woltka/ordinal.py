@@ -215,7 +215,7 @@ def read_gene_coords(fh, sort=False):
 
     See Also
     --------
-    map_read_gene
+    match_read_gene
 
     Notes
     -----
@@ -253,7 +253,7 @@ def read_gene_coords(fh, sort=False):
     # sort gene coordinates per nucleotide
     if sort:
         for nucl, queue in res.items():
-            res[nucl] = sorted(queue, key=lambda x: x[0])
+            res[nucl] = sorted(queue, key=itemgetter(0))
 
     return res
 
@@ -350,7 +350,7 @@ def match_read_gene(queue, lens, th, pfx=None):
                 # check current reads
                 for rid, rloc in reads_items():
 
-                    # add to match if read/gene overlap is long enough
+                    # is a match if read/gene overlap is long enough
                     if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
                         yield rid, id_
 

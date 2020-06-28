@@ -15,7 +15,7 @@ from tempfile import mkdtemp
 
 from woltka.tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
-    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca)
+    fill_root, get_lineage, lineage_str, find_rank, find_lca)
 
 
 # A small test taxon set containing 15 proteobacterial species
@@ -423,22 +423,22 @@ class TreeTests(TestCase):
         exp = ['1', '131567', '2', '1224', '1236', '72274', '135621', '286']
         self.assertListEqual(obs, exp)
 
-    def test_get_lineage_gg(self):
+    def test_lineage_str(self):
         tree = self.proteo['tree']
-        obs = get_lineage_gg('561', tree)
+        obs = lineage_str('561', tree)
         self.assertEqual(obs, '1236;91347;543')
-        obs = get_lineage_gg('561', tree, include_root=True)
+        obs = lineage_str('561', tree, include_root=True)
         self.assertEqual(obs, '1224;1236;91347;543')
-        obs = get_lineage_gg('561', tree, include_self=True)
+        obs = lineage_str('561', tree, include_self=True)
         self.assertEqual(obs, '1236;91347;543;561')
-        obs = get_lineage_gg('561', tree, self.proteo['names'])
+        obs = lineage_str('561', tree, self.proteo['names'])
         exp = 'Gammaproteobacteria;Enterobacterales;Enterobacteriaceae'
         self.assertEqual(obs, exp)
-        obs = get_lineage_gg('1224', tree)
+        obs = lineage_str('1224', tree)
         self.assertEqual(obs, '')
-        obs = get_lineage_gg('1236', tree)
+        obs = lineage_str('1236', tree)
         self.assertEqual(obs, '')
-        obs = get_lineage_gg('0000', tree)
+        obs = lineage_str('0000', tree)
         self.assertEqual(obs, '')
 
     def test_fill_root(self):
@@ -536,6 +536,12 @@ class TreeTests(TestCase):
         self.assertEqual(find_lca(['1'], tree), '1')
         self.assertIsNone(find_lca(['1234'], tree))
         self.assertIsNone(find_lca(['1234', '1'], tree))
+        self.assertIsNone(find_lca(['1', '2', '3'], tree))
+        self.assertEqual(find_lca(['1', '1'], tree), '1')
+
+        # broken tree, only for unit test coverage
+        tree = {'1': '1', '2': '2'}
+        self.assertEqual(find_lca(['1', '2'], tree), '1')
 
         # proteo tree
         # Escherichia, Enterobacter => Enterobacteriaceae
