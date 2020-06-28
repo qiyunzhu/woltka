@@ -64,7 +64,7 @@ class CliTests(TestCase):
             self.assertEqual(res.exit_code, 0)
             self.assertTrue(cmp(output_fp, join(self.datdir, 'output', exp)))
 
-        # bowtie2, free-rank classification
+        # bowtie2, paired-end, free-rank classification
         params = ['--input',  join(self.datdir, 'align', 'bowtie2'),
                   '--output', output_fp,
                   '--nodes',  join(self.datdir, 'taxonomy', 'nodes.dmp'),
@@ -72,6 +72,14 @@ class CliTests(TestCase):
                   '--rank',   'free',
                   '--no-subok']
         _test_params(params, 'bowtie2.free.tsv')
+
+        # blastn, multiplexed, lineage-based, species-level classification
+        params = ['--input',   join(
+                      self.datdir, 'align', 'blastn', 'mux.b6o.xz'),
+                  '--output',  output_fp,
+                  '--lineage', join(self.datdir, 'taxonomy', 'lineage.txt'),
+                  '--rank',    'species']
+        _test_params(params, 'blastn.species.tsv')
 
         # burst, classification at genus level
         params = ['--input',  join(self.datdir, 'align', 'burst'),

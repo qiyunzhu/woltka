@@ -1,15 +1,16 @@
-# Test Datasets
+# Test Datasets and Commands
 
 Test datasets, including reference genome and taxonomy databases, query sequencing data are based on a a collection of 107 NCBI-defined "reference" bacterial genomes. The database is available for download at:
 
 ## Align
+
 *Sequence alignment** results.
 
 Here "alignment" refers to the operation of aligning short DNA sequences ("reads") against reference **genome** sequences.
 
 The query sequences are five samples (S01 to S05) of 150 bp paired-end reads simulated using [CAMISIM](https://github.com/CAMI-challenge/CAMISIM/). The ground-truth mapping of reads against original genomes and locations are provided in `truth`.
 
-Three aligners were used: [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [Centrifuge](https://ccb.jhu.edu/software/centrifuge/), and [BURST](https://github.com/knights-lab/BURST). In particular, `bowtie2` used the Bowtie2 program default, whereas `bt2sho` used the Bowtie2 parameter setting recommended by SHOGUN. The mappings between reads and genomes are provided by each alignment file.
+Four aligners were used: [BLASTn](https://blast.ncbi.nlm.nih.gov/Blast.cgi), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [Centrifuge](https://ccb.jhu.edu/software/centrifuge/), and [BURST](https://github.com/knights-lab/BURST). In particular, `bowtie2` used the Bowtie2 program default, whereas `bt2sho` used the Bowtie2 parameter setting recommended by SHOGUN. The mappings between reads and genomes are provided by each alignment file.
 
 In addition, `burst/split` is the mapping against **genes** annotated from the reference genomes (not genomes themselves).
 
@@ -17,9 +18,9 @@ In addition, `burst/split` is the mapping against **genes** annotated from the r
 
 **Reference taxonomy** of the 107 bacterial genomes. The taxonomy is provided in multiple formats:
 
-- `g2lineage.txt`: Greengenes-style lineage strings.
-- `taxdump`: NCBI taxdump-style database files (`nodes.dmp` and `names.dmp`).
 - `g2tid.txt`: Genome ID to NCBI taxonomy ID mapping file.
+- `taxdump`: NCBI taxdump-style database files (`nodes.dmp` and `names.dmp`).
+- `lineage.txt`: Greengenes-style lineage strings.
 - `rank_names.tsv` and `rank_tids.tsv`: Taxon name and TaxID at each of the seven standard taxonomic ranks for each genome.
 
 In addition, `nucl/` contains the mappings from nucleotide sequence accessions (instead of their host genomes) to taxonomy.
@@ -59,6 +60,16 @@ woltka classify \
   --output bowtie2.free.tsv
 ```
 
+`blastn.species.tsv`:
+
+```bash
+woltka classify \
+  --input align/blastn/mux.b6o.xz \
+  --lineage taxonomy/lineage.txt \
+  --rank species \
+  --output blastn.species.tsv
+```
+
 `burst.genus.tsv`:
 
 ```bash
@@ -75,7 +86,7 @@ woltka classify \
 `burst.genus.map/`: Same as above, adding:
 
 ```bash
---outmap burst.genus.map`
+--outmap burst.genus.map
 ```
 
 `bt2sho.phylo.tsv`
@@ -105,7 +116,7 @@ woltka classify \
 `burst.genus.process.tsv`: Same as above, adding:
 
 ```bash
---stratify burst.genus.map`
+--stratify burst.genus.map
 ```
 
 `split.genus.tsv`:
