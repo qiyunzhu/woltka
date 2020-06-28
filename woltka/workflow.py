@@ -216,14 +216,14 @@ def classify(mapper:  object,
               outzip != 'none' else None}
 
     # current sample Id
-    csample = None
+    csample = False
 
-    # parse input maps and generate profile
+    # parse input alignment file(s) and generate profile(s)
     for fp in sorted(files):
         n = 0
         click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
 
-        # read alignment file into query-subject(s) map
+        # read alignment file into query-to-subject(s) map
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
@@ -233,18 +233,18 @@ def classify(mapper:  object,
                 click.echo('.', nl=False)
                 n += len(qryque)
 
-                # (optionally) strip indices and freeze sets
+                # (optional) strip indices and freeze sets
                 subque = deque(strip_index(subque) if deidx else map(
                     frozenset, subque))
 
-                # (optionally) demultiplex and generate per-sample maps
+                # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
                     files[fp] if files else None: (qryque, subque)}
 
                 # assign reads at each rank
                 for sample, (qryque, subque) in rmaps.items():
 
-                    # (optionally) read strata of current sample into cache
+                    # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
                         with openzip(stratmap[sample]) as fh:
                             kwargs['strata'] = dict(read_map(fh))
@@ -315,6 +315,7 @@ def parse_samples(fp:        str,
             elif len(map_) < len(samples):
                 raise ValueError(errmsg)
             files = {join(fp, map_[x]): x for x in samples}
+
         click.echo(f'Input directory: {fp}.')
         click.echo(f'Number of alignment files to read: {len(files)}.')
 
@@ -340,6 +341,7 @@ def parse_samples(fp:        str,
             else:
                 samples = [x[0] for x in map_]
                 files = {x[1]: x[0] for x in map_}
+
             click.echo(f'Number of alignment files to read: {len(files)}.')
 
         # treat file as a single alignment file
@@ -357,6 +359,7 @@ def parse_samples(fp:        str,
                     raise ValueError(errmsg)
                 files = {fp: sample}
                 samples = [sample]
+
             click.echo(f'Input alignment file: {fp}.')
 
     else:
@@ -472,6 +475,7 @@ def prepare_ranks(ranks:      str = None,
             dir_ = join(outmap_dir, rank)
             makedirs(dir_, exist_ok=True)
             rank2dir[rank] = dir_
+
     return ranks, rank2dir
 
 
@@ -513,6 +517,8 @@ def build_hierarchy(names_fps:    list = [],
         Root identifier.
     """
     tree, rankdic, namedic = {}, {}, {}
+
+    # check if at least one filepath is specified
     is_build = any([
         names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps])
     if is_build:
@@ -579,10 +585,12 @@ def build_hierarchy(names_fps:    list = [],
     if is_build:
         click.echo('Classification system constructed.')
         click.echo(f'Total number of classification units: {len(tree)}.')
+
     return tree, rankdic, namedic, root
 
 
-def strip_index(subque, sep='_'):
+def strip_index(subque: list,
+                sep:     str = '_') -> object:
     """Remove "underscore index" suffixes from subject IDs.
 
     Parameters
@@ -596,19 +604,28 @@ def strip_index(subque, sep='_'):
     -------
     generator of frozenset
         Processed subject(s) queue.
+
+    Notes
+    -----
+    This function will find the last occurrence of separator in a subject Id,
+    and trim from it to the right end. If not found, the whole subject Id will
+    be retained.
     """
     return map(frozenset, map(partial(
         map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
 
-def demultiplex(qryque, subque, samples=None, sep='_'):
+def demultiplex(qryque:  list,
+                subque:  list,
+                samples: list = None,
+                sep:      str = '_') -> dict:
     """Demultiplex a query-to-subject(s) map.
 
     Parameters
     ----------
-    qryque : deque
+    qryque : iterable
         Query queue to demultiplex.
-    subque : deque
+    subque : iterable
         Corresponding subject(s) queue.
     samples : iterable of str, optional
         Sample IDs to keep.
@@ -645,8 +662,8 @@ def demultiplex(qryque, subque, samples=None, sep='_'):
         # split query Id by first separator
         left, _, right = query.partition(sep)
 
-        # if separator if present, take left, right
-        # if there is no separator, take None, left
+        # if separator is present, take left and right
+        # if there is no separator, take None and left
         sample, read = right and left, right or left
 
         # append read Id and subject(s) to queues

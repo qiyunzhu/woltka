@@ -18,9 +18,9 @@ In addition, `burst/split` is the mapping against **genes** annotated from the r
 
 **Reference taxonomy** of the 107 bacterial genomes. The taxonomy is provided in multiple formats:
 
-- `g2lineage.txt`: Greengenes-style lineage strings.
-- `taxdump`: NCBI taxdump-style database files (`nodes.dmp` and `names.dmp`).
 - `g2tid.txt`: Genome ID to NCBI taxonomy ID mapping file.
+- `taxdump`: NCBI taxdump-style database files (`nodes.dmp` and `names.dmp`).
+- `lineage.txt`: Greengenes-style lineage strings.
 - `rank_names.tsv` and `rank_tids.tsv`: Taxon name and TaxID at each of the seven standard taxonomic ranks for each genome.
 
 In addition, `nucl/` contains the mappings from nucleotide sequence accessions (instead of their host genomes) to taxonomy.
@@ -86,7 +86,7 @@ woltka classify \
 `burst.genus.map/`: Same as above, adding:
 
 ```bash
---outmap burst.genus.map`
+--outmap burst.genus.map
 ```
 
 `bt2sho.phylo.tsv`
@@ -116,7 +116,7 @@ woltka classify \
 `burst.genus.process.tsv`: Same as above, adding:
 
 ```bash
---stratify burst.genus.map`
+--stratify burst.genus.map
 ```
 
 `split.genus.tsv`:
