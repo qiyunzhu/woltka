@@ -72,9 +72,15 @@ woltka classify \
   --output burst.genus.tsv
 ```
 
+`burst.genus.map/`: Same as above, adding:
+
+```bash
+--outmap burst.genus.map`
+```
+
 `bt2sho.phylo.tsv`
 
-```
+```bash
 woltka classify \
   --input align/bt2sho \
   --newick tree.nwk \
@@ -94,6 +100,12 @@ woltka classify \
   --map-as-rank \
   --rank process \
   --output burst.process.tsv
+```
+
+`burst.genus.process.tsv`: Same as above, adding:
+
+```bash
+--stratify burst.genus.map`
 ```
 
 `split.genus.tsv`:

@@ -12,8 +12,6 @@
 hierarchical classification system.
 """
 
-from collections import deque
-
 from .util import count_list
 from .tree import find_rank, find_lca
 
@@ -187,48 +185,3 @@ def majority(taxa, th=0.8):
     for taxon, n in sorted(count_list(taxa).items(), key=lambda x: x[1],
                            reverse=True):
         return taxon if n >= len(taxa) * th else None
-
-
-def strip_index(subque, sep='_'):
-    """Remove "underscore index" suffixes from subject IDs.
-
-    Parameters
-    ----------
-    subque : deque
-        Subject(s) queue to manipulate.
-    sep : str, optional
-        Separator between subject ID and index.
-    """
-    return deque(set(x.rsplit(sep, 1)[0] for x in subs) for subs in subque)
-
-
-def demultiplex(qryque, subque, samples=None, sep='_'):
-    """Demultiplex a read-to-subject(s) map.
-
-    Parameters
-    ----------
-    qryque : deque
-        Query queue to demultiplex.
-    subque : deque
-        Corresponding subject(s) queue.
-    samples : iterable of str, optional
-        Sample IDs to keep.
-    sep : str, optional
-        Separator between sample ID and read ID.
-
-    Returns
-    -------
-    dict of (deque, deque)
-        Per-sample read-to-subject(s) maps.
-    """
-    if samples:
-        samset = set(samples)
-    qryques, subques = {}, {}
-    qry_add, sub_add = qryques.setdefault, subques.setdefault
-    for query, subjects in zip(qryque, subque):
-        left, _, right = query.partition(sep)
-        sample, read = right and left, right or left
-        if not samples or sample in samset:
-            qry_add(sample, deque()).append(read)
-            sub_add(sample, deque()).append(subjects)
-    return {x: (qryques[x], subques[x]) for x in qryques}
