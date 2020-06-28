@@ -469,25 +469,25 @@ def find_rank(taxon, rank, tree, rankdic):
 
     Returns
     -------
-    str
-        Ancestral taxon if found.
+    str or None
+        Ancestral taxon at given rank, or None if not found.
     """
     # if taxon is not in tree, return None
     try:
         parent = tree[taxon]
     except KeyError:
-        return None
+        return
+
+    # cache method reference
+    get_rank = rankdic.get
 
     # move up hierarchy until reaching given rank
     this = taxon
     while True:
 
         # check rank of current taxon
-        try:
-            if rankdic[this] == rank:
-                return this
-        except KeyError:
-            pass
+        if get_rank(this) == rank:
+            return this
 
         # stop when reaching root
         if parent == this:

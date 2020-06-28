@@ -244,15 +244,14 @@ def classify(mapper:  object,
                 # assign reads at each rank
                 for sample, (qryque, subque) in rmaps.items():
 
-                    # read strata of current sample into cache
+                    # (optionally) read strata of current sample into cache
                     if stratmap and sample != csample:
                         with openzip(stratmap[sample]) as fh:
                             kwargs['strata'] = dict(read_map(fh))
                         csample = sample
 
+                    # call assignment workflow for each rank
                     for rank in ranks:
-
-                        # call assignment workflow
                         assign_readmap(
                             qryque, subque, data, rank, sample, **kwargs)
 
