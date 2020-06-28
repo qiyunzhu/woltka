@@ -18,20 +18,21 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
+from collections import deque
+from functools import partial, lru_cache
 import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
     openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
     write_readmap, write_table)
-from .align import Plain, parse_align_file
+from .align import plain_mapper
 from .classify import (
-    assign_none, assign_free, assign_rank, count, count_strata, strip_index,
-    demultiplex)
+    assign_none, assign_free, assign_rank, count, count_strata)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
     fill_root)
-from .ordinal import Ordinal, read_gene_coords, whether_prefix
+from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
 from .biom import profile_to_biom, write_biom
 
 
@@ -124,7 +125,7 @@ def workflow(input_fp:      str,
 def classify(mapper:  object,
              files:     list or dict,
              samples:   list = None,
-             input_fmt:  str = None,
+             fmt:        str = None,
              demux:     bool = None,
              tree:      dict = None,
              rankdic:   dict = None,
@@ -138,7 +139,7 @@ def classify(mapper:  object,
              ambig:      str = True,
              subok:     bool = None,
              deidx:     bool = False,
-             lines:      int = None,
+             lines:      int = 1000000,
              stratmap:  dict = None) -> dict:
     """Core of the classification workflow.
 
@@ -151,7 +152,7 @@ def classify(mapper:  object,
         paths to sample IDs, if per-sample.
     samples : list of str, optional
         Sample ID list to include.
-    input_fmt : str, optional
+    fmt : str, optional
         Format of input alignment file. Options:
         - 'b6o': BLAST tabular format.
         - 'sam': SAM format.
@@ -199,6 +200,12 @@ def classify(mapper:  object,
     -------
     dict of dict
         Per-rank profiles generated from classification.
+
+    Notes
+    -----
+    Subject(s) of each query are converted into a frozenset. This is because
+    frozenset is hashable, a property necessary for subsequent assignment
+    result caching.
     """
     data = {x: {} for x in ranks}
 
@@ -220,17 +227,22 @@ def classify(mapper:  object,
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
-            for rmap in parse_align_file(fh, mapper, input_fmt, lines):
+            for qryque, subque in mapper(fh, fmt=fmt, n=lines):
 
                 # show progress
                 click.echo('.', nl=False)
-                n += len(rmap)
+                n += len(qryque)
 
-                # reshape read map
-                rmap = reshape_readmap(rmap, deidx, demux, samples, files, fp)
+                # (optionally) strip indices and freeze sets
+                subque = deque(strip_index(subque) if deidx else map(
+                    frozenset, subque))
+
+                # (optionally) demultiplex and generate per-sample maps
+                rmaps = demultiplex(qryque, subque, samples) if demux else {
+                    files[fp] if files else None: (qryque, subque)}
 
                 # assign reads at each rank
-                for sample, map_ in rmap.items():
+                for sample, (qryque, subque) in rmaps.items():
 
                     # read strata of current sample into cache
                     if stratmap and sample != csample:
@@ -241,7 +253,8 @@ def classify(mapper:  object,
                     for rank in ranks:
 
                         # call assignment workflow
-                        assign_readmap(map_, data, rank, sample, **kwargs)
+                        assign_readmap(
+                            qryque, subque, data, rank, sample, **kwargs)
 
         click.echo(' Done.')
         click.echo(f'  Number of query sequences: {n}.')
@@ -386,8 +399,8 @@ def parse_strata(fp:       str = None,
 
 
 def build_mapper(coords_fp: str = None,
-                 overlap:   int = None) -> object:
-    """Build mapping module (Plain or Ordinal).
+                 overlap:   int = None) -> callable:
+    """Build mapper function (plain or ordinal).
 
     Parameters
     ----------
@@ -398,13 +411,13 @@ def build_mapper(coords_fp: str = None,
 
     Returns
     -------
-    object
-        Mapping module.
+    callable
+        Mapper function.
 
     Notes
     -----
-    Currently two mappers are supported: Plain() for regular alignments
-    (i.e., simple query-to-subject maps), Ordinal() for alignments with
+    Currently two mappers are supported: "plain" for regular alignments
+    (i.e., simple query-to-subject maps), "ordinal" for alignments with
     coordinates which will be used to match queries (reads) and genes. The
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
@@ -415,10 +428,11 @@ def build_mapper(coords_fp: str = None,
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'Total number of host sequences: {len(coords)}.')
-        return Ordinal(coords, whether_prefix(coords),
-                       overlap and overlap / 100)
+        return partial(ordinal_mapper, coords=coords,
+                       prefix=whether_prefix(coords),
+                       th=overlap and overlap / 100)
     else:
-        return Plain()
+        return plain_mapper
 
 
 def prepare_ranks(ranks:      str = None,
@@ -569,51 +583,62 @@ def build_hierarchy(names_fps:    list = [],
     return tree, rankdic, namedic, root
 
 
-def reshape_readmap(rmap:    dict,
-                    deidx:   bool = None,
-                    demux:   bool = None,
-                    samples: list = None,
-                    files:   dict = None,
-                    fp:       str = None) -> dict:
-    """Reshape a read map.
+def strip_index(subque, sep='_'):
+    """Remove "underscore index" suffixes from subject IDs.
 
     Parameters
     ----------
-    rmap : dict
-        Read map to manipulate.
-    deidx : bool, optional
-        Strip suffixes from subject IDs.
-    demux : bool, optional
-        Whether perform demultiplexing.
-    samples : list of str, optional
-        Sample ID list to include.
-    files : list or dict
-        Map of filepaths to sample IDs.
-    fp : str
-        Path to current alignment file.
+    subque : iterable
+        Subject(s) queue to manipulate.
+    sep : str, optional
+        Separator between subject ID and index.
 
     Returns
     -------
-    dict
-        Reshaped read map.
+    generator of frozenset
+        Processed subject(s) queue.
     """
-    # strip indices from subjects
-    if deidx:
-        strip_index(rmap)
-
-    # demultiplex into multiple samples
-    if demux:
-        return demultiplex(rmap, samples)
-
-    # sample Id from filename
-    else:
-        return {files[fp] if files else None: rmap}
+    return map(frozenset, map(partial(
+        map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
 
-def assign_readmap(rmap:     dict,
+def demultiplex(qryque, subque, samples=None, sep='_'):
+    """Demultiplex a read-to-subject(s) map.
+
+    Parameters
+    ----------
+    qryque : deque
+        Query queue to demultiplex.
+    subque : deque
+        Corresponding subject(s) queue.
+    samples : iterable of str, optional
+        Sample IDs to keep.
+    sep : str, optional
+        Separator between sample ID and read ID.
+
+    Returns
+    -------
+    dict of (deque, deque)
+        Per-sample read-to-subject(s) maps.
+    """
+    if samples:
+        samset = set(samples)
+    qryques, subques = {}, {}
+    qry_add, sub_add = qryques.setdefault, subques.setdefault
+    for query, subjects in zip(qryque, subque):
+        left, _, right = query.partition(sep)
+        sample, read = right and left, right or left
+        if not samples or sample in samset:
+            qry_add(sample, deque()).append(read)
+            sub_add(sample, deque()).append(subjects)
+    return {x: (qryques[x], subques[x]) for x in qryques}
+
+
+def assign_readmap(qryque:   list,
+                   subque:   list,
                    data:     dict,
-                   rank:     str,
-                   sample:   str,
+                   rank:      str,
+                   sample:    str,
                    rank2dir: dict = None,
                    outzip:    str = None,
                    tree:     dict = None,
@@ -630,8 +655,10 @@ def assign_readmap(rmap:     dict,
 
     Parameters
     ----------
-    rmap : dict
-        Read map to assign.
+    qryque : iterable of str
+        Query queue to assign.
+    subque : iterable of frozenset
+        Subject(s) queue for assignment.
     data : dict
         Master data structure.
     rank : str
@@ -666,19 +693,21 @@ def assign_readmap(rmap:     dict,
     """
     # determine assigner
     if rank is None or rank == 'none' or tree is None:
-        assigner = assign_none
-        args = (ambig,)
+        assigner = lru_cache(maxsize=128)(partial(
+            assign_none, ambig=ambig))
     elif rank == 'free':
-        assigner = assign_free
-        args = (tree, root, subok)
+        assigner = lru_cache(maxsize=128)(partial(
+            assign_free, tree=tree, root=root, subok=subok))
     else:
-        assigner = assign_rank
-        args = (rank, tree, rankdic, root, above, major, ambig)
+        assigner = lru_cache(maxsize=128)(partial(
+            assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
+            above=above, major=major, ambig=ambig))
 
     # call assigner
     asgmt = {}
-    for query, subjects in rmap.items():
-        res = assigner(subjects, *args)
+    for query, subjects in zip(qryque, subque):
+        # res = assigner(subjects, *args)
+        res = assigner(subjects)
         if res is not None:
             asgmt[query] = res
 
