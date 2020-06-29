@@ -49,10 +49,10 @@ class WorkflowTests(TestCase):
         # simplest gotu workflow
         input_fp = join(self.datdir, 'align', 'bowtie2')
         samples, files, demux = parse_samples(input_fp)
-        mapper = build_mapper()
+        mapper, lines = build_mapper()
         ranks = ['none']
         obs = classify(mapper, files, samples=samples, demux=demux,
-                       ranks=ranks)['none']
+                       ranks=ranks, lines=lines)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)
@@ -68,12 +68,12 @@ class WorkflowTests(TestCase):
         samples, files, demux = parse_samples(input_fp)
         tree, rankdic, namedic, root = build_hierarchy(
             map_fps=map_fps, map_as_rank=True)
-        mapper = build_mapper(coords_fp=coords_fp, overlap=80)
+        mapper, lines = build_mapper(coords_fp=coords_fp, overlap=80)
         stratmap = parse_strata(strata_dir, samples)
         obs = classify(
             mapper, files, samples=samples, demux=demux, tree=tree,
             rankdic=rankdic, namedic=namedic, root=root, stratmap=stratmap,
-            ranks=['process'])['process']
+            lines=lines, ranks=['process'])['process']
         self.assertEqual(obs['S01'][('Thermus', 'GO:0005978')], 2)
         self.assertEqual(obs['S02'][('Bacteroides', 'GO:0006814')], 1)
         self.assertEqual(obs['S03'][('Escherichia', 'GO:0006813')], 2)
@@ -232,19 +232,22 @@ class WorkflowTests(TestCase):
     def test_build_mapper(self):
         # plain
         obs = build_mapper()
-        self.assertEqual(obs.__name__, 'plain_mapper')
+        self.assertEqual(obs[0].__name__, 'plain_mapper')
+        self.assertEqual(obs[1], 1000)
 
         # ordinal
         fp = join(self.tmpdir, 'coords.txt')
         with open(fp, 'w') as f:
             f.write('>G1\n1\t10\t20\n2\t35\t50\n')
         obs = build_mapper(fp)
-        self.assertEqual(obs.func.__name__, 'ordinal_mapper')
+        self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
+        self.assertEqual(obs[1], 1000000)
 
-        # ordinal with overlap threshold
-        obs = build_mapper(fp, 75)
-        self.assertEqual(obs.func.__name__, 'ordinal_mapper')
-        self.assertEqual(obs.keywords['th'], 0.75)
+        # ordinal with overlap threshold and number of lines
+        obs = build_mapper(fp, overlap=75, lines=50000)
+        self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
+        self.assertEqual(obs[0].keywords['th'], 0.75)
+        self.assertEqual(obs[1], 50000)
         remove(fp)
 
     def test_prepare_ranks(self):
@@ -424,13 +427,15 @@ class WorkflowTests(TestCase):
         subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
         data = {'none': {}}
         assign_readmap(qryq, subq, data, 'none', 'S1')
-        self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
+        self.assertDictEqual(data['none']['S1'], {
+            'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
 
         # write read map
         data = {'none': {'S1': {}}}
         assign_readmap(qryq, subq, data, 'none', 'S1', rank2dir={
             'none': self.tmpdir})
-        self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
+        self.assertDictEqual(data['none']['S1'], {
+            'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
         fp = join(self.tmpdir, 'S1.txt')
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
@@ -450,7 +455,7 @@ class WorkflowTests(TestCase):
         data = {'ko': {}}
         assign_readmap(qryq, subq, data, 'ko', 'S1', tree=tree,
                        rankdic=rankdic)
-        self.assertDictEqual(data['ko']['S1'], {'T1': 2})
+        self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
 
     def test_write_profiles(self):
         # do nothing
