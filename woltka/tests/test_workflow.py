@@ -427,13 +427,15 @@ class WorkflowTests(TestCase):
         subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
         data = {'none': {}}
         assign_readmap(qryq, subq, data, 'none', 'S1')
-        self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
+        self.assertDictEqual(data['none']['S1'], {
+            'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
 
         # write read map
         data = {'none': {'S1': {}}}
         assign_readmap(qryq, subq, data, 'none', 'S1', rank2dir={
             'none': self.tmpdir})
-        self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
+        self.assertDictEqual(data['none']['S1'], {
+            'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
         fp = join(self.tmpdir, 'S1.txt')
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
@@ -453,7 +455,7 @@ class WorkflowTests(TestCase):
         data = {'ko': {}}
         assign_readmap(qryq, subq, data, 'ko', 'S1', tree=tree,
                        rankdic=rankdic)
-        self.assertDictEqual(data['ko']['S1'], {'T1': 2})
+        self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
 
     def test_write_profiles(self):
         # do nothing

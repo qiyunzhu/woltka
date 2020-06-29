@@ -714,7 +714,7 @@ def assign_readmap(qryque:   list,
                    root:      str = None,
                    above:    bool = False,
                    major:   float = None,
-                   ambig:     str = True,
+                   ambig:    bool = True,
                    subok:    bool = None,
                    strata:   dict = None):
     """Assign query sequences in a query-to-subjects map to classification

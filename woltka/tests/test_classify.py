@@ -12,6 +12,7 @@ from unittest import TestCase, main
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+from decimal import Decimal
 
 from woltka.classify import (
     assign_none, assign_free, assign_rank, count, count_strata, majority)
@@ -113,10 +114,10 @@ class ClassifyTests(TestCase):
                    'seq2': {'a': 2, 'b': 5},
                    'seq3': {'d': 4}}
         obs = count(matches)
-        exp = {'a': 1 / 6 + 2 / 7,
-               'b': 2 / 6 + 5 / 7,
-               'c': 3 / 6,
-               'd': 4 / 4}
+        exp = {'a': Decimal(1) / 6 + Decimal(2) / 7,
+               'b': Decimal(2) / 6 + Decimal(5) / 7,
+               'c': Decimal(3) / 6,
+               'd': Decimal(4) / 4}
         for key in obs:
             self.assertAlmostEqual(obs[key], exp[key])
 

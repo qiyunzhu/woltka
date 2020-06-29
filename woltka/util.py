@@ -104,12 +104,13 @@ def intize(dic, zero=False):
         Whether keep zero values.
     """
     todel = []
+    add_todel = todel.append
     for key, value in dic.items():
         intval = round(value)
         if intval or zero:
             dic[key] = intval
         else:
-            todel.append(key)
+            add_todel(key)
     for key in todel:
         del dic[key]
 
