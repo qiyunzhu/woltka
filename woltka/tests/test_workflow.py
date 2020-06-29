@@ -422,17 +422,19 @@ class WorkflowTests(TestCase):
             self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
     def test_assign_readmap(self):
+        assigners = {}
+
         # simple gotu assignment
         qryq = ['R1', 'R2', 'R3']
         subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
         data = {'none': {}}
-        assign_readmap(qryq, subq, data, 'none', 'S1')
+        assign_readmap(qryq, subq, data, 'none', 'S1', assigners)
         self.assertDictEqual(data['none']['S1'], {
             'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
 
         # write read map
         data = {'none': {'S1': {}}}
-        assign_readmap(qryq, subq, data, 'none', 'S1', rank2dir={
+        assign_readmap(qryq, subq, data, 'none', 'S1', assigners, rank2dir={
             'none': self.tmpdir})
         self.assertDictEqual(data['none']['S1'], {
             'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
@@ -447,13 +449,13 @@ class WorkflowTests(TestCase):
         tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
                 'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
         data = {'free': {}}
-        assign_readmap(qryq, subq, data, 'free', 'S1', tree=tree)
+        assign_readmap(qryq, subq, data, 'free', 'S1', assigners, tree=tree)
         self.assertDictEqual(data['free']['S1'], {'T0': 1, 'T1': 2})
 
         # fixed-rank assignment
         rankdic = {'T1': 'ko', 'T2': 'ko', 'T0': 'mo'}
         data = {'ko': {}}
-        assign_readmap(qryq, subq, data, 'ko', 'S1', tree=tree,
+        assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
                        rankdic=rankdic)
         self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
 
