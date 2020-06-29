@@ -43,7 +43,7 @@ def workflow(input_fp:      str,
              input_ext:     str = None,
              samples:       str = None,
              demux:        bool = None,
-             lines:         int = 1000000,
+             lines:         int = None,
              # hierarchies
              nodes_fp:      str = None,
              newick_fp:     str = None,
@@ -102,7 +102,7 @@ def workflow(input_fp:      str,
         map_as_rank)
 
     # build mapping module
-    mapper = build_mapper(coords_fp, overlap)
+    mapper, lines = build_mapper(coords_fp, overlap, lines)
 
     # target classification ranks
     ranks, rank2dir = prepare_ranks(ranks, outmap_dir)
@@ -139,7 +139,7 @@ def classify(mapper:  object,
              ambig:      str = True,
              subok:     bool = None,
              deidx:     bool = False,
-             lines:      int = 1000000,
+             lines:      int = None,
              stratmap:  dict = None) -> dict:
     """Core of the classification workflow.
 
@@ -192,7 +192,7 @@ def classify(mapper:  object,
     deidx : bool, optional
         Strip "underscore index" suffixes from subject IDs.
     lines : int, optional
-        Number of lines to read from alignment file per chunk.
+        Number of lines per chunk to read from alignment file.
     stratmap : dict, optional
         Map of sample ID to stratification file.
 
@@ -230,7 +230,7 @@ def classify(mapper:  object,
             for qryque, subque in mapper(fh, fmt=fmt, n=lines):
 
                 # show progress
-                click.echo('.', nl=False)
+                # click.echo('.', nl=False)
                 n += len(qryque)
 
                 # (optional) strip indices and freeze sets
@@ -257,6 +257,11 @@ def classify(mapper:  object,
 
         click.echo(' Done.')
         click.echo(f'  Number of query sequences: {n}.')
+
+    # round floats
+    for rank in data:
+        for sample in data[rank]:
+            intize(data[rank][sample])
 
     click.echo('Classification completed.')
     return data
@@ -401,7 +406,8 @@ def parse_strata(fp:       str = None,
 
 
 def build_mapper(coords_fp: str = None,
-                 overlap:   int = None) -> callable:
+                 overlap:   int = None,
+                 lines:     int = None) -> (callable, int):
     """Build mapper function (plain or ordinal).
 
     Parameters
@@ -410,11 +416,15 @@ def build_mapper(coords_fp: str = None,
         Path to gene coordinates file.
     overlap : int, optional
         Read/gene overlapping percentage threshold.
+    lines : int, optional
+        Number of lines per chunk to read from alignment file.
 
     Returns
     -------
     callable
         Mapper function.
+    int
+        Number of lines per chunk.
 
     Notes
     -----
@@ -423,6 +433,9 @@ def build_mapper(coords_fp: str = None,
     coordinates which will be used to match queries (reads) and genes. The
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
+
+    The number of lines, if not specified, is determined empirically: 1,000
+    for the plain mapper and 1,000,000 for ordinal mapper.
     """
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
@@ -430,11 +443,13 @@ def build_mapper(coords_fp: str = None,
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'Total number of host sequences: {len(coords)}.')
+        lines = lines or 1000000
         return partial(ordinal_mapper, coords=coords,
                        prefix=whether_prefix(coords),
-                       th=overlap and overlap / 100)
+                       th=overlap and overlap / 100), lines
     else:
-        return plain_mapper
+        lines = lines or 1000
+        return plain_mapper, lines
 
 
 def prepare_ranks(ranks:      str = None,
@@ -771,9 +786,6 @@ def assign_readmap(qryque:   list,
 
     # count taxa
     counts = count_strata(asgmt, strata) if strata else count(asgmt)
-
-    # round floats
-    intize(counts)
 
     # combine old and new counts
     if sample in data[rank]:

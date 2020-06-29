@@ -27,7 +27,7 @@ from collections import deque
 from functools import lru_cache
 
 
-def plain_mapper(fh, fmt=None, n=1000000):
+def plain_mapper(fh, fmt=None, n=1000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
     Parameters
