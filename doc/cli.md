@@ -24,7 +24,7 @@ Option | Description
 `--filext`, `-e` | Input filename extension following sample ID.
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
-`--lines` | Number of lines to read from alignment file per chunk. Default: 1000000.
+`--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
 
 ### Hierarchies
 

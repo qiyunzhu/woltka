@@ -87,7 +87,7 @@ def gotu(ctx, **kwargs):
     help='Demultiplex alignment by first underscore in query identifier.')
 @click.option(
     '--lines', type=click.INT, default=None,
-    help=('Number of lines to read from alignment file per chunk.'))
+    help=('Number of lines per chunk to read from alignment file.'))
 # hierarchies
 @click.option(
     '--nodes', 'nodes_fp', type=click.Path(exists=True),

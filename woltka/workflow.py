@@ -209,11 +209,14 @@ def classify(mapper:  object,
     """
     data = {x: {} for x in ranks}
 
+    # assigners for each rank
+    assigners = {}
+
     # assignment parameters
-    kwargs = {'tree': tree, 'rankdic': rankdic, 'root':  root, 'above': above,
-              'major': major and major / 100, 'ambig': ambig, 'subok': subok,
-              'namedic': namedic, 'rank2dir': rank2dir, 'outzip': outzip if
-              outzip != 'none' else None}
+    kwargs = {'assigners': assigners, 'tree': tree, 'rankdic': rankdic,
+              'root':  root, 'above': above, 'major': major and major / 100,
+              'ambig': ambig, 'subok': subok, 'namedic': namedic, 'rank2dir':
+              rank2dir, 'outzip': outzip if outzip != 'none' else None}
 
     # current sample Id
     csample = False
@@ -221,16 +224,13 @@ def classify(mapper:  object,
     # parse input alignment file(s) and generate profile(s)
     for fp in sorted(files):
         n = 0
-        click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
+        click.echo(f'Parsing alignment file {basename(fp)}...', nl=False)
 
         # read alignment file into query-to-subject(s) map
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
             for qryque, subque in mapper(fh, fmt=fmt, n=lines):
-
-                # show progress
-                # click.echo('.', nl=False)
                 n += len(qryque)
 
                 # (optional) strip indices and freeze sets
@@ -242,7 +242,7 @@ def classify(mapper:  object,
                     files[fp] if files else None: (qryque, subque)}
 
                 # assign reads at each rank
-                for sample, (qryque, subque) in rmaps.items():
+                for sample, rmap in rmaps.items():
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
@@ -252,8 +252,7 @@ def classify(mapper:  object,
 
                     # call assignment workflow for each rank
                     for rank in ranks:
-                        assign_readmap(
-                            qryque, subque, data, rank, sample, **kwargs)
+                        assign_readmap(*rmap, data, rank, sample, **kwargs)
 
         click.echo(' Done.')
         click.echo(f'  Number of query sequences: {n}.')
@@ -701,22 +700,23 @@ def demultiplex(qryque:  list,
     return {x: (qryques[x], subques[x]) for x in qryques}
 
 
-def assign_readmap(qryque:   list,
-                   subque:   list,
-                   data:     dict,
-                   rank:      str,
-                   sample:    str,
-                   rank2dir: dict = None,
-                   outzip:    str = None,
-                   tree:     dict = None,
-                   rankdic:  dict = None,
-                   namedic:  dict = None,
-                   root:      str = None,
-                   above:    bool = False,
-                   major:   float = None,
-                   ambig:    bool = True,
-                   subok:    bool = None,
-                   strata:   dict = None):
+def assign_readmap(qryque:    list,
+                   subque:    list,
+                   data:      dict,
+                   rank:       str,
+                   sample:     str,
+                   assigners: dict,
+                   rank2dir:  dict = None,
+                   outzip:     str = None,
+                   tree:      dict = None,
+                   rankdic:   dict = None,
+                   namedic:   dict = None,
+                   root:       str = None,
+                   above:     bool = False,
+                   major:    float = None,
+                   ambig:     bool = True,
+                   subok:     bool = None,
+                   strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
 
@@ -732,6 +732,8 @@ def assign_readmap(qryque:   list,
         Target rank to assign to.
     sample : str
         Sample ID.
+    assigners : dict of callable
+        Per-rank assigners.
     rank2dir : dict, optional
         Directory of output maps per rank.
     outzip : str, optional
@@ -758,25 +760,27 @@ def assign_readmap(qryque:   list,
     strata : dict, optional
         Read-to-feature map for stratification.
     """
-    # determine assigner
+    # determine assigner and initiate (if not already)
     if rank is None or rank == 'none' or tree is None:
-        assigner = lru_cache(maxsize=128)(partial(
-            assign_none, ambig=ambig))
+        if 'none' not in assigners:
+            assigners['none'] = lru_cache(maxsize=128)(partial(
+                assign_none, ambig=ambig))
+        assigner = assigners['none']
     elif rank == 'free':
-        assigner = lru_cache(maxsize=128)(partial(
-            assign_free, tree=tree, root=root, subok=subok))
+        if 'free' not in assigners:
+            assigners['free'] = lru_cache(maxsize=128)(partial(
+                assign_free, tree=tree, root=root, subok=subok))
+        assigner = assigners['free']
     else:
-        assigner = lru_cache(maxsize=128)(partial(
-            assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
-            above=above, major=major, ambig=ambig))
+        if rank not in assigners:
+            assigners[rank] = lru_cache(maxsize=128)(partial(
+                assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
+                above=above, major=major, ambig=ambig))
+        assigner = assigners[rank]
 
     # call assigner
-    asgmt = {}
-    for query, subjects in zip(qryque, subque):
-        # res = assigner(subjects, *args)
-        res = assigner(subjects)
-        if res is not None:
-            asgmt[query] = res
+    asgmt = {query: res for query, res in zip(qryque, map(assigner, subque))
+             if res is not None}
 
     # write classification map
     if rank2dir is not None:
