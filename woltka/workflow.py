@@ -224,16 +224,13 @@ def classify(mapper:  object,
     # parse input alignment file(s) and generate profile(s)
     for fp in sorted(files):
         n = 0
-        click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
+        click.echo(f'Parsing alignment file {basename(fp)}...', nl=False)
 
         # read alignment file into query-to-subject(s) map
         with openzip(fp) as fh:
 
             # parse alignment file by chunk
             for qryque, subque in mapper(fh, fmt=fmt, n=lines):
-
-                # show progress
-                # click.echo('.', nl=False)
                 n += len(qryque)
 
                 # (optional) strip indices and freeze sets

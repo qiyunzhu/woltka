@@ -19,6 +19,9 @@ from .util import count_list
 from .tree import find_rank, find_lca
 
 
+fromkeys = dict.fromkeys
+
+
 def assign_none(subs, ambig=False):
     """Assign query to subjects without using a classification system.
 
@@ -38,7 +41,7 @@ def assign_none(subs, ambig=False):
         sub, = subs
         return sub
     except ValueError:
-        return count_list(subs) if ambig else None
+        return fromkeys(subs, 1) if ambig else None
 
 
 def assign_free(subs, tree, root=None, subok=False):
