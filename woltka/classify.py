@@ -14,14 +14,9 @@ hierarchical classification system.
 
 from operator import itemgetter
 from collections import defaultdict
-from decimal import Decimal
 
 from .util import count_list
 from .tree import find_rank, find_lca
-
-
-# decimal number one for precise normalization
-one = Decimal(1)
 
 
 def assign_none(subs, ambig=False):
@@ -128,10 +123,10 @@ def count(matches):
 
     Returns
     -------
-    defaultdict of str: Decimal
+    defaultdict of str: int
         Taxon-to-count map.
     """
-    res = defaultdict(Decimal)
+    res = defaultdict(int)
     for taxa in matches.values():
         try:
             # unique match (scalar)
@@ -139,7 +134,7 @@ def count(matches):
         except TypeError:
             # multiple matches (dict of subject : count), to be normalized by
             # total match count
-            k = one / sum(taxa.values())
+            k = 1 / sum(taxa.values())
             for taxon, n in taxa.items():
                 res[taxon] += n * k
     return res
@@ -157,15 +152,15 @@ def count_strata(matches, strata):
 
     Returns
     -------
-    defaultdict of (str, str): Decimal
+    defaultdict of (str, str): int
         Stratified (feature, taxon)-to-count map.
     """
-    res = defaultdict(Decimal)
+    res = defaultdict(int)
     for query, taxa in matches.items():
         if query in strata:
             feature = strata[query]
             if isinstance(taxa, dict):
-                k = one / sum(taxa.values())
+                k = 1 / sum(taxa.values())
                 for taxon, n in taxa.items():
                     taxon = (feature, taxon)
                     res[taxon] += n * k
