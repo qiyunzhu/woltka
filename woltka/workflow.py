@@ -779,11 +779,8 @@ def assign_readmap(qryque:    list,
         assigner = assigners[rank]
 
     # call assigner
-    asgmt = {}
-    for query, subjects in zip(qryque, subque):
-        res = assigner(subjects)
-        if res is not None:
-            asgmt[query] = res
+    asgmt = {query: res for query, res in zip(qryque, map(assigner, subque))
+             if res is not None}
 
     # write classification map
     if rank2dir is not None:
