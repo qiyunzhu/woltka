@@ -84,6 +84,29 @@ def profile_to_biom(profile, samples=None, tree=None, rankdic=None,
                       generated_by=f'{__name__}-{__version__}')
 
 
+def table_to_biom(data, observations, samples, metadata=None):
+    """Convert a profile into a BIOM table.
+
+    Parameters
+    ----------
+    data : list of list
+        Table data.
+    observations : list
+        Observation IDs.
+    samples : list
+        Sample IDs.
+    metadata : list of dict, optional
+        Observation metadata.
+
+    Returns
+    -------
+    biom.Table
+        Converted BIOM table.
+    """
+    return biom.Table(np.array(data), observations, samples, metadata or None,
+                      generated_by=f'{__name__}-{__version__}')
+
+
 def write_biom(table: biom.Table, fp: str):
     """Write a BIOM table to file.
 

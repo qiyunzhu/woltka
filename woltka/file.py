@@ -421,6 +421,43 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
     return len(samples), nrow
 
 
+def write_tsv(fh, data, features, samples, metadata=None):
+    """Write a table to a tab-delimited file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Output file.
+    data : list of list
+        Profile data.
+    features : list
+        Feature IDs (row names).
+    samples : list
+        Sample IDs (column names).
+    metadata : list of dict, optional
+        Feature metadata (extra columns)
+
+    Notes
+    -----
+    The output table will have columns as samples and rows as features.
+    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
+    appended to the right of the table.
+    """
+    if metadata is None:
+        metadata = [{}] * len(features)
+
+    # table header
+    print('\t'.join(filter(None, [
+        '#FeatureID', '\t'.join(samples), '\t'.join(
+            next(iter(metadata), {}).keys())])), file=fh)
+
+    # table body
+    for i, feature in enumerate(features):
+        print('\t'.join(filter(None, [
+            feature, '\t'.join(map(str, data[i])), '\t'.join(
+                metadata[i].values())])), file=fh)
+
+
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
                name_as_id=False):
     """Convert a profile into data, index and columns, as well as metadata if

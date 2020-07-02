@@ -18,7 +18,8 @@ import bz2
 
 from woltka.file import (
     openzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, read_map, write_readmap, write_table, prep_table)
+    id2file_from_map, read_map, write_readmap, write_table, write_tsv,
+    prep_table)
 
 
 class FileTests(TestCase):
@@ -472,6 +473,50 @@ class FileTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # clean up
+        remove(fp)
+
+    def test_write_tsv(self):
+        fp = join(self.tmpdir, 'table.tsv')
+
+        # just data
+        data = [[4, 2, 0],
+                [5, 0, 3],
+                [8, 0, 0],
+                [0, 3, 0],
+                [0, 7, 5]]
+        features = ['G1', 'G2', 'G3', 'G4', 'G5']
+        samples = ['S1', 'S2', 'S3']
+        with open(fp, 'w') as f:
+            write_tsv(f, data, features, samples)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3',
+               'G1\t4\t2\t0',
+               'G2\t5\t0\t3',
+               'G3\t8\t0\t0',
+               'G4\t0\t3\t0',
+               'G5\t0\t7\t5']
+        self.assertListEqual(obs, exp)
+
+        # with metadata
+        metadata = [
+            {'Name': 'Actinobacteria', 'Rank': 'phylum', 'Lineage': '2;72;74'},
+            {'Name': 'Firmicutes',     'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': 'Bacteroidetes',  'Rank': 'phylum', 'Lineage': '2;70'},
+            {'Name': 'Cyanobacteria',  'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': '',               'Rank': '',       'Lineage': ''}]
+        with open(fp, 'w') as f:
+            write_tsv(f, data, features, samples, metadata)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = [
+            '#FeatureID\tS1\tS2\tS3\tName\tRank\tLineage',
+            'G1\t4\t2\t0\tActinobacteria\tphylum\t2;72;74',
+            'G2\t5\t0\t3\tFirmicutes\tphylum\t2;72',
+            'G3\t8\t0\t0\tBacteroidetes\tphylum\t2;70',
+            'G4\t0\t3\t0\tCyanobacteria\tphylum\t2;72',
+            'G5\t0\t7\t5\t\t\t']
+        self.assertListEqual(obs, exp)
         remove(fp)
 
     def test_prep_table(self):

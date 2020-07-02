@@ -13,6 +13,7 @@ from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+from io import StringIO
 
 import numpy as np
 import pandas as pd
@@ -20,7 +21,7 @@ from biom import load_table, Table
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
-from woltka.biom import profile_to_biom, write_biom, filter_biom
+from woltka.biom import profile_to_biom, table_to_biom, write_biom, filter_biom
 from woltka.file import prep_table
 
 
@@ -119,6 +120,35 @@ class BiomTests(TestCase):
         index = ['A|G1', 'A|G2', 'B|G1', 'B|G2', 'B|G3', 'C|G2']
         exp = pd.DataFrame(data, index=index, columns=samples)
         assert_frame_equal(obs, exp)
+
+    def test_table_to_biom(self):
+        data = [[4, 2, 0],
+                [5, 0, 3],
+                [8, 0, 0],
+                [0, 3, 0],
+                [0, 7, 5]]
+        observs = ['G1', 'G2', 'G3', 'G4', 'G5']
+        samples = ['S1', 'S2', 'S3']
+        metadata = [
+            {'Name': 'Actinobacteria', 'Rank': 'phylum', 'Lineage': '2;72;74'},
+            {'Name': 'Firmicutes',     'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': 'Bacteroidetes',  'Rank': 'phylum', 'Lineage': '2;70'},
+            {'Name': 'Cyanobacteria',  'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': '',               'Rank': '',       'Lineage': ''}]
+        obs = table_to_biom(data, observs, samples, metadata)
+        exp = pd.read_csv(StringIO(
+            '\tS1\tS2\tS3\tName\tRank\tLineage\n'
+            'G1\t4\t2\t0\tActinobacteria\tphylum\t2;72;74\n'
+            'G2\t5\t0\t3\tFirmicutes\tphylum\t2;72\n'
+            'G3\t8\t0\t0\tBacteroidetes\tphylum\t2;70\n'
+            'G4\t0\t3\t0\tCyanobacteria\tphylum\t2;72\n'
+            'G5\t0\t7\t5\t\t\t\n'),
+            sep='\t', index_col=0, na_filter=False)
+        assert_frame_equal(
+            obs.to_dataframe(dense=True).astype(int), exp.iloc[:, :3])
+        assert_frame_equal(
+            obs.metadata_to_dataframe('observation')[['Name', 'Rank', 'Lineage']],
+            exp.iloc[:, -3:])
 
     def test_write_biom(self):
         profile = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
