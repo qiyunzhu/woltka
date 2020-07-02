@@ -25,7 +25,7 @@ import click
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
     openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
-    write_readmap, write_table)
+    write_readmap, prep_table, write_tsv)
 from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata)
@@ -33,7 +33,7 @@ from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
     fill_root)
 from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
-from .biom import profile_to_biom, write_biom
+from .biom import table_to_biom, write_biom
 
 
 def workflow(input_fp:      str,
@@ -874,17 +874,14 @@ def write_profiles(data:        dict,
     # write output profile(s)
     click.echo('Writing output profiles...')
     for rank, fp in rank2fp.items():
+        table = prep_table(data[rank], samples, tree if add_lineage else None,
+                           rankdic if add_rank else None, namedic, name_as_id)
         if is_biom:
-            biom = profile_to_biom(
-                data[rank], samples, tree if add_lineage else None, rankdic
-                if add_rank else None, namedic, name_as_id)
-            write_biom(biom, fp)
-            m, n = biom.shape
+            write_biom(table_to_biom(*table), fp)
         else:
             with open(fp, 'w') as fh:
-                n, m = write_table(
-                    fh, data[rank], samples, tree if add_lineage else None,
-                    rankdic if add_rank else None, namedic, name_as_id)
+                write_tsv(fh, *table)
+        n, m = len(table[2]), len(table[1])
         click.echo(f'  Rank: {rank}, samples: {n}, features: {m}.')
 
     click.echo('Profiles written.')

@@ -147,8 +147,8 @@ class BiomTests(TestCase):
         assert_frame_equal(
             obs.to_dataframe(dense=True).astype(int), exp.iloc[:, :3])
         assert_frame_equal(
-            obs.metadata_to_dataframe('observation')[['Name', 'Rank', 'Lineage']],
-            exp.iloc[:, -3:])
+            obs.metadata_to_dataframe('observation')[[
+                'Name', 'Rank', 'Lineage']], exp.iloc[:, -3:])
 
     def test_write_biom(self):
         profile = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
@@ -192,7 +192,6 @@ class BiomTests(TestCase):
             'S1': {'G2': 5, 'G3': 8},
             'S2': {'G4': 3, 'G5': 7},
             'S3': {'G2': 3, 'G5': 5}})))
-        print(obs.to_dataframe(dense=True))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
         obs = filter_biom(table, th=0.5)
@@ -200,7 +199,6 @@ class BiomTests(TestCase):
             'S1': {},
             'S2': {'G5': 7},
             'S3': {'G5': 5}})))
-        print(obs.to_dataframe(dense=True))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
         # empty BIOM table cannot be directly compared
