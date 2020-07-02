@@ -14,12 +14,14 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 
+import numpy as np
 import pandas as pd
-from biom import load_table
+from biom import load_table, Table
 from numpy.testing import assert_array_equal
 from pandas.testing import assert_frame_equal
 
-from woltka.biom import profile_to_biom, write_biom
+from woltka.biom import profile_to_biom, write_biom, filter_biom
+from woltka.file import prep_table
 
 
 class BiomTests(TestCase):
@@ -128,6 +130,51 @@ class BiomTests(TestCase):
         obs = load_table(fp)
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
         remove(fp)
+
+    def test_filter_biom(self):
+        table = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+            'S2': {'G1': 2, 'G4': 3, 'G5': 7},
+            'S3': {'G2': 3, 'G5': 5}})))
+        obs = filter_biom(table, th=3)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+            'S2': {'G4': 3, 'G5': 7},
+            'S3': {'G2': 3, 'G5': 5}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        obs = filter_biom(table, th=4)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+            'S2': {'G5': 7},
+            'S3': {'G5': 5}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        obs = filter_biom(table, th=6)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G3': 8},
+            'S2': {'G5': 7},
+            'S3': {}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        obs = filter_biom(table, th=0.25)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G2': 5, 'G3': 8},
+            'S2': {'G4': 3, 'G5': 7},
+            'S3': {'G2': 3, 'G5': 5}})))
+        print(obs.to_dataframe(dense=True))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        obs = filter_biom(table, th=0.5)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {},
+            'S2': {'G5': 7},
+            'S3': {'G5': 5}})))
+        print(obs.to_dataframe(dense=True))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        obs = filter_biom(table, th=10)
+        self.assertTupleEqual(obs.to_dataframe(True).shape, (0, 3))
 
 
 if __name__ == '__main__':

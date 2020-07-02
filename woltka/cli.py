@@ -200,11 +200,14 @@ def tools():
     type=click.Path(writable=True, dir_okay=False),
     help=('Path to output feature table.'))
 @click.option(
-    '--threshold', '-t', type=click.FLOAT, required=True,
-    help='Per-sample relative abundance percentage threshold.')
+    '--min-count', '-c', type=click.FLOAT, required=True,
+    help='Per-sample minimum count threshold.')
+@click.option(
+    '--min-percent', '-p', type=click.FLOAT, required=True,
+    help='Per-sample minimum percentage threshold.')
 @click.pass_context
 def filter(ctx, **kwargs):
-    """Filter a feature table by per-sample relative abundance.
+    """Filter a feature table by per-sample abundance.
     """
     pass
 

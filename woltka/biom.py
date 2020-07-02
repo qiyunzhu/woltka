@@ -96,3 +96,30 @@ def write_biom(table: biom.Table, fp: str):
     """
     with biom.util.biom_open(fp, 'w') as f:
         table.to_hdf5(f, table.generated_by)
+
+
+def filter_biom(table: biom.Table, th: float):
+    """Filter a BIOM table by per-sample percentage frequency threshold.
+
+    Parameters
+    ----------
+    table : biom.Table
+        BIOM table to filter.
+    th : float
+        Per-sample minimum abundance threshold. If >= 1, this value is an
+        absolute count; if < 1, it is a fraction of sum of counts.
+
+    Returns
+    -------
+    biom.Table
+        Filtered BIOM table.
+    """
+    def f(data, id_, md):
+        bound = th if th > 1 else data.sum() * th
+        data[data < bound] = 0
+        return data
+
+    res = table.copy()
+    res.transform(f, axis='sample')
+    res.remove_empty(axis='observation')
+    return res
