@@ -18,8 +18,7 @@ import bz2
 
 from woltka.file import (
     openzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, read_map, write_readmap, write_table, write_tsv,
-    prep_table)
+    id2file_from_map, read_map, write_readmap, prep_table, write_tsv)
 
 
 class FileTests(TestCase):
@@ -326,199 +325,6 @@ class FileTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(fp)
 
-    def test_write_table(self):
-        # default mode
-        data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
-                'S2': {'G1': 2, 'G4': 3, 'G5': 7},
-                'S3': {'G2': 3, 'G5': 5}}
-        fp = join(self.tmpdir, 'profile.tsv')
-        with open(fp, 'w') as f:
-            obs = write_table(f, data)
-        self.assertTupleEqual(obs, (3, 5))
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'G1\t4\t2\t0',
-               'G2\t5\t0\t3',
-               'G3\t8\t0\t0',
-               'G4\t0\t3\t0',
-               'G5\t0\t7\t5']
-        self.assertListEqual(obs, exp)
-
-        # with sample Ids
-        samples = ['S3', 'S1']
-        with open(fp, 'w') as f:
-            obs = write_table(f, data, samples=samples)
-        self.assertTupleEqual(obs, (2, 5))
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS3\tS1',
-               'G1\t0\t4',
-               'G2\t3\t5',
-               'G3\t0\t8',
-               'G4\t0\t0',
-               'G5\t5\t0']
-        self.assertListEqual(obs, exp)
-
-        # some sample Ids are not in data
-        with open(fp, 'w') as f:
-            obs = write_table(f, data, samples=['S3', 'S0', 'S1'])
-        self.assertTupleEqual(obs, (2, 5))
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        self.assertListEqual(obs, exp)
-
-        # with taxon names
-        namedic = {'G1': 'Actinobacteria',
-                   'G2': 'Firmicutes',
-                   'G3': 'Bacteroidetes',
-                   'G4': 'Cyanobacteria'}
-        with open(fp, 'w') as f:
-            write_table(f, data, namedic=namedic)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3\tName',
-               'G1\t4\t2\t0\tActinobacteria',
-               'G2\t5\t0\t3\tFirmicutes',
-               'G3\t8\t0\t0\tBacteroidetes',
-               'G4\t0\t3\t0\tCyanobacteria',
-               'G5\t0\t7\t5\t']
-        self.assertListEqual(obs, exp)
-
-        # with taxon names to replace Ids
-        with open(fp, 'w') as f:
-            write_table(f, data, namedic=namedic, name_as_id=True)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'Actinobacteria\t4\t2\t0',
-               'Firmicutes\t5\t0\t3',
-               'Bacteroidetes\t8\t0\t0',
-               'Cyanobacteria\t0\t3\t0',
-               'G5\t0\t7\t5']
-        self.assertListEqual(obs, exp)
-
-        # with ranks
-        rankdic = {'G1': 'class', 'G2': 'phylum', 'G4': 'phylum'}
-        with open(fp, 'w') as f:
-            write_table(f, data, rankdic=rankdic)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3\tRank',
-               'G1\t4\t2\t0\tclass',
-               'G2\t5\t0\t3\tphylum',
-               'G3\t8\t0\t0\t',
-               'G4\t0\t3\t0\tphylum',
-               'G5\t0\t7\t5\t']
-        self.assertListEqual(obs, exp)
-
-        # with lineages
-        tree = {'G1': '74',  # Actinobacteria (phylum)
-                '74': '72',
-                'G2': '72',  # Terrabacteria group
-                'G3': '70',  # FCB group
-                'G4': '72',
-                'G5': '1',
-                '72': '2',
-                '70': '2',
-                '2':  '1',
-                '1':  '1'}
-        with open(fp, 'w') as f:
-            write_table(f, data, tree=tree)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3\tLineage',
-               'G1\t4\t2\t0\t2;72;74',
-               'G2\t5\t0\t3\t2;72',
-               'G3\t8\t0\t0\t2;70',
-               'G4\t0\t3\t0\t2;72',
-               'G5\t0\t7\t5\t']
-        self.assertListEqual(obs, exp)
-
-        # with lineages and names as Ids
-        namedic.update({
-            '74': 'Actino', '72': 'Terra', '70': 'FCB', '2': 'Bacteria'})
-        with open(fp, 'w') as f:
-            write_table(f, data, tree=tree, namedic=namedic, name_as_id=True)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3\tLineage',
-               'Actinobacteria\t4\t2\t0\tBacteria;Terra;Actino',
-               'Firmicutes\t5\t0\t3\tBacteria;Terra',
-               'Bacteroidetes\t8\t0\t0\tBacteria;FCB',
-               'Cyanobacteria\t0\t3\t0\tBacteria;Terra',
-               'G5\t0\t7\t5\t']
-        self.assertListEqual(obs, exp)
-
-        # with stratification
-        sdata = {'S1': {('A', 'G1'): 4,
-                        ('A', 'G2'): 5,
-                        ('B', 'G1'): 8},
-                 'S2': {('A', 'G1'): 2,
-                        ('B', 'G1'): 3,
-                        ('B', 'G2'): 7},
-                 'S3': {('B', 'G3'): 3,
-                        ('C', 'G2'): 5}}
-        with open(fp, 'w') as f:
-            write_table(f, sdata)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'A|G1\t4\t2\t0',
-               'A|G2\t5\t0\t0',
-               'B|G1\t8\t3\t0',
-               'B|G2\t0\t7\t0',
-               'B|G3\t0\t0\t3',
-               'C|G2\t0\t0\t5']
-        self.assertListEqual(obs, exp)
-
-        # clean up
-        remove(fp)
-
-    def test_write_tsv(self):
-        fp = join(self.tmpdir, 'table.tsv')
-
-        # just data
-        data = [[4, 2, 0],
-                [5, 0, 3],
-                [8, 0, 0],
-                [0, 3, 0],
-                [0, 7, 5]]
-        features = ['G1', 'G2', 'G3', 'G4', 'G5']
-        samples = ['S1', 'S2', 'S3']
-        with open(fp, 'w') as f:
-            write_tsv(f, data, features, samples)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = ['#FeatureID\tS1\tS2\tS3',
-               'G1\t4\t2\t0',
-               'G2\t5\t0\t3',
-               'G3\t8\t0\t0',
-               'G4\t0\t3\t0',
-               'G5\t0\t7\t5']
-        self.assertListEqual(obs, exp)
-
-        # with metadata
-        metadata = [
-            {'Name': 'Actinobacteria', 'Rank': 'phylum', 'Lineage': '2;72;74'},
-            {'Name': 'Firmicutes',     'Rank': 'phylum', 'Lineage': '2;72'},
-            {'Name': 'Bacteroidetes',  'Rank': 'phylum', 'Lineage': '2;70'},
-            {'Name': 'Cyanobacteria',  'Rank': 'phylum', 'Lineage': '2;72'},
-            {'Name': '',               'Rank': '',       'Lineage': ''}]
-        with open(fp, 'w') as f:
-            write_tsv(f, data, features, samples, metadata)
-        with open(fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp = [
-            '#FeatureID\tS1\tS2\tS3\tName\tRank\tLineage',
-            'G1\t4\t2\t0\tActinobacteria\tphylum\t2;72;74',
-            'G2\t5\t0\t3\tFirmicutes\tphylum\t2;72',
-            'G3\t8\t0\t0\tBacteroidetes\tphylum\t2;70',
-            'G4\t0\t3\t0\tCyanobacteria\tphylum\t2;72',
-            'G5\t0\t7\t5\t\t\t']
-        self.assertListEqual(obs, exp)
-        remove(fp)
-
     def test_prep_table(self):
         # default mode
         prof = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
@@ -617,6 +423,50 @@ class FileTests(TestCase):
         obs = prep_table(prof, [], {}, {}, {}, True)
         self.assertListEqual(obs[1], ['G1', 'G2', 'G3', 'G4', 'G5'])
         self.assertListEqual(obs[3], [{}] * 5)
+
+    def test_write_tsv(self):
+        fp = join(self.tmpdir, 'table.tsv')
+
+        # just data
+        data = [[4, 2, 0],
+                [5, 0, 3],
+                [8, 0, 0],
+                [0, 3, 0],
+                [0, 7, 5]]
+        features = ['G1', 'G2', 'G3', 'G4', 'G5']
+        samples = ['S1', 'S2', 'S3']
+        with open(fp, 'w') as f:
+            write_tsv(f, data, features, samples)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS1\tS2\tS3',
+               'G1\t4\t2\t0',
+               'G2\t5\t0\t3',
+               'G3\t8\t0\t0',
+               'G4\t0\t3\t0',
+               'G5\t0\t7\t5']
+        self.assertListEqual(obs, exp)
+
+        # with metadata
+        metadata = [
+            {'Name': 'Actinobacteria', 'Rank': 'phylum', 'Lineage': '2;72;74'},
+            {'Name': 'Firmicutes',     'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': 'Bacteroidetes',  'Rank': 'phylum', 'Lineage': '2;70'},
+            {'Name': 'Cyanobacteria',  'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': '',               'Rank': '',       'Lineage': ''}]
+        with open(fp, 'w') as f:
+            write_tsv(f, data, features, samples, metadata)
+        with open(fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = [
+            '#FeatureID\tS1\tS2\tS3\tName\tRank\tLineage',
+            'G1\t4\t2\t0\tActinobacteria\tphylum\t2;72;74',
+            'G2\t5\t0\t3\tFirmicutes\tphylum\t2;72',
+            'G3\t8\t0\t0\tBacteroidetes\tphylum\t2;70',
+            'G4\t0\t3\t0\tCyanobacteria\tphylum\t2;72',
+            'G5\t0\t7\t5\t\t\t']
+        self.assertListEqual(obs, exp)
+        remove(fp)
 
 
 if __name__ == '__main__':

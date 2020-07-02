@@ -341,123 +341,6 @@ def write_readmap(fh, rmap, namedic=None):
         print('\t'.join(row), file=fh)
 
 
-def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
-                name_as_id=False):
-    """Write a profile to a tab-delimited file.
-
-    Parameters
-    ----------
-    fh : file handle
-        Output file.
-    data : dict
-        Profile data.
-    samples : list, optional
-        Ordered sample ID list.
-    tree : dict, optional
-        Taxonomic tree, to inform "Lineage" column.
-    rankdic : dict, optional
-        Rank dictionary, to inform "Rank" column.
-    namedic : dict, optional
-        Taxon name dictionary, to inform "Name" column.
-    name_as_id : bool, optional
-        Replace feature IDs with names. It applies to row headers and "Lineage"
-        column, and removes "Name" column.
-
-    Returns
-    -------
-    int
-        Number of samples in the table.
-    int
-        Number of features in the table.
-
-    Notes
-    -----
-    The output table will have columns as samples and rows as features.
-    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
-    appended to the right of the table.
-    """
-    if samples:
-        samples = [x for x in samples if x in data]
-    else:
-        samples = sorted(data)
-
-    # table header
-    header = ['#FeatureID'] + samples
-    if namedic and not name_as_id:
-        header.append('Name')
-    if rankdic:
-        header.append('Rank')
-    if tree:
-        header.append('Lineage')
-    print('\t'.join(header), file=fh)
-
-    # table body
-    nrow = 0
-    for key in sorted(allkeys(data)):
-        # stratification
-        stratum, feature = key if isinstance(key, tuple) else (None, key)
-        # get feature name
-        name = namedic[feature] if namedic and feature in namedic else None
-        # fill row header (feature Id or name)
-        head = name if name_as_id and name else feature
-        row = [f'{stratum}|{head}'] if stratum else [head]
-        # fill cell values (feature counts)
-        for sample in samples:
-            row.append(str(data[sample][key]) if key in data[sample] else '0')
-        # fill name column
-        if namedic and not name_as_id:
-            row.append(name or '')
-        # fill rank column
-        if rankdic:
-            row.append(rankdic[feature] if feature in rankdic else '')
-        # fill lineage column
-        if tree:
-            row.append(lineage_str(
-                feature, tree, namedic if name_as_id else None))
-        # print row
-        print('\t'.join(row), file=fh)
-        nrow += 1
-
-    return len(samples), nrow
-
-
-def write_tsv(fh, data, features, samples, metadata=None):
-    """Write a table to a tab-delimited file.
-
-    Parameters
-    ----------
-    fh : file handle
-        Output file.
-    data : list of list
-        Profile data.
-    features : list
-        Feature IDs (row names).
-    samples : list
-        Sample IDs (column names).
-    metadata : list of dict, optional
-        Feature metadata (extra columns)
-
-    Notes
-    -----
-    The output table will have columns as samples and rows as features.
-    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
-    appended to the right of the table.
-    """
-    if metadata is None:
-        metadata = [{}] * len(features)
-
-    # table header
-    print('\t'.join(filter(None, [
-        '#FeatureID', '\t'.join(samples), '\t'.join(
-            next(iter(metadata), {}).keys())])), file=fh)
-
-    # table body
-    for i, feature in enumerate(features):
-        print('\t'.join(filter(None, [
-            feature, '\t'.join(map(str, data[i])), '\t'.join(
-                metadata[i].values())])), file=fh)
-
-
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
                name_as_id=False):
     """Convert a profile into data, index and columns, as well as metadata if
@@ -509,6 +392,9 @@ def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
 
     See Also
     --------
+    write_tsv
+    .biom.table_to_biom
+    .workflow.write_profiles
 
     Notes
     -----
@@ -557,3 +443,40 @@ def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
         metadata.append(metadatum)
 
     return data, features, samples, metadata
+
+
+def write_tsv(fh, data, features, samples, metadata=None):
+    """Write a table to a tab-delimited file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Output file.
+    data : list of list
+        Profile data.
+    features : list
+        Feature IDs (row names).
+    samples : list
+        Sample IDs (column names).
+    metadata : list of dict, optional
+        Feature metadata (extra columns)
+
+    Notes
+    -----
+    The output table will have columns as samples and rows as features.
+    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
+    appended to the right of the table.
+    """
+    if metadata is None:
+        metadata = [{}] * len(features)
+
+    # table header
+    print('\t'.join(filter(None, [
+        '#FeatureID', '\t'.join(samples), '\t'.join(
+            next(iter(metadata), {}).keys())])), file=fh)
+
+    # table body
+    for i, feature in enumerate(features):
+        print('\t'.join(filter(None, [
+            feature, '\t'.join(map(str, data[i])), '\t'.join(
+                metadata[i].values())])), file=fh)
