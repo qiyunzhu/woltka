@@ -476,29 +476,102 @@ class FileTests(TestCase):
 
     def test_prep_table(self):
         # default mode
-        data = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+        prof = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},
                 'S2': {'G1': 2, 'G4': 3, 'G5': 7},
                 'S3': {'G2': 3, 'G5': 5}}
-        obs0, obs1, obs2 = prep_table(data)
-        exp0 = [[4, 2, 0],
-                [5, 0, 3],
-                [8, 0, 0],
-                [0, 3, 0],
-                [0, 7, 5]]
-        self.assertListEqual(obs0, exp0)
-        self.assertListEqual(obs1, ['G1', 'G2', 'G3', 'G4', 'G5'])
-        self.assertListEqual(obs2, ['S1', 'S2', 'S3'])
+        obs = prep_table(prof)
+        self.assertListEqual(obs[0], [
+            [4, 2, 0], [5, 0, 3], [8, 0, 0], [0, 3, 0], [0, 7, 5]])
+        self.assertListEqual(obs[1], ['G1', 'G2', 'G3', 'G4', 'G5'])
+        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
+        self.assertListEqual(obs[3], [{}] * 5)
 
-        # with sample Ids
+        # with sample Ids in custom order
         samples = ['S3', 'S1']
-        obs0, _, obs2 = prep_table(data, samples=samples)
-        exp0 = [[0, 4],
-                [3, 5],
-                [0, 8],
-                [0, 0],
-                [5, 0]]
-        self.assertListEqual(obs0, exp0)
-        self.assertListEqual(obs2, ['S3', 'S1'])
+        obs = prep_table(prof, samples=samples)
+        self.assertListEqual(obs[2], ['S3', 'S1'])
+        self.assertListEqual(obs[0], [
+            [0, 4], [3, 5], [0, 8], [5, 0]])
+
+        # some sample Ids are not in data
+        samples = ['S3', 'S0', 'S1']
+        obs = prep_table(prof, samples=samples)
+        self.assertListEqual(obs[2], ['S3', 'S1'])
+        self.assertListEqual(obs[0], [
+            [0, 4], [3, 5], [0, 8], [5, 0]])
+
+        # with taxon names
+        namedic = {'G1': 'Actinobacteria',
+                   'G2': 'Firmicutes',
+                   'G3': 'Bacteroidetes',
+                   'G4': 'Cyanobacteria'}
+        obs = prep_table(prof, namedic=namedic)
+        self.assertListEqual(obs[1], ['G1', 'G2', 'G3', 'G4', 'G5'])
+        self.assertListEqual([x['Name'] for x in obs[3]], [
+            'Actinobacteria', 'Firmicutes', 'Bacteroidetes', 'Cyanobacteria',
+            ''])
+
+        # with taxon names to replace Ids
+        obs = prep_table(prof, namedic=namedic, name_as_id=True)
+        self.assertListEqual(obs[1], [
+            'Actinobacteria', 'Firmicutes', 'Bacteroidetes', 'Cyanobacteria',
+            'G5'])
+        self.assertListEqual(obs[3], [{}] * 5)
+
+        # with ranks
+        rankdic = {'G1': 'class', 'G2': 'phylum', 'G4': 'phylum'}
+        obs = prep_table(prof, rankdic=rankdic)
+        self.assertListEqual([x['Rank'] for x in obs[3]], [
+            'class', 'phylum', '', 'phylum', ''])
+
+        # with lineages
+        tree = {'G1': '74',  # Actinobacteria (phylum)
+                '74': '72',
+                'G2': '72',  # Terrabacteria group
+                'G3': '70',  # FCB group
+                'G4': '72',
+                'G5': '1',
+                '72': '2',
+                '70': '2',
+                '2':  '1',
+                '1':  '1'}
+        obs = prep_table(prof, tree=tree)
+        self.assertListEqual([x['Lineage'] for x in obs[3]], [
+            '2;72;74', '2;72', '2;70', '2;72', ''])
+
+        # with lineages and names as Ids
+        namedic.update({
+            '74': 'Actino', '72': 'Terra', '70': 'FCB', '2': 'Bacteria'})
+        obs = prep_table(prof, tree=tree, namedic=namedic, name_as_id=True)
+        self.assertListEqual(obs[1], [
+            'Actinobacteria', 'Firmicutes', 'Bacteroidetes', 'Cyanobacteria',
+            'G5'])
+        self.assertListEqual([x['Lineage'] for x in obs[3]], [
+            'Bacteria;Terra;Actino', 'Bacteria;Terra', 'Bacteria;FCB',
+            'Bacteria;Terra', ''])
+
+        # with stratification
+        sprof = {'S1': {('A', 'G1'): 4,
+                        ('A', 'G2'): 5,
+                        ('B', 'G1'): 8},
+                 'S2': {('A', 'G1'): 2,
+                        ('B', 'G1'): 3,
+                        ('B', 'G2'): 7},
+                 'S3': {('B', 'G3'): 3,
+                        ('C', 'G2'): 5}}
+        obs = prep_table(sprof)
+        self.assertListEqual(obs[0], [
+            [4, 2, 0], [5, 0, 0], [8, 3, 0], [0, 7, 0], [0, 0, 3], [0, 0, 5]])
+        self.assertListEqual(obs[1], [
+            'A|G1', 'A|G2', 'B|G1', 'B|G2', 'B|G3', 'C|G2'])
+        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
+
+        # empty parameters instead of None
+        obs = prep_table(prof, None, {}, {}, {})
+        self.assertListEqual(obs[3], [{}] * 5)
+        obs = prep_table(prof, [], {}, {}, {}, True)
+        self.assertListEqual(obs[1], ['G1', 'G2', 'G3', 'G4', 'G5'])
+        self.assertListEqual(obs[3], [{}] * 5)
 
 
 if __name__ == '__main__':

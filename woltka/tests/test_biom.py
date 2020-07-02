@@ -173,6 +173,7 @@ class BiomTests(TestCase):
         print(obs.to_dataframe(dense=True))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
+        # empty BIOM table cannot be directly compared
         obs = filter_biom(table, th=10)
         self.assertTupleEqual(obs.to_dataframe(True).shape, (0, 3))
 

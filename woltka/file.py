@@ -421,37 +421,102 @@ def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
     return len(samples), nrow
 
 
-def prep_table(profile, samples=None):
-    """Convert a profile into data, index and columns, which can be further
-    converted into a Pandas DataFrame or BIOM table.
+def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
+               name_as_id=False):
+    """Convert a profile into data, index and columns, as well as metadata if
+    applicable, which can be further converted into a TSV file, BIOM table or
+    Pandas DataFrame.
 
     Parameters
     ----------
     profile : dict
-        Input profile.
+        Profile data.
+    samples : list, optional
+        Ordered sample ID list.
+    tree : dict, optional
+        Taxonomic tree, to inform "Lineage" column.
+    rankdic : dict, optional
+        Rank dictionary, to inform "Rank" column.
+    namedic : dict, optional
+        Taxon name dictionary, to inform "Name" column.
+    name_as_id : bool, optional
+        Replace feature IDs with names. It applies to row headers and "Lineage"
+        column, and removes "Name" column.
 
     Returns
     -------
     list of list
         Data (2D array of values).
     list
-        Index (observation IDs).
+        Features (rows, Pandas index, or BIOM observation IDs).
     list
-        Columns (sample IDs).
+        Samples (columns, Pandas columns, or BIOM sample IDs).
+    list of dict
+        Metadata (extra columns, or BIOM observation metadata).
+
+    Examples
+    --------
+    Convert output to a BIOM table:
+    >>> import biom
+    >>> args = profile, samples, tree, rankdic, namedic, name_as_id
+    >>> table = biom.Table(prep_table(*args))
+
+    Convert output to a Pandas DataFrame (data only):
+    >>> import pandas as pd
+    >>> data, features, samples, metadata = prep_table(*args)
+    >>> df = pd.DataFrame(data, features, samples)
+
+    Convert output to a Pandas DataFrame (data and metadata):
+    >>> df = pd.concat([pd.DataFrame(data, features, samples),
+                        pd.DataFrame.from_records(metadata, features)], axis=1)
+
+    See Also
+    --------
 
     Notes
     -----
-    This function is currently not in use.
+    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
+    appended to the table.
+
+    A feature will be dropped if all its values are zero. However, samples will
+    not be dropped even when empty.
+
+    A stratified feature will be printed as "stratum|feature".
     """
-    index = sorted(allkeys(profile))
-    columns = samples or sorted(profile)
-    data = []
-    for key in index:
-        row = []
-        for sample in columns:
-            try:
-                row.append(profile[sample][key])
-            except KeyError:
-                row.append(0)
-        data.append(row)
-    return data, index, columns
+    # determine range and order of samples
+    samples = [x for x in samples if x in profile] if samples else sorted(
+        profile)
+
+    # determine metadata columns
+    namecol = namedic and not name_as_id or None
+    metacols = tuple(filter(None, (
+        namecol and 'Name', rankdic and 'Rank', tree and 'Lineage')))
+
+    notnone = None.__ne__
+    features, data, metadata = [], [], []
+
+    # sort features in alphabetical order
+    for key in sorted(allkeys(profile)):
+
+        # determine cell values (feature counts)
+        datum = [profile[x][key] if key in profile[x] else 0 for x in samples]
+        if not any(datum):
+            continue
+        data.append(datum)
+
+        # determine feature Id
+        stratum, taxon = key if isinstance(key, tuple) else (None, key)
+        name = namedic[taxon] if namedic and taxon in namedic else None
+        feature = name if name_as_id and name else taxon
+        feature = f'{stratum}|{feature}' if stratum else feature
+        features.append(feature)
+
+        # determine metadata
+        metadatum = dict(zip(metacols, filter(notnone, (
+            namecol and (name or ''),
+            rankdic and (rankdic[taxon] if taxon in rankdic else ''),
+            tree and lineage_str(
+                taxon, tree, namedic if name_as_id else None)))))
+        metadata.append(metadatum)
+
+    return data, features, samples, metadata
