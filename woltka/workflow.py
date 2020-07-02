@@ -25,7 +25,7 @@ import click
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
     openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
-    write_readmap, prep_table, write_tsv)
+    write_readmap)
 from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata)
@@ -33,6 +33,7 @@ from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
     fill_root)
 from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
+from .table import prep_table, write_tsv
 from .biom import table_to_biom, write_biom
 
 
