@@ -70,6 +70,8 @@ woltka classify \
   --output blastn.species.tsv
 ```
 
+`blastn.species.biom`: Same as above, replacing `.tsv` with `.biom`.
+
 `burst.genus.tsv`:
 
 ```bash

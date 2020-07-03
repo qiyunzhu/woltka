@@ -2,8 +2,9 @@
 
 The command-line interface (CLI) of Woltka provides several commands:
 
-- **gotu**: gOTU table generation.
-- **classify**: Complete classification workflow with all parameters.
+- [**gotu**](#gotu): gOTU table generation.
+- [**classify**](#classify): Complete classification workflow with all parameters.
+- [**tools**](#tools): Utilities for working with alignments, maps and profiles.
 
 ## Classify
 
@@ -74,3 +75,17 @@ Option | Description
 `--add-lineage` | Append lineage strings to table.
 `--outmap`, `-u` | Write read-to-feature maps to directory.
 `--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+
+
+## Tools
+
+### Filter
+
+Filter a profile by per-sample abundance.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input alignment file or directory of alignment files.
+`--output`, `-o` (required) | Path to output profile file or directory of profile files.
+`--min-count`, `-c` | Per-sample minimum count threshold (>=1).
+`--min-percent`, `-p` | Per-sample minimum percentage threshold (<100).

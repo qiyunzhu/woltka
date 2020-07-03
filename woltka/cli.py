@@ -15,6 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
+from .tools import filter_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -51,10 +52,10 @@ def cli():
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of nucleotides to genomes.'))
 @click.pass_context
-def gotu(ctx, **kwargs):
+def gotu_cmd(ctx, **kwargs):
     """Generate a gOTU table based on sequence alignments.
     """
-    ctx.invoke(classify, **kwargs)
+    ctx.invoke(classify_cmd, **kwargs)
 
 
 # `classify` invokes the main classification workflow
@@ -167,7 +168,7 @@ def gotu(ctx, **kwargs):
     '--outmap-zip', default='gz',
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
     help=('Compress read maps using this algorithm.'))
-def classify(**kwargs):
+def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
 
     Notes
@@ -190,6 +191,8 @@ def tools():
     pass
 
 
+# `filter` invokes the per-sample abundance filtering workflow
+
 @tools.command('filter')
 @click.option(
     '--input', '-i', 'input_fp', required=True,
@@ -200,13 +203,16 @@ def tools():
     type=click.Path(writable=True, dir_okay=False),
     help=('Path to output feature table.'))
 @click.option(
-    '--threshold', '-t', type=click.FLOAT, required=True,
-    help='Per-sample relative abundance percentage threshold.')
+    '--min-count', '-c', type=click.IntRange(min=1),
+    help='Per-sample minimum count threshold.')
+@click.option(
+    '--min-percent', '-p', type=click.FLOAT,
+    help='Per-sample minimum percentage threshold.')
 @click.pass_context
-def filter(ctx, **kwargs):
-    """Filter a feature table by per-sample relative abundance.
+def filter_cmd(ctx, **kwargs):
+    """Filter a profile by per-sample abundance.
     """
-    pass
+    filter_wf(**kwargs)
 
 
 if __name__ == '__main__':

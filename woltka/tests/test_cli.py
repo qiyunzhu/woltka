@@ -18,7 +18,7 @@ import gzip
 
 from click.testing import CliRunner
 
-from woltka.cli import cli, gotu, classify
+from woltka.cli import cli, gotu_cmd, classify_cmd, filter_cmd
 
 
 class CliTests(TestCase):
@@ -37,7 +37,7 @@ class CliTests(TestCase):
         output_fp = join(self.tmpdir, 'output.tsv')
         params = ['--input',  join(self.datdir, 'align', 'bowtie2'),
                   '--output', output_fp]
-        res = self.runner.invoke(gotu, params)
+        res = self.runner.invoke(gotu_cmd, params)
         self.assertEqual(res.exit_code, 0)
         self.assertEqual(res.output.splitlines()[-1], 'Task completed.')
         with open(output_fp, 'r') as f:
@@ -60,7 +60,7 @@ class CliTests(TestCase):
         output_fp = join(self.tmpdir, 'output.tsv')
 
         def _test_params(params, exp):
-            res = self.runner.invoke(classify, params)
+            res = self.runner.invoke(classify_cmd, params)
             self.assertEqual(res.exit_code, 0)
             self.assertTrue(cmp(output_fp, join(self.datdir, 'output', exp)))
 
@@ -156,6 +156,20 @@ class CliTests(TestCase):
                   '--map-as-rank']
         _test_params(params, 'split.process.tsv')
 
+        remove(output_fp)
+
+    def test_filter_table(self):
+        input_fp = join(self.datdir, 'output', 'bowtie2.free.tsv')
+        output_fp = join(self.tmpdir, 'output.tsv')
+        params = ['--input', input_fp,
+                  '--output', output_fp,
+                  '--min-percent', 1]
+        res = self.runner.invoke(filter_cmd, params)
+        self.assertEqual(res.exit_code, 0)
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Filtered profile written.')
+        with open(output_fp, 'r') as f:
+            self.assertEqual(len(f.read().splitlines()) - 1, 29)
         remove(output_fp)
 
 
