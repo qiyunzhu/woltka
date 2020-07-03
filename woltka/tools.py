@@ -47,7 +47,7 @@ def filter_wf(input_fp:      str,
     click.echo(f'Number of features before filtering: {n}.')
 
     # filter table by threshold
-    click.echo(f'Filtered profile...', nl=False)
+    click.echo('Filtered profile...', nl=False)
     table = filter_table(table, th)
     click.echo(' Done.')
     n = table_shape(table)[0]
