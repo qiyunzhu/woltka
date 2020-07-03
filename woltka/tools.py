@@ -11,15 +11,16 @@
 """Features under the `tools` command group.
 """
 
+from sys import exit
 import click
 
 from .table import read_table, table_shape, filter_table, write_table
 
 
-def filter_table_wf(input_fp:      str,
-                    output_fp:     str,
-                    min_count:     int = None,
-                    min_percent: float = None):
+def filter_wf(input_fp:      str,
+              output_fp:     str,
+              min_count:     int = None,
+              min_percent: float = None):
     """Workflow for filtering a feature table based on a per-sample threshold.
 
     See Also
@@ -29,13 +30,13 @@ def filter_table_wf(input_fp:      str,
     """
     # validate parameters
     if not any((min_count, min_percent)):
-        click.echo('Please specify either minimum count or minimum percentage '
-                   'threshold.', err=True)
+        exit('Please specify either minimum count or minimum percentage '
+             'threshold.')
     if all((min_count, min_percent)):
-        click.echo('Only one of minimum count or minimum percentage thresholds'
-                   'can be specified', err=True)
+        exit('Only one of minimum count or minimum percentage thresholds '
+             'can be specified.')
     if min_percent and min_percent >= 100:
-        click.echo('Minimum percentage threshold must be below 100.', err=True)
+        exit('Minimum percentage threshold must be below 100.')
 
     # determine threshold
     th = min_count or min_percent / 100
