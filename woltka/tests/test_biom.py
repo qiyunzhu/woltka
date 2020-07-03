@@ -20,8 +20,8 @@ import pandas as pd
 from biom import load_table, Table
 from pandas.testing import assert_frame_equal
 
-from woltka.biom import table_to_biom, write_biom, filter_biom
-from woltka.file import prep_table
+from woltka.biom import table_to_biom, biom_to_table, write_biom, filter_biom
+from woltka.table import prep_table
 
 
 class BiomTests(TestCase):
@@ -60,6 +60,27 @@ class BiomTests(TestCase):
         assert_frame_equal(
             obs.metadata_to_dataframe('observation')[[
                 'Name', 'Rank', 'Lineage']], exp.iloc[:, -3:])
+
+    def test_biom_to_table(self):
+        data = [[4, 2, 0],
+                [5, 0, 3],
+                [8, 0, 0],
+                [0, 3, 0],
+                [0, 7, 5]]
+        observs = ['G1', 'G2', 'G3', 'G4', 'G5']
+        samples = ['S1', 'S2', 'S3']
+        metadata = [
+            {'Name': 'Actinobacteria', 'Rank': 'phylum', 'Lineage': '2;72;74'},
+            {'Name': 'Firmicutes',     'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': 'Bacteroidetes',  'Rank': 'phylum', 'Lineage': '2;70'},
+            {'Name': 'Cyanobacteria',  'Rank': 'phylum', 'Lineage': '2;72'},
+            {'Name': '',               'Rank': '',       'Lineage': ''}]
+        table = table_to_biom(data, observs, samples, metadata)
+        obs = biom_to_table(table)
+        self.assertListEqual(obs[0], data)
+        self.assertListEqual(obs[1], observs)
+        self.assertListEqual(obs[2], samples)
+        self.assertListEqual(obs[3], metadata)
 
     def test_write_biom(self):
         profile = {'S1': {'G1': 4, 'G2': 5, 'G3': 8},

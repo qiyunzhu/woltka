@@ -17,7 +17,7 @@ from .__init__ import __name__, __version__
 
 
 def table_to_biom(data, observations, samples, metadata=None):
-    """Convert a profile into a BIOM table.
+    """Convert table components into a BIOM table.
 
     Parameters
     ----------
@@ -37,6 +37,32 @@ def table_to_biom(data, observations, samples, metadata=None):
     """
     return biom.Table(np.array(data), observations, samples, metadata or None,
                       generated_by=f'{__name__}-{__version__}')
+
+
+def biom_to_table(table: biom.Table):
+    """Convert a BIOM table into table components.
+
+    Parameters
+    ----------
+    table : biom.Table
+        BIOM table to convert.
+
+    Returns
+    -------
+    tuple of
+        list of list
+            Profile data.
+        list
+            Observation IDs.
+        list
+            Sample IDs.
+        list of dict
+            Observation metadata.
+    """
+    return (table.matrix_data.toarray().astype(int).tolist(),
+            table.ids('observation').tolist(),
+            table.ids('sample').tolist(),
+            list(map(dict, table.metadata(axis='observation'))))
 
 
 def write_biom(table: biom.Table, fp: str):
@@ -70,7 +96,7 @@ def filter_biom(table: biom.Table, th: float):
         Filtered BIOM table.
     """
     def f(data, id_, md):
-        bound = th if th > 1 else data.sum() * th
+        bound = th if th >= 1 else data.sum() * th
         data[data < bound] = 0
         return data
 

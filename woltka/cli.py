@@ -15,6 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
+from .tool import filter_table_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -190,7 +191,7 @@ def tools():
     pass
 
 
-@tools.command('filter')
+@tools.command('filter-table')
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -200,16 +201,16 @@ def tools():
     type=click.Path(writable=True, dir_okay=False),
     help=('Path to output feature table.'))
 @click.option(
-    '--min-count', '-c', type=click.FLOAT, required=True,
+    '--min-count', '-c', type=click.IntRange(min=1),
     help='Per-sample minimum count threshold.')
 @click.option(
-    '--min-percent', '-p', type=click.FLOAT, required=True,
+    '--min-percent', '-p', type=click.FLOAT,
     help='Per-sample minimum percentage threshold.')
 @click.pass_context
-def filter(ctx, **kwargs):
+def filter_table(ctx, **kwargs):
     """Filter a feature table by per-sample abundance.
     """
-    pass
+    filter_table_wf(**kwargs)
 
 
 if __name__ == '__main__':
