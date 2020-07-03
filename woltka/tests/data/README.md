@@ -60,6 +60,16 @@ woltka classify \
   --output bowtie2.free.tsv
 ```
 
+`blastn.species.tsv`:
+
+```bash
+woltka classify \
+  --input align/blastn/mux.b6o.xz \
+  --lineage taxonomy/lineage.txt \
+  --rank species \
+  --output blastn.species.tsv
+```
+
 `blastn.species.biom`: Same as above, replacing `.tsv` with `.biom`.
 
 `burst.genus.tsv`:
