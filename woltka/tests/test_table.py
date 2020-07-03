@@ -259,7 +259,7 @@ class TableTests(TestCase):
         features = ['G1', 'G2', 'G3', 'G4', 'G5']
         samples = ['S1', 'S2', 'S3']
         with open(fp, 'w') as f:
-            write_tsv(f, data, features, samples)
+            write_tsv((data, features, samples, None), f)
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
         exp = ['#FeatureID\tS1\tS2\tS3',
@@ -278,7 +278,7 @@ class TableTests(TestCase):
             {'Name': 'Cyanobacteria',  'Rank': 'phylum', 'Lineage': '2;72'},
             {'Name': '',               'Rank': '',       'Lineage': ''}]
         with open(fp, 'w') as f:
-            write_tsv(f, data, features, samples, metadata)
+            write_tsv((data, features, samples, metadata), f)
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
         exp = [

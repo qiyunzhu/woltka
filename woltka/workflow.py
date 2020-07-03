@@ -33,8 +33,7 @@ from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_rank_table,
     fill_root)
 from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
-from .table import prep_table, write_tsv
-from .biom import table_to_biom, write_biom
+from .table import prep_table, write_table
 
 
 def workflow(input_fp:      str,
@@ -818,7 +817,7 @@ def write_profiles(data:        dict,
     fp : str
         Path to output file or directory.
     is_biom : bool, optional
-        Output BIOM instead of TSV format.
+        Output BIOM or TSV format.
     samples : list, optional
         Ordered sample ID list.
     tree : dict, optional
@@ -873,15 +872,12 @@ def write_profiles(data:        dict,
         name_as_id = False
 
     # write output profile(s)
-    click.echo('Writing output profiles...')
+    fmt = 'BIOM' if is_biom else 'TSV'
+    click.echo(f'Writing output profiles in {fmt} format...')
     for rank, fp in rank2fp.items():
         table = prep_table(data[rank], samples, tree if add_lineage else None,
                            rankdic if add_rank else None, namedic, name_as_id)
-        if is_biom:
-            write_biom(table_to_biom(*table), fp)
-        else:
-            with open(fp, 'w') as fh:
-                write_tsv(fh, *table)
+        write_table(table, fp, is_biom)
         n, m = len(table[2]), len(table[1])
         click.echo(f'  Rank: {rank}, samples: {n}, features: {m}.')
 

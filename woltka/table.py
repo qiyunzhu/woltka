@@ -159,7 +159,7 @@ def read_table(fp):
             return table, 'tsv'
 
 
-def write_table(table, fp):
+def write_table(table, fp, is_biom=None):
     """Write a feature table (profile) to an output file, while automatically
     matching format (BIOM or TSV).
 
@@ -169,8 +169,11 @@ def write_table(table, fp):
         Table to be written.
     fp : str
         Output filepath.
+    is_biom : bool, optional
+        Output BIOM or TSV format. If not specified, will automatically
+        determine based on output filename.
     """
-    if fp.endswith('.biom'):
+    if is_biom is not False and fp.endswith('.biom'):
         if isinstance(table, tuple):
             table = table_to_biom(*table)
         write_biom(table, fp)
@@ -178,7 +181,7 @@ def write_table(table, fp):
         if isinstance(table, Table):
             table = biom_to_table(table)
         with openzip(fp, 'wt') as fh:
-            write_tsv(fh, *table)
+            write_tsv(table, fh)
 
 
 def read_tsv(fh):
@@ -234,21 +237,15 @@ def read_tsv(fh):
     return data, features, samples, metadata
 
 
-def write_tsv(fh, data, features, samples, metadata=None):
+def write_tsv(table, fh):
     """Write table components to a tab-delimited file.
 
     Parameters
     ----------
+    table : tuple
+        Table components to write.
     fh : file handle
         Output file.
-    data : list of list
-        Profile data.
-    features : list
-        Feature IDs (row names).
-    samples : list
-        Sample IDs (column names).
-    metadata : list of dict, optional
-        Feature metadata (extra columns).
 
     Notes
     -----
@@ -256,6 +253,8 @@ def write_tsv(fh, data, features, samples, metadata=None):
     Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
     appended to the right of the table.
     """
+    data, features, samples, metadata = table
+
     # metadata columns
     metacols = next(iter(metadata), {}).keys() if metadata else None
 

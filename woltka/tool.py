@@ -54,5 +54,4 @@ def filter_table_wf(input_fp:      str,
         write_biom(table, output_fp)
     else:
         with open(output_fp, 'w') as fh:
-            write_tsv(fh, *table)
-
+            write_tsv(table, fh)
