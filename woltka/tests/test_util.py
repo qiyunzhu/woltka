@@ -76,6 +76,10 @@ class UtilTests(TestCase):
         intize(dic, zero=True)
         exp = {'a': 0, 'b': -3, 'c': 2, 'd': 0}
         self.assertDictEqual(dic, exp)
+        dic = {'a': 2.5, 'b': 3.5, 'c': 1.49999999999, 'd': 1.50000000001}
+        intize(dic)
+        exp = {'a': 2, 'b': 4, 'c': 2, 'd': 2}
+        self.assertDictEqual(dic, exp)
 
     def test_delnone(self):
         dic = {'a': 1, 'b': 2, 'c': 3}
