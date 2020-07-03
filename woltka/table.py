@@ -16,7 +16,7 @@ from biom import Table, load_table
 from .util import allkeys
 from .tree import lineage_str
 from .file import openzip
-from .biom import table_to_biom, biom_to_table, write_biom
+from .biom import table_to_biom, biom_to_table, write_biom, filter_biom
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -307,12 +307,32 @@ def strip_metacols(header, cols=['Name', 'Rank', 'Lineage']):
     return header[:-len(res) or None], res[::-1]
 
 
-def filter_table(table, th):
-    """Write table components to a tab-delimited file.
+def table_shape(table):
+    """Get feature and sample counts of a table.
 
     Parameters
     ----------
-    table : tuple of (list, list, list, list)
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to count (data, features, samples, metadata).
+
+    Returns
+    -------
+    int
+        Number of features.
+    int
+        Number of samples.
+    """
+    if isinstance(table, Table):
+        return table.shape
+    return len(table[1]), len(table[2])
+
+
+def filter_table(table, th):
+    """Filter a table by per-sample count or percentage threshold.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
         Table to filter (data, features, samples, metadata).
     th : float
         Per-sample minimum abundance threshold. If >= 1, this value is an
@@ -320,9 +340,13 @@ def filter_table(table, th):
 
     Returns
     -------
-    tuple of (list, list, list, list)
+    bio.Table, or tuple of (list, list, list, list)
         Filtered table (data, features, samples, metadata).
     """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        return(filter_biom(table, th))
+
     # filtering function to apply to each column
     def f(datum, th):
         bound = th if th >= 1 else sum(datum) * th

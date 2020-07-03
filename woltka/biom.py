@@ -35,8 +35,7 @@ def table_to_biom(data, observations, samples, metadata=None):
     biom.Table
         Converted BIOM table.
     """
-    return biom.Table(np.array(data), observations, samples, metadata or None,
-                      generated_by=f'{__name__}-{__version__}')
+    return biom.Table(np.array(data), observations, samples, metadata or None)
 
 
 def biom_to_table(table: biom.Table):
@@ -62,7 +61,7 @@ def biom_to_table(table: biom.Table):
     return (table.matrix_data.toarray().astype(int).tolist(),
             table.ids('observation').tolist(),
             table.ids('sample').tolist(),
-            list(map(dict, table.metadata(axis='observation'))))
+            list(map(dict, table.metadata(axis='observation') or ())))
 
 
 def write_biom(table: biom.Table, fp: str):
@@ -74,13 +73,18 @@ def write_biom(table: biom.Table, fp: str):
         BIOM table to write.
     fp : str
         Output filepath.
+
+    Notes
+    -----
+    The `generated_by` attribute of the output BIOM table will be like
+    "woltka-version".
     """
     with biom.util.biom_open(fp, 'w') as f:
-        table.to_hdf5(f, table.generated_by)
+        table.to_hdf5(f, f'{__name__}-{__version__}')
 
 
 def filter_biom(table: biom.Table, th: float):
-    """Filter a BIOM table by per-sample percentage frequency threshold.
+    """Filter a BIOM table by per-sample count or percentage threshold.
 
     Parameters
     ----------

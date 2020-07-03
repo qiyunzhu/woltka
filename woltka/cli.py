@@ -15,7 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
-from .tool import filter_table_wf
+from .tools import filter_table_wf
 
 
 class NaturalOrderGroup(click.Group):

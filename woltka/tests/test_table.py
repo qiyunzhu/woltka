@@ -13,11 +13,12 @@ from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
-from biom import load_table
+import numpy as np
+from biom import Table, load_table
 
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
-    filter_table)
+    table_shape, filter_table)
 from woltka.biom import table_to_biom
 
 
@@ -196,7 +197,7 @@ class TableTests(TestCase):
         self.assertEqual(obs.descriptive_equality(biota),
                          'Tables appear equal')
 
-        # TSV to BIOM
+        # tuple to BIOM
         write_table(table, fp)
         obs = load_table(fp)
         self.assertEqual(obs.descriptive_equality(biota),
@@ -364,6 +365,17 @@ class TableTests(TestCase):
         self.assertListEqual(obs[0], ['#ID', 'S01', 'S02', 'S03', 'Name'])
         self.assertListEqual(obs[1], ['Rank', 'Lineage'])
 
+    def test_table_shape(self):
+        # original tuple
+        table = prep_table({'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+                            'S2': {'G1': 2, 'G4': 3, 'G5': 7},
+                            'S3': {'G2': 3, 'G5': 5}})
+        self.assertTupleEqual(table_shape(table), (5, 3))
+
+        # BIOM table
+        table = Table(*map(np.array, table))
+        self.assertTupleEqual(table_shape(table), (5, 3))
+
     def test_filter_table(self):
         table = prep_table({'S1': {'G1': 4, 'G2': 5, 'G3': 8},
                             'S2': {'G1': 2, 'G4': 3, 'G5': 7},
@@ -404,6 +416,15 @@ class TableTests(TestCase):
         obs = filter_table(exp, th=1)
         exp = ([], [], ['S1', 'S2', 'S3'], [])
         self.assertTupleEqual(obs, exp)
+
+        # filter a BIOM table
+        table = Table(*map(np.array, table))
+        obs = filter_table(table, th=3)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+            'S2': {'G4': 3, 'G5': 7},
+            'S3': {'G2': 3, 'G5': 5}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
 
 if __name__ == '__main__':

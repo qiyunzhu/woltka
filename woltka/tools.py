@@ -8,14 +8,12 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-"""Features other than the main `classify` subcommand.
+"""Features under the `tools` command group.
 """
 
 import click
-from biom import load_table
 
-from .table import read_tsv, filter_table, write_tsv
-from .biom import filter_biom, write_biom, table_to_biom
+from .table import read_table, table_shape, filter_table, write_table
 
 
 def filter_table_wf(input_fp:      str,
@@ -44,14 +42,16 @@ def filter_table_wf(input_fp:      str,
 
     # read input table
     table, fmt = read_table(input_fp)
+    n = table_shape(table)[0]
+    click.echo(f'Number of features before filtering: {n}.')
 
     # filter table by threshold
-    filter_func = filter_table if fmt == 'tsv' else filter_biom
-    table = filter_func(table, th)
+    click.echo(f'Filtered profile...', nl=False)
+    table = filter_table(table, th)
+    click.echo(' Done.')
+    n = table_shape(table)[0]
+    click.echo(f'Number of features After filtering: {n}.')
 
     # write filtered table
-    if output_fp.endswith('.biom'):
-        write_biom(table, output_fp)
-    else:
-        with open(output_fp, 'w') as fh:
-            write_tsv(table, fh)
+    write_table(table, output_fp)
+    click.echo('Filtered profile written.', err=True)
