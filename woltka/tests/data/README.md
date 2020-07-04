@@ -56,7 +56,6 @@ woltka classify \
   --map taxonomy/g2tid.txt \
   --nodes taxonomy/nodes.dmp \
   --rank free \
-  --no-subok \
   --output bowtie2.free.tsv
 ```
 

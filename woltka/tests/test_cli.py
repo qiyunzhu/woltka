@@ -69,8 +69,7 @@ class CliTests(TestCase):
                   '--output', output_fp,
                   '--nodes',  join(self.datdir, 'taxonomy', 'nodes.dmp'),
                   '--map',    join(self.datdir, 'taxonomy', 'g2tid.txt'),
-                  '--rank',   'free',
-                  '--no-subok']
+                  '--rank',   'free']
         _test_params(params, 'bowtie2.free.tsv')
 
         # blastn, multiplexed, lineage-based, species-level classification
@@ -107,7 +106,8 @@ class CliTests(TestCase):
         params = ['--input',  join(self.datdir, 'align', 'bt2sho'),
                   '--output', output_fp,
                   '--newick', join(self.datdir, 'tree.nwk'),
-                  '--rank',   'free']
+                  '--rank',   'free',
+                  '--subok']
         _test_params(params, 'bt2sho.phylo.tsv')
 
         # burst, classification by GO process

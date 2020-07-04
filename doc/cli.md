@@ -49,7 +49,7 @@ Option | Description
 `--above/--no-above` | Allow assigning to a classification unit higher than given rank. Default: auto-decision.
 `--major` | Majority-rule assignment percentage threshold. Range: [51, 99].
 `--ambig/--no-ambig` | Allow assigning one sequence to multiple classification units. Default: True.
-`--subok/--no-subok` | Can report subject IDs in classification result. Default: True.
+`--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
 `--deidx/--no-deidx` | Strip "underscore index" suffixes from subject IDs. Default: False.
 
 ### Gene matching

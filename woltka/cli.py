@@ -130,8 +130,9 @@ def gotu_cmd(ctx, **kwargs):
     '--ambig/--no-ambig', default=True,
     help='Allow assigning one sequence to multiple classification units.')
 @click.option(
-    '--subok/--no-subok', default=True,
-    help='Allow assigning sequences to their subjects.')
+    '--subok', is_flag=True,
+    help=('In free-rank classification, allow assigning a sequence to its '
+          'direct subject, if applicable, before going up in hierarchy.'))
 @click.option(
     '--deidx/--no-deidx', default=False,
     help='Strip "_index" suffixes from subject IDs.')

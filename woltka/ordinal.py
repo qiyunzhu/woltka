@@ -85,7 +85,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
 
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
-            # Python's built-in "timesort" algorithm is efficient at this
+            # Python's built-in timsort algorithm is efficient at this
             try:
                 queue = sorted(coords[nucl] + loci)
 
