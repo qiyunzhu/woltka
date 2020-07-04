@@ -223,15 +223,17 @@ def classify(mapper:  object,
 
     # parse input alignment file(s) and generate profile(s)
     for fp in sorted(files):
-        n = 0
-        click.echo(f'Parsing alignment file {basename(fp)}...', nl=False)
+        click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
 
         # read alignment file into query-to-subject(s) map
         with openzip(fp) as fh:
 
+            # query and progress counters
+            nqry, nstep = 0, -1
+
             # parse alignment file by chunk
             for qryque, subque in mapper(fh, fmt=fmt, n=lines):
-                n += len(qryque)
+                nqry += len(qryque)
 
                 # (optional) strip indices and freeze sets
                 subque = deque(strip_index(subque) if deidx else map(
@@ -254,8 +256,14 @@ def classify(mapper:  object,
                     for rank in ranks:
                         assign_readmap(*rmap, data, rank, sample, **kwargs)
 
+                # show progress
+                istep = nqry // 1000000 - nstep
+                if istep:
+                    click.echo('.' * istep, nl=False)
+                    nstep += istep
+
         click.echo(' Done.')
-        click.echo(f'  Number of query sequences: {n}.')
+        click.echo(f'  Number of sequences classified: {nqry}.')
 
     # round floats
     for rank in data:
@@ -598,7 +606,7 @@ def build_hierarchy(names_fps:    list = [],
 
     if is_build:
         click.echo('Classification system constructed.')
-        click.echo(f'Total number of classification units: {len(tree)}.')
+        click.echo(f'  Total number of classification units: {len(tree)}.')
 
     return tree, rankdic, namedic, root
 
