@@ -106,7 +106,7 @@ def workflow(input_fp:      str,
     mapper, lines = build_mapper(coords_fp, overlap, lines)
 
     # target classification ranks
-    ranks, rank2dir = prepare_ranks(ranks, outmap_dir)
+    ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree)
 
     # classify query sequences
     data = classify(
@@ -460,7 +460,8 @@ def build_mapper(coords_fp: str = None,
 
 
 def prepare_ranks(ranks:      str = None,
-                  outmap_dir: str = None) -> (list, dict or None):
+                  outmap_dir: str = None,
+                  tree:      dict = None) -> (list, dict or None):
     """Prepare classification ranks and directories of read-to-feature maps.
 
     Parameters
@@ -469,6 +470,8 @@ def prepare_ranks(ranks:      str = None,
         Target ranks (comma-separated).
     outmap_dir : str, optional
         Path to output read map directory.
+    tree : dict, optional
+        Taxonomic tree.
 
     Returns
     -------
@@ -477,8 +480,15 @@ def prepare_ranks(ranks:      str = None,
     dict or None
         Rank-to-directory map (or None if not necessary).
     """
-    # determine ranks
-    ranks = ['none'] if ranks is None else ranks.split(',')
+    # ranks are given
+    if ranks:
+        ranks = ranks.split(',')
+
+    # if classification system is provided, do free-rank classification;
+    # otherwise do no-rank assignment.
+    else:
+        ranks = ['free' if tree else 'none']
+
     click.echo('Classification will operate on these ranks: {}.'.format(
         ', '.join(ranks)))
 

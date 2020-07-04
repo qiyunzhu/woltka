@@ -115,8 +115,8 @@ def gotu_cmd(ctx, **kwargs):
 # assignment
 @click.option(
     '--rank', '-r', 'ranks', type=click.STRING,
-    help=('Classify sequences at this rank. Ignore or enter "none" to omit '
-          'classification; enter "free" for free-rank classification. Can '
+    help=('Classify sequences at this rank. Enter "none" to directly report '
+          'subjects; enter "free" for free-rank classification. Can '
           'specify multiple comma-separated ranks and one profile will be '
           'generated for each rank.'))
 @click.option(

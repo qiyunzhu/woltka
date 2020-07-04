@@ -263,6 +263,10 @@ class WorkflowTests(TestCase):
         obs = prepare_ranks('phylum,genus,species')
         self.assertListEqual(obs[0], ['phylum', 'genus', 'species'])
 
+        # free rank when there is tree
+        obs = prepare_ranks(tree={'a': 1})
+        self.assertListEqual(obs[0], ['free'])
+
         # with output read map directory
         obs = prepare_ranks(outmap_dir=self.tmpdir)
         self.assertTupleEqual(obs, (['none'], {'none': self.tmpdir}))
