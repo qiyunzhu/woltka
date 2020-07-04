@@ -57,7 +57,7 @@ def workflow(input_fp:      str,
              above:        bool = False,
              major:        bool = None,
              ambig:        bool = True,
-             subok:        bool = True,
+             subok:        bool = False,
              deidx:        bool = False,
              # gene matching
              coords_fp:     str = None,
@@ -137,7 +137,7 @@ def classify(mapper:  object,
              above:     bool = False,
              major:      int = None,
              ambig:      str = True,
-             subok:     bool = None,
+             subok:     bool = False,
              deidx:     bool = False,
              lines:      int = None,
              stratmap:  dict = None) -> dict:
@@ -187,8 +187,8 @@ def classify(mapper:  object,
         the same rank. The profile will be normalized by the number of matches
         per query sequence.
     subok : bool, optional
-        Allow directly reporting subject ID(s) if a sequence cannot be assigned
-        to any higher classification unit.
+        In free-rank classification, allow assigning sequences to their direct
+        subjects instead of higher classification units, if applicable.
     deidx : bool, optional
         Strip "underscore index" suffixes from subject IDs.
     lines : int, optional
@@ -449,7 +449,7 @@ def build_mapper(coords_fp: str = None,
         with openzip(coords_fp) as fh:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
-        click.echo(f'Total number of host sequences: {len(coords)}.')
+        click.echo(f'  Total number of host sequences: {len(coords)}.')
         lines = lines or 1000000
         return partial(ordinal_mapper, coords=coords,
                        prefix=whether_prefix(coords),
@@ -723,7 +723,7 @@ def assign_readmap(qryque:    list,
                    above:     bool = False,
                    major:    float = None,
                    ambig:     bool = True,
-                   subok:     bool = None,
+                   subok:     bool = False,
                    strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
@@ -763,8 +763,8 @@ def assign_readmap(qryque:    list,
         Count occurrence of each possible assignment instead of targeting one
         assignment (available only with a fixed rank and not above).
     subok : bool, optional
-        Allow assignment to subject(s) itself instead of higher classification
-        units.
+        In free-rank classification, allow assigning sequences to their direct
+        subjects instead of higher classification units, if applicable.
     strata : dict, optional
         Read-to-feature map for stratification.
     """
