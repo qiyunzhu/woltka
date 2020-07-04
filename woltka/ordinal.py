@@ -225,36 +225,37 @@ def read_gene_coords(fh, sort=False):
     plus reads.
     """
     res = {}
-    nucl = None
+    queue_extend = None
     for line in fh:
-        line = line.rstrip()
 
-        # ">" or "#" indicates nucleotide name
-        if line.startswith(('>', '#')):
-            nucl = line[1:].strip()
+        # ">" or "#" indicates genome (nucleotide) name
+        c0 = line[0]
+        if c0 in '>#':
 
-            # double ">" or "#" indicates genome name
-            if not nucl.startswith(('>', '#')):
+            # double ">" or "#" indicates genome name, which serves as
+            # a super group of subsequent nucleotide names; to be ignored
+            if line[1] != c0:
+                nucl = line[1:].strip()
                 res[nucl] = []
+                queue_extend = res[nucl].extend
         else:
-            x = line.split('\t')
-            idx = x[0]
+            x = line.rstrip().split('\t')
 
-            # start and end are based on genome, not gene itself
+            # start and end are based on genome (nucleotide), not gene itself
             try:
-                start, end = sorted([int(x[1]), int(x[2])])
+                start, end = sorted((int(x[1]), int(x[2])))
             except (IndexError, ValueError):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            res[nucl].extend((
-                (start, True, True, idx),
-                (end,  False, True, idx)))
+            idx = x[0]
+            queue_extend(((start, True, True, idx),
+                          (end,  False, True, idx)))
 
     # sort gene coordinates per nucleotide
     if sort:
+        sortkey = itemgetter(0)
         for nucl, queue in res.items():
-            res[nucl] = sorted(queue, key=itemgetter(0))
-
+            res[nucl] = sorted(queue, key=sortkey)
     return res
 
 
@@ -282,12 +283,11 @@ def whether_prefix(coords):
     """
     genes = {}
     for nucl, queue in coords.items():
-        for coord, is_start, is_gene, id_ in queue:
-            try:
-                if genes[id_] == is_start:
-                    return True
-            except KeyError:
-                genes[id_] = is_start
+        for coord, is_start, is_gene, gid in queue:
+            if gid not in genes:
+                genes[gid] = is_start
+            elif genes[gid] == is_start:
+                return True
     return False
 
 
@@ -337,12 +337,12 @@ def match_read_gene(queue, lens, th, pfx=None):
     genes_items = genes.items
 
     # walk through flattened queue of reads and genes
-    for loc, is_start, is_gene, id_ in queue:
+    for loc, is_start, is_gene, idx in queue:
         if is_gene:
 
             # when a gene starts, added to current genes
             if is_start:
-                genes[id_] = loc
+                genes[idx] = loc
 
             # when a gene ends,
             else:
@@ -351,21 +351,21 @@ def match_read_gene(queue, lens, th, pfx=None):
                 for rid, rloc in reads_items():
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
-                        yield rid, id_
+                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                        yield rid, idx
 
                 # remove it from current genes
-                del(genes[id_])
+                del(genes[idx])
 
         # the same for reads
         else:
             if is_start:
-                reads[id_] = loc
+                reads[idx] = loc
             else:
                 for gid, gloc in genes_items():
-                    if loc - max(reads[id_], gloc) + 1 >= lens[id_] * th:
-                        yield id_, gid
-                del(reads[id_])
+                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                        yield idx, gid
+                del(reads[idx])
 
 
 def match_read_gene_pfx(queue, lens, th, pfx):
@@ -401,20 +401,20 @@ def match_read_gene_pfx(queue, lens, th, pfx):
     """
     genes, reads = {}, {}
     reads_items, genes_items = reads.items, genes.items
-    for loc, is_start, is_gene, id_ in queue:
+    for loc, is_start, is_gene, idx in queue:
         if is_gene:
             if is_start:
-                genes[id_] = loc
+                genes[idx] = loc
             else:
                 for rid, rloc in reads_items():
-                    if loc - max(genes[id_], rloc) + 1 >= lens[rid] * th:
-                        yield rid, f'{pfx}_{id_}'
-                del(genes[id_])
+                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                        yield rid, f'{pfx}_{idx}'
+                del(genes[idx])
         else:
             if is_start:
-                reads[id_] = loc
+                reads[idx] = loc
             else:
                 for gid, gloc in genes_items():
-                    if loc - max(reads[id_], gloc) + 1 >= lens[id_] * th:
-                        yield id_, f'{pfx}_{gid}'
-                del(reads[id_])
+                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                        yield idx, f'{pfx}_{gid}'
+                del(reads[idx])

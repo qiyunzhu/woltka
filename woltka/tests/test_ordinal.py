@@ -226,13 +226,13 @@ class OrdinalTests(TestCase):
 
     def test_read_gene_coords(self):
         # simple case
-        tbl = ('## GCF_000123456',
-               '# NC_123456',
-               '1	5	384',
-               '2	410	933',
-               '# NC_789012',
-               '1	912	638',
-               '2	529	75')
+        tbl = ('## GCF_000123456\n',
+               '# NC_123456\n',
+               '1	5	384\n',
+               '2	410	933\n',
+               '# NC_789012\n',
+               '1	912	638\n',
+               '2	529	75\n')
         obs = read_gene_coords(tbl, sort=True)
         exp = {'NC_123456': [
             (5,   True, True, '1'), (384, False, True, '1'),
