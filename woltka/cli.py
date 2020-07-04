@@ -121,11 +121,14 @@ def gotu_cmd(ctx, **kwargs):
           'specify multiple comma-separated ranks and one profile will be '
           'generated for each rank.'))
 @click.option(
-    '--above/--no-above', default=False,
-    help='Allow assigning to a classification unit higher than given rank.')
+    '--above', is_flag=True,
+    help=('In given-rank classification, allow assigning a sequence to '
+          'a higher rank if it cannot be assigned to the specified rank.'))
 @click.option(
     '--major', type=click.IntRange(51, 99),
-    help='Majority-rule assignment percentage threshold.')
+    help=('In given-rank classification, use majority rule at this percentage '
+          'threshold to determine assignment when there are multiple '
+          'candidates. Overrides "--above".'))
 @click.option(
     '--ambig/--no-ambig', default=True,
     help='Allow assigning one sequence to multiple classification units.')

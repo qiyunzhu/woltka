@@ -73,7 +73,7 @@ def assign_free(subs, tree, root=None, subok=False):
 
 def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
                 ambig=False):
-    """Assign query to a fixed rank in a classification system.
+    """Assign query to a given rank in a classification system.
 
     Parameters
     ----------
@@ -98,6 +98,10 @@ def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
     -------
     str or dict
         Unique assignment or assignment-to-count map.
+
+    TODO
+    ----
+    Combine major and above.
     """
     taxa = [find_rank(x, rank, tree, rankdic) for x in subs]
     tset = set(taxa)

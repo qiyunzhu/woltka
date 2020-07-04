@@ -180,8 +180,8 @@ def classify(mapper:  object,
     above : bool, optional
         Allow assigning to a classification unit higher than given rank.
     major : int, optional
-        Perform majority-rule assignment based on this percentage threshold.
-        Range: [51, 99].
+        In given-rank classification, perform majority-rule assignment based on
+        this percentage threshold. Range: [51, 99].
     ambig : bool, optional
         Allow one sequence to be assigned to multiple classification units at
         the same rank. The profile will be normalized by the number of matches
@@ -755,10 +755,11 @@ def assign_readmap(qryque:    list,
     root : str, optional
         Root identifier.
     above : bool, optional
-        Assignment above given rank is acceptable (for fixed ranks).
+        In given-rank classification, assignment above the specified rank is
+        acceptable.
     major : float, optional
-        Majority-rule assignment threshold (available only with a fixed rank
-        and not above or ambig).
+        In given-rank classification, perform majority-rule assignment based on
+        this fraction threshold.
     ambig : bool, optional
         Count occurrence of each possible assignment instead of targeting one
         assignment (available only with a fixed rank and not above).
