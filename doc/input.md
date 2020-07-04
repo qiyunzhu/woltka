@@ -9,6 +9,8 @@ The input files for Woltka are sequence **alignment** files. The term "alignment
 - [Filename pattern](#filename-pattern)
 - [Sample list](#sample-list)
 - [Demultiplexing](#demultiplexing)
+- [Subject trimming](#subject-trimming)
+
 
 ## Input filepath
 
@@ -85,3 +87,9 @@ woltka classify \
   --output profile.biom \
   ...
 ```
+
+## Subject trimming
+
+The parameter `--trim-sub <delim>` lets Woltka trim subject IDs at the last occurrence of the given delimiter. Examples include trimming off version numbers from NCBI accessions (`--trim-sub .`: `NP_123456.1` => `NP_123456`, trimming off ORF indices from nucleotide sequences (`--trim-sub _`: `Contig_5_20` => `Contig_5`).
+
+This allows flexible adaptation to alternative classification systems without manually editing the alignment files. A use case is the stratified taxonomic/functional classification (see [details](stratify.md)).

@@ -21,7 +21,7 @@ from pandas.testing import assert_frame_equal
 
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
-    prepare_ranks, build_hierarchy, assign_readmap, strip_index, demultiplex,
+    prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
     write_profiles)
 
 
@@ -365,22 +365,22 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(obs[1], {'Bac': 'map', 'Arc': 'map'})
         remove(fp)
 
-    def test_strip_index(self):
+    def test_strip_suffix(self):
         subs = [{'G1_1', 'G1_2', 'G2_3', 'G3'},
                 {'G1_1', 'G1.3', 'G4_5', 'G4_x'}]
-        obs = strip_index(subs)
+        obs = strip_suffix(subs, sep='_')
         exp = [{'G1', 'G2', 'G3'},
                {'G1', 'G1.3', 'G4', 'G4'}]
         self.assertListEqual(list(obs), exp)
 
         subs = [{'NC_123456.1_300', 'ABCD000001.20_101'}]
-        obs = strip_index(subs)
+        obs = strip_suffix(subs, sep='_')
         exp = [{'NC_123456.1', 'ABCD000001.20'}]
         self.assertListEqual(list(obs), exp)
 
         subs = [{'G1.1', 'G1.2', 'G2'},
                 {'G1.1', 'G1.3', 'G3_x'}]
-        obs = strip_index(subs, sep='.')
+        obs = strip_suffix(subs, sep='.')
         exp = [{'G1', 'G2'},
                {'G1', 'G3_x'}]
         self.assertListEqual(list(obs), exp)

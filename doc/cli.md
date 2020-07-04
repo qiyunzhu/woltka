@@ -25,6 +25,7 @@ Option | Description
 `--filext`, `-e` | Input filename extension following sample ID.
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
+`--trim-sub` | Trim subject IDs at the last given delimiter.
 `--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
 
 ### Hierarchies
@@ -50,7 +51,6 @@ Option | Description
 `--major` | Majority-rule assignment percentage threshold. Range: [51, 99].
 `--ambig/--no-ambig` | Allow assigning one sequence to multiple classification units. Default: True.
 `--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
-`--deidx/--no-deidx` | Strip "underscore index" suffixes from subject IDs. Default: False.
 
 ### Gene matching
 

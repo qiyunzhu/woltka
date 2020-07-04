@@ -43,6 +43,7 @@ def workflow(input_fp:      str,
              input_ext:     str = None,
              samples:       str = None,
              demux:        bool = None,
+             trimsub:       str = None,
              lines:         int = None,
              # hierarchies
              nodes_fp:      str = None,
@@ -58,7 +59,6 @@ def workflow(input_fp:      str,
              major:        bool = None,
              ambig:        bool = True,
              subok:        bool = False,
-             deidx:        bool = False,
              # gene matching
              coords_fp:     str = None,
              overlap:       int = 80,
@@ -109,9 +109,9 @@ def workflow(input_fp:      str,
 
     # classify query sequences
     data = classify(
-        mapper, files, samples, input_fmt, demux, tree, rankdic, namedic, root,
-        ranks, rank2dir, outmap_zip, above, major, ambig, subok, deidx, lines,
-        stratmap)
+        mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
+        namedic, root, ranks, rank2dir, outmap_zip, above, major, ambig, subok,
+        lines, stratmap)
 
     # write output profiles
     write_profiles(
@@ -127,6 +127,7 @@ def classify(mapper:  object,
              samples:   list = None,
              fmt:        str = None,
              demux:     bool = None,
+             trimsub:    str = None,
              tree:      dict = None,
              rankdic:   dict = None,
              namedic:   dict = None,
@@ -138,7 +139,6 @@ def classify(mapper:  object,
              major:      int = None,
              ambig:      str = True,
              subok:     bool = False,
-             deidx:     bool = False,
              lines:      int = None,
              stratmap:  dict = None) -> dict:
     """Core of the classification workflow.
@@ -160,6 +160,8 @@ def classify(mapper:  object,
         If None, program will automatically infer from file content.
     demux : bool, optional
         Whether perform demultiplexing.
+    trimsub : str, optional
+        Trim subject IDs at the last given delimiter.
     tree : dict, optional
         Taxonomic tree.
     rankdic : dict, optional
@@ -189,8 +191,6 @@ def classify(mapper:  object,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
-    deidx : bool, optional
-        Strip "underscore index" suffixes from subject IDs.
     lines : int, optional
         Number of lines per chunk to read from alignment file.
     stratmap : dict, optional
@@ -236,8 +236,8 @@ def classify(mapper:  object,
                 nqry += len(qryque)
 
                 # (optional) strip indices and freeze sets
-                subque = deque(strip_index(subque) if deidx else map(
-                    frozenset, subque))
+                subque = deque(strip_suffix(subque, trimsub) if trimsub else
+                               map(frozenset, subque))
 
                 # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
@@ -611,16 +611,16 @@ def build_hierarchy(names_fps:    list = [],
     return tree, rankdic, namedic, root
 
 
-def strip_index(subque: list,
-                sep:     str = '_') -> object:
-    """Remove "underscore index" suffixes from subject IDs.
+def strip_suffix(subque: list,
+                 sep:     str) -> object:
+    """Strip suffixes from subject IDs at the last separator.
 
     Parameters
     ----------
     subque : iterable
         Subject(s) queue to manipulate.
     sep : str, optional
-        Separator between subject ID and index.
+        Separator between subject ID and suffix.
 
     Returns
     -------

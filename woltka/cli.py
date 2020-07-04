@@ -87,6 +87,9 @@ def gotu_cmd(ctx, **kwargs):
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
 @click.option(
+    '--trim-sub', 'trimsub',
+    help='Trim subject IDs at the last given delimiter.')
+@click.option(
     '--lines', type=click.INT, default=None,
     help=('Number of lines per chunk to read from alignment file.'))
 # hierarchies
@@ -136,9 +139,6 @@ def gotu_cmd(ctx, **kwargs):
     '--subok', is_flag=True,
     help=('In free-rank classification, allow assigning a sequence to its '
           'direct subject, if applicable, before going up in hierarchy.'))
-@click.option(
-    '--deidx/--no-deidx', default=False,
-    help='Strip "_index" suffixes from subject IDs.')
 # gene matching
 @click.option(
     '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
