@@ -26,7 +26,6 @@ Option | Description
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
 `--trim-sub` | Trim subject IDs at the last given delimiter.
-`--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
 
 ### Hierarchies
 
@@ -75,6 +74,12 @@ Option | Description
 `--add-lineage` | Append lineage strings to table.
 `--outmap`, `-u` | Write read-to-feature maps to directory.
 `--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+
+### Performance
+
+Option | Description
+--- | ---
+`--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
 
 
 ## Tools

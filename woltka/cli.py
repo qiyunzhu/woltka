@@ -89,9 +89,6 @@ def gotu_cmd(ctx, **kwargs):
 @click.option(
     '--trim-sub', 'trimsub',
     help='Trim subject IDs at the last given delimiter.')
-@click.option(
-    '--lines', type=click.INT, default=None,
-    help=('Number of lines per chunk to read from alignment file.'))
 # hierarchies
 @click.option(
     '--nodes', 'nodes_fp', type=click.Path(exists=True),
@@ -172,6 +169,10 @@ def gotu_cmd(ctx, **kwargs):
     '--outmap-zip', default='gz',
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
     help=('Compress read maps using this algorithm.'))
+# performance
+@click.option(
+    '--lines', type=click.INT, default=None,
+    help=('Number of lines per chunk to read from alignment file.'))
 def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
 

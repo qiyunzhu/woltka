@@ -44,7 +44,6 @@ def workflow(input_fp:      str,
              samples:       str = None,
              demux:        bool = None,
              trimsub:       str = None,
-             lines:         int = None,
              # hierarchies
              nodes_fp:      str = None,
              newick_fp:     str = None,
@@ -70,7 +69,9 @@ def workflow(input_fp:      str,
              add_rank:     bool = False,
              add_lineage:  bool = False,
              outmap_dir:    str = None,
-             outmap_zip:    str = 'gz') -> dict:
+             outmap_zip:    str = 'gz',
+             # performance
+             lines:         int = None) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -111,7 +112,7 @@ def workflow(input_fp:      str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic, root, ranks, rank2dir, outmap_zip, above, major, ambig, subok,
-        lines, stratmap)
+        stratmap, lines)
 
     # write output profiles
     write_profiles(
@@ -139,8 +140,8 @@ def classify(mapper:  object,
              major:      int = None,
              ambig:      str = True,
              subok:     bool = False,
-             lines:      int = None,
-             stratmap:  dict = None) -> dict:
+             stratmap:  dict = None,
+             lines:      int = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -191,10 +192,10 @@ def classify(mapper:  object,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
-    lines : int, optional
-        Number of lines per chunk to read from alignment file.
     stratmap : dict, optional
         Map of sample ID to stratification file.
+    lines : int, optional
+        Number of lines per chunk to read from alignment file.
 
     Returns
     -------
