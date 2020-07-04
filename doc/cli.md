@@ -46,9 +46,9 @@ Option | Description
 Option | Description
 --- | ---
 `--rank`, `-r` | Classify sequences at this rank. Ignore or enter "none" to omit classification; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank.
-`--above/--no-above` | Allow assigning to a classification unit higher than given rank. Default: auto-decision.
+`--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
 `--major` | Majority-rule assignment percentage threshold. Range: [51, 99].
-`--ambig/--no-ambig` | Allow assigning one sequence to multiple classification units. Default: True.
+`--above` | Allow assigning to a classification unit higher than given rank.
 `--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
 
 ### Gene matching

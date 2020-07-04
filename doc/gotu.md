@@ -63,7 +63,7 @@ It is quite common that one query sequence can be aligned to multiple reference 
 Alternatively, one may choose to discard all non-unique matches, by adding a flag:
 
 ```bash
-woltka gotu --no-ambig ...
+woltka gotu --uniq ...
 ```
 
 ## Custom alignment

@@ -44,13 +44,12 @@ def cli():
     type=click.Path(writable=True),
     help=('Path to output gOTU table.'))
 @click.option(
-    '--ambig/--no-ambig', default=True,
-    help=('Allow one sequence to be assigned to multiple gOTUs. Each hit '
-          'will be counted as 1 / k (k is the totally number of hits). '
-          'Otherwise, sequences with multiple matches will be dropped.'))
-@click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of nucleotides to genomes.'))
+@click.option(
+    '--uniq', is_flag=True,
+    help=('Skip if one sequence is aligned to multiple genomes. Otherwise, '
+          'each genome is counted as 1/k (k is the number of genomes).'))
 @click.pass_context
 def gotu_cmd(ctx, **kwargs):
     """Generate a gOTU table based on sequence alignments.
@@ -121,17 +120,19 @@ def gotu_cmd(ctx, **kwargs):
           'specify multiple comma-separated ranks and one profile will be '
           'generated for each rank.'))
 @click.option(
-    '--above', is_flag=True,
-    help=('In given-rank classification, allow assigning a sequence to '
-          'a higher rank if it cannot be assigned to the specified rank.'))
+    '--uniq', is_flag=True,
+    help=('One sequence can only be assigned to one classification unit, or '
+          'remain unassigned if there is ambiguity. Otherwise, all candidate '
+          'units are reported and their counts are normalized.'))
 @click.option(
     '--major', type=click.IntRange(51, 99),
     help=('In given-rank classification, use majority rule at this percentage '
           'threshold to determine assignment when there are multiple '
           'candidates. Overrides "--above".'))
 @click.option(
-    '--ambig/--no-ambig', default=True,
-    help='Allow assigning one sequence to multiple classification units.')
+    '--above', is_flag=True,
+    help=('In given-rank classification, allow assigning a sequence to '
+          'a higher rank if it cannot be assigned to the current rank.'))
 @click.option(
     '--subok', is_flag=True,
     help=('In free-rank classification, allow assigning a sequence to its '

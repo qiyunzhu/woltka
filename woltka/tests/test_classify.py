@@ -30,12 +30,12 @@ class ClassifyTests(TestCase):
         self.assertEqual(assign_none({'G1'}), 'G1')
 
         # count subjects
-        obs = assign_none({'G1', 'G2'}, ambig=True)
+        obs = assign_none({'G1', 'G2'})
         exp = {'G1': 1, 'G2': 1}
         self.assertDictEqual(obs, exp)
 
         # cannot assign
-        obs = assign_none({'G1', 'G2', 'G3'})
+        obs = assign_none({'G1', 'G2', 'G3'}, uniq=True)
         self.assertIsNone(obs)
 
     def test_assign_free(self):
@@ -74,11 +74,11 @@ class ClassifyTests(TestCase):
         self.assertEqual(obs, 'T1')
 
         # rank that does not exist
-        obs = assign_rank({'G1', 'G2', 'G3'}, 'admiral', **kwargs)
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'admiral', **kwargs, uniq=True)
         self.assertIsNone(obs)
 
         # cannot find consensus at rank
-        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs)
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs, uniq=True)
         self.assertIsNone(obs)
 
         # majority rule
@@ -86,7 +86,7 @@ class ClassifyTests(TestCase):
         self.assertEqual(obs, 'T1')
 
         # consider ambiguity
-        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs, ambig=True)
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs)
         exp = {'T1': 2, 'T2': 1}
         self.assertDictEqual(obs, exp)
 

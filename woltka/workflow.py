@@ -54,9 +54,9 @@ def workflow(input_fp:      str,
              names_fps:    list = [],
              # assignment
              ranks:         str = None,
-             above:        bool = False,
+             uniq:         bool = False,
              major:        bool = None,
-             ambig:        bool = True,
+             above:        bool = False,
              subok:        bool = False,
              # gene matching
              coords_fp:     str = None,
@@ -111,7 +111,7 @@ def workflow(input_fp:      str,
     # classify query sequences
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
-        namedic, root, ranks, rank2dir, outmap_zip, above, major, ambig, subok,
+        namedic, root, ranks, rank2dir, outmap_zip, uniq, major, above, subok,
         stratmap, lines)
 
     # write output profiles
@@ -136,9 +136,9 @@ def classify(mapper:  object,
              ranks:      str = None,
              rank2dir:  dict = None,
              outzip:     str = None,
-             above:     bool = False,
+             uniq:      bool = False,
              major:      int = None,
-             ambig:      str = True,
+             above:     bool = False,
              subok:     bool = False,
              stratmap:  dict = None,
              lines:      int = None) -> dict:
@@ -180,15 +180,14 @@ def classify(mapper:  object,
         Write classification map per rank to directory.
     outzip : str, optional
         Output read map compression method (gz, bz2, xz or None).
-    above : bool, optional
-        Allow assigning to a classification unit higher than given rank.
+    uniq : bool, optional
+        Assignment must be unique. Otherwise, report all possible assignments
+        and normalize counts (for none- and fixed-rank assignments).
     major : int, optional
         In given-rank classification, perform majority-rule assignment based on
         this percentage threshold. Range: [51, 99].
-    ambig : bool, optional
-        Allow one sequence to be assigned to multiple classification units at
-        the same rank. The profile will be normalized by the number of matches
-        per query sequence.
+    above : bool, optional
+        Allow assigning to a classification unit higher than given rank.
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
@@ -215,8 +214,8 @@ def classify(mapper:  object,
 
     # assignment parameters
     kwargs = {'assigners': assigners, 'tree': tree, 'rankdic': rankdic,
-              'root':  root, 'above': above, 'major': major and major / 100,
-              'ambig': ambig, 'subok': subok, 'namedic': namedic, 'rank2dir':
+              'root':  root, 'uniq': uniq, 'major': major and major / 100,
+              'above': above, 'subok': subok, 'namedic': namedic, 'rank2dir':
               rank2dir, 'outzip': outzip if outzip != 'none' else None}
 
     # current sample Id
@@ -721,9 +720,9 @@ def assign_readmap(qryque:    list,
                    rankdic:   dict = None,
                    namedic:   dict = None,
                    root:       str = None,
-                   above:     bool = False,
+                   uniq:      bool = False,
                    major:    float = None,
-                   ambig:     bool = True,
+                   above:     bool = False,
                    subok:     bool = False,
                    strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
@@ -755,15 +754,15 @@ def assign_readmap(qryque:    list,
         Taxon name directory.
     root : str, optional
         Root identifier.
-    above : bool, optional
-        In given-rank classification, assignment above the specified rank is
-        acceptable.
+    uniq : bool, optional
+        Assignment must be unique. Otherwise, report all possible assignments
+        and normalize counts (for none- and fixed-rank assignments).
     major : float, optional
         In given-rank classification, perform majority-rule assignment based on
         this fraction threshold.
-    ambig : bool, optional
-        Count occurrence of each possible assignment instead of targeting one
-        assignment (available only with a fixed rank and not above).
+    above : bool, optional
+        In given-rank classification, assignment above the specified rank is
+        acceptable.
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
@@ -774,7 +773,7 @@ def assign_readmap(qryque:    list,
     if rank is None or rank == 'none' or tree is None:
         if 'none' not in assigners:
             assigners['none'] = lru_cache(maxsize=128)(partial(
-                assign_none, ambig=ambig))
+                assign_none, uniq=uniq))
         assigner = assigners['none']
     elif rank == 'free':
         if 'free' not in assigners:
@@ -785,7 +784,7 @@ def assign_readmap(qryque:    list,
         if rank not in assigners:
             assigners[rank] = lru_cache(maxsize=128)(partial(
                 assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
-                above=above, major=major, ambig=ambig))
+                major=major, above=above, uniq=uniq))
         assigner = assigners[rank]
 
     # call assigner

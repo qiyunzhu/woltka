@@ -33,7 +33,7 @@ The outcome will be per-sample maps of query sequences to original subject seque
 woltka classify -i map_dir ...
 ```
 
-[**Temporary notice**] At this moment Woltka cannot take non-unique mappings (one query to multiple subjects) as input. Therefore, if your alignment files may contain non-unique matches, you need to add `--no-ambig` to the first command.
+[**Temporary notice**] At this moment Woltka cannot take non-unique mappings (one query to multiple subjects) as input. Therefore, if your alignment files may contain non-unique matches, you need to add `--uniq` to the first command.
 
 Woltka supports outputing compressed maps. The default compression method is **gzip**, and it can be customized via the `--outmap-zip` paramter (see [details](output.md#output-read-maps)).
 
