@@ -109,7 +109,7 @@ def gotu_cmd(ctx, **kwargs):
     '--map-as-rank', is_flag=True,
     help='Map filename stem is rank name.')
 @click.option(
-    '--names', 'names_fps', type=click.Path(exists=True), multiple=True,
+    '--names', '-n', 'names_fps', type=click.Path(exists=True), multiple=True,
     help=('Names of classification units as defined by NCBI names.dmp or a '
           'simple map. Can accept multiple files.'))
 # assignment
@@ -117,8 +117,7 @@ def gotu_cmd(ctx, **kwargs):
     '--rank', '-r', 'ranks', type=click.STRING,
     help=('Classify sequences at this rank. Enter "none" to directly report '
           'subjects; enter "free" for free-rank classification. Can '
-          'specify multiple comma-separated ranks and one profile will be '
-          'generated for each rank.'))
+          'specify multiple comma-separated ranks.'))
 @click.option(
     '--uniq', is_flag=True,
     help=('One sequence can only be assigned to one classification unit, or '
@@ -128,7 +127,7 @@ def gotu_cmd(ctx, **kwargs):
     '--major', type=click.IntRange(51, 99),
     help=('In given-rank classification, use majority rule at this percentage '
           'threshold to determine assignment when there are multiple '
-          'candidates. Overrides "--above".'))
+          'candidates.'))
 @click.option(
     '--above', is_flag=True,
     help=('In given-rank classification, allow assigning a sequence to '
@@ -176,14 +175,6 @@ def gotu_cmd(ctx, **kwargs):
     help=('Number of lines per chunk to read from alignment file.'))
 def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
-
-    Notes
-    -----
-    Details of parameters are provided in `workflow.py` and `doc/cli.md`.
-
-    See Also
-    --------
-    workflow.workflow
     """
     workflow(**kwargs)
 

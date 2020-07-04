@@ -39,16 +39,16 @@ Option | Description
 `--rank-table` | Table of classification units at each rank (column).
 `--map`, `-m` | Map of lower classification units to higher ones. Can accept multiple files.
 `--map-as-rank` | Treat map filename stem as rank.
-`--names` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
+`--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
 
 ### Assignment
 
 Option | Description
 --- | ---
-`--rank`, `-r` | Classify sequences at this rank. Ignore or enter "none" to omit classification; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank.
+`--rank`, `-r` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification.; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank. If omitted, the program will do "free" if a classification system is provided or "none" if not.
 `--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
-`--major` | Majority-rule assignment percentage threshold. Range: [51, 99].
-`--above` | Allow assigning to a classification unit higher than given rank.
+`--major` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates. Range: [51, 99]. Overrides "above".
+`--above` | In given-rank classification, allow assigning a sequence to a higher rank if it cannot be assigned to the current rank. Overrides "uniq".
 `--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
 
 ### Gene matching
