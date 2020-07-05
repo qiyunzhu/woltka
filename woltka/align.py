@@ -241,9 +241,9 @@ def parse_b6o_line(line):
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
-    x = line.rstrip().split('\t')
+    x = line.split('\t')
     qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
-    sstart, send = sorted([int(x[8]), int(x[9])])
+    sstart, send = sorted((int(x[8]), int(x[9])))
     return qseqid, sseqid, score, length, sstart, send
 
 
@@ -276,7 +276,7 @@ def parse_sam_line(line):
     # skip header
     if line[0] == '@':
         return
-    x = line.rstrip().split('\t')
+    x = line.split('\t')
     qname, rname = x[0], x[2]  # query and subject identifiers
 
     # skip unmapped
@@ -355,7 +355,7 @@ def parse_kraken(line):
     .. _Kraken2 manual:
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
-    x = line.rstrip().split('\t')
+    x = line.split('\t')
     return (x[1], x[2]) if x[0] == 'C' else (None, None)
 
 
@@ -383,5 +383,5 @@ def parse_centrifuge(line):
     """
     if line.startswith('readID'):
         return
-    x = line.rstrip().split('\t')
+    x = line.split('\t')
     return x[0], x[1], int(x[3]), int(x[5])
