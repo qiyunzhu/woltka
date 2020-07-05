@@ -102,11 +102,52 @@ def intize(dic, zero=False):
         Input dictionary.
     zero : bool, optional
         Whether keep zero values.
+
+    Notes
+    -----
+    Limited by Python floating point arithmetic, odds are that when ambiguous
+    assignment is on, counts will be sums of fractions and they can be rounded
+    either up or down when converted to integers, depending how these numbers
+    are summed. For example:
+
+    >>> data = (1/4, 1/3, 1/4, 1/3, 1/4, 1/3, 1/3, 1/3, 1/4, 1/4, 1/4, 1/3)
+    >>> total = sum(data)
+    >>> total, round(total)
+    (3.5, 4)
+
+    >>> total = sum(sum(data[i:i+4]) for i in range(0, len(data), 4))
+    >>> total, round(total)
+    (3.499999999999999, 3)
+
+    To avoid this inconsistency, this function first checks if the count is
+    close enough to a half number, and if yes, it will use the half number
+    instead of the original number for rounding.
+
+    Note: Multiple scientific computing languages such as Python and R's
+    default round behavior is to round half numbers to the nearest even
+    number. For example:
+
+    >>> round(0.5)
+    0
+    >>> round(1.5)
+    2
     """
     todel = []
     add_todel = todel.append
     for key, value in dic.items():
-        intval = round(value)
+
+        # first, round to the nearest half number
+        near = round(value * 2) / 2
+
+        # check if the difference is small enough:
+        # yes - round the half number
+        # no - round the original number
+        if abs(value - near) <= 0.0000001:
+            intval = round(near)
+        else:
+            intval = round(value)
+
+        # keep or skip zero values
         if intval or zero:
             dic[key] = intval
         else:
