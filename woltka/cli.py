@@ -151,7 +151,10 @@ def gotu_cmd(ctx, **kwargs):
 # output files
 @click.option(
     '--to-biom/--to-tsv', 'output_fmt', default=None,
-    help='Output feature table format (BIOM or TSV).')
+    help='Output profile format (BIOM or TSV).')
+@click.option(
+    '--unassigned', is_flag=True,
+    help=('Report unassigned sequences.'))
 @click.option(
     '--name-as-id', is_flag=True,
     help='Replace feature IDs with names.')
@@ -166,9 +169,9 @@ def gotu_cmd(ctx, **kwargs):
     type=click.Path(dir_okay=True),
     help='Write read-to-feature maps to this directory.')
 @click.option(
-    '--outmap-zip', default='gz',
+    '--zipmap', 'outmap_zip', default='gz',
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
-    help='Compress read maps using this algorithm.')
+    help='Compress read-to-feature maps using this algorithm.')
 # performance
 @click.option(
     '--lines', type=click.INT, default=None,

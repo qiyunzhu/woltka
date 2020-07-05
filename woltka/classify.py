@@ -134,7 +134,7 @@ def count(taxque):
         Taxon-to-count map.
     """
     res = defaultdict(int)
-    for taxa in filter(None, taxque):
+    for taxa in taxque:
         try:
             # unique match (scalar)
             res[taxa] += 1
@@ -166,8 +166,6 @@ def count_strata(qryque, taxque, strata):
     """
     res = defaultdict(int)
     for query, taxa in zip(qryque, taxque):
-        if taxa is None:
-            continue
         if query in strata:
             feature = strata[query]
             if isinstance(taxa, dict):

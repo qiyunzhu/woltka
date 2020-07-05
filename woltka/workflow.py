@@ -18,6 +18,7 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
+from operator import itemgetter
 from collections import deque
 from functools import partial, lru_cache
 import click
@@ -65,6 +66,7 @@ def workflow(input_fp:      str,
              strata_dir:    str = None,
              # output
              output_fmt:    str = None,
+             unassigned:   bool = False,
              name_as_id:   bool = False,
              add_rank:     bool = False,
              add_lineage:  bool = False,
@@ -112,7 +114,7 @@ def workflow(input_fp:      str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic, root, ranks, rank2dir, outmap_zip, uniq, major, above, subok,
-        stratmap, lines)
+        unassigned, stratmap, lines)
 
     # write output profiles
     write_profiles(
@@ -140,6 +142,7 @@ def classify(mapper:  object,
              major:      int = None,
              above:     bool = False,
              subok:     bool = False,
+             unasgd:    bool = False,
              stratmap:  dict = None,
              lines:      int = None) -> dict:
     """Core of the classification workflow.
@@ -191,6 +194,8 @@ def classify(mapper:  object,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
+    unasgd : bool, optional
+        Report unassigned sequences.
     stratmap : dict, optional
         Map of sample ID to stratification file.
     lines : int, optional
@@ -215,8 +220,9 @@ def classify(mapper:  object,
     # assignment parameters
     kwargs = {'assigners': assigners, 'tree': tree, 'rankdic': rankdic,
               'root':  root, 'uniq': uniq, 'major': major and major / 100,
-              'above': above, 'subok': subok, 'namedic': namedic, 'rank2dir':
-              rank2dir, 'outzip': outzip if outzip != 'none' else None}
+              'above': above, 'subok': subok, 'unasgd': unasgd, 'namedic':
+              namedic, 'rank2dir': rank2dir, 'outzip': outzip if outzip !=
+              'none' else None}
 
     # current sample Id
     csample = False
@@ -732,6 +738,7 @@ def assign_readmap(qryque:    list,
                    major:    float = None,
                    above:     bool = False,
                    subok:     bool = False,
+                   unasgd:    bool = False,
                    strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
@@ -774,6 +781,8 @@ def assign_readmap(qryque:    list,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
+    unasgd : bool, optional
+        Report unassigned sequences.
     strata : dict, optional
         Read-to-feature map for stratification.
     """
@@ -797,8 +806,12 @@ def assign_readmap(qryque:    list,
 
     # call assigner on suject(s) per query
     resque = map(assigner, subque)
-    # asgmt = {query: res for query, res in zip(qryque, map(assigner, subque))
-    #          if res is not None}
+
+    # report or drop unassigned
+    if unasgd:
+        resque = [x or 'Unassigned' for x in resque]
+    else:
+        qryque, resque = zip(*filter(itemgetter(1), zip(qryque, resque)))
 
     # write classification map
     if rank2dir is not None:

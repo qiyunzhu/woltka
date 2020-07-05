@@ -321,8 +321,6 @@ def write_readmap(fh, qryque, taxque, namedic=None):
     def sortkey(x): return -x[1], x[0]
     for query, taxa in zip(qryque, taxque):
         row = [query]
-        if taxa is None:
-            row.append('Unassigned')
         if isinstance(taxa, dict):
             for taxon, count in sorted(taxa.items(), key=sortkey):
                 if namedic and taxon in namedic:
