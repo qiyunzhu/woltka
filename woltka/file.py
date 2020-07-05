@@ -17,8 +17,6 @@ import gzip
 import bz2
 import lzma
 
-from .util import feat_n_cnt
-
 
 ZIPDIC = {'.gz': gzip, '.gzip': gzip,
           '.bz2': bz2, '.bzip2': bz2,
@@ -244,72 +242,65 @@ def id2file_from_map(fp):
     return res or None
 
 
-def read_map(fh, sep='\t', multi=None, count=False):
-    """Read a mapping file.
+def read_map_uniq(fh, sep='\t'):
+    """Read a mapping file, considering unique matches only (exactly two
+    columns).
 
     Parameters
     ----------
     fh : file handle
         Mapping file.
-    sep : str, optional
-        Separator between columns.
-    multi : bool, optional
-        Whether one key can correspond to multiple values.
-        - True: all values are parsed.
-        - False: only first value is parsed.
-        - None: skip if there are multiple values.
-    count : bool, optional
-        Values have counts after colon.
 
     Yields
     ------
-    tuple
-        Pair of key and value(s).
-
-    Notes
-    -----
-    A mapping file is a tab-delimited file (tab can be replaced by a custom
-    separator), where the first column is the key, and the remaining columns
-    are values.
-
-    In default mode, lines with only one or more than two columns are omitted.
-    With multi = False, only the 2nd column is parsed regardless of others.
-    With multi = True, 2nd to last columns are all parsed and combined in a
-    tuple.
-
-    Counts are numeric suffixes post a colon in a value. With count = True, a
-    "value:count" string will be converted into a tuple of (value, count). If
-    not applicable, the result will be a tuple of (value, 1).
-
-    This function is among the bottlenecking steps of the pipeline. Performance
-    is a major consideration.
-
-    See Also
-    --------
-    util.feat_n_cnt
+    tuple of (str, str)
+        Key-value pair.
     """
     for line in fh:
-        row = line.rstrip().split(sep)
-        n = len(row)
-        if n == 1:
-            continue
-        key = row[0]
+        key, found, value = line.partition(sep)
+        if found and sep not in value:
+            yield key, value.rstrip()
 
-        # first value only
-        if not multi:
-            if n > 2 and multi is None:
-                continue
-            value = row[1]
-            if count:
-                value = feat_n_cnt(value)
-            yield key, value
 
-        # all values
-        else:
-            values = row[1:]
-            if count:
-                values = (feat_n_cnt(x) for x in values)
-            yield key, (*values,)
+def read_map_1st(fh, sep='\t'):
+    """Read a mapping file, considering the first two columns as key and value
+    while discarding remaining columns if any.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file.
+
+    Yields
+    ------
+    tuple of (str, str)
+        Key-value pair.
+    """
+    for line in fh:
+        key, found, rest = line.partition(sep)
+        if found:
+            value, found, rest = rest.partition(sep)
+            yield key, value.rstrip()
+
+
+def read_map_all(fh, sep='\t'):
+    """Read a mapping file, considering all columns as key (1st) and values
+    (2nd-last).
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file.
+
+    Yields
+    ------
+    tuple of (str, list of str)
+        Key-value(s) pair.
+    """
+    for line in fh:
+        key, found, rest = line.partition(sep)
+        if found:
+            yield key, rest.rstrip().split(sep)
 
 
 def write_readmap(fh, rmap, namedic=None):

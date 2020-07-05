@@ -18,7 +18,8 @@ import bz2
 
 from woltka.file import (
     openzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, read_map, write_readmap)
+    id2file_from_map, read_map_uniq, read_map_1st, read_map_all,
+    write_readmap)
 
 
 class FileTests(TestCase):
@@ -248,58 +249,64 @@ class FileTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(mapfile)
 
-    def test_read_map(self):
-        # simplest map
+    def test_read_map_uniq(self):
+        # simplest map (two columns)
         tsv = ('R1	A',
                'R2	B',
                'R3	C')
-        obs = read_map(tsv)
         exp = (('R1', 'A'), ('R2', 'B'), ('R3', 'C'))
-        for obs_, exp_ in zip(read_map(tsv), exp):
+        for obs_, exp_ in zip(read_map_uniq(tsv), exp):
             self.assertTupleEqual(obs_, exp_)
 
         # specify separator
-        obs = read_map(('R1,A',), sep=',')
+        obs = read_map_uniq(('R1,A',), sep=',')
         self.assertTupleEqual(next(obs), ('R1', 'A'))
 
         # single column
-        obs = tuple(read_map(('Hello.',)))
+        obs = tuple(read_map_uniq(('Hello.',)))
         self.assertTupleEqual(obs, ())
 
-        # more than two columns and line is skipped
-        obs = tuple(read_map(('Here\tit\tis.',)))
+        # more than two columns
+        obs = tuple(read_map_uniq(('Here\tit\tis.',)))
         self.assertTupleEqual(obs, ())
 
-        # more than two columns and they are omitted
-        obs = next(read_map(('Here\tit\tis.',), multi=False))
-        exp = ('Here', 'it')
-        self.assertTupleEqual(obs, exp)
-
-        # multiple columns
-        tsv = ('R1	A	B	C',
-               'R2	D	E',
-               'R3	F')
-        obs = read_map(tsv, multi=True)
-        exp = (('R1', ('A', 'B', 'C')), ('R2', ('D', 'E')), ('R3', ('F',)))
-        self.assertTupleEqual(tuple(obs), exp)
-
-        # single column with count
+    def test_read_map_1st(self):
+        # simplest map (two columns)
         tsv = ('R1	A',
-               'R2	B:2',
-               'R3	C:3')
-        obs = read_map(tsv, count=True)
-        exp = (('R1', ('A', 1)), ('R2', ('B', 2)), ('R3', ('C', 3)))
-        self.assertTupleEqual(tuple(obs), exp)
+               'R2	B',
+               'R3	C')
+        exp = (('R1', 'A'), ('R2', 'B'), ('R3', 'C'))
+        for obs_, exp_ in zip(read_map_1st(tsv), exp):
+            self.assertTupleEqual(obs_, exp_)
 
-        # multiple columns with count
-        tsv = ('R1	A:3	B:2	C',
-               'R2	D:4	E',
-               'R3	F')
-        obs = read_map(tsv, multi=True, count=True)
-        exp = (('R1', (('A', 3), ('B', 2), ('C', 1))),
-               ('R2', (('D', 4), ('E', 1))),
-               ('R3', (('F', 1),)))
-        self.assertTupleEqual(tuple(obs), exp)
+        # specify separator
+        obs = read_map_1st(('R1,A',), sep=',')
+        self.assertTupleEqual(next(obs), ('R1', 'A'))
+
+        # single column
+        obs = tuple(read_map_1st(('Hello.',)))
+        self.assertTupleEqual(obs, ())
+
+        # more than two columns
+        obs = read_map_1st(('Here\tit\tis.',))
+        self.assertTupleEqual(next(obs), ('Here', 'it'))
+
+    def test_read_map_all(self):
+        # simple map (two or more columns)
+        tsv = ('R1	A',
+               'R2	A	B',
+               'R3	C	A	B')
+        exp = (('R1', ['A']), ('R2', ['A', 'B']), ('R3', ['C', 'A', 'B']))
+        for obs_, exp_ in zip(read_map_all(tsv), exp):
+            self.assertTupleEqual(obs_, exp_)
+
+        # specify separator
+        obs = read_map_all(('R1,A,B,C',), sep=',')
+        self.assertTupleEqual(next(obs), ('R1', ['A', 'B', 'C']))
+
+        # single column
+        obs = tuple(read_map_all(('Hello.',)))
+        self.assertTupleEqual(obs, ())
 
     def test_write_readmap(self):
         # typical read map

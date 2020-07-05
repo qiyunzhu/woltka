@@ -28,7 +28,7 @@ class NaturalOrderGroup(click.Group):
 @click.version_option(__version__)
 @click.group(cls=NaturalOrderGroup)
 def cli():
-    pass
+    pass  # pragma: no cover
 
 
 # `gotu` is a simplified wrapper of `classify`
@@ -185,7 +185,7 @@ def classify_cmd(**kwargs):
 def tools():
     """Utilities for working with alignments, maps and profiles.
     """
-    pass
+    pass  # pragma: no cover
 
 
 @tools.command('filter')
@@ -228,4 +228,4 @@ def merge_cmd(ctx, **kwargs):
 
 
 if __name__ == '__main__':
-    cli()
+    cli()  # pragma: no cover
