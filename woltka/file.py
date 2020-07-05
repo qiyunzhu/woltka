@@ -289,24 +289,18 @@ def read_map(fh, sep='\t', multi=None, count=False):
     util.feat_n_cnt
     """
     for line in fh:
-        row = line.rstrip().split(sep)
-        n = len(row)
-        if n == 1:
+        key, found, rest = line.partition(sep)
+        if not found:
             continue
-        key = row[0]
-
-        # first value only
-        if not multi:
-            if n > 2 and multi is None:
-                continue
-            value = row[1]
-            if count:
-                value = feat_n_cnt(value)
+        value, found, rest = rest.rstrip().partition(sep)
+        if not found:
             yield key, value
-
-        # all values
+        elif multi is None:
+            continue
+        elif multi is False:
+            yield key, value if not count else feat_n_cnt(value)
         else:
-            values = row[1:]
+            values = [value] + rest.split(sep)
             if count:
                 values = (feat_n_cnt(x) for x in values)
             yield key, (*values,)
