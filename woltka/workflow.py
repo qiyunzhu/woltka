@@ -262,13 +262,11 @@ def classify(mapper:  object,
                     click.echo('.' * istep, nl=False)
                     nstep += istep
 
+        # round values and drop zeros
+        round_profiles(data, uniq, major, above)
+
         click.echo(' Done.')
         click.echo(f'  Number of sequences classified: {nqry}.')
-
-    # round floats
-    for rank in data:
-        for sample in data[rank]:
-            intize(data[rank][sample])
 
     click.echo('Classification completed.')
     return data
@@ -815,6 +813,43 @@ def assign_readmap(qryque:    list,
         sum_dict(data[rank][sample], counts)
     else:
         data[rank][sample] = counts
+
+
+def round_profiles(data:   list,
+                   uniq:   bool = False,
+                   major: float = None,
+                   above:  bool = False):
+    """Round counts in the profile into integers, and drop zero counts.
+
+    Parameters
+    ----------
+    data : dict
+        Profile data.
+    uniq : bool, optional
+        Assignment is unique.
+    major : int, optional
+        Majority-rule assignment threshold.
+    above : bool, optional
+        Assignment above given rank.
+    """
+    for rank in data:
+
+        # free-rank classification is always unique
+        if rank == 'free':
+            continue
+
+        # non-unique no-rank classification needs to be rounded
+        elif rank == 'none':
+            if uniq:
+                continue
+            for datum in data[rank].values():
+                intize(datum)
+
+        # given rank classification needs rounding when all three criteria
+        # are not met
+        elif not any((uniq, major, above)):
+            for datum in data[rank].values():
+                intize(datum)
 
 
 def write_profiles(data:        dict,

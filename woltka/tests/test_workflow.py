@@ -22,7 +22,7 @@ from pandas.testing import assert_frame_equal
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
-    write_profiles)
+    round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -462,6 +462,47 @@ class WorkflowTests(TestCase):
         assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
                        rankdic=rankdic)
         self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
+
+    def test_round_profiles(self):
+        # free-rank: don't round
+        obs = {'free': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        round_profiles(obs)
+        exp = {'free': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        self.assertEqual(obs, exp)
+
+        # none-rank: round
+        obs = {'none': {'S1': {'G1': 1.3, 'G2': 2.2},
+                        'S2': {'G1': 3.0, 'G3': 2.1}}}
+        round_profiles(obs)
+        exp = {'none': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        self.assertEqual(obs, exp)
+
+        # none-rank and unique: don't round
+        obs = {'none': {'S1': {'G1': 1.5, 'G2': 0},
+                        'S2': {'G1': 3.0, 'G3': 2}}}
+        round_profiles(obs, uniq=True)
+        exp = {'none': {'S1': {'G1': 1.5, 'G2': 0},
+                        'S2': {'G1': 3.0, 'G3': 2}}}
+        self.assertDictEqual(obs, exp)
+
+        # given-rank: round
+        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
+                         'S2': {'G1': 3.0, 'G3': 2}}}
+        round_profiles(obs)
+        exp = {'class': {'S1': {'G1': 2},
+                         'S2': {'G1': 3, 'G3': 2}}}
+        self.assertDictEqual(obs, exp)
+
+        # given-rank: don't round
+        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
+                         'S2': {'G1': 3.0, 'G3': 2}}}
+        round_profiles(obs, uniq=False, major=0, above=True)
+        exp = {'class': {'S1': {'G1': 1.5, 'G2': 0},
+                         'S2': {'G1': 3.0, 'G3': 2}}}
+        self.assertDictEqual(obs, exp)
 
     def test_write_profiles(self):
         # do nothing
