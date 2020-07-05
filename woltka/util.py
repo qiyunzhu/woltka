@@ -183,7 +183,7 @@ def last_value(lst):
         pass
 
 
-def feat_n_cnt(s, sep=':'):
+def feature_count(s, sep=':'):
     """Read feature and count from a string in format of "feature:count".
 
     Parameters
@@ -199,22 +199,22 @@ def feat_n_cnt(s, sep=':'):
         Pair of feature and count.
     """
     # find first occurrence of separator from right
-    key, _, value = s.rpartition(sep)
+    feature, _, count = s.rpartition(sep)
 
     # if separator is found
-    if key:
+    if feature:
 
         # part after separator is number
         try:
-            n = int(value)
+            count = int(count)
 
         # otherwise, entire string is feature
         except ValueError:
             return s, 1
 
-        # count must be positve integer
-        if n > 0:
-            return key, n
+        # count must be positive integer
+        if count > 0:
+            return feature, count
 
         # otherwise, entire string is feature
         else:

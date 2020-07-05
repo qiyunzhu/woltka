@@ -211,13 +211,12 @@ def parse_map_line(line, *args):
 
     Notes
     -----
-    Only first two columns are considered.
+    Only the first two columns are considered.
     """
-    try:
-        query, subject = line.rstrip().split('\t', 2)[:2]
-        return query, subject
-    except ValueError:
-        pass
+    query, found, rest = line.partition('\t')
+    if found:
+        subject, found, rest = rest.partition('\t')
+        return query, subject.rstrip()
 
 
 def parse_b6o_line(line):

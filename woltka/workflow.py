@@ -24,8 +24,8 @@ import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
-    openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
-    write_readmap)
+    openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map,
+    read_map_uniq, read_map_1st, write_readmap)
 from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata)
@@ -249,7 +249,7 @@ def classify(mapper:  object,
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
                         with openzip(stratmap[sample]) as fh:
-                            kwargs['strata'] = dict(read_map(fh))
+                            kwargs['strata'] = dict(read_map_uniq(fh))
                         csample = sample
 
                     # call assignment workflow for each rank
@@ -602,7 +602,7 @@ def build_hierarchy(names_fps:    list = [],
     for fp in map_fps:
         click.echo(f'  Parsing simple map file: {fp}...', nl=False)
         with openzip(fp) as f:
-            map_ = dict(read_map(f, multi=False))
+            map_ = dict(read_map_1st(f))
         update_dict(tree, map_)
 
         # filename stem as rank
