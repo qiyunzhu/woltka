@@ -125,7 +125,7 @@ woltka classify \
 ```bash
 woltka classify \
   --input align/burst/split \
-  --deidx \
+  --trim-sub _ \
   --map taxonomy/nucl/nucl2tid.txt \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \

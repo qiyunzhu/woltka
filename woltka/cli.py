@@ -15,7 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
-from .tools import filter_wf
+from .tools import filter_wf, merge_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -44,13 +44,12 @@ def cli():
     type=click.Path(writable=True),
     help=('Path to output gOTU table.'))
 @click.option(
-    '--ambig/--no-ambig', default=True,
-    help=('Allow one sequence to be assigned to multiple gOTUs. Each hit '
-          'will be counted as 1 / k (k is the totally number of hits). '
-          'Otherwise, sequences with multiple matches will be dropped.'))
-@click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of nucleotides to genomes.'))
+@click.option(
+    '--uniq', is_flag=True,
+    help=('Skip if one sequence is aligned to multiple genomes. Otherwise, '
+          'each genome is counted as 1/k (k is the number of genomes).'))
 @click.pass_context
 def gotu_cmd(ctx, **kwargs):
     """Generate a gOTU table based on sequence alignments.
@@ -87,8 +86,8 @@ def gotu_cmd(ctx, **kwargs):
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
 @click.option(
-    '--lines', type=click.INT, default=None,
-    help=('Number of lines per chunk to read from alignment file.'))
+    '--trim-sub', 'trimsub',
+    help='Trim subject IDs at the last given delimiter.')
 # hierarchies
 @click.option(
     '--nodes', 'nodes_fp', type=click.Path(exists=True),
@@ -110,32 +109,33 @@ def gotu_cmd(ctx, **kwargs):
     '--map-as-rank', is_flag=True,
     help='Map filename stem is rank name.')
 @click.option(
-    '--names', 'names_fps', type=click.Path(exists=True), multiple=True,
+    '--names', '-n', 'names_fps', type=click.Path(exists=True), multiple=True,
     help=('Names of classification units as defined by NCBI names.dmp or a '
           'simple map. Can accept multiple files.'))
 # assignment
 @click.option(
     '--rank', '-r', 'ranks', type=click.STRING,
-    help=('Classify sequences at this rank. Ignore or enter "none" to omit '
-          'classification; enter "free" for free-rank classification. Can '
-          'specify multiple comma-separated ranks and one profile will be '
-          'generated for each rank.'))
+    help=('Classify sequences at this rank. Enter "none" to directly report '
+          'subjects; enter "free" for free-rank classification. Can '
+          'specify multiple comma-separated ranks.'))
 @click.option(
-    '--above/--no-above', default=False,
-    help='Allow assigning to a classification unit higher than given rank.')
+    '--uniq', is_flag=True,
+    help=('One sequence can only be assigned to one classification unit, or '
+          'remain unassigned if there is ambiguity. Otherwise, all candidate '
+          'units are reported and their counts are normalized.'))
 @click.option(
     '--major', type=click.IntRange(51, 99),
-    help='Majority-rule assignment percentage threshold.')
+    help=('In given-rank classification, use majority rule at this percentage '
+          'threshold to determine assignment when there are multiple '
+          'candidates.'))
 @click.option(
-    '--ambig/--no-ambig', default=True,
-    help='Allow assigning one sequence to multiple classification units.')
+    '--above', is_flag=True,
+    help=('In given-rank classification, allow assigning a sequence to '
+          'a higher rank if it cannot be assigned to the current rank.'))
 @click.option(
     '--subok', is_flag=True,
     help=('In free-rank classification, allow assigning a sequence to its '
           'direct subject, if applicable, before going up in hierarchy.'))
-@click.option(
-    '--deidx/--no-deidx', default=False,
-    help='Strip "_index" suffixes from subject IDs.')
 # gene matching
 @click.option(
     '--coords', '-c', 'coords_fp', type=click.Path(exists=True),
@@ -168,17 +168,13 @@ def gotu_cmd(ctx, **kwargs):
 @click.option(
     '--outmap-zip', default='gz',
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
-    help=('Compress read maps using this algorithm.'))
+    help='Compress read maps using this algorithm.')
+# performance
+@click.option(
+    '--lines', type=click.INT, default=None,
+    help='Number of lines per chunk to read from alignment file.')
 def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
-
-    Notes
-    -----
-    Details of parameters are provided in `workflow.py` and `doc/cli.md`.
-
-    See Also
-    --------
-    workflow.workflow
     """
     workflow(**kwargs)
 
@@ -192,17 +188,15 @@ def tools():
     pass
 
 
-# `filter` invokes the per-sample abundance filtering workflow
-
 @tools.command('filter')
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
-    help=('Path to input feature table.'))
+    help='Path to input profile.')
 @click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True, dir_okay=False),
-    help=('Path to output feature table.'))
+    help='Path to output profile.')
 @click.option(
     '--min-count', '-c', type=click.IntRange(min=1),
     help='Per-sample minimum count threshold.')
@@ -214,6 +208,23 @@ def filter_cmd(ctx, **kwargs):
     """Filter a profile by per-sample abundance.
     """
     filter_wf(**kwargs)
+
+
+@tools.command('merge')
+@click.option(
+    '--input', '-i', 'input_fps', required=True, multiple=True,
+    type=click.Path(exists=True),
+    help=('Path to input profiles or directories containing profiles. Can '
+          'accept multiple paths.'))
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.pass_context
+def merge_cmd(ctx, **kwargs):
+    """Merge multiple profiles into one profile.
+    """
+    merge_wf(**kwargs)
 
 
 if __name__ == '__main__':

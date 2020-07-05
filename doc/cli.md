@@ -25,7 +25,7 @@ Option | Description
 `--filext`, `-e` | Input filename extension following sample ID.
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
-`--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
+`--trim-sub` | Trim subject IDs at the last given delimiter.
 
 ### Hierarchies
 
@@ -39,18 +39,17 @@ Option | Description
 `--rank-table` | Table of classification units at each rank (column).
 `--map`, `-m` | Map of lower classification units to higher ones. Can accept multiple files.
 `--map-as-rank` | Treat map filename stem as rank.
-`--names` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
+`--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
 
 ### Assignment
 
 Option | Description
 --- | ---
-`--rank`, `-r` | Classify sequences at this rank. Ignore or enter "none" to omit classification; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank.
-`--above/--no-above` | Allow assigning to a classification unit higher than given rank. Default: auto-decision.
-`--major` | Majority-rule assignment percentage threshold. Range: [51, 99].
-`--ambig/--no-ambig` | Allow assigning one sequence to multiple classification units. Default: True.
+`--rank`, `-r` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification.; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank. If omitted, the program will do "free" if a classification system is provided or "none" if not.
+`--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
+`--major` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates. Range: [51, 99]. Overrides "above".
+`--above` | In given-rank classification, allow assigning a sequence to a higher rank if it cannot be assigned to the current rank. Overrides "uniq".
 `--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
-`--deidx/--no-deidx` | Strip "underscore index" suffixes from subject IDs. Default: False.
 
 ### Gene matching
 
@@ -75,6 +74,12 @@ Option | Description
 `--add-lineage` | Append lineage strings to table.
 `--outmap`, `-u` | Write read-to-feature maps to directory.
 `--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+
+### Performance
+
+Option | Description
+--- | ---
+`--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
 
 
 ## Tools

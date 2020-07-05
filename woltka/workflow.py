@@ -43,7 +43,7 @@ def workflow(input_fp:      str,
              input_ext:     str = None,
              samples:       str = None,
              demux:        bool = None,
-             lines:         int = None,
+             trimsub:       str = None,
              # hierarchies
              nodes_fp:      str = None,
              newick_fp:     str = None,
@@ -54,11 +54,10 @@ def workflow(input_fp:      str,
              names_fps:    list = [],
              # assignment
              ranks:         str = None,
-             above:        bool = False,
+             uniq:         bool = False,
              major:        bool = None,
-             ambig:        bool = True,
+             above:        bool = False,
              subok:        bool = False,
-             deidx:        bool = False,
              # gene matching
              coords_fp:     str = None,
              overlap:       int = 80,
@@ -70,7 +69,9 @@ def workflow(input_fp:      str,
              add_rank:     bool = False,
              add_lineage:  bool = False,
              outmap_dir:    str = None,
-             outmap_zip:    str = 'gz') -> dict:
+             outmap_zip:    str = 'gz',
+             # performance
+             lines:         int = None) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -105,13 +106,13 @@ def workflow(input_fp:      str,
     mapper, lines = build_mapper(coords_fp, overlap, lines)
 
     # target classification ranks
-    ranks, rank2dir = prepare_ranks(ranks, outmap_dir)
+    ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree)
 
     # classify query sequences
     data = classify(
-        mapper, files, samples, input_fmt, demux, tree, rankdic, namedic, root,
-        ranks, rank2dir, outmap_zip, above, major, ambig, subok, deidx, lines,
-        stratmap)
+        mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
+        namedic, root, ranks, rank2dir, outmap_zip, uniq, major, above, subok,
+        stratmap, lines)
 
     # write output profiles
     write_profiles(
@@ -127,6 +128,7 @@ def classify(mapper:  object,
              samples:   list = None,
              fmt:        str = None,
              demux:     bool = None,
+             trimsub:    str = None,
              tree:      dict = None,
              rankdic:   dict = None,
              namedic:   dict = None,
@@ -134,13 +136,12 @@ def classify(mapper:  object,
              ranks:      str = None,
              rank2dir:  dict = None,
              outzip:     str = None,
-             above:     bool = False,
+             uniq:      bool = False,
              major:      int = None,
-             ambig:      str = True,
+             above:     bool = False,
              subok:     bool = False,
-             deidx:     bool = False,
-             lines:      int = None,
-             stratmap:  dict = None) -> dict:
+             stratmap:  dict = None,
+             lines:      int = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -160,6 +161,8 @@ def classify(mapper:  object,
         If None, program will automatically infer from file content.
     demux : bool, optional
         Whether perform demultiplexing.
+    trimsub : str, optional
+        Trim subject IDs at the last given delimiter.
     tree : dict, optional
         Taxonomic tree.
     rankdic : dict, optional
@@ -177,24 +180,21 @@ def classify(mapper:  object,
         Write classification map per rank to directory.
     outzip : str, optional
         Output read map compression method (gz, bz2, xz or None).
+    uniq : bool, optional
+        Assignment must be unique. Otherwise, report all possible assignments
+        and normalize counts (for none- and fixed-rank assignments).
+    major : int, optional
+        In given-rank classification, perform majority-rule assignment based on
+        this percentage threshold. Range: [51, 99].
     above : bool, optional
         Allow assigning to a classification unit higher than given rank.
-    major : int, optional
-        Perform majority-rule assignment based on this percentage threshold.
-        Range: [51, 99].
-    ambig : bool, optional
-        Allow one sequence to be assigned to multiple classification units at
-        the same rank. The profile will be normalized by the number of matches
-        per query sequence.
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
-    deidx : bool, optional
-        Strip "underscore index" suffixes from subject IDs.
-    lines : int, optional
-        Number of lines per chunk to read from alignment file.
     stratmap : dict, optional
         Map of sample ID to stratification file.
+    lines : int, optional
+        Number of lines per chunk to read from alignment file.
 
     Returns
     -------
@@ -214,8 +214,8 @@ def classify(mapper:  object,
 
     # assignment parameters
     kwargs = {'assigners': assigners, 'tree': tree, 'rankdic': rankdic,
-              'root':  root, 'above': above, 'major': major and major / 100,
-              'ambig': ambig, 'subok': subok, 'namedic': namedic, 'rank2dir':
+              'root':  root, 'uniq': uniq, 'major': major and major / 100,
+              'above': above, 'subok': subok, 'namedic': namedic, 'rank2dir':
               rank2dir, 'outzip': outzip if outzip != 'none' else None}
 
     # current sample Id
@@ -236,8 +236,8 @@ def classify(mapper:  object,
                 nqry += len(qryque)
 
                 # (optional) strip indices and freeze sets
-                subque = deque(strip_index(subque) if deidx else map(
-                    frozenset, subque))
+                subque = deque(strip_suffix(subque, trimsub) if trimsub else
+                               map(frozenset, subque))
 
                 # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
@@ -460,7 +460,8 @@ def build_mapper(coords_fp: str = None,
 
 
 def prepare_ranks(ranks:      str = None,
-                  outmap_dir: str = None) -> (list, dict or None):
+                  outmap_dir: str = None,
+                  tree:      dict = None) -> (list, dict or None):
     """Prepare classification ranks and directories of read-to-feature maps.
 
     Parameters
@@ -469,6 +470,8 @@ def prepare_ranks(ranks:      str = None,
         Target ranks (comma-separated).
     outmap_dir : str, optional
         Path to output read map directory.
+    tree : dict, optional
+        Taxonomic tree.
 
     Returns
     -------
@@ -477,8 +480,15 @@ def prepare_ranks(ranks:      str = None,
     dict or None
         Rank-to-directory map (or None if not necessary).
     """
-    # determine ranks
-    ranks = ['none'] if ranks is None else ranks.split(',')
+    # ranks are given
+    if ranks:
+        ranks = ranks.split(',')
+
+    # if classification system is provided, do free-rank classification;
+    # otherwise do no-rank assignment.
+    else:
+        ranks = ['free' if tree else 'none']
+
     click.echo('Classification will operate on these ranks: {}.'.format(
         ', '.join(ranks)))
 
@@ -611,16 +621,16 @@ def build_hierarchy(names_fps:    list = [],
     return tree, rankdic, namedic, root
 
 
-def strip_index(subque: list,
-                sep:     str = '_') -> object:
-    """Remove "underscore index" suffixes from subject IDs.
+def strip_suffix(subque: list,
+                 sep:     str) -> object:
+    """Strip suffixes from subject IDs at the last separator.
 
     Parameters
     ----------
     subque : iterable
         Subject(s) queue to manipulate.
     sep : str, optional
-        Separator between subject ID and index.
+        Separator between subject ID and suffix.
 
     Returns
     -------
@@ -720,9 +730,9 @@ def assign_readmap(qryque:    list,
                    rankdic:   dict = None,
                    namedic:   dict = None,
                    root:       str = None,
-                   above:     bool = False,
+                   uniq:      bool = False,
                    major:    float = None,
-                   ambig:     bool = True,
+                   above:     bool = False,
                    subok:     bool = False,
                    strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
@@ -754,14 +764,15 @@ def assign_readmap(qryque:    list,
         Taxon name directory.
     root : str, optional
         Root identifier.
-    above : bool, optional
-        Assignment above given rank is acceptable (for fixed ranks).
+    uniq : bool, optional
+        Assignment must be unique. Otherwise, report all possible assignments
+        and normalize counts (for none- and fixed-rank assignments).
     major : float, optional
-        Majority-rule assignment threshold (available only with a fixed rank
-        and not above or ambig).
-    ambig : bool, optional
-        Count occurrence of each possible assignment instead of targeting one
-        assignment (available only with a fixed rank and not above).
+        In given-rank classification, perform majority-rule assignment based on
+        this fraction threshold.
+    above : bool, optional
+        In given-rank classification, assignment above the specified rank is
+        acceptable.
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
@@ -772,7 +783,7 @@ def assign_readmap(qryque:    list,
     if rank is None or rank == 'none' or tree is None:
         if 'none' not in assigners:
             assigners['none'] = lru_cache(maxsize=128)(partial(
-                assign_none, ambig=ambig))
+                assign_none, uniq=uniq))
         assigner = assigners['none']
     elif rank == 'free':
         if 'free' not in assigners:
@@ -783,7 +794,7 @@ def assign_readmap(qryque:    list,
         if rank not in assigners:
             assigners[rank] = lru_cache(maxsize=128)(partial(
                 assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
-                above=above, major=major, ambig=ambig))
+                major=major, above=above, uniq=uniq))
         assigner = assigners[rank]
 
     # call assigner

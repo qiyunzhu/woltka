@@ -22,15 +22,15 @@ from .tree import find_rank, find_lca
 fromkeys = dict.fromkeys
 
 
-def assign_none(subs, ambig=False):
+def assign_none(subs, uniq=False):
     """Assign query to subjects without using a classification system.
 
     Parameters
     ----------
     subs : set of str
         Subjects.
-    ambig : bool, optional
-        Count occurrence of each subject.
+    uniq : bool, optional
+        Assignment must be unique.
 
     Returns
     -------
@@ -41,7 +41,7 @@ def assign_none(subs, ambig=False):
         sub, = subs
         return sub
     except ValueError:
-        return fromkeys(subs, 1) if ambig else None
+        return None if uniq else fromkeys(subs, 1)
 
 
 def assign_free(subs, tree, root=None, subok=False):
@@ -71,9 +71,9 @@ def assign_free(subs, tree, root=None, subok=False):
         return None if lca == root else lca
 
 
-def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
-                ambig=False):
-    """Assign query to a fixed rank in a classification system.
+def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
+                uniq=False):
+    """Assign query to a given rank in a classification system.
 
     Parameters
     ----------
@@ -87,17 +87,21 @@ def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
         Rank dictionary.
     root : str, optional
         Root identifier.
-    above : bool, optional
-        Allow assignment above rank.
     major : float, optional
         Majority-rule assignment threshold.
-    ambig : bool, optional
-        Count occurrence of each taxon at rank.
+    above : bool, optional
+        Allow assignment above rank.
+    uniq : bool, optional
+        Assignment must be unique.
 
     Returns
     -------
     str or dict
         Unique assignment or assignment-to-count map.
+
+    TODO
+    ----
+    Combine major and above.
     """
     taxa = [find_rank(x, rank, tree, rankdic) for x in subs]
     tset = set(taxa)
@@ -110,10 +114,10 @@ def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
             return None
         lca = find_lca(tset, tree)
         return None if lca == root else lca
-    elif ambig:
-        return count_list(filter(None, taxa))
-    else:
+    elif uniq:
         return None
+    else:
+        return count_list(filter(None, taxa))
 
 
 def count(matches):
