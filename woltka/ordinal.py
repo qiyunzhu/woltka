@@ -99,7 +99,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
                 # merge read-gene pairs to the master map
                 res[rids[read]].add(gene)
 
-        # return read Ids (based on indices) and gene Ids
+        # return matching read Ids and gene Ids
         return res.keys(), res.values()
 
     this = None  # current query Id
