@@ -120,13 +120,13 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
         return count_list(filter(None, taxa))
 
 
-def count(matches):
+def count(taxque):
     """Count occurrences of taxa in a map.
 
     Parameters
     ----------
-    matches : dict of str or dict
-        Query-to-taxon(a) map.
+    taxque : iterable of str or dict
+        Taxon(a) assigned to each query.
 
     Returns
     -------
@@ -134,7 +134,7 @@ def count(matches):
         Taxon-to-count map.
     """
     res = defaultdict(int)
-    for taxa in matches.values():
+    for taxa in filter(None, taxque):
         try:
             # unique match (scalar)
             res[taxa] += 1
@@ -147,15 +147,17 @@ def count(matches):
     return res
 
 
-def count_strata(matches, strata):
+def count_strata(qryque, taxque, strata):
     """Stratify taxa in a map and count occurrences.
 
     Parameters
     ----------
-    matches : dict of str or dict
-        Query-to-taxon(a) map.
+    qryque : iterable of str
+        Query sequences.
+    taxque : iterable of str or dict
+        Taxon(a) assigned to each query.
     strata : dict, optional
-        Read-to-feature map for stratification.
+        Query-to-feature map for stratification.
 
     Returns
     -------
@@ -163,7 +165,9 @@ def count_strata(matches, strata):
         Stratified (feature, taxon)-to-count map.
     """
     res = defaultdict(int)
-    for query, taxa in matches.items():
+    for query, taxa in zip(qryque, taxque):
+        if taxa is None:
+            continue
         if query in strata:
             feature = strata[query]
             if isinstance(taxa, dict):

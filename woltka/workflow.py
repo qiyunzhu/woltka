@@ -795,18 +795,19 @@ def assign_readmap(qryque:    list,
                 major=major, above=above, uniq=uniq))
         assigner = assigners[rank]
 
-    # call assigner
-    asgmt = {query: res for query, res in zip(qryque, map(assigner, subque))
-             if res is not None}
+    # call assigner on suject(s) per query
+    resque = map(assigner, subque)
+    # asgmt = {query: res for query, res in zip(qryque, map(assigner, subque))
+    #          if res is not None}
 
     # write classification map
     if rank2dir is not None:
         outfp = join(rank2dir[rank], f'{sample}.txt')
         with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
-            write_readmap(fh, asgmt, namedic)
+            write_readmap(fh, qryque, resque, namedic)
 
     # count taxa
-    counts = count_strata(asgmt, strata) if strata else count(asgmt)
+    counts = count_strata(qryque, resque, strata) if strata else count(resque)
 
     # combine old and new counts
     if sample in data[rank]:
