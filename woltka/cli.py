@@ -15,7 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
-from .tools import filter_wf
+from .tools import filter_wf, merge_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -168,11 +168,11 @@ def gotu_cmd(ctx, **kwargs):
 @click.option(
     '--outmap-zip', default='gz',
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
-    help=('Compress read maps using this algorithm.'))
+    help='Compress read maps using this algorithm.')
 # performance
 @click.option(
     '--lines', type=click.INT, default=None,
-    help=('Number of lines per chunk to read from alignment file.'))
+    help='Number of lines per chunk to read from alignment file.')
 def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
     """
@@ -188,17 +188,15 @@ def tools():
     pass
 
 
-# `filter` invokes the per-sample abundance filtering workflow
-
 @tools.command('filter')
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
-    help=('Path to input feature table.'))
+    help='Path to input profile.')
 @click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True, dir_okay=False),
-    help=('Path to output feature table.'))
+    help='Path to output profile.')
 @click.option(
     '--min-count', '-c', type=click.IntRange(min=1),
     help='Per-sample minimum count threshold.')
@@ -210,6 +208,23 @@ def filter_cmd(ctx, **kwargs):
     """Filter a profile by per-sample abundance.
     """
     filter_wf(**kwargs)
+
+
+@tools.command('merge')
+@click.option(
+    '--input', '-i', 'input_fps', required=True, multiple=True,
+    type=click.Path(exists=True),
+    help=('Path to input profiles or directories containing profiles. Can '
+          'accept multiple paths.'))
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.pass_context
+def merge_cmd(ctx, **kwargs):
+    """Merge multiple profiles into one profile.
+    """
+    merge_wf(**kwargs)
 
 
 if __name__ == '__main__':

@@ -18,7 +18,7 @@ import gzip
 
 from click.testing import CliRunner
 
-from woltka.cli import cli, gotu_cmd, classify_cmd, filter_cmd
+from woltka.cli import cli, gotu_cmd, classify_cmd, filter_cmd, merge_cmd
 
 
 class CliTests(TestCase):
@@ -156,7 +156,7 @@ class CliTests(TestCase):
 
         remove(output_fp)
 
-    def test_filter_table(self):
+    def test_filter_cmd(self):
         input_fp = join(self.outdir, 'bowtie2.free.tsv')
         output_fp = join(self.tmpdir, 'output.tsv')
         params = ['--input', input_fp,
@@ -167,7 +167,22 @@ class CliTests(TestCase):
         self.assertEqual(res.output.splitlines()[-1],
                          'Filtered profile written.')
         with open(output_fp, 'r') as f:
-            self.assertEqual(len(f.read().splitlines()) - 1, 29)
+            self.assertEqual(len(f.read().splitlines()), 30)
+        remove(output_fp)
+
+    def test_merge_cmd(self):
+        input_fp1 = join(self.outdir, 'burst.process.tsv')
+        input_fp2 = join(self.outdir, 'split.process.tsv')
+        output_fp = join(self.tmpdir, 'output.tsv')
+        params = ['--input',  input_fp1,
+                  '--input',  input_fp2,
+                  '--output', output_fp]
+        res = self.runner.invoke(merge_cmd, params)
+        self.assertEqual(res.exit_code, 0)
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Merged profile written.')
+        with open(output_fp, 'r') as f:
+            self.assertEqual(len(f.read().splitlines()), 205)
         remove(output_fp)
 
 

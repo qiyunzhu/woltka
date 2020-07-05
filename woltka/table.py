@@ -11,9 +11,11 @@
 """Functions for manipulating tables (profiles).
 """
 
+from functools import reduce
+from collections import defaultdict
 from biom import Table, load_table
 
-from .util import allkeys
+from .util import allkeys, update_dict
 from .tree import lineage_str
 from .file import openzip
 from .biom import table_to_biom, biom_to_table, write_biom, filter_biom
@@ -340,12 +342,12 @@ def filter_table(table, th):
 
     Returns
     -------
-    bio.Table, or tuple of (list, list, list, list)
+    biom.Table, or tuple of (list, list, list, list)
         Filtered table (data, features, samples, metadata).
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return(filter_biom(table, th))
+        return filter_biom(table, th)
 
     # filtering function to apply to each column
     def f(datum, th):
@@ -363,3 +365,41 @@ def filter_table(table, th):
         res[3].append(table[3][i])
 
     return res
+
+
+def merge_tables(tables):
+    """Merge multiple tables into one.
+
+    Parameters
+    ----------
+    tables : list
+        Table to merge.
+
+    Returns
+    -------
+    biom.Table, or tuple of (list, list, list, list)
+        Merged table.
+    """
+    # merge BIOM tables using built-in method
+    if all(isinstance(x, Table) for x in tables):
+        return reduce(lambda a, b: a.merge(b), tables)
+
+    data = defaultdict(lambda: defaultdict(int))
+    metadata = {}
+    for table in tables:
+        if isinstance(table, Table):
+            table = biom_to_table(table)
+
+        # update metadata
+        try:
+            update_dict(metadata, dict(zip(table[1], table[3])))
+        except AssertionError:
+            raise ValueError('Conflicting metadata found in tables.')
+
+        # update data
+        for feature, datum in zip(table[1], table[0]):
+            for sample, value in zip(table[2], datum):
+                data[sample][feature] += value
+
+    res = prep_table(data)
+    return res[0], res[1], res[2], [metadata[x] for x in res[1]]

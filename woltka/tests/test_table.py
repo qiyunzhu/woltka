@@ -18,7 +18,7 @@ from biom import Table, load_table
 
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
-    table_shape, filter_table)
+    table_shape, filter_table, merge_tables)
 from woltka.biom import table_to_biom
 
 
@@ -425,6 +425,59 @@ class TableTests(TestCase):
             'S2': {'G4': 3, 'G5': 7},
             'S3': {'G2': 3, 'G5': 5}})))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+    def test_merge_tables(self):
+        # just data
+        t1 = prep_table({'S1': {'G1': 4, 'G2': 5, 'G3': 8},
+                         'S2': {'G1': 2, 'G4': 3, 'G5': 7},
+                         'S3': {'G2': 3, 'G5': 5}})
+        t2 = prep_table({'S3': {'G3': 1, 'G5': 1},
+                         'S4': {'G2': 5, 'G3': 3, 'G6': 9},
+                         'S5': {'G5': 2, 'G6': 4}})
+        t3 = prep_table({'S2': {'G3': 2, 'G5': 2, 'G6': 8},
+                         'S6': {'G3': 1, 'G6': 6}})
+        obs = merge_tables([t1, t2, t3])
+        exp = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 0, 'G6': 0},
+            'S2': {'G1': 2, 'G2': 0, 'G3': 2, 'G4': 3, 'G5': 9, 'G6': 8},
+            'S3': {'G1': 0, 'G2': 3, 'G3': 1, 'G4': 0, 'G5': 6, 'G6': 0},
+            'S4': {'G1': 0, 'G2': 5, 'G3': 3, 'G4': 0, 'G5': 0, 'G6': 9},
+            'S5': {'G1': 0, 'G2': 0, 'G3': 0, 'G4': 0, 'G5': 2, 'G6': 4},
+            'S6': {'G1': 0, 'G2': 0, 'G3': 1, 'G4': 0, 'G5': 0, 'G6': 6}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # with metadata
+        names = {'G1': 'Actinobacteria',
+                 'G2': 'Firmicutes',
+                 'G3': 'Bacteroidetes',
+                 'G4': 'Cyanobacteria',
+                 'G5': 'Proteobacteria',
+                 'G6': 'Fusobacteria'}
+        for t in (t1, t2, t3, exp):
+            t[3].clear()
+            t[3].extend({'Name': names[x]} for x in t[1])
+        obs = merge_tables([t1, t2, t3])
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # some biom tables
+        obs = merge_tables([t1, table_to_biom(*t2), t3])
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # all biom tables
+        obs = merge_tables([table_to_biom(*x) for x in (t1, t2, t3)])
+        self.assertTrue(isinstance(obs, Table))
+        exp = table_to_biom(*exp)
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # inconsistent metadata
+        t3[3][1]['Name'] = 'This is not right.'
+        with self.assertRaises(ValueError) as ctx:
+            merge_tables([t1, t2, t3])
+        errmsg = 'Conflicting metadata found in tables.'
+        self.assertEqual(str(ctx.exception), errmsg)
 
 
 if __name__ == '__main__':
