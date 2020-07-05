@@ -97,10 +97,10 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             for read, gene in match_func(queue, lenmap[nucl], th, nucl):
 
                 # merge read-gene pairs to the master map
-                res[read].add(gene)
+                res[rids[read]].add(gene)
 
         # return read Ids (based on indices) and gene Ids
-        return itemgetter(*res)(rids), res.values()
+        return res.keys(), res.values()
 
     this = None  # current query Id
     target = n   # target line number at end of current chunk
