@@ -24,6 +24,7 @@ A parser function returns a tuple of:
 """
 
 from collections import deque
+from itertools import chain
 from functools import lru_cache
 
 
@@ -54,7 +55,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     proceeds.
     """
     # determine alignment file format
-    fmt = fmt or infer_align_format(fh)
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
     parser = assign_parser(fmt)
@@ -68,7 +69,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     # parse alignment file
     this = None  # current query Id
     target = n   # target line number at end of current chunk
-    for i, line in enumerate(fh):
+    for i, line in enumerate(chain(iter(head), fh)):
 
         # parse current alignment line
         try:
@@ -122,6 +123,8 @@ def infer_align_format(fh):
     -------
     str
         Alignment file format (map, b6o or sam).
+    list of str
+        Lines that are read in order to infer format.
 
     Raises
     ------
@@ -134,6 +137,11 @@ def infer_align_format(fh):
     --------
     parse_b6o_line
     parse_sam_line
+
+    TODO
+    ----
+    Currently this function guesses format only based on the first line.
+    This can be more robust.
     """
     # read first line of file
     try:
@@ -143,29 +151,26 @@ def infer_align_format(fh):
     except StopIteration:
         raise ValueError('Cannot read alignment file.')
 
-    # move pointer back to beginning of file
-    fh.seek(0)
-
     # SAM file header
     if line.split()[0] in ('@HD', '@PG'):
-        return 'sam'
+        return 'sam', [line]
 
     # tab-delimited row
     row = line.rstrip().split('\t')
 
     # simple query-to-subject map
     if len(row) == 2:
-        return 'map'
+        return 'map', [line]
 
     # BLAST standard tabular format
     if len(row) >= 12:
         if all(row[i].isdigit() for i in range(3, 10)):
-            return 'b6o'
+            return 'b6o', [line]
 
     # SAM format
     if len(row) >= 11:
         if all(row[i].isdigit() for i in (1, 3, 4)):
-            return 'sam'
+            return 'sam', [line]
 
     # cannot determine
     raise ValueError('Cannot determine alignment file format.')

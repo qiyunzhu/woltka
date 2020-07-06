@@ -64,7 +64,7 @@ class CliTests(TestCase):
         output_fp = join(self.tmpdir, 'output.tsv')
 
         def _test_params(params, exp):
-            res = self.runner.invoke(classify_cmd, params)
+            res = self.runner.invoke(classify_cmd, params + ['--no-exe'])
             self.assertEqual(res.exit_code, 0)
             self.assertTrue(cmp(output_fp, join(self.outdir, exp)))
 

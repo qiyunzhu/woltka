@@ -109,19 +109,21 @@ class AlignTests(TestCase):
         # simple cases
         # map
         line = 'S1/1	NC_123456'
-        self.assertEqual(infer_align_format(StringIO(line)), 'map')
+        obs = infer_align_format(StringIO(line))
+        self.assertEqual(obs[0], 'map')
+        self.assertListEqual(obs[1], [line])
 
         # b6o
         line = 'S1/1	NC_123456	100	100	0	0	1	100	25	124	0.1	100'
-        self.assertEqual(infer_align_format(StringIO(line)), 'b6o')
+        self.assertEqual(infer_align_format(StringIO(line))[0], 'b6o')
 
         # sam
         line = 'S1	77	NC_123456	26	0	100M	*	0	0	*	*'
-        self.assertEqual(infer_align_format(StringIO(line)), 'sam')
+        self.assertEqual(infer_align_format(StringIO(line))[0], 'sam')
 
         # sam header
         line = '@HD	VN:1.0	SO:unsorted'
-        self.assertEqual(infer_align_format(StringIO(line)), 'sam')
+        self.assertEqual(infer_align_format(StringIO(line))[0], 'sam')
 
         # empty file
         with self.assertRaises(ValueError) as ctx:
@@ -146,11 +148,11 @@ class AlignTests(TestCase):
         # real files
         # Bowtie2 (sam)
         with openzip(join(self.datdir, 'align', 'bowtie2', 'S01.sam.xz')) as f:
-            self.assertEqual(infer_align_format(f), 'sam')
+            self.assertEqual(infer_align_format(f)[0], 'sam')
 
         # BURST (b6o)
         with openzip(join(self.datdir, 'align', 'burst', 'S01.b6.bz2')) as f:
-            self.assertEqual(infer_align_format(f), 'b6o')
+            self.assertEqual(infer_align_format(f)[0], 'b6o')
 
     def test_assign_parser(self):
         self.assertEqual(assign_parser('map'), parse_map_line)
