@@ -81,8 +81,8 @@ Option | Description
 Option | Description
 --- | ---
 `--chunk` | Number of alignment lines to read and parse in each chunk. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
-`--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 128.
-
+`--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1024.
+`--no-exe` | Disable calling external programs (`gzip`, `bzip2` and `xz`) for decompression. Otherwise, Woltka will use them if available for faster processing, or switch back to Python if not.
 
 ## Tools
 

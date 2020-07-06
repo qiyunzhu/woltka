@@ -179,6 +179,9 @@ def gotu_cmd(ctx, **kwargs):
 @click.option(
     '--cache', type=click.INT, default=128,
     help='Number of recent results to cache for faster classification.')
+@click.option(
+    '--no-exe', is_flag=True,
+    help='Disable calling external programs for decompression.')
 def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
     """

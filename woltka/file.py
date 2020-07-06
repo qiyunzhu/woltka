@@ -13,14 +13,17 @@
 
 from os import listdir
 from os.path import basename, dirname, splitext, isfile, join
+from shutil import which
+from subprocess import Popen, PIPE
 import gzip
 import bz2
 import lzma
 
 
-ZIPDIC = {'.gz': gzip, '.gzip': gzip,
-          '.bz2': bz2, '.bzip2': bz2,
-          '.xz': lzma, '.lz': lzma, '.lzma': lzma}
+zipfmts = {'.gz':   'gzip', '.gzip':   'gzip',
+           '.bz2': 'bzip2', '.bzip2': 'bzip2',
+           '.xz':     'xz', '.lz':       'xz', '.lzma': 'xz'}
+ziplibs = {'gzip': gzip, 'bzip2': bz2, 'xz': lzma}
 
 
 def openzip(fp, mode='rt'):
@@ -38,10 +41,90 @@ def openzip(fp, mode='rt'):
     -------
     file handle
         Text stream ready to be read.
+
+    Notes
+    -----
+    This is a simple and universal solution which uses Python's built-in
+    compression modules. It supports reading and writing. However it is not as
+    fast as `readzip` in reading compressed files.
+
+    See Also
+    --------
+    readzip
     """
     ext = splitext(fp)[1]
-    zipfunc = getattr(ZIPDIC[ext], 'open') if ext in ZIPDIC else open
-    return zipfunc(fp, mode)
+    zipper = getattr(ziplibs[zipfmts[ext]], 'open') if ext in zipfmts else open
+    return zipper(fp, mode)
+
+
+def readzip(fp, zippers=None):
+    """Open a regular or compressed file by matching filename extension to
+    proper library.
+
+    Parameters
+    ----------
+    fp : str
+        Input filepath.
+    zippers : dict of bool, optional
+        Available external compression programs.
+
+    Returns
+    -------
+    file handle
+        Text stream ready to be read.
+
+    Notes
+    -----
+    This function attempts to call external compression programs to read the
+    compressed file. This is typically faster than using Python's built-in
+    compression modules, because it saves the overhead in the Python wrapper,
+    and utilizes additional thread(s) for decompression.
+
+    The function checks the availability of a certain compression program at
+    its first use, and stores this information in the parameter `zippers` which
+    is shared across the program.
+
+    If the external compression program is not available, or disabled (when
+    `parameter` is not provided), the function will call Python's built-in
+    modules instead.
+
+    In addition to this method, a pure Python method for accelerating reading
+    compression files is to use the buffered reader:
+
+    >>> with gzip.open(fp, 'rb') as fh:
+    >>>     with io.BufferedReader(fh, 1048576) as buf:
+    >>>         for line in buf:
+    >>>             res = line.decode()
+    >>>             ...
+
+    See Also
+    --------
+    openzip
+    """
+    # filename extension
+    ext = splitext(fp)[1]
+
+    # not a compressed file
+    if ext not in zipfmts:
+        return open(fp, 'r')
+
+    fmt = zipfmts[ext]
+
+    # external programs are disabled
+    if zippers is None:
+        return ziplibs[fmt].open(fp, 'rt')
+
+    # check whether specific external program exists
+    if fmt not in zippers:
+        zippers[fmt] = bool(which(fmt))
+
+    # use external program
+    if zippers[fmt]:
+        return Popen([fmt, '-cdfq', fp], stdout=PIPE, encoding='utf-8').stdout
+
+    # external program does not exist
+    else:
+        return ziplibs[fmt].open(fp, 'rt')
 
 
 def file2stem(fname, ext=None):
@@ -73,7 +156,7 @@ def file2stem(fname, ext=None):
         return fname[:-len(ext)]
     else:
         stem, ext = splitext(fname)
-        if ext in ZIPDIC:
+        if ext in zipfmts:
             stem, ext = splitext(stem)
         return stem
 

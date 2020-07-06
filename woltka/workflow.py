@@ -25,8 +25,8 @@ import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
-    openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map,
-    read_map_uniq, read_map_1st, write_readmap)
+    openzip, readzip, path2stem, read_ids, id2file_from_dir,
+    id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
 from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata)
@@ -74,7 +74,8 @@ def workflow(input_fp:      str,
              outmap_zip:    str = 'gz',
              # performance
              chunk:         int = None,
-             cache:         int = 128) -> dict:
+             cache:         int = 1024,
+             no_exe:       bool = False) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -93,6 +94,9 @@ def workflow(input_fp:      str,
     .cli.classify
         Command-line arguments and help information.
     """
+    # available external compressors
+    zippers = None if no_exe else {}
+
     # parse input samples
     samples, files, demux = parse_samples(
         input_fp, input_ext, samples, demux)
@@ -103,10 +107,10 @@ def workflow(input_fp:      str,
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
         names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps,
-        map_as_rank)
+        map_as_rank, zippers)
 
     # build mapping module
-    mapper, chunk = build_mapper(coords_fp, overlap, chunk)
+    mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
 
     # target classification ranks
     ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree)
@@ -115,7 +119,7 @@ def workflow(input_fp:      str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
-        uniq, major, above, subok, unassigned, stratmap, chunk, cache)
+        uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
 
     # write output profiles
     write_profiles(
@@ -146,7 +150,8 @@ def classify(mapper:  object,
              unasgd:    bool = False,
              stratmap:  dict = None,
              chunk:      int = None,
-             cache:      int = 128) -> dict:
+             cache:      int = 1024,
+             zippers:   dict = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -204,6 +209,8 @@ def classify(mapper:  object,
         Number of lines per chunk to read from alignment file.
     cache : int, optional
         LRU cache size for classification results at each rank.
+    zippers : dict, optional
+        External compression programs.
 
     Returns
     -------
@@ -236,7 +243,7 @@ def classify(mapper:  object,
         click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
 
         # read alignment file into query-to-subject(s) map
-        with openzip(fp) as fh:
+        with readzip(fp, zippers) as fh:
 
             # query and progress counters
             nqry, nstep = 0, -1
@@ -258,7 +265,7 @@ def classify(mapper:  object,
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
-                        with openzip(stratmap[sample]) as fh:
+                        with readzip(stratmap[sample], zippers) as fh:
                             kwargs['strata'] = dict(read_map_uniq(fh))
                         csample = sample
 
@@ -422,7 +429,8 @@ def parse_strata(fp:       str = None,
 
 def build_mapper(coords_fp: str = None,
                  overlap:   int = None,
-                 chunk:     int = None) -> (callable, int):
+                 chunk:     int = None,
+                 zippers:  dict = None) -> (callable, int):
     """Build mapper function (plain or ordinal).
 
     Parameters
@@ -433,6 +441,8 @@ def build_mapper(coords_fp: str = None,
         Read/gene overlapping percentage threshold.
     chunk : int, optional
         Number of lines per chunk to read from alignment file.
+    zippers : dict, optional
+        External compression programs.
 
     Returns
     -------
@@ -454,7 +464,7 @@ def build_mapper(coords_fp: str = None,
     """
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
-        with openzip(coords_fp) as fh:
+        with readzip(coords_fp, zippers) as fh:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'  Total number of host sequences: {len(coords)}.')
@@ -525,7 +535,8 @@ def build_hierarchy(names_fps:    list = [],
                     lineage_fp:    str = None,
                     rank_table_fp: str = None,
                     map_fps:      list = [],
-                    map_as_rank:  bool = False) -> (dict, dict, dict, str):
+                    map_as_rank:  bool = False,
+                    zippers:      dict = None) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
     Parameters
@@ -544,6 +555,8 @@ def build_hierarchy(names_fps:    list = [],
         Mapping file(s).
     map_as_rank : bool, optional
         Treat mapping filename stem as rank.
+    zippers : dict, optional
+        External compression programs.
 
     Returns
     -------
@@ -567,7 +580,7 @@ def build_hierarchy(names_fps:    list = [],
     # taxonomy names
     for fp in names_fps:
         click.echo(f'  Parsing taxonomy names file: {fp}...', nl=False)
-        with openzip(fp) as f:
+        with readzip(fp, zippers) as f:
             names = read_names(f)
         update_dict(namedic, names)
         click.echo(' Done.')
@@ -575,7 +588,7 @@ def build_hierarchy(names_fps:    list = [],
     # taxonomy nodes
     if nodes_fp:
         click.echo(f'  Parsing taxonomy nodes file: {nodes_fp}...', nl=False)
-        with openzip(nodes_fp) as f:
+        with readzip(nodes_fp, zippers) as f:
             tree_, rankdic_ = read_nodes(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
@@ -584,14 +597,14 @@ def build_hierarchy(names_fps:    list = [],
     # Newick-format tree
     if newick_fp:
         click.echo(f'  Parsing Newick tree file: {newick_fp}...', nl=False)
-        with openzip(newick_fp) as f:
+        with readzip(newick_fp, zippers) as f:
             update_dict(tree, read_newick(f))
         click.echo(' Done.')
 
     # lineage strings file
     if lineage_fp:
         click.echo(f'  Parsing lineage file: {lineage_fp}...', nl=False)
-        with openzip(lineage_fp) as f:
+        with readzip(lineage_fp, zippers) as f:
             tree_, rankdic_ = read_lineage(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
@@ -600,7 +613,7 @@ def build_hierarchy(names_fps:    list = [],
     # rank table file
     if rank_table_fp:
         click.echo(f'  Parsing rank table file: {rank_table_fp}...', nl=False)
-        with openzip(rank_table_fp) as f:
+        with readzip(rank_table_fp, zippers) as f:
             tree_, rankdic_ = read_rank_table(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)
@@ -609,7 +622,7 @@ def build_hierarchy(names_fps:    list = [],
     # plain mapping files
     for fp in map_fps:
         click.echo(f'  Parsing simple map file: {fp}...', nl=False)
-        with openzip(fp) as f:
+        with readzip(fp, zippers) as f:
             map_ = dict(read_map_1st(f))
         update_dict(tree, map_)
 
@@ -732,7 +745,7 @@ def assign_readmap(qryque:    list,
                    rank:       str,
                    sample:     str,
                    assigners: dict,
-                   cache:      int = 128,
+                   cache:      int = 1024,
                    rank2dir:  dict = None,
                    outzip:     str = None,
                    tree:      dict = None,
