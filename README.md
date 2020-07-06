@@ -32,8 +32,8 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - BLAST, DIAMOND, VSEARCH
 - References
   - [Command-line interface](doc/cli.md)
+  - [Computational efficiency](doc/perform.md)
   - [Parameter auto-decision](doc/auto.md)
-  - [Computational performance](doc/perform.md)
   - [Developer's guidlines](doc/dev.md)
 - [Notes](#notes)
 
