@@ -18,8 +18,8 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
-from operator import itemgetter
 from collections import deque
+from itertools import compress
 from functools import partial, lru_cache
 import click
 
@@ -811,7 +811,10 @@ def assign_readmap(qryque:    list,
     if unasgd:
         resque = [x or 'Unassigned' for x in resque]
     else:
-        qryque, resque = zip(*filter(itemgetter(1), zip(qryque, resque)))
+        resque = list(resque)
+        keep = list(map(None.__ne__, resque))
+        qryque, resque = list(compress(qryque, keep)), list(compress(
+            resque, keep))
 
     # write classification map
     if rank2dir is not None:
