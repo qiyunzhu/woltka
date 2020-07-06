@@ -47,7 +47,7 @@ Option | Description
 --- | ---
 `--rank`, `-r` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification.; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank. If omitted, the program will do "free" if a classification system is provided or "none" if not.
 `--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
-`--major` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates. Range: [51, 99]. Overrides "above".
+`--major` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates. Range: [51, 99]. Overrides "above" and "uniq".
 `--above` | In given-rank classification, allow assigning a sequence to a higher rank if it cannot be assigned to the current rank. Overrides "uniq".
 `--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
 
@@ -69,18 +69,19 @@ Option | Description
 Option | Description
 --- | ---
 `--to-biom/--to-tsv` | Force output profile format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is only one rank.
-`--unassigned` | Report unassigned sequences in profiles and read-to-feature maps (marked as "Unassigned").
+`--unassigned` | Report unassigned sequences (will be marked as "Unassigned").
 `--name-as-id` | Replace feature IDs with names. Otherwise append names to table as a metadata column.
 `--add-rank` | Append feature ranks to table as a metadata column.
 `--add-lineage` | Append lineage strings to table as a metadata column.
-`--outmap`, `-u` | Write read-to-feature maps to directory.
+`--outmap`, `-u` | Write read-to-feature maps to this directory.
 `--zipmap` | Compress read-to-feature maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
 
 ### Performance
 
 Option | Description
 --- | ---
-`--lines` | Number of lines per chunk to read from alignment file. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
+`--chunk` | Number of alignment lines to read and parse in each chunk. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
+`--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 128.
 
 
 ## Tools

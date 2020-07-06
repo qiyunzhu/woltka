@@ -73,7 +73,8 @@ def workflow(input_fp:      str,
              outmap_dir:    str = None,
              outmap_zip:    str = 'gz',
              # performance
-             lines:         int = None) -> dict:
+             chunk:         int = None,
+             cache:         int = 128) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -105,7 +106,7 @@ def workflow(input_fp:      str,
         map_as_rank)
 
     # build mapping module
-    mapper, lines = build_mapper(coords_fp, overlap, lines)
+    mapper, chunk = build_mapper(coords_fp, overlap, chunk)
 
     # target classification ranks
     ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree)
@@ -114,7 +115,7 @@ def workflow(input_fp:      str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
-        uniq, major, above, subok, unassigned, stratmap, lines)
+        uniq, major, above, subok, unassigned, stratmap, chunk, cache)
 
     # write output profiles
     write_profiles(
@@ -144,7 +145,8 @@ def classify(mapper:  object,
              subok:     bool = False,
              unasgd:    bool = False,
              stratmap:  dict = None,
-             lines:      int = None) -> dict:
+             chunk:      int = None,
+             cache:      int = 128) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -198,8 +200,10 @@ def classify(mapper:  object,
         Report unassigned sequences.
     stratmap : dict, optional
         Map of sample ID to stratification file.
-    lines : int, optional
+    chunk : int, optional
         Number of lines per chunk to read from alignment file.
+    cache : int, optional
+        LRU cache size for classification results at each rank.
 
     Returns
     -------
@@ -218,11 +222,11 @@ def classify(mapper:  object,
     assigners = {}
 
     # assignment parameters
-    kwargs = {'assigners': assigners, 'tree': tree, 'rankdic': rankdic,
-              'root':  root, 'uniq': uniq, 'major': major and major / 100,
-              'above': above, 'subok': subok, 'unasgd': unasgd, 'namedic':
-              namedic, 'rank2dir': rank2dir, 'outzip': outzip if outzip !=
-              'none' else None}
+    kwargs = {'assigners': assigners, 'cache': cache, 'tree': tree, 'rankdic':
+              rankdic, 'namedic': namedic, 'root':  root, 'uniq': uniq,
+              'major': major and major / 100, 'above': above, 'subok': subok,
+              'unasgd': unasgd, 'rank2dir': rank2dir, 'outzip': outzip if
+              outzip != 'none' else None}
 
     # current sample Id
     csample = False
@@ -238,7 +242,7 @@ def classify(mapper:  object,
             nqry, nstep = 0, -1
 
             # parse alignment file by chunk
-            for qryque, subque in mapper(fh, fmt=fmt, n=lines):
+            for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
                 nqry += len(qryque)
 
                 # (optional) strip indices and freeze sets
@@ -418,7 +422,7 @@ def parse_strata(fp:       str = None,
 
 def build_mapper(coords_fp: str = None,
                  overlap:   int = None,
-                 lines:     int = None) -> (callable, int):
+                 chunk:     int = None) -> (callable, int):
     """Build mapper function (plain or ordinal).
 
     Parameters
@@ -427,7 +431,7 @@ def build_mapper(coords_fp: str = None,
         Path to gene coordinates file.
     overlap : int, optional
         Read/gene overlapping percentage threshold.
-    lines : int, optional
+    chunk : int, optional
         Number of lines per chunk to read from alignment file.
 
     Returns
@@ -445,8 +449,8 @@ def build_mapper(coords_fp: str = None,
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
 
-    The number of lines, if not specified, is determined empirically: 1,000
-    for the plain mapper and 1,000,000 for ordinal mapper.
+    The chunk size, if not specified, is determined empirically: 1,000 for
+    plain mapper and 1,000,000 for ordinal mapper.
     """
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
@@ -454,13 +458,13 @@ def build_mapper(coords_fp: str = None,
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'  Total number of host sequences: {len(coords)}.')
-        lines = lines or 1000000
+        chunk = chunk or 1000000
         return partial(ordinal_mapper, coords=coords,
                        prefix=whether_prefix(coords),
-                       th=overlap and overlap / 100), lines
+                       th=overlap and overlap / 100), chunk
     else:
-        lines = lines or 1000
-        return plain_mapper, lines
+        chunk = chunk or 1000
+        return plain_mapper, chunk
 
 
 def prepare_ranks(ranks:      str = None,
@@ -728,6 +732,7 @@ def assign_readmap(qryque:    list,
                    rank:       str,
                    sample:     str,
                    assigners: dict,
+                   cache:      int = 128,
                    rank2dir:  dict = None,
                    outzip:     str = None,
                    tree:      dict = None,
@@ -757,6 +762,8 @@ def assign_readmap(qryque:    list,
         Sample ID.
     assigners : dict of callable
         Per-rank assigners.
+    cache : int, optional
+        LRU cache size for classification results at each rank.
     rank2dir : dict, optional
         Directory of output maps per rank.
     outzip : str, optional
@@ -789,17 +796,17 @@ def assign_readmap(qryque:    list,
     # determine assigner and initiate (if not already)
     if rank is None or rank == 'none' or tree is None:
         if 'none' not in assigners:
-            assigners['none'] = lru_cache(maxsize=128)(partial(
+            assigners['none'] = lru_cache(maxsize=cache)(partial(
                 assign_none, uniq=uniq))
         assigner = assigners['none']
     elif rank == 'free':
         if 'free' not in assigners:
-            assigners['free'] = lru_cache(maxsize=128)(partial(
+            assigners['free'] = lru_cache(maxsize=cache)(partial(
                 assign_free, tree=tree, root=root, subok=subok))
         assigner = assigners['free']
     else:
         if rank not in assigners:
-            assigners[rank] = lru_cache(maxsize=128)(partial(
+            assigners[rank] = lru_cache(maxsize=cache)(partial(
                 assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
                 major=major, above=above, uniq=uniq))
         assigner = assigners[rank]

@@ -174,8 +174,11 @@ def gotu_cmd(ctx, **kwargs):
     help='Compress read-to-feature maps using this algorithm.')
 # performance
 @click.option(
-    '--lines', type=click.INT, default=None,
-    help='Number of lines per chunk to read from alignment file.')
+    '--chunk', type=click.INT, default=None,
+    help='Number of alignment lines to read and parse in each chunk.')
+@click.option(
+    '--cache', type=click.INT, default=128,
+    help='Number of recent results to cache for faster classification.')
 def classify_cmd(**kwargs):
     """Generate a profile of samples based on a classification system.
     """

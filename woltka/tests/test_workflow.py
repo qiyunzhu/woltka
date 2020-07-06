@@ -49,10 +49,10 @@ class WorkflowTests(TestCase):
         # simplest gotu workflow
         input_fp = join(self.datdir, 'align', 'bowtie2')
         samples, files, demux = parse_samples(input_fp)
-        mapper, lines = build_mapper()
+        mapper, chunk = build_mapper()
         ranks = ['none']
         obs = classify(mapper, files, samples=samples, demux=demux,
-                       ranks=ranks, lines=lines)['none']
+                       ranks=ranks, chunk=chunk)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)
@@ -68,12 +68,12 @@ class WorkflowTests(TestCase):
         samples, files, demux = parse_samples(input_fp)
         tree, rankdic, namedic, root = build_hierarchy(
             map_fps=map_fps, map_as_rank=True)
-        mapper, lines = build_mapper(coords_fp=coords_fp, overlap=80)
+        mapper, chunk = build_mapper(coords_fp=coords_fp, overlap=80)
         stratmap = parse_strata(strata_dir, samples)
         obs = classify(
             mapper, files, samples=samples, demux=demux, tree=tree,
             rankdic=rankdic, namedic=namedic, root=root, stratmap=stratmap,
-            lines=lines, ranks=['process'])['process']
+            chunk=chunk, ranks=['process'])['process']
         self.assertEqual(obs['S01'][('Thermus', 'GO:0005978')], 2)
         self.assertEqual(obs['S02'][('Bacteroides', 'GO:0006814')], 1)
         self.assertEqual(obs['S03'][('Escherichia', 'GO:0006813')], 2)
@@ -243,8 +243,8 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
         self.assertEqual(obs[1], 1000000)
 
-        # ordinal with overlap threshold and number of lines
-        obs = build_mapper(fp, overlap=75, lines=50000)
+        # ordinal with overlap threshold and chunk size
+        obs = build_mapper(fp, overlap=75, chunk=50000)
         self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
         self.assertEqual(obs[0].keywords['th'], 0.75)
         self.assertEqual(obs[1], 50000)
