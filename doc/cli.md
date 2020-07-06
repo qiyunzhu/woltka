@@ -68,12 +68,13 @@ Option | Description
 
 Option | Description
 --- | ---
-`--to-biom/--to-tsv` | Force output feature table format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is one rank.
-`--name-as-id` | Replace feature IDs with names.
-`--add-rank` | Append feature ranks to table.
-`--add-lineage` | Append lineage strings to table.
+`--to-biom/--to-tsv` | Force output profile format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is only one rank.
+`--unassigned` | Report unassigned sequences in profiles and read-to-feature maps (marked as "Unassigned").
+`--name-as-id` | Replace feature IDs with names. Otherwise append names to table as a metadata column.
+`--add-rank` | Append feature ranks to table as a metadata column.
+`--add-lineage` | Append lineage strings to table as a metadata column.
 `--outmap`, `-u` | Write read-to-feature maps to directory.
-`--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+`--zipmap` | Compress read-to-feature maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
 
 ### Performance
 

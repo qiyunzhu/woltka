@@ -316,7 +316,7 @@ class FileTests(TestCase):
                 'R4': {'G3': 3}}
         fp = join(self.tmpdir, 'readmap.tsv')
         with open(fp, 'w') as f:
-            write_readmap(f, rmap)
+            write_readmap(f, rmap.keys(), rmap.values())
         with open(fp, 'r') as f:
             obs = sorted(f.read().splitlines())
         exp = ['R1\tG1', 'R2\tG2', 'R3\tG2:2\tG1:1', 'R4\tG3:3']
@@ -325,7 +325,7 @@ class FileTests(TestCase):
         # with name dict
         namedic = {'G1': 'Ecoli', 'G2': 'Strep', 'G3': 'Kleb'}
         with open(fp, 'w') as f:
-            write_readmap(f, rmap, namedic)
+            write_readmap(f, rmap.keys(), rmap.values(), namedic)
         with open(fp, 'r') as f:
             obs = sorted(f.read().splitlines())
         exp = ['R1\tEcoli', 'R2\tStrep', 'R3\tStrep:2\tEcoli:1', 'R4\tKleb:3']
