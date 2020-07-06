@@ -12,6 +12,7 @@
 """
 
 from collections import defaultdict
+from itertools import chain
 from operator import itemgetter
 
 from .align import infer_align_format, assign_parser
@@ -47,7 +48,9 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         Subject(s) queue.
     """
     # determine file format
-    fmt = fmt or infer_align_format(fh)
+    if not fmt:
+        fmt, head = infer_align_format(fh)
+        fh = chain(iter(head), fh)
 
     # assign parser for given format
     parser = assign_parser(fmt)
