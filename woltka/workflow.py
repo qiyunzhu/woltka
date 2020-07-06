@@ -113,8 +113,8 @@ def workflow(input_fp:      str,
     # classify query sequences
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
-        namedic, root, ranks, rank2dir, outmap_zip, uniq, major, above, subok,
-        unassigned, stratmap, lines)
+        namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
+        uniq, major, above, subok, unassigned, stratmap, lines)
 
     # write output profiles
     write_profiles(
