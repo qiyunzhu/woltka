@@ -426,11 +426,10 @@ class WorkflowTests(TestCase):
             self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
     def test_assign_readmap(self):
-        assigners = {}
-
         # simple gotu assignment
         qryq = ['R1', 'R2', 'R3']
         subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
+        assigners = {}
         data = {'none': {}}
         assign_readmap(qryq, subq, data, 'none', 'S1', assigners)
         self.assertDictEqual(data['none']['S1'], {
@@ -448,6 +447,13 @@ class WorkflowTests(TestCase):
         exp = ['R1\tG1', 'R2\tG1:1\tG2:1', 'R3\tG2:1\tG3:1']
         self.assertListEqual(obs, exp)
         remove(fp)
+
+        # unique and unassigned
+        assigners = {}
+        data = {'none': {}}
+        assign_readmap(qryq, subq, data, 'none', 'S1', assigners, uniq=True,
+                       unasgd=True)
+        self.assertDictEqual(data['none']['S1'], {'G1': 1, 'Unassigned': 2})
 
         # free-rank assignment
         tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',

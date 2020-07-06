@@ -102,17 +102,16 @@ class ClassifyTests(TestCase):
 
     def test_count(self):
         # unique match
-        matches = {'seq1': 'a', 'seq2': 'a',  'seq3': 'b',
-                   'seq4': 'c', 'seq5': None, 'seq6': 'b'}
-        obs = count(matches)
-        exp = {'a': 2, 'b': 2, 'c': 1, None: 1}
+        taxque = ['a', 'a', 'b', 'c', None, 'b', None]
+        obs = count(taxque)
+        exp = {'a': 2, 'b': 2, 'c': 1, None: 2}
         self.assertDictEqual(obs, exp)
 
         # multiple matches
-        matches = {'seq1': {'a': 1, 'b': 2, 'c': 3},
-                   'seq2': {'a': 2, 'b': 5},
-                   'seq3': {'d': 4}}
-        obs = count(matches)
+        taxque = [{'a': 1, 'b': 2, 'c': 3},
+                  {'a': 2, 'b': 5},
+                  {'d': 4}]
+        obs = count(taxque)
         exp = {'a': 1 / 6 + 2 / 7,
                'b': 2 / 6 + 5 / 7,
                'c': 3 / 6,
@@ -135,7 +134,7 @@ class ClassifyTests(TestCase):
                    'seq5': 'nuclease',
                    'seq6': 'ligase',
                    'seq0': 'nothing'}
-        obs = count_strata(matches, strata)
+        obs = count_strata(matches.keys(), matches.values(), strata)
         exp = {('Ecoli',     'ligase'): 2,
                ('Ecoli', 'polymerase'): 1,
                ('Cdiff',   'nuclease'): 1,
@@ -146,7 +145,7 @@ class ClassifyTests(TestCase):
         # multiple matches
         strata['seq7'] = 'Ecoli'
         matches['seq7'] = {'polymerase': 3, 'ligase': 1}
-        obs = count_strata(matches, strata)
+        obs = count_strata(matches.keys(), matches.values(), strata)
         exp = {('Ecoli',     'ligase'): 2.25,
                ('Ecoli', 'polymerase'): 1.75,
                ('Cdiff',   'nuclease'): 1,

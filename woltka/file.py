@@ -303,22 +303,24 @@ def read_map_all(fh, sep='\t'):
             yield key, rest.rstrip().split(sep)
 
 
-def write_readmap(fh, rmap, namedic=None):
+def write_readmap(fh, qryque, taxque, namedic=None):
     """Write a read map to a tab-delimited file.
 
     Parameters
     ----------
     fh : file handle
         Output file.
-    rmap : dict
-        Read-to-taxon(a) map.
+    qryque : iterable of str
+        Query sequences.
+    taxque : iterable of str or dict
+        Taxon(a) assigned to each query.
     namedic : dict, optional
         Taxon name dictionary.
     """
     # sort subjects by count (high-to-low) then by alphabet
     def sortkey(x): return -x[1], x[0]
-    for read, taxa in rmap.items():
-        row = [read]
+    for query, taxa in zip(qryque, taxque):
+        row = [query]
         if isinstance(taxa, dict):
             for taxon, count in sorted(taxa.items(), key=sortkey):
                 if namedic and taxon in namedic:
