@@ -265,8 +265,8 @@ def classify(mapper:  object,
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
-                        with readzip(stratmap[sample], zippers) as fh:
-                            kwargs['strata'] = dict(read_map_uniq(fh))
+                        with readzip(stratmap[sample], zippers) as fhs:
+                            kwargs['strata'] = dict(read_map_uniq(fhs))
                         csample = sample
 
                     # call assignment workflow for each rank

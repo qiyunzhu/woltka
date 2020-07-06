@@ -55,9 +55,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     proceeds.
     """
     # determine alignment file format
-    if not fmt:
-        fmt, head = infer_align_format(fh)
-        fh = chain(iter(head), fh)
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
     parser = assign_parser(fmt)
@@ -71,7 +69,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     # parse alignment file
     this = None  # current query Id
     target = n   # target line number at end of current chunk
-    for i, line in enumerate(fh):
+    for i, line in enumerate(chain(iter(head), fh)):
 
         # parse current alignment line
         try:

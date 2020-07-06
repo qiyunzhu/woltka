@@ -48,9 +48,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         Subject(s) queue.
     """
     # determine file format
-    if not fmt:
-        fmt, head = infer_align_format(fh)
-        fh = chain(iter(head), fh)
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
     parser = assign_parser(fmt)
@@ -109,7 +107,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     target = n   # target line number at end of current chunk
 
     # parse alignment file
-    for i, line in enumerate(fh):
+    for i, line in enumerate(chain(iter(head), fh)):
 
         # parse current alignment line
         try:

@@ -17,9 +17,8 @@ import gzip
 import bz2
 
 from woltka.file import (
-    openzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, read_map_uniq, read_map_1st, read_map_all,
-    write_readmap)
+    openzip, readzip, file2stem, path2stem, read_ids, id2file_from_dir,
+    id2file_from_map, read_map_uniq, read_map_1st, read_map_all, write_readmap)
 
 
 class FileTests(TestCase):
@@ -66,6 +65,46 @@ class FileTests(TestCase):
             obs = f.read()
         self.assertEqual(obs, 'Here I am!')
         remove(fpb)
+
+    def test_readzip(self):
+        text = 'Hello World!'
+
+        # read regular file
+        fp = join(self.tmpdir, 'test.txt')
+        with open(fp, 'w') as f:
+            f.write(text)
+        with readzip(fp) as f:
+            obs = f.read()
+        self.assertEqual(obs, text)
+
+        # read gzip file using builti-in Python module
+        fpz = join(self.tmpdir, 'test.txt.gz')
+        with gzip.open(fpz, 'wb') as f:
+            f.write(text.encode())
+        with readzip(fpz) as f:
+            obs = f.read()
+        self.assertEqual(obs, text)
+
+        # read gzip file using auto-identified gzip program
+        zippers = {}
+        with readzip(fpz, zippers) as f:
+            obs = f.read()
+        self.assertEqual(obs, text)
+        self.assertDictEqual(zippers, {'gzip': True})
+
+        # read gzip file using already-identified gzip program
+        with readzip(fpz, zippers) as f:
+            obs = f.read()
+        self.assertEqual(obs, text)
+        self.assertTrue(zippers['gzip'])
+
+        # disable gzip program
+        zippers['gzip'] = False
+        with readzip(fpz, zippers) as f:
+            obs = f.read()
+        self.assertEqual(obs, text)
+        self.assertFalse(zippers['gzip'])
+        remove(fpz)
 
     def test_file2stem(self):
         self.assertEqual(file2stem('input.txt'), 'input')
