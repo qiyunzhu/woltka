@@ -38,7 +38,7 @@ Option | Description
 `--lineage` | Lineage strings. Can accept Greengenes-style rank prefix.
 `--columns` | Table of classification units per rank (column).
 `--map`, `-m` | Mapping of lower classification units to higher ones.
-`--map-as-rank` | Treat map filename stem as rank.
+`--map-as-rank` | Extract rank name from mapping filename.
 `--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map.
 
 ### Assignment
