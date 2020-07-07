@@ -296,7 +296,7 @@ def parse_sam_line(line):
     length, offset = cigar_to_lens(cigar)
 
     # append strand to read Id if not already
-    if not qname.endswith(('/1', '/2')):
+    if qname[-2:] not in ('/1', '/2'):
         flag = int(flag)
 
         # forward strand: bit 64
