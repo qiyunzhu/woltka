@@ -276,23 +276,30 @@ def parse_sam_line(line):
     # skip header
     if line[0] == '@':
         return
-    x = line.split('\t')
-    qname, rname = x[0], x[2]  # query and subject identifiers
+
+    # relevant fields
+    qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
 
     # skip unmapped
     if rname == '*':
         return
-    pos = int(x[3])  # leftmost mapping position
+
+    # leftmost mapping position
+    pos = int(pos)
 
     # parse CIGAR string
-    length, offset = cigar_to_lens(x[5])
+    length, offset = cigar_to_lens(cigar)
 
     # append strand to read Id if not already
     if not qname.endswith(('/1', '/2')):
-        flag = int(x[1])
-        if flag & (1 << 6):  # forward strand: bit 64
+        flag = int(flag)
+
+        # forward strand: bit 64
+        if flag & (1 << 6):
             qname += '/1'
-        elif flag & (1 << 7):  # reverse strand: bit 128
+
+        # reverse strand: bit 128
+        elif flag & (1 << 7):
             qname += '/2'
 
     return qname, rname, None, length, pos, pos + offset - 1
