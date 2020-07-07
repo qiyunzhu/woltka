@@ -35,11 +35,11 @@ Option | Description
 --- | ---
 `--nodes` | Hierarchies defined by NCBI nodes.dmp or compatible formats.
 `--newick` | Hierarchies defined by a tree in Newick format.
-`--lineage` | Map of lineage strings. Can accept Greengenes-style rank prefix.
+`--lineage` | Lineage strings. Can accept Greengenes-style rank prefix.
 `--columns` | Table of classification units per rank (column).
-`--map`, `-m` | Map of lower classification units to higher ones. Can accept multiple files.
+`--map`, `-m` | Mapping of lower classification units to higher ones.
 `--map-as-rank` | Treat map filename stem as rank.
-`--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
+`--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map.
 
 ### Assignment
 

@@ -25,13 +25,13 @@ import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
-    openzip, readzip, path2stem, read_ids, id2file_from_dir,
+    openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
 from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, count, count_strata)
 from .tree import (
-    read_names, read_nodes, read_lineage, read_newick, read_rank_table,
+    read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
 from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
 from .table import prep_table, write_table
@@ -46,10 +46,10 @@ def workflow(input_fp:     str,
              demux:       bool = None,
              trimsub:      str = None,
              # hierarchies
-             nodes_fp:     str = None,
-             newick_fp:    str = None,
-             lineage_fp:   str = None,
-             columns_fp:   str = None,
+             nodes_fps:   list = [],
+             newick_fps:  list = [],
+             lineage_fps: list = [],
+             columns_fps: list = [],
              map_fps:     list = [],
              map_as_rank: bool = False,
              names_fps:   list = [],
@@ -106,7 +106,7 @@ def workflow(input_fp:     str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fps, nodes_fp, newick_fp, lineage_fp, columns_fp, map_fps,
+        names_fps, nodes_fps, newick_fps, lineage_fps, columns_fps, map_fps,
         map_as_rank, zippers)
 
     # build mapping module
@@ -530,10 +530,10 @@ def prepare_ranks(ranks:      str = None,
 
 
 def build_hierarchy(names_fps:   list = [],
-                    nodes_fp:     str = None,
-                    newick_fp:    str = None,
-                    lineage_fp:   str = None,
-                    columns_fp:   str = None,
+                    nodes_fps:   list = [],
+                    newick_fps:  list = [],
+                    lineage_fps: list = [],
+                    columns_fps: list = [],
                     map_fps:     list = [],
                     map_as_rank: bool = False,
                     zippers:     dict = None) -> (dict, dict, dict, str):
@@ -543,13 +543,13 @@ def build_hierarchy(names_fps:   list = [],
     ----------
     names_fps : list of str, optional
         Taxonomic names file(s).
-    nodes_fp : str, optional
-        Taxonomic nodes file.
-    newick_fp : str, optional
+    nodes_fps : list of str, optional
+        Taxonomic nodes file(s).
+    newick_fps : list of str, optional
         Newick tree file.
-    lineage_fp : str, optional
+    lineage_fps : list of str, optional
         Lineage strings file.
-    columns_fp : str, optional
+    columns_fps : list of str, optional
         Rank-per-column file.
     map_fps : list of str, optional
         Mapping file(s).
@@ -573,62 +573,62 @@ def build_hierarchy(names_fps:   list = [],
 
     # check if at least one filepath is specified
     is_build = any([
-        names_fps, nodes_fp, newick_fp, lineage_fp, columns_fp, map_fps])
+        names_fps, nodes_fps, newick_fps, lineage_fps, columns_fps, map_fps])
     if is_build:
         click.echo('Constructing classification system...')
 
     # taxonomy names
     for fp in names_fps:
-        click.echo(f'  Parsing taxonomy names file: {fp}...', nl=False)
+        click.echo(f'  Parsing taxon names file: {basename(fp)}...', nl=False)
         with readzip(fp, zippers) as f:
             names = read_names(f)
         update_dict(namedic, names)
         click.echo(' Done.')
 
     # taxonomy nodes
-    if nodes_fp:
-        click.echo(f'  Parsing taxonomy nodes file: {nodes_fp}...', nl=False)
-        with readzip(nodes_fp, zippers) as f:
+    for fp in nodes_fps:
+        click.echo(f'  Parsing taxon nodes file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             tree_, rankdic_ = read_nodes(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
     # Newick-format tree
-    if newick_fp:
-        click.echo(f'  Parsing Newick tree file: {newick_fp}...', nl=False)
-        with readzip(newick_fp, zippers) as f:
+    for fp in newick_fps:
+        click.echo(f'  Parsing Newick tree file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             update_dict(tree, read_newick(f))
         click.echo(' Done.')
 
     # lineage file
-    if lineage_fp:
-        click.echo(f'  Parsing lineage file: {lineage_fp}...', nl=False)
-        with readzip(lineage_fp, zippers) as f:
+    for fp in lineage_fps:
+        click.echo(f'  Parsing lineage file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             tree_, rankdic_ = read_lineage(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
     # columns file
-    if columns_fp:
-        click.echo(f'  Parsing columns file: {columns_fp}...', nl=False)
-        with readzip(columns_fp, zippers) as f:
-            tree_, rankdic_ = read_rank_table(f)
+    for fp in columns_fps:
+        click.echo(f'  Parsing columns file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
+            tree_, rankdic_ = read_columns(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
     # plain mapping files
     for fp in map_fps:
-        click.echo(f'  Parsing simple map file: {fp}...', nl=False)
+        click.echo(f'  Parsing simple map file: {basename(fp)}...', nl=False)
         with readzip(fp, zippers) as f:
             map_ = dict(read_map_1st(f))
         update_dict(tree, map_)
 
         # filename stem as rank
         if map_as_rank:
-            rank = path2stem(fp)
+            rank = stem2rank(path2stem(fp))
             update_dict(rankdic, {k: rank for k in set(map_.values())})
         click.echo(' Done.')
 

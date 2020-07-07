@@ -179,6 +179,44 @@ def path2stem(fp, ext=None):
     return file2stem(basename(fp), ext)
 
 
+def stem2rank(fp):
+    """Extract rank name from stem filename.
+
+    Parameters
+    ----------
+    fp : str
+        Filepath.
+    ext : str, optional
+        Filename extension.
+
+    Returns
+    -------
+    str
+        Filename stem.
+    """
+    stem = path2stem(fp)
+
+    # find pattern "a_to_b", "a-2-b" etc.
+    for sep in ('-', '_'):
+        try:
+            left, middle, right = stem.split(sep)
+        except ValueError:
+            continue
+        if middle in ('to', '2'):
+            return right
+
+    # find pattern "a2b"
+    try:
+        left, right = stem.split('2')
+    except ValueError:
+        pass
+    else:
+        return right
+
+    # if neither is found, return entire string
+    return stem
+
+
 def read_ids(fh):
     """Read a list of IDs from a file.
 

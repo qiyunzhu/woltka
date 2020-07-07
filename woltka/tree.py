@@ -168,8 +168,8 @@ def read_newick(fh):
     return res
 
 
-def read_rank_table(fh):
-    """Read taxonomic information from a rank table.
+def read_columns(fh):
+    """Read taxonomic information from a rank-per-column table.
 
     Parameters
     ----------
@@ -312,8 +312,8 @@ def fill_root(tree):
     Notes
     -----
     A root is defined as having parent as itself, a behavior derived from the
-    NCBI convention. Only root must be present in a tree, so that all taxa can
-    be traced back to the same root.
+    NCBI convention. Exactly one root must be present in a tree, so that all
+    taxa can be traced back to the same root.
 
     In custom trees, there may or may not be a clearly defined root. This
     function aims as defining a root for any given tree. Specifically, if
