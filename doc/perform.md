@@ -106,6 +106,22 @@ Reading compressed alignment files is an expensive task. By default, Woltka call
 
 If necessary, you can disable the calling of external programs using the `--no-exe` flag. However, we don't recommend this unless there is a specific concern in your computer system.
 
+### Parse alignments as simple maps
+
+Woltka currently supports three formats of alignment: BLAST (b6o), SAM and simple map of "query \<tab\> subject". For the former two, Woltka can extract alignment coordinates which are need for coordinates-based classification. However, this is not needed for plain classification.
+
+For the "simple map" format, Woltka will parse first two columns and query and subject while discarding remaining one. If your alignment files suffice the format of "query \<tab\> subject \<tab\> whatever" (for example, **BLAST** files fall into this category), you can force Woltka to parse it as a simple map, using parameter `--format map`. This will improve the speed of parsing those files.
+
+### Trim SAM file columns
+
+A [SAM](https://en.wikipedia.org/wiki/SAM_(file_format)) file can be bulky. The last several columns may contain the entire sequence and quality scores (e.g., Bowtie2 and Minimap2 do this). These texts are not useful for Woltka. If you haven't opted out this during alignment (e.g., calling Bowtie2 with `--omit-sec-seq`), you can do so afterwards to save disk space:
+
+```bash
+zcat input.sam.gz | grep -v ^@ | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz
+```
+
+Alternatively, you may only keep 1st and 3rd columns (query and subject) using `cut -f1,3` so that the resulting file can be parse as a simple map (see [above](#parse-alignments-as-simple-maps)). But this will lose strand information (which is stored in the 2nd column) if you care about it.
+
 ### Convert alignments to simple maps
 
 Woltka allows you to generate maps of query sequences to classification units via the `--outmap` or `-u` parameter (see [details](output.md#output-read-maps)). These maps themselves can serve as input files for Woltka, enabling efficient reuse AND the powerful [stratification](stratify.md) function.

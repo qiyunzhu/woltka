@@ -19,7 +19,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - Details
   - [Input files](doc/input.md)
   - [Output files](doc/output.md)
-  - [Classification system](doc/classify.md)
+  - [Classification system](doc/hierarchy.md)
   - [Ordinal matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
 - Tutorials
@@ -54,17 +54,6 @@ Woltka does NOT **align** sequences. You need to align your FastQ (or Fast5, etc
 Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime2.org/) for robust downstream analyses of the profiles to decode the relationships among micobial communities and with their environments.
 
 ## Flexible
-
-Woltka features the following modes of classification:
-
-1\. No classification (`--rank none`):
-
-2\. Free-rank classification (`--rank free`)
-
-3\. Given-rank classification (`--rank <name>`). The name
-
-Woltka features a highly flexible hierarchical classification system. It is represented by a **tree** structure instead of a fixed number of levels (e.g., the eight standard taxonomic ranks). In another word, it is **rank-free**.
-
 
 
 

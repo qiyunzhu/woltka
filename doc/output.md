@@ -20,7 +20,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3 | Sample 4 | Name | Rank
 
 Parameter `--output` or `-o` is to tell Woltka where to save the output feature table(s).
 
-The number of feature tables generated per run is dependent on the number of ranks (supplied with `--rank` or `-r`, see [classification](classify.md) for details). If there is only one rank, the value of the parameter is the actual path of the output file. For example:
+The number of feature tables generated per run is dependent on the number of ranks (supplied with `--rank` or `-r`, see [classification](hierarchy.md) for details). If there is only one rank, the value of the parameter is the actual path of the output file. For example:
 
 ```bash
 woltka classify ... -r genus -o output.biom
@@ -40,7 +40,7 @@ The default output feature table format is [**BIOM**](http://biom-format.org/), 
 
 A BIOM table not only stores feature counts per sample, but also allows appending feature metadata to it. Woltka optionally appends the following three metadata columns to a BIOM table:
 
-- **Name**: The name of each classification unit, as defined in the file provided by `--names` (see [classification](classify.md) for details).
+- **Name**: The name of each classification unit, as defined in the file provided by `--names` (see [classification](hierarchy.md) for details).
 
   Alternatively, instead of appending the name column, one may choose to replace unit IDs with their names, by using the `--name-as-id` flag. IDs without names will remain IDs. Note however, this will throw an error if multiple IDs correspond to the same name!
 
@@ -97,7 +97,7 @@ biom convert --to-hdf5 -i input.tsv -o output.biom
 
 During the processing of each alignment file, Woltka can optionally write to disk a map of reads to classification units. These "read maps" are informative when the user wants to know how exactly individual reads are assigned. They are useful in a series of downstream applications. For example, Woltka's stratification function can take read maps generated using one classification system (e.g., taxonomy), and stratify assignments based on another (e.g., function). See [stratification](stratify.md) for details.
 
-The format of a read map is usually as simple as "read \<tab\> classification unit". If ambiguous assignment is allowed (`--ambig`, see [classification](classify.md) for details), one or multiple classification units will be joined by comma, and counted by a number following colon if the same classification unit occurs multiple times. Example:
+The format of a read map is usually as simple as "read \<tab\> classification unit". If ambiguous assignment is allowed (`--ambig`, see [classification](hierarchy.md) for details), one or multiple classification units will be joined by comma, and counted by a number following colon if the same classification unit occurs multiple times. Example:
 
 ```
 R01 Ecoli
