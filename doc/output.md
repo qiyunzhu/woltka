@@ -22,13 +22,13 @@ Parameter `--output` or `-o` is to tell Woltka where to save the output feature 
 
 The number of feature tables generated per run is dependent on the number of ranks (supplied with `--rank` or `-r`, see [classification](classify.md) for details). If there is only one rank, the value of the parameter is the actual path of the output file. For example:
 
-```
+```bash
 woltka classify ... -r genus -o output.biom
 ```
 
 If there are multiple ranks, this parameter points to a directory, where multiple feature tables with the filename pattern `<rank>.biom` will be stored. For example:
 
-```
+```bash
 woltka classify ... -r phylum,genus,species -o .
 ```
 
@@ -56,19 +56,19 @@ A BIOM table not only stores feature counts per sample, but also allows appendin
 
 A BIOM table can be directly parsed by many bioinformatics programs. It is typically not necessary to convert it back to plain text format (i.e., a tab-separated file). However if you do want to do so, the following command with do the job:
 
-```
+```bash
 biom convert --to-tsv -i input.biom -o output.tsv
 ```
 
 Optionally, one can append a metadata column to the right of the table. For example:
 
-```
+```bash
 biom convert --to-tsv -i input.biom -o output.tsv --header-key Name --tsv-metadata-formatter naive
 ```
 
 Additionally, one can export all metadata as a separate table, with:
 
-```
+```bash
 biom export-metadata -i input.biom --observation-metadata-fp metadata.tsv
 ```
 
@@ -80,7 +80,7 @@ If the output filepath (`--output`) is a single file (i.e., `--rank` has only on
 
 Alternatively, use `--to-biom` or `--to-tsv` to force a specific output format. This is useful when there are multiple ranks and the output filepath is a directory. Example:
 
-```
+```bash
 woltka classify ... -r phylum,genus,species -o . --to-tsv
 ```
 
@@ -88,7 +88,7 @@ Metadata (see above) will be appended as extra columns to the right of the table
 
 Likewise, one can convert a TSV file (without metadata) to BIOM format:
 
-```
+```bash
 biom convert --to-hdf5 -i input.tsv -o output.biom
 ```
 
@@ -114,7 +114,7 @@ Read maps are typically large -- comparable to the original alignment files, sin
 
 For example, with command:
 
-```
+```bash
 woltka classify ... -s S1,S2,S3 -r genus --outmap maps
 ```
 
@@ -122,7 +122,7 @@ In directory `maps`, there will be three read map files: `S1.txt.gz`, `S2.txt.gz
 
 With command:
 
-```
+```bash
 woltka classify \
   ...
   --samples S1,S2,S3 \

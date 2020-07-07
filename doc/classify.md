@@ -1,18 +1,34 @@
-# Tree-based classification
+# Tree-structured classification system
 
-Woltka features a highly flexible hierarchical classification system. It is represented by a **tree** structure instead of a fixed number of levels (e.g., the eight standard taxonomic ranks). In another word, it is **rank-free**.
+Woltka features a highly flexible hierarchical classification system. It is represented by a **tree** structure, instead of a fixed number of levels (e.g., the eight standard [taxonomic ranks](https://en.wikipedia.org/wiki/Taxonomic_rank)). It can be the traditional taxonomy, or an actual phylogenetic tree, or the hierarchies of gene-module-pathway, or any hierarchical representations of feature relationships.
 
-Wolkta supports various formats of classification systems, specifically:
+The term "**rank**" (or "level") is still relevant, but it is merely a property of a feature, and does not bear information of hierarchy. For example, above a _genus_-level feature it does not have to be a _family_-level one, but could directly go to _order_, or have a _tribe_ which isn't common for the rest of the tree, or one or more levels which do NOT have the rank assignment.
 
-1. `--nodes`: NCBI-style `nodes.dmp` (columns are delimited by "\<tab\>|\<tab\>") or a tab-delimited file, in which each taxon (1st column) points to its parent taxon (2nd column). Rank (3rd column) is optional.
+In another word, Woltka classification is **rank-free**. This design enables finer-grain resolution of feature relationships, in addition to flexibility. It is therefore suitable for complex systems, such as phylogenetic trees.
 
-2. `--newick`: Newick-format tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
+That being said, Woltka still supports ranked hierarchies and one can instruct the program to target one or more specific ranks.
+
+
+## Contents
+
+- [Supported hierarchy files](#supported-hierarchy-files)
+- [How Woltka handles hierarchies](#how-woltka-handles-hierarchies)
+- [Feature name dictionary](#feature-name-dictionary)
+
+
+## Supported hierarchy files
+
+Wolkta supports various types and formats of classification systems, specifically:
+
+1. `--nodes`: [NCBI-style](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/) `nodes.dmp` (columns are delimited by "\<tab\>|\<tab\>") or a tab-delimited file, in which each taxon (1st column) points to its parent taxon (2nd column). Rank (3rd column) is optional.
+
+2. `--newick`: [Newick-format](https://en.wikipedia.org/wiki/Newick_format) tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
 
 3. `--rank-table`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
 
 4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
 
-   It can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
+   It can be [Greengenes-style](http://greengenes.secondgenome.com/) taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
 
    Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
 
@@ -22,84 +38,49 @@ Wolkta supports various formats of classification systems, specifically:
 
    Flag `--map-as-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
 
-If no classification file is provided, Woltka will automatically build a classification system from the alignment files, in which subject identifiers will be parsed as lineage strings.
+Compressed files are supported and automatically recognized. For example:
 
-Subjects themselves are part of the classification system. A map of subject to taxon (e.g., a genome ID to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
+```bash
+woltka classify  --lineage gg_13_5_taxonomy.txt.gz ...
+```
 
-Classification files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies -- unless they conflict -- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
+
+## How Woltka handles hierarchies
+
+Hierarchy files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies -- unless they conflict -- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
 
 ```bash
 woltka classify \
   --map nucl2g.txt \
   --map g2taxid.txt \
   --nodes taxdump/nodes.dmp \
-  --names taxdump/names.dmp \
   ...
 ```
 
 In this command, three layers of hierarchies are provided: 1) nucleotide ID to genome ID (`nucl2g.txt`), 2) genome ID to taxonomy ID (`g2taxid.txt`), 3) NCBI taxonomy tree (`nodes.dmp`).
 
-Again, compressed files are supported and automatically recognized. The following command works:
+**Subjects** themselves are part of the classification system. A map of subjects to one-level-higher features (e.g., a nucleotide accession to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
+
+
+## Feature name dictionary
+
+Optionally, one can supply Woltka with a feature name dictionary:
+
+* `--names` or `-n`: NCBI-style `names.dmp` or a simple map of taxon \<tab\> name.
+
+With a name dictionary, Woltka will append names to the output profile as an extra column. Alternatively, one may add the `--name-as-id` flag to the command and Woltka will replace feature IDs with names in the profile and the read-to-feature maps. See the [Output files](output.md) page for details.
+
+Example command:
 
 ```bash
 woltka classify \
-  --lineage gg_13_5_taxonomy.txt.gz
-  ...
-```
-
-Furthermore, one can supply Woltka with a taxon name dictionary, and the output profile will show taxon names instead of taxon IDs:
-
-* `--names`: NCBI-style `names.dmp` or a simple map of taxon \<tab\> name. Example:
-
-```bash
-woltka classify \
+  --input diamond.m8.gz \
+  --map prot.accession2taxid.gz \
   --nodes taxdump/nodes.dmp \
   --names taxdump/names.dmp \
-  ...
+  --name-as-id \
+  --rank genus \
+  --output diamond.genus.tsv
 ```
 
-One may supply multiple names files.
-
-
-## Combined taxonomic & functional analyses
-
-Woltka combines the two fundamental analyses in metagenomics: taxonomic profiling (mapping reads to genomes) and functional profiling (mapping reads to functional genes) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
-
-This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
-
-The coordinates of read-to-genome alignments are provided in the alignment files. One needs to provide Woltka with a table of gene coordinates. The format is like:
-
-WoL reannotations (available for [download](https://biocore.github.io/wol/)):
-
-```
->G000006745
-1       806     372
-2       2177    816
-3       3896    2271
-4       4446    4123
-5       4629    4492
-```
-
-Native NCBI annotations and accessions:
-
-```
-## GCF_000005825.2
-# NC_013791.2
-WP_012957018.1  816 2168
-WP_012957019.1  2348    3490
-WP_012957020.1  3744    3959
-WP_012957021.1  3971    5086
-...
-```
-
-Again, compressed files are supported.
-
-With the coordinates file, one can streamline the read-to-gene matching step into a Woltka protocol. Here is an example for functional profiling:
-
-```bash
-woltka classify \
-  --coords coords.txt \
-  --map gene2function.txt \
-  --map function2pathway.txt \
-  ...
-```
+Similarily, multiple name files are acceptable, and names dictionaries will be merged, unless Woltka detects any conflict among them.
