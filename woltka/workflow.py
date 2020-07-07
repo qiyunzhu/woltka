@@ -37,45 +37,45 @@ from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
 from .table import prep_table, write_table
 
 
-def workflow(input_fp:      str,
-             output_fp:     str,
+def workflow(input_fp:     str,
+             output_fp:    str,
              # input
-             input_fmt:     str = None,
-             input_ext:     str = None,
-             samples:       str = None,
-             demux:        bool = None,
-             trimsub:       str = None,
+             input_fmt:    str = None,
+             input_ext:    str = None,
+             samples:      str = None,
+             demux:       bool = None,
+             trimsub:      str = None,
              # hierarchies
-             nodes_fp:      str = None,
-             newick_fp:     str = None,
-             lineage_fp:    str = None,
-             rank_table_fp: str = None,
-             map_fps:      list = [],
-             map_as_rank:  bool = False,
-             names_fps:    list = [],
+             nodes_fp:     str = None,
+             newick_fp:    str = None,
+             lineage_fp:   str = None,
+             columns_fp:   str = None,
+             map_fps:     list = [],
+             map_as_rank: bool = False,
+             names_fps:   list = [],
              # assignment
-             ranks:         str = None,
-             uniq:         bool = False,
-             major:        bool = None,
-             above:        bool = False,
-             subok:        bool = False,
+             ranks:        str = None,
+             uniq:        bool = False,
+             major:       bool = None,
+             above:       bool = False,
+             subok:       bool = False,
              # gene matching
-             coords_fp:     str = None,
-             overlap:       int = 80,
+             coords_fp:    str = None,
+             overlap:      int = 80,
              # stratification
-             strata_dir:    str = None,
+             strata_dir:   str = None,
              # output
-             output_fmt:    str = None,
-             unassigned:   bool = False,
-             name_as_id:   bool = False,
-             add_rank:     bool = False,
-             add_lineage:  bool = False,
-             outmap_dir:    str = None,
-             outmap_zip:    str = 'gz',
+             output_fmt:   str = None,
+             unassigned:  bool = False,
+             name_as_id:  bool = False,
+             add_rank:    bool = False,
+             add_lineage: bool = False,
+             outmap_dir:   str = None,
+             outmap_zip:   str = 'gz',
              # performance
-             chunk:         int = None,
-             cache:         int = 1024,
-             no_exe:       bool = False) -> dict:
+             chunk:        int = None,
+             cache:        int = 1024,
+             no_exe:      bool = False) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -106,7 +106,7 @@ def workflow(input_fp:      str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps,
+        names_fps, nodes_fp, newick_fp, lineage_fp, columns_fp, map_fps,
         map_as_rank, zippers)
 
     # build mapping module
@@ -529,14 +529,14 @@ def prepare_ranks(ranks:      str = None,
     return ranks, rank2dir
 
 
-def build_hierarchy(names_fps:    list = [],
-                    nodes_fp:      str = None,
-                    newick_fp:     str = None,
-                    lineage_fp:    str = None,
-                    rank_table_fp: str = None,
-                    map_fps:      list = [],
-                    map_as_rank:  bool = False,
-                    zippers:      dict = None) -> (dict, dict, dict, str):
+def build_hierarchy(names_fps:   list = [],
+                    nodes_fp:     str = None,
+                    newick_fp:    str = None,
+                    lineage_fp:   str = None,
+                    columns_fp:   str = None,
+                    map_fps:     list = [],
+                    map_as_rank: bool = False,
+                    zippers:     dict = None) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
     Parameters
@@ -549,8 +549,8 @@ def build_hierarchy(names_fps:    list = [],
         Newick tree file.
     lineage_fp : str, optional
         Lineage strings file.
-    rank_table_fp : str, optional
-        Rank table file.
+    columns_fp : str, optional
+        Rank-per-column file.
     map_fps : list of str, optional
         Mapping file(s).
     map_as_rank : bool, optional
@@ -573,7 +573,7 @@ def build_hierarchy(names_fps:    list = [],
 
     # check if at least one filepath is specified
     is_build = any([
-        names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps])
+        names_fps, nodes_fp, newick_fp, lineage_fp, columns_fp, map_fps])
     if is_build:
         click.echo('Constructing classification system...')
 
@@ -601,7 +601,7 @@ def build_hierarchy(names_fps:    list = [],
             update_dict(tree, read_newick(f))
         click.echo(' Done.')
 
-    # lineage strings file
+    # lineage file
     if lineage_fp:
         click.echo(f'  Parsing lineage file: {lineage_fp}...', nl=False)
         with readzip(lineage_fp, zippers) as f:
@@ -610,10 +610,10 @@ def build_hierarchy(names_fps:    list = [],
         update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
-    # rank table file
-    if rank_table_fp:
-        click.echo(f'  Parsing rank table file: {rank_table_fp}...', nl=False)
-        with readzip(rank_table_fp, zippers) as f:
+    # columns file
+    if columns_fp:
+        click.echo(f'  Parsing columns file: {columns_fp}...', nl=False)
+        with readzip(columns_fp, zippers) as f:
             tree_, rankdic_ = read_rank_table(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)

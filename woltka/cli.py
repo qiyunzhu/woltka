@@ -99,8 +99,8 @@ def gotu_cmd(ctx, **kwargs):
     '--lineage', 'lineage_fp', type=click.Path(exists=True),
     help='Map of lineage strings. Can accept Greengenes-style rank prefix.')
 @click.option(
-    '--rank-table', 'rank_table_fp', type=click.Path(exists=True),
-    help='Table of classification units at each rank (column).')
+    '--columns', 'columns_fp', type=click.Path(exists=True),
+    help='Table of classification units per rank (column).')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of lower classification units to higher ones. Can accept '

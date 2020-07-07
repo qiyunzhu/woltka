@@ -19,7 +19,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - Details
   - [Input files](doc/input.md)
   - [Output files](doc/output.md)
-  - [Classification system](doc/classify.md)
+  - [Classification system](doc/hierarchy.md)
   - [Ordinal matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
 - Tutorials
@@ -33,9 +33,32 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - References
   - [Command-line interface](doc/cli.md)
   - [Computational efficiency](doc/perform.md)
-  - [Parameter auto-decision](doc/auto.md)
-  - [Developer's guidlines](doc/dev.md)
+- [FAQs](#doc/faq.md)
 - [Notes](#notes)
+
+
+## Overview
+
+### Where does Woltka fit in a pipeline
+
+Woltka is a **classifier**. It serves as a middle layer between sequence alignment and community ecology analyses.
+
+### What does Woltka do
+
+Woltka processes **alignments** -- the mappings of query sequences against reference sequences (such as microbial genomes or genes), and infers the best placement of the queries in a hierarchical classification system. One query could have simultaneous matches in multiple references. Woltka finds the most suitable classification unit(s) to describe the query accordingly the criteria specified by the researcher. Woltka generates **profiles** (feature tables) -- the frequencies (counts) of classification units which describe the composition of samples.
+
+### What does Woltka not do
+
+Woltka does NOT **align** sequences. You need to align your FastQ (or Fast5, etc.) files against a reference database (we recommend [WoL](https://biocore.github.io/wol/)) use an aligner of your choice (BLAST, Bowtie2, etc.). The resulting alignment files can be fed into Woltka.
+
+Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime2.org/) for robust downstream analyses of the profiles to decode the relationships among micobial communities and with their environments.
+
+## Flexible
+
+
+
+
+## What is
 
 ## Installation
 

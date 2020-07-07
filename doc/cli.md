@@ -29,14 +29,14 @@ Option | Description
 
 ### Hierarchies
 
-* See [classification system](classify.md) for details.
+* See [classification system](hierarchy.md) for details.
 
 Option | Description
 --- | ---
 `--nodes` | Hierarchies defined by NCBI nodes.dmp or compatible formats.
 `--newick` | Hierarchies defined by a tree in Newick format.
 `--lineage` | Map of lineage strings. Can accept Greengenes-style rank prefix.
-`--rank-table` | Table of classification units at each rank (column).
+`--columns` | Table of classification units per rank (column).
 `--map`, `-m` | Map of lower classification units to higher ones. Can accept multiple files.
 `--map-as-rank` | Treat map filename stem as rank.
 `--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
@@ -84,6 +84,7 @@ Option | Description
 `--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1024.
 `--no-exe` | Disable calling external programs (`gzip`, `bzip2` and `xz`) for decompression. Otherwise, Woltka will use them if available for faster processing, or switch back to Python if not.
 
+
 ## Tools
 
 ### Filter
@@ -96,3 +97,12 @@ Option | Description
 `--output`, `-o` (required) | Path to output profile file or directory of profile files.
 `--min-count`, `-c` | Per-sample minimum count threshold (>=1).
 `--min-percent`, `-p` | Per-sample minimum percentage threshold (<100).
+
+### Merge
+
+Merge multiple profiles into one profile.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input profiles or directories containing profiles. Can accept multiple paths.
+`--output`, `-o` (required) | Path to output profile.
