@@ -2,8 +2,9 @@
 
 The command-line interface (CLI) of Woltka provides several commands:
 
-- **gotu**: gOTU table generation.
-- **classify**: Complete classification workflow with all parameters.
+- [**gotu**](#gotu): gOTU table generation.
+- [**classify**](#classify): Complete classification workflow with all parameters.
+- [**tools**](#tools): Utilities for working with alignments, maps and profiles.
 
 ## Classify
 
@@ -24,32 +25,31 @@ Option | Description
 `--filext`, `-e` | Input filename extension following sample ID.
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
-`--lines` | Number of lines to read from alignment file per chunk. Default: 1000000.
+`--trim-sub` | Trim subject IDs at the last given delimiter.
 
 ### Hierarchies
 
-* See [classification system](classify.md) for details.
+* See [classification system](hierarchy.md) for details.
 
 Option | Description
 --- | ---
 `--nodes` | Hierarchies defined by NCBI nodes.dmp or compatible formats.
 `--newick` | Hierarchies defined by a tree in Newick format.
-`--lineage` | Map of lineage strings. Can accept Greengenes-style rank prefix.
-`--rank-table` | Table of classification units at each rank (column).
-`--map`, `-m` | Map of lower classification units to higher ones. Can accept multiple files.
-`--map-as-rank` | Treat map filename stem as rank.
-`--names` | Names of classification units as defined by NCBI names.dmp or a plain map. Can accept multiple files.
+`--lineage` | Lineage strings. Can accept Greengenes-style rank prefix.
+`--columns` | Table of classification units per rank (column).
+`--map`, `-m` | Mapping of lower classification units to higher ones.
+`--map-as-rank` | Extract rank name from mapping filename.
+`--names`, `-n` | Names of classification units as defined by NCBI names.dmp or a plain map.
 
 ### Assignment
 
 Option | Description
 --- | ---
-`--rank`, `-r` | Classify sequences at this rank. Ignore or enter "none" to omit classification; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank.
-`--above/--no-above` | Allow assigning to a classification unit higher than given rank. Default: auto-decision.
-`--major` | Majority-rule assignment percentage threshold. Range: [51, 99].
-`--ambig/--no-ambig` | Allow assigning one sequence to multiple classification units. Default: True.
-`--subok/--no-subok` | Can report subject IDs in classification result. Default: True.
-`--deidx/--no-deidx` | Strip "underscore index" suffixes from subject IDs. Default: False.
+`--rank`, `-r` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification.; enter "free" for free-rank classification. Can specify multiple comma-delimited ranks and one profile will be generated for each rank. If omitted, the program will do "free" if a classification system is provided or "none" if not.
+`--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
+`--major` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates. Range: [51, 99]. Overrides "above" and "uniq".
+`--above` | In given-rank classification, allow assigning a sequence to a higher rank if it cannot be assigned to the current rank. Overrides "uniq".
+`--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
 
 ### Gene matching
 
@@ -68,9 +68,41 @@ Option | Description
 
 Option | Description
 --- | ---
-`--to-biom/--to-tsv` | Force output feature table format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is one rank.
-`--name-as-id` | Replace feature IDs with names.
-`--add-rank` | Append feature ranks to table.
-`--add-lineage` | Append lineage strings to table.
-`--outmap`, `-u` | Write read-to-feature maps to directory.
-`--outmap-zip` | Compress read maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+`--to-biom/--to-tsv` | Force output profile format (BIOM or TSV). If omitted, format defaults to BIOM if there are multiple ranks, or based on output filename extension (`.biom` for BIOM, otherwise TSV) if there is only one rank.
+`--unassigned` | Report unassigned sequences (will be marked as "Unassigned").
+`--name-as-id` | Replace feature IDs with names. Otherwise append names to table as a metadata column.
+`--add-rank` | Append feature ranks to table as a metadata column.
+`--add-lineage` | Append lineage strings to table as a metadata column.
+`--outmap`, `-u` | Write read-to-feature maps to this directory.
+`--zipmap` | Compress read-to-feature maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+
+### Performance
+
+Option | Description
+--- | ---
+`--chunk` | Number of alignment lines to read and parse in each chunk. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
+`--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1024.
+`--no-exe` | Disable calling external programs (`gzip`, `bzip2` and `xz`) for decompression. Otherwise, Woltka will use them if available for faster processing, or switch back to Python if not.
+
+
+## Tools
+
+### Filter
+
+Filter a profile by per-sample abundance.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input alignment file or directory of alignment files.
+`--output`, `-o` (required) | Path to output profile file or directory of profile files.
+`--min-count`, `-c` | Per-sample minimum count threshold (>=1).
+`--min-percent`, `-p` | Per-sample minimum percentage threshold (<100).
+
+### Merge
+
+Merge multiple profiles into one profile.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input profiles or directories containing profiles. Can accept multiple paths.
+`--output`, `-o` (required) | Path to output profile.

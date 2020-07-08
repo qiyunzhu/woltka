@@ -1,15 +1,15 @@
 # gOTU analysis
 
-The Woltka interface provides two commands:
+The notion of “**gOTU**” (pronounced as "go-to") is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. It is in constrast to conventional practices, in which taxonomic units such as genera or species were used. Therefore,  gOTU is analogous to sOTU in 16S rRNA studies. The advantage of using gOTU includes 1) highest-possible resolution, 2) independent from taxonomy which is coarse and error-prone as a classification system. 3) allowing for phylogeny-based analysis such as Faith’s PD and UniFrac. The last part is enhanced by the “Web of Life” ([WoL](https://biocore.github.io/wol/)) reference phylogeny.
 
-- **gotu**: gOTU table generation.
-- **classify**: Complete classification workflow with all parameters.
 
-The command specialized for gOTU analysis, **gotu**, is a simplified wrapper of the full-power command, **classify**, which has more parameters to allow for extended features and controls. We will start with this simple analysis before diving into the complex and flexible usages.
+## Contents
 
-## Background
+- [gOTU table generation](#gotu-table-generation)
+- [gOTU analysis using QIIME 2](#gotu-analysis-using-qiime-2)
+- [Alignment ambiguity](#alignment-ambiguity)
+- [Custom alignment](#custom-alignment)
 
-The notion of “gOTU” (pronounced as "go-to") is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. It is in constrast to conventional practices, in which taxonomic units such as genera or species were used. Therefore,  gOTU is analogous to sOTU in 16S rRNA studies. The advantage of using gOTU includes 1) highest-possible resolution, 2) independent from taxonomy which is coarse and error-prone as a classification system. 3) allowing for phylogeny-based analysis such as Faith’s PD and UniFrac. The last part is enhanced by the “web of life” reference phylogeny.
 
 ## gOTU table generation
 
@@ -63,7 +63,7 @@ It is quite common that one query sequence can be aligned to multiple reference 
 Alternatively, one may choose to discard all non-unique matches, by adding a flag:
 
 ```bash
-woltka gotu --no-ambig ...
+woltka gotu --uniq ...
 ```
 
 ## Custom alignment

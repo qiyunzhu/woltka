@@ -12,19 +12,25 @@
 hierarchical classification system.
 """
 
+from operator import itemgetter
+from collections import defaultdict
+
 from .util import count_list
 from .tree import find_rank, find_lca
 
 
-def assign_none(subs, ambig=False):
+fromkeys = dict.fromkeys
+
+
+def assign_none(subs, uniq=False):
     """Assign query to subjects without using a classification system.
 
     Parameters
     ----------
     subs : set of str
         Subjects.
-    ambig : bool, optional
-        Count occurrence of each subject.
+    uniq : bool, optional
+        Assignment must be unique.
 
     Returns
     -------
@@ -35,7 +41,7 @@ def assign_none(subs, ambig=False):
         sub, = subs
         return sub
     except ValueError:
-        return count_list(subs) if ambig else None
+        return None if uniq else fromkeys(subs, 1)
 
 
 def assign_free(subs, tree, root=None, subok=False):
@@ -65,9 +71,9 @@ def assign_free(subs, tree, root=None, subok=False):
         return None if lca == root else lca
 
 
-def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
-                ambig=False):
-    """Assign query to a fixed rank in a classification system.
+def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
+                uniq=False):
+    """Assign query to a given rank in a classification system.
 
     Parameters
     ----------
@@ -81,17 +87,21 @@ def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
         Rank dictionary.
     root : str, optional
         Root identifier.
-    above : bool, optional
-        Allow assignment above rank.
     major : float, optional
         Majority-rule assignment threshold.
-    ambig : bool, optional
-        Count occurrence of each taxon at rank.
+    above : bool, optional
+        Allow assignment above rank.
+    uniq : bool, optional
+        Assignment must be unique.
 
     Returns
     -------
     str or dict
         Unique assignment or assignment-to-count map.
+
+    TODO
+    ----
+    Combine major and above.
     """
     taxa = [find_rank(x, rank, tree, rankdic) for x in subs]
     tset = set(taxa)
@@ -104,66 +114,68 @@ def assign_rank(subs, rank, tree, rankdic, root=None, above=False, major=None,
             return None
         lca = find_lca(tset, tree)
         return None if lca == root else lca
-    elif ambig:
-        return count_list(filter(None, taxa))
-    else:
+    elif uniq:
         return None
+    else:
+        return count_list(filter(None, taxa))
 
 
-def count(matches):
+def count(taxque):
     """Count occurrences of taxa in a map.
 
     Parameters
     ----------
-    matches : dict of str or dict
-        Query-to-taxon(a) map.
+    taxque : iterable of str or dict
+        Taxon(a) assigned to each query.
 
     Returns
     -------
-    dict
+    defaultdict of str: int
         Taxon-to-count map.
     """
-    res = {}
-    for taxa in matches.values():
+    res = defaultdict(int)
+    for taxa in taxque:
         try:
             # unique match (scalar)
-            res[taxa] = res.get(taxa, 0) + 1
+            res[taxa] += 1
         except TypeError:
             # multiple matches (dict of subject : count), to be normalized by
             # total match count
             k = 1 / sum(taxa.values())
             for taxon, n in taxa.items():
-                res[taxon] = res.get(taxon, 0) + n * k
+                res[taxon] += n * k
     return res
 
 
-def count_strata(matches, strata):
+def count_strata(qryque, taxque, strata):
     """Stratify taxa in a map and count occurrences.
 
     Parameters
     ----------
-    matches : dict of str or dict
-        Query-to-taxon(a) map.
+    qryque : iterable of str
+        Query sequences.
+    taxque : iterable of str or dict
+        Taxon(a) assigned to each query.
     strata : dict, optional
-        Read-to-feature map for stratification.
+        Query-to-feature map for stratification.
 
     Returns
     -------
-    dict of tuple of (str, str): int
-        Stratified (feature, taxon): count map.
+    defaultdict of (str, str): int
+        Stratified (feature, taxon)-to-count map.
     """
-    res = {}
-    for query, taxa in matches.items():
+    res = defaultdict(int)
+    for query, taxa in zip(qryque, taxque):
         if query in strata:
             feature = strata[query]
             if isinstance(taxa, dict):
                 k = 1 / sum(taxa.values())
                 for taxon, n in taxa.items():
                     taxon = (feature, taxon)
-                    res[taxon] = res.get(taxon, 0) + n * k
+                    res[taxon] += n * k
             else:
                 taxon = (feature, taxa)
-                res[taxon] = res.get(taxon, 0) + 1
+                res[taxon] += 1
     return res
 
 
@@ -182,48 +194,6 @@ def majority(taxa, th=0.8):
     str or None
         Selected taxon.
     """
-    for taxon, n in sorted(count_list(taxa).items(), key=lambda x: x[1],
+    for taxon, n in sorted(count_list(taxa).items(), key=itemgetter(1),
                            reverse=True):
         return taxon if n >= len(taxa) * th else None
-
-
-def strip_index(readmap, sep='_'):
-    """Remove "underscore index" suffixes from subject IDs.
-
-    Parameters
-    ----------
-    readmap : dict
-        Read map to manipulate.
-    sep : str, optional
-        Separator between subject ID and index.
-    """
-    for query, subjects in readmap.items():
-        readmap[query] = set(x.rsplit(sep)[0] for x in subjects)
-
-
-def demultiplex(dic, samples=None, sep='_'):
-    """Demultiplex a read-to-subject(s) map.
-
-    Parameters
-    ----------
-    map_ : str
-        Read-to-subject(s) map.
-    samples : iterable of str, optional
-        Sample IDs to keep.
-    sep : str, optional
-        Separator between sample ID and read ID.
-
-    Returns
-    -------
-    dict of dict
-        Per-sample read-to-subject(s) maps.
-    """
-    if samples:
-        samset = set(samples)
-    res = {}
-    for key, value in dic.items():
-        left, _, right = key.partition(sep)
-        sample, read = right and left, right or left
-        if not samples or sample in samset:
-            res.setdefault(sample, {})[read] = value
-    return res

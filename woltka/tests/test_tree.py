@@ -14,8 +14,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.tree import (
-    read_names, read_nodes, read_lineage, read_newick, read_rank_table,
-    fill_root, get_lineage, get_lineage_gg, find_rank, find_lca)
+    read_names, read_nodes, read_lineage, read_newick, read_columns,
+    fill_root, get_lineage, lineage_str, find_rank, find_lca)
 
 
 # A small test taxon set containing 15 proteobacterial species
@@ -273,14 +273,14 @@ class TreeTests(TestCase):
         self.assertEqual(obs['N2'], 'N1')
         self.assertEqual(obs['N1'], 'N1')
 
-    def test_read_rank_table(self):
+    def test_read_columns(self):
         # simple case
         tsv = ['#seq	k	p	c	o',
                'seq1	k1	p1	c1	o1',
                'seq2	k1	p1	c2	o2',
                'seq3	k1	p2	c3	',
                'seq4	k2		c4	o3']
-        tree_obs, rankdic_obs = read_rank_table(iter(tsv))
+        tree_obs, rankdic_obs = read_columns(iter(tsv))
         tree_exp = {'seq1': 'o1', 'o1': 'c1', 'c1': 'p1', 'p1': 'k1',
                     'seq2': 'o2', 'o2': 'c2', 'c2': 'p1',
                     'seq3': 'c3', 'c3': 'p2', 'p2': 'k1',
@@ -295,18 +295,18 @@ class TreeTests(TestCase):
 
         # inconsistent tree
         with self.assertRaises(ValueError) as ctx:
-            read_rank_table(iter(tsv + ['seq5	k1	p2	c1	o1']))
+            read_columns(iter(tsv + ['seq5	k1	p2	c1	o1']))
         self.assertEqual(str(ctx.exception), 'Conflict at taxon "c1".')
 
         # inconsistent rank
         with self.assertRaises(ValueError) as ctx:
-            read_rank_table(iter(tsv + ['seq5	k2	c4		o3']))
+            read_columns(iter(tsv + ['seq5	k2	c4		o3']))
         self.assertEqual(str(ctx.exception), 'Conflict at taxon "c4".')
 
         # real rank table file
         fp = join(self.datdir, 'taxonomy', 'rank_tids.tsv')
         with open(fp, 'r') as f:
-            tree, rankdic = read_rank_table(f)
+            tree, rankdic = read_columns(f)
         self.assertEqual(len(tree), 426)
         self.assertEqual(len(rankdic), 319)
         self.assertEqual(tree['562'], '561')
@@ -328,20 +328,18 @@ class TreeTests(TestCase):
                'k1;p1':       'k1',
                'k1;p2':       'k1',
                'k2;p3':       'k2',
-               'k2;':         'k2',
                'k1;p1;c1':    'k1;p1',
                'k1;p2;c2':    'k1;p2',
                'k1;p2;c3':    'k1;p2',
                'k2;p3;c1':    'k2;p3',
-               'k2;;c4':      'k2;',
+               'k2;;c4':      'k2',
                'k1;p1;c1;o1': 'k1;p1;c1',
                'k1;p2;c2;o2': 'k1;p2;c2',
-               'k1;p2;c3;':   'k1;p2;c3',
                'k2;p3;c1;o3': 'k2;p3;c1',
                'k2;;c4;o4':   'k2;;c4',
                'seq1':        'k1;p1;c1;o1',
                'seq2':        'k1;p2;c2;o2',
-               'seq3':        'k1;p2;c3;',
+               'seq3':        'k1;p2;c3',
                'seq4':        'k2;p3;c1;o3',
                'seq5':        'k2;;c4;o4'}
         self.assertDictEqual(obs, exp)
@@ -351,24 +349,23 @@ class TreeTests(TestCase):
                'G1	k__Bacteria; p__Firmicutes; c__Bacilli',
                'G2	k__Bacteria; p__Firmicutes; c__Clostridia',
                'G3	k__Bacteria; p__Tenericutes; c__Mollicutes',
-               'G4	k__Viruses; x__; c__Inoviridae')
+               'G4	k__Viruses; x__Inoviridae')
         tree_obs, rankdic_obs = read_lineage(tsv)
         tree_exp = {'k__Bacteria': None,
                     'k__Viruses': None,
                     'k__Bacteria;p__Firmicutes': 'k__Bacteria',
                     'k__Bacteria;p__Tenericutes': 'k__Bacteria',
-                    'k__Viruses;x__': 'k__Viruses',
                     'k__Bacteria;p__Firmicutes;c__Bacilli':
                     'k__Bacteria;p__Firmicutes',
                     'k__Bacteria;p__Firmicutes;c__Clostridia':
                     'k__Bacteria;p__Firmicutes',
                     'k__Bacteria;p__Tenericutes;c__Mollicutes':
                     'k__Bacteria;p__Tenericutes',
-                    'k__Viruses;x__;c__Inoviridae': 'k__Viruses;x__',
+                    'k__Viruses;x__Inoviridae': 'k__Viruses',
                     'G1': 'k__Bacteria;p__Firmicutes;c__Bacilli',
                     'G2': 'k__Bacteria;p__Firmicutes;c__Clostridia',
                     'G3': 'k__Bacteria;p__Tenericutes;c__Mollicutes',
-                    'G4': 'k__Viruses;x__;c__Inoviridae'}
+                    'G4': 'k__Viruses;x__Inoviridae'}
         self.assertDictEqual(tree_obs, tree_exp)
         rankdic_exp = {'k__Bacteria': 'kingdom',
                        'k__Viruses': 'kingdom',
@@ -376,16 +373,15 @@ class TreeTests(TestCase):
                        'k__Bacteria;p__Tenericutes': 'phylum',
                        'k__Bacteria;p__Firmicutes;c__Bacilli': 'class',
                        'k__Bacteria;p__Firmicutes;c__Clostridia': 'class',
-                       'k__Bacteria;p__Tenericutes;c__Mollicutes': 'class',
-                       'k__Viruses;x__;c__Inoviridae': 'class'}
+                       'k__Bacteria;p__Tenericutes;c__Mollicutes': 'class'}
         self.assertDictEqual(rankdic_obs, rankdic_exp)
 
         # real lineage file
         fp = join(self.datdir, 'taxonomy', 'lineage.txt')
         with open(fp, 'r') as f:
             tree, rankdic = read_lineage(f)
-        self.assertEqual(len(tree), 429)
-        self.assertEqual(len(rankdic), 322)
+        self.assertEqual(len(tree), 426)
+        self.assertEqual(len(rankdic), 319)
         self.assertEqual(tree['k__Bacteria;p__Firmicutes'], 'k__Bacteria')
         self.assertEqual(rankdic['k__Bacteria;p__Firmicutes'], 'phylum')
         self.assertIsNone(tree['k__Bacteria'])
@@ -423,22 +419,22 @@ class TreeTests(TestCase):
         exp = ['1', '131567', '2', '1224', '1236', '72274', '135621', '286']
         self.assertListEqual(obs, exp)
 
-    def test_get_lineage_gg(self):
+    def test_lineage_str(self):
         tree = self.proteo['tree']
-        obs = get_lineage_gg('561', tree)
+        obs = lineage_str('561', tree)
         self.assertEqual(obs, '1236;91347;543')
-        obs = get_lineage_gg('561', tree, include_root=True)
+        obs = lineage_str('561', tree, include_root=True)
         self.assertEqual(obs, '1224;1236;91347;543')
-        obs = get_lineage_gg('561', tree, include_self=True)
+        obs = lineage_str('561', tree, include_self=True)
         self.assertEqual(obs, '1236;91347;543;561')
-        obs = get_lineage_gg('561', tree, self.proteo['names'])
+        obs = lineage_str('561', tree, self.proteo['names'])
         exp = 'Gammaproteobacteria;Enterobacterales;Enterobacteriaceae'
         self.assertEqual(obs, exp)
-        obs = get_lineage_gg('1224', tree)
+        obs = lineage_str('1224', tree)
         self.assertEqual(obs, '')
-        obs = get_lineage_gg('1236', tree)
+        obs = lineage_str('1236', tree)
         self.assertEqual(obs, '')
-        obs = get_lineage_gg('0000', tree)
+        obs = lineage_str('0000', tree)
         self.assertEqual(obs, '')
 
     def test_fill_root(self):
@@ -536,6 +532,12 @@ class TreeTests(TestCase):
         self.assertEqual(find_lca(['1'], tree), '1')
         self.assertIsNone(find_lca(['1234'], tree))
         self.assertIsNone(find_lca(['1234', '1'], tree))
+        self.assertIsNone(find_lca(['1', '2', '3'], tree))
+        self.assertEqual(find_lca(['1', '1'], tree), '1')
+
+        # broken tree, only for unit test coverage
+        tree = {'1': '1', '2': '2'}
+        self.assertEqual(find_lca(['1', '2'], tree), '1')
 
         # proteo tree
         # Escherichia, Enterobacter => Enterobacteriaceae

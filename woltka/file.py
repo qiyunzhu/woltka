@@ -13,17 +13,17 @@
 
 from os import listdir
 from os.path import basename, dirname, splitext, isfile, join
+from shutil import which
+from subprocess import Popen, PIPE
 import gzip
 import bz2
 import lzma
 
-from .util import allkeys, feat_n_cnt
-from .tree import get_lineage_gg
 
-
-ZIPDIC = {'.gz': gzip, '.gzip': gzip,
-          '.bz2': bz2, '.bzip2': bz2,
-          '.xz': lzma, '.lz': lzma, '.lzma': lzma}
+zipfmts = {'.gz':   'gzip', '.gzip':   'gzip',
+           '.bz2': 'bzip2', '.bzip2': 'bzip2',
+           '.xz':     'xz', '.lz':       'xz', '.lzma': 'xz'}
+ziplibs = {'gzip': gzip, 'bzip2': bz2, 'xz': lzma}
 
 
 def openzip(fp, mode='rt'):
@@ -41,10 +41,90 @@ def openzip(fp, mode='rt'):
     -------
     file handle
         Text stream ready to be read.
+
+    Notes
+    -----
+    This is a simple and universal solution which uses Python's built-in
+    compression modules. It supports reading and writing. However it is not as
+    fast as `readzip` in reading compressed files.
+
+    See Also
+    --------
+    readzip
     """
     ext = splitext(fp)[1]
-    zipfunc = getattr(ZIPDIC[ext], 'open') if ext in ZIPDIC else open
-    return zipfunc(fp, mode)
+    zipper = getattr(ziplibs[zipfmts[ext]], 'open') if ext in zipfmts else open
+    return zipper(fp, mode)
+
+
+def readzip(fp, zippers=None):
+    """Open a regular or compressed file by matching filename extension to
+    proper library.
+
+    Parameters
+    ----------
+    fp : str
+        Input filepath.
+    zippers : dict of bool, optional
+        Available external compression programs.
+
+    Returns
+    -------
+    file handle
+        Text stream ready to be read.
+
+    Notes
+    -----
+    This function attempts to call external compression programs to read the
+    compressed file. This is typically faster than using Python's built-in
+    compression modules, because it saves the overhead in the Python wrapper,
+    and utilizes additional thread(s) for decompression.
+
+    The function checks the availability of a certain compression program at
+    its first use, and stores this information in the parameter `zippers` which
+    is shared across the program.
+
+    If the external compression program is not available, or disabled (when
+    `parameter` is not provided), the function will call Python's built-in
+    modules instead.
+
+    In addition to this method, a pure Python method for accelerating reading
+    compression files is to use the buffered reader:
+
+    >>> with gzip.open(fp, 'rb') as fh:
+    >>>     with io.BufferedReader(fh, 1048576) as buf:
+    >>>         for line in buf:
+    >>>             res = line.decode()
+    >>>             ...
+
+    See Also
+    --------
+    openzip
+    """
+    # filename extension
+    ext = splitext(fp)[1]
+
+    # not a compressed file
+    if ext not in zipfmts:
+        return open(fp, 'r')
+
+    fmt = zipfmts[ext]
+
+    # external programs are disabled
+    if zippers is None:
+        return ziplibs[fmt].open(fp, 'rt')
+
+    # check whether specific external program exists
+    if fmt not in zippers:
+        zippers[fmt] = bool(which(fmt))
+
+    # use external program
+    if zippers[fmt]:
+        return Popen([fmt, '-cdfq', fp], stdout=PIPE, encoding='utf-8').stdout
+
+    # external program does not exist
+    else:
+        return ziplibs[fmt].open(fp, 'rt')
 
 
 def file2stem(fname, ext=None):
@@ -76,7 +156,7 @@ def file2stem(fname, ext=None):
         return fname[:-len(ext)]
     else:
         stem, ext = splitext(fname)
-        if ext in ZIPDIC:
+        if ext in zipfmts:
             stem, ext = splitext(stem)
         return stem
 
@@ -97,6 +177,44 @@ def path2stem(fp, ext=None):
         Filename stem.
     """
     return file2stem(basename(fp), ext)
+
+
+def stem2rank(fp):
+    """Extract rank name from stem filename.
+
+    Parameters
+    ----------
+    fp : str
+        Filepath.
+    ext : str, optional
+        Filename extension.
+
+    Returns
+    -------
+    str
+        Filename stem.
+    """
+    stem = path2stem(fp)
+
+    # find pattern "a_to_b", "a-2-b" etc.
+    for sep in ('-', '_'):
+        try:
+            left, middle, right = stem.split(sep)
+        except ValueError:
+            continue
+        if middle in ('to', '2'):
+            return right
+
+    # find pattern "a2b"
+    try:
+        left, right = stem.split('2')
+    except ValueError:
+        pass
+    else:
+        return right
+
+    # if neither is found, return entire string
+    return stem
 
 
 def read_ids(fh):
@@ -245,90 +363,85 @@ def id2file_from_map(fp):
     return res or None
 
 
-def read_map(fh, sep='\t', multi=None, count=False):
-    """Read a mapping file.
+def read_map_uniq(fh, sep='\t'):
+    """Read a mapping file, considering unique matches only (exactly two
+    columns).
 
     Parameters
     ----------
     fh : file handle
         Mapping file.
-    sep : str, optional
-        Separator between columns.
-    multi : bool, optional
-        Whether one key can correspond to multiple values.
-        - True: all values are parsed.
-        - False: only first value is parsed.
-        - None: skip if there are multiple values.
-    count : bool, optional
-        Values have counts after colon.
 
     Yields
     ------
-    tuple
-        Pair of key and value(s).
-
-    Notes
-    -----
-    A mapping file is a tab-delimited file (tab can be replaced by a custom
-    separator), where the first column is the key, and the remaining columns
-    are values.
-
-    In default mode, lines with only one or more than two columns are omitted.
-    With multi = False, only the 2nd column is parsed regardless of others.
-    With multi = True, 2nd to last columns are all parsed and combined in a
-    tuple.
-
-    Counts are numeric suffixes post a colon in a value. With count = True, a
-    "value:count" string will be converted into a tuple of (value, count). If
-    not applicable, the result will be a tuple of (value, 1).
-
-    This function is among the bottlenecking steps of the pipeline. Performance
-    is a major consideration.
-
-    See Also
-    --------
-    util.feat_n_cnt
+    tuple of (str, str)
+        Key-value pair.
     """
     for line in fh:
-        row = line.rstrip().split(sep)
-        n = len(row)
-        if n == 1:
-            continue
-        key = row[0]
-
-        # first value only
-        if not multi:
-            if n > 2 and multi is None:
-                continue
-            value = row[1]
-            if count:
-                value = feat_n_cnt(value)
-            yield key, value
-
-        # all values
-        else:
-            values = row[1:]
-            if count:
-                values = (feat_n_cnt(x) for x in values)
-            yield key, (*values,)
+        key, found, value = line.partition(sep)
+        if found and sep not in value:
+            yield key, value.rstrip()
 
 
-def write_readmap(fh, rmap, namedic=None):
+def read_map_1st(fh, sep='\t'):
+    """Read a mapping file, considering the first two columns as key and value
+    while discarding remaining columns if any.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file.
+
+    Yields
+    ------
+    tuple of (str, str)
+        Key-value pair.
+    """
+    for line in fh:
+        key, found, rest = line.partition(sep)
+        if found:
+            value, found, rest = rest.partition(sep)
+            yield key, value.rstrip()
+
+
+def read_map_all(fh, sep='\t'):
+    """Read a mapping file, considering all columns as key (1st) and values
+    (2nd-last).
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file.
+
+    Yields
+    ------
+    tuple of (str, list of str)
+        Key-value(s) pair.
+    """
+    for line in fh:
+        key, found, rest = line.partition(sep)
+        if found:
+            yield key, rest.rstrip().split(sep)
+
+
+def write_readmap(fh, qryque, taxque, namedic=None):
     """Write a read map to a tab-delimited file.
 
     Parameters
     ----------
     fh : file handle
         Output file.
-    rmap : dict
-        Read-to-taxon(a) map.
+    qryque : iterable of str
+        Query sequences.
+    taxque : iterable of str or dict
+        Taxon(a) assigned to each query.
     namedic : dict, optional
         Taxon name dictionary.
     """
     # sort subjects by count (high-to-low) then by alphabet
     def sortkey(x): return -x[1], x[0]
-    for read, taxa in rmap.items():
-        row = [read]
+    for query, taxa in zip(qryque, taxque):
+        row = [query]
         if isinstance(taxa, dict):
             for taxon, count in sorted(taxa.items(), key=sortkey):
                 if namedic and taxon in namedic:
@@ -339,119 +452,3 @@ def write_readmap(fh, rmap, namedic=None):
         else:
             row.append(taxa)
         print('\t'.join(row), file=fh)
-
-
-def write_table(fh, data, samples=None, tree=None, rankdic=None, namedic=None,
-                name_as_id=False):
-    """Write a profile to a tab-delimited file.
-
-    Parameters
-    ----------
-    fh : file handle
-        Output file.
-    data : dict
-        Profile data.
-    samples : list, optional
-        Ordered sample ID list.
-    tree : dict, optional
-        Taxonomic tree, to inform "Lineage" column.
-    rankdic : dict, optional
-        Rank dictionary, to inform "Rank" column.
-    namedic : dict, optional
-        Taxon name dictionary, to inform "Name" column.
-    name_as_id : bool, optional
-        Replace feature IDs with names. It applies to row headers and "Lineage"
-        column, and removes "Name" column.
-
-    Returns
-    -------
-    int
-        Number of samples in the table.
-    int
-        Number of features in the table.
-
-    Notes
-    -----
-    The output table will have columns as samples and rows as features.
-    Optionally, three metadata columns, "Name", "Rank" and "Lineage" will be
-    appended to the right of the table.
-    """
-    if samples:
-        samples = [x for x in samples if x in data]
-    else:
-        samples = sorted(data)
-
-    # table header
-    header = ['#FeatureID'] + samples
-    if namedic and not name_as_id:
-        header.append('Name')
-    if rankdic:
-        header.append('Rank')
-    if tree:
-        header.append('Lineage')
-    print('\t'.join(header), file=fh)
-
-    # table body
-    nrow = 0
-    for key in sorted(allkeys(data)):
-        # stratification
-        stratum, feature = key if isinstance(key, tuple) else (None, key)
-        # get feature name
-        name = namedic[feature] if namedic and feature in namedic else None
-        # fill row header (feature Id or name)
-        head = name if name_as_id and name else feature
-        row = [f'{stratum}|{head}'] if stratum else [head]
-        # fill cell values (feature counts)
-        for sample in samples:
-            row.append(str(data[sample][key]) if key in data[sample] else '0')
-        # fill name column
-        if namedic and not name_as_id:
-            row.append(name or '')
-        # fill rank column
-        if rankdic:
-            row.append(rankdic[feature] if feature in rankdic else '')
-        # fill lineage column
-        if tree:
-            row.append(get_lineage_gg(
-                feature, tree, namedic if name_as_id else None))
-        # print row
-        print('\t'.join(row), file=fh)
-        nrow += 1
-
-    return len(samples), nrow
-
-
-def prep_table(profile, samples=None):
-    """Convert a profile into data, index and columns, which can be further
-    converted into a Pandas DataFrame or BIOM table.
-
-    Parameters
-    ----------
-    profile : dict
-        Input profile.
-
-    Returns
-    -------
-    list of list
-        Data (2D array of values).
-    list
-        Index (observation IDs).
-    list
-        Columns (sample IDs).
-
-    Notes
-    -----
-    This function is currently not in use.
-    """
-    index = sorted(allkeys(profile))
-    columns = samples or sorted(profile)
-    data = []
-    for key in index:
-        row = []
-        for sample in columns:
-            try:
-                row.append(profile[sample][key])
-            except KeyError:
-                row.append(0)
-        data.append(row)
-    return data, index, columns

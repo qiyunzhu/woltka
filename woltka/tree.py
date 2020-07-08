@@ -168,8 +168,8 @@ def read_newick(fh):
     return res
 
 
-def read_rank_table(fh):
-    """Read taxonomic information from a rank table.
+def read_columns(fh):
+    """Read taxonomic information from a rank-per-column table.
 
     Parameters
     ----------
@@ -258,8 +258,11 @@ def read_lineage(fh):
     Therefore, the taxon itself does not have to be unique, but the ancestral
     lineage does.
 
-    Empty taxon is allowed, in consistency with QIIME convention (e.g.,
-    "k__Bacteria;p__" is considered a valid phylum).
+    Empty levels in the end are discarded. e.g., "k__Bacteria;p__" is not a
+    valid taxon.
+
+    Empty levels in the middle are kept. e.g., "k__Bacteria;p__;c_Clostridia"
+    will not be shortened into "k__Bacteria;c_Clostridia".
     """
     p = re.compile(r'([a-z])__.*')
     tree, rankdic = {}, {}
@@ -267,16 +270,16 @@ def read_lineage(fh):
         if line.startswith('#'):
             continue
         id_, lineage = line.rstrip().split('\t')
-        parent = None
+        parent, this = None, None
         for taxon in lineage.split(';'):
             taxon = taxon.strip()
 
-            # skip empty taxon (currently disabled)
-            # if taxon.lower() in notax or taxon[1:] == '__':
-            #     continue
+            # build the entire lineage
+            this = f'{this};{taxon}' if this else taxon
 
-            # append entire ancestral lineage
-            this = f'{parent};{taxon}' if parent else taxon
+            # skip empty taxon
+            if taxon.lower() in notax or taxon[1:] == '__':
+                continue
 
             # add current taxon to dictionary
             tree[this] = parent
@@ -312,8 +315,8 @@ def fill_root(tree):
     Notes
     -----
     A root is defined as having parent as itself, a behavior derived from the
-    NCBI convention. Only root must be present in a tree, so that all taxa can
-    be traced back to the same root.
+    NCBI convention. Exactly one root must be present in a tree, so that all
+    taxa can be traced back to the same root.
 
     In custom trees, there may or may not be a clearly defined root. This
     function aims as defining a root for any given tree. Specifically, if
@@ -406,22 +409,31 @@ def get_lineage(taxon, tree):
     except KeyError:
         return None
 
-    # move up classification hierarchy till root
+    # initiate lineage and cache method reference
     lineage = [taxon]
+    add_taxon = lineage.append
+
+    # move up classification hierarchy till root
     this = taxon
     while True:
-        lineage.append(parent)
-        this = parent
-        parent = tree[this]
+
+        # stop when reaching root
         if parent == this:
             break
 
-    # reverse lineage so that it's high-to-low
-    return list(reversed(lineage))
+        # add current level to lineage
+        add_taxon(parent)
+
+        # move up to parent
+        this = parent
+        parent = tree[this]
+
+    # make lineage high-to-low
+    return lineage[::-1]
 
 
-def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
-                   include_root=False):
+def lineage_str(taxon, tree, namedic=None, include_self=False,
+                include_root=False):
     """Generate a Greengenes-style lineage string of a taxon.
 
     Parameters
@@ -433,7 +445,7 @@ def get_lineage_gg(taxon, tree, namedic=None, include_self=False,
     namedic : dict, optional
         Taxon name dictionary.
     include_self : bool, optional
-        Include current taxon.
+        Include self.
     include_root : bool, optional
         Include root.
 
@@ -469,25 +481,25 @@ def find_rank(taxon, rank, tree, rankdic):
 
     Returns
     -------
-    str
-        Ancestral taxon if found.
+    str or None
+        Ancestral taxon at given rank, or None if not found.
     """
     # if taxon is not in tree, return None
     try:
         parent = tree[taxon]
     except KeyError:
-        return None
+        return
+
+    # cache method reference
+    get_rank = rankdic.get
 
     # move up hierarchy until reaching given rank
     this = taxon
     while True:
 
         # check rank of current taxon
-        try:
-            if rankdic[this] == rank:
-                return this
-        except KeyError:
-            pass
+        if get_rank(this) == rank:
+            return this
 
         # stop when reaching root
         if parent == this:
@@ -518,15 +530,15 @@ def find_lca(taxa, tree):
     Combine LCA and majority rule, which is not trivial and requires careful
     reasoning and algorithm design.
     """
-    taxa_ = list(taxa)
+    itaxa = iter(taxa)
 
     # get lineage of first taxon
-    lineage = get_lineage(taxa_[0], tree)
+    lineage = get_lineage(next(itaxa), tree)
     if lineage is None:
         return
 
     # compare with remaining taxa
-    for taxon in taxa_[1:]:
+    for taxon in itaxa:
         try:
             parent = tree[taxon]
         except KeyError:
@@ -544,7 +556,6 @@ def find_lca(taxa, tree):
                     break
                 this = parent
                 parent = tree[this]
-                continue
 
             # trim shared lineage
             else:

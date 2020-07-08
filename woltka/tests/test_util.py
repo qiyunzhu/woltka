@@ -15,7 +15,7 @@ from tempfile import mkdtemp
 
 from woltka.util import (
     add_dict, update_dict, sum_dict, intize, delnone, allkeys, count_list,
-    last_value, feat_n_cnt)
+    last_value, feature_count)
 
 
 class UtilTests(TestCase):
@@ -76,6 +76,10 @@ class UtilTests(TestCase):
         intize(dic, zero=True)
         exp = {'a': 0, 'b': -3, 'c': 2, 'd': 0}
         self.assertDictEqual(dic, exp)
+        dic = {'a': 2.5, 'b': 3.5, 'c': 1.49999999999, 'd': 1.50000000001}
+        intize(dic)
+        exp = {'a': 2, 'b': 4, 'c': 2, 'd': 2}
+        self.assertDictEqual(dic, exp)
 
     def test_delnone(self):
         dic = {'a': 1, 'b': 2, 'c': 3}
@@ -105,15 +109,15 @@ class UtilTests(TestCase):
         self.assertEqual(last_value(lst), 2)
         self.assertIsNone(last_value([None, None]))
 
-    def test_feat_n_cnt(self):
-        self.assertTupleEqual(feat_n_cnt('A'),   ('A', 1))
-        self.assertTupleEqual(feat_n_cnt('A:1'), ('A', 1))
-        self.assertTupleEqual(feat_n_cnt('A:2'), ('A', 2))
-        self.assertTupleEqual(feat_n_cnt('A:0'), ('A:0', 1))
-        self.assertTupleEqual(feat_n_cnt('A:x'), ('A:x', 1))
-        self.assertTupleEqual(feat_n_cnt(':1'),  (':1', 1))
-        self.assertTupleEqual(feat_n_cnt('::'),  ('::', 1))
-        self.assertTupleEqual(feat_n_cnt(''),    ('', 1))
+    def test_feature_count(self):
+        self.assertTupleEqual(feature_count('A'),   ('A', 1))
+        self.assertTupleEqual(feature_count('A:1'), ('A', 1))
+        self.assertTupleEqual(feature_count('A:2'), ('A', 2))
+        self.assertTupleEqual(feature_count('A:0'), ('A:0', 1))
+        self.assertTupleEqual(feature_count('A:x'), ('A:x', 1))
+        self.assertTupleEqual(feature_count(':1'),  (':1', 1))
+        self.assertTupleEqual(feature_count('::'),  ('::', 1))
+        self.assertTupleEqual(feature_count(''),    ('', 1))
 
 
 if __name__ == '__main__':

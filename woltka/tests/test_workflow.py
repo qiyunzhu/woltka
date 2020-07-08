@@ -13,6 +13,7 @@ from os import remove
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
+from filecmp import cmp
 
 import pandas as pd
 from biom import load_table
@@ -20,8 +21,8 @@ from pandas.testing import assert_frame_equal
 
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
-    prepare_ranks, build_hierarchy, reshape_readmap, assign_readmap,
-    write_profiles)
+    prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
+    round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -34,33 +35,49 @@ class WorkflowTests(TestCase):
 
     def test_workflow(self):
         # simplest gotu workflow
-        input_path = join(self.datdir, 'align', 'bowtie2')
-        output_path = join(self.tmpdir, 'tmp.tsv')
-        obs = workflow(input_path, output_path)['none']
+        input_fp = join(self.datdir, 'align', 'bowtie2')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        obs = workflow(input_fp, output_fp)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)
-        with open(output_path, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.datdir, 'output', 'bowtie2.gotu.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
-        remove(output_path)
+        self.assertTrue(cmp(output_fp, join(
+            self.datdir, 'output', 'bowtie2.gotu.tsv')))
+        remove(output_fp)
 
     def test_classify(self):
         # simplest gotu workflow
-        input_path = join(self.datdir, 'align', 'bowtie2')
-        samples, files, demux = parse_samples(input_path)
-        mapper = build_mapper()
+        input_fp = join(self.datdir, 'align', 'bowtie2')
+        samples, files, demux = parse_samples(input_fp)
+        mapper, chunk = build_mapper()
         ranks = ['none']
         obs = classify(mapper, files, samples=samples, demux=demux,
-                       ranks=ranks)['none']
+                       ranks=ranks, chunk=chunk)['none']
         self.assertEqual(obs['S01']['G000011545'], 48)
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)
         self.assertEqual(obs['S04']['G000240185'], 4)
         self.assertEqual(obs['S05']['G000191145'], 10)
+
+        # complex genus/process stratification workflow
+        input_fp = join(self.datdir, 'align', 'burst')
+        coords_fp = join(self.datdir, 'function', 'coords.txt.xz')
+        map_fps = [join(self.datdir, 'function', 'uniref.map.xz'),
+                   join(self.datdir, 'function', 'go', 'process.tsv.xz')]
+        strata_dir = join(self.datdir, 'output', 'burst.genus.map')
+        samples, files, demux = parse_samples(input_fp)
+        tree, rankdic, namedic, root = build_hierarchy(
+            map_fps=map_fps, map_as_rank=True)
+        mapper, chunk = build_mapper(coords_fp=coords_fp, overlap=80)
+        stratmap = parse_strata(strata_dir, samples)
+        obs = classify(
+            mapper, files, samples=samples, demux=demux, tree=tree,
+            rankdic=rankdic, namedic=namedic, root=root, stratmap=stratmap,
+            chunk=chunk, ranks=['process'])['process']
+        self.assertEqual(obs['S01'][('Thermus', 'GO:0005978')], 2)
+        self.assertEqual(obs['S02'][('Bacteroides', 'GO:0006814')], 1)
+        self.assertEqual(obs['S03'][('Escherichia', 'GO:0006813')], 2)
+        self.assertEqual(len(obs['S04']), 39)
 
     def test_parse_samples(self):
         # file (assuming demultiplexed)
@@ -215,19 +232,22 @@ class WorkflowTests(TestCase):
     def test_build_mapper(self):
         # plain
         obs = build_mapper()
-        self.assertEqual(obs.__class__.__name__, 'Plain')
+        self.assertEqual(obs[0].__name__, 'plain_mapper')
+        self.assertEqual(obs[1], 1000)
 
         # ordinal
         fp = join(self.tmpdir, 'coords.txt')
         with open(fp, 'w') as f:
             f.write('>G1\n1\t10\t20\n2\t35\t50\n')
         obs = build_mapper(fp)
-        self.assertEqual(obs.__class__.__name__, 'Ordinal')
+        self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
+        self.assertEqual(obs[1], 1000000)
 
-        # ordinal with overlap threshold
-        obs = build_mapper(fp, 75)
-        self.assertEqual(obs.__class__.__name__, 'Ordinal')
-        self.assertEqual(obs.th, 0.75)
+        # ordinal with overlap threshold and chunk size
+        obs = build_mapper(fp, overlap=75, chunk=50000)
+        self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
+        self.assertEqual(obs[0].keywords['th'], 0.75)
+        self.assertEqual(obs[1], 50000)
         remove(fp)
 
     def test_prepare_ranks(self):
@@ -242,6 +262,10 @@ class WorkflowTests(TestCase):
         # multiple ranks
         obs = prepare_ranks('phylum,genus,species')
         self.assertListEqual(obs[0], ['phylum', 'genus', 'species'])
+
+        # free rank when there is tree
+        obs = prepare_ranks(tree={'a': 1})
+        self.assertListEqual(obs[0], ['free'])
 
         # with output read map directory
         obs = prepare_ranks(outmap_dir=self.tmpdir)
@@ -268,7 +292,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'nodes.dmp')
         with open(fp, 'w') as f:
             f.write('a\td\nb\te\nc\td\nd\te\n')
-        obs = build_hierarchy(nodes_fp=fp)
+        obs = build_hierarchy(nodes_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertEqual(obs[3], 'e')
@@ -277,7 +301,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'nodes.dmp')
         with open(fp, 'w') as f:
             f.write('a\td\tlv3\nb\te\tlv3\nc\td\tlv3\nd\te\tlv2\ne\te\tlv1\n')
-        obs = build_hierarchy(nodes_fp=fp)
+        obs = build_hierarchy(nodes_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertDictEqual(obs[1], {'a': 'lv3', 'b': 'lv3', 'c': 'lv3',
@@ -289,7 +313,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'tree.nwk')
         with open(fp, 'w') as f:
             f.write('((a,c)d,b)e;')
-        obs = build_hierarchy(newick_fp=fp)
+        obs = build_hierarchy(newick_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertEqual(obs[3], 'e')
@@ -299,7 +323,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'lineage.txt')
         with open(fp, 'w') as f:
             f.write('a\te;d\nb\te\nc\te;d\n')
-        obs = build_hierarchy(lineage_fp=fp)
+        obs = build_hierarchy(lineage_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'e;d', 'b': 'e', 'c': 'e;d', 'e;d': 'e', 'e': 'e'})
         self.assertEqual(obs[3], 'e')
@@ -307,7 +331,7 @@ class WorkflowTests(TestCase):
         # lineage with rank code
         with open(fp, 'w') as f:
             f.write('a\tk__e;p__d\nb\tk__e\nc\tk__e;p__d\n')
-        obs = build_hierarchy(lineage_fp=fp)
+        obs = build_hierarchy(lineage_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'k__e;p__d', 'b': 'k__e', 'c': 'k__e;p__d',
             'k__e;p__d': 'k__e', 'k__e': 'k__e'})
@@ -316,21 +340,21 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs[3], 'k__e')
         remove(fp)
 
-        # rank table
-        fp = join(self.tmpdir, 'ranks.tsv')
+        # rank-per-column table
+        fp = join(self.tmpdir, 'columns.tsv')
         with open(fp, 'w') as f:
             f.write('#ID\tlv1\tlv2\n'
                     'a\te\td\n'
                     'b\te\t\n'
                     'c\te\td\n')
-        obs = build_hierarchy(rank_table_fp=fp)
+        obs = build_hierarchy(columns_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertDictEqual(obs[1], {'d': 'lv2', 'e': 'lv1'})
         self.assertEqual(obs[3], 'e')
         remove(fp)
 
-        # map
+        # simple map
         fp = join(self.tmpdir, 'map.txt')
         with open(fp, 'w') as f:
             f.write('a\tBac\nb\tArc\nc\tBac\n')
@@ -345,44 +369,78 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(obs[1], {'Bac': 'map', 'Arc': 'map'})
         remove(fp)
 
-    def test_reshape_readmap(self):
-        # doing nothing
-        rmap = {'R1': {'G1'}, 'R2': {'G2'}, 'R3': {'G3', 'G4'}}
-        obs = reshape_readmap(rmap)
-        self.assertDictEqual(obs, {None: rmap})
+    def test_strip_suffix(self):
+        subs = [{'G1_1', 'G1_2', 'G2_3', 'G3'},
+                {'G1_1', 'G1.3', 'G4_5', 'G4_x'}]
+        obs = strip_suffix(subs, sep='_')
+        exp = [{'G1', 'G2', 'G3'},
+               {'G1', 'G1.3', 'G4', 'G4'}]
+        self.assertListEqual(list(obs), exp)
 
-        # with filename
-        obs = reshape_readmap(rmap, files={'fname': 'S1'}, fp='fname')
-        self.assertDictEqual(obs, {'S1': rmap})
+        subs = [{'NC_123456.1_300', 'ABCD000001.20_101'}]
+        obs = strip_suffix(subs, sep='_')
+        exp = [{'NC_123456.1', 'ABCD000001.20'}]
+        self.assertListEqual(list(obs), exp)
 
-        # remove index
-        rmap_ = {'R1': {'G1'}, 'R2': {'G2_1'}, 'R3': {'G3_1', 'G4_2'}}
-        obs = reshape_readmap(rmap_, deidx=True)
-        self.assertDictEqual(obs, {None: rmap})
+        subs = [{'G1.1', 'G1.2', 'G2'},
+                {'G1.1', 'G1.3', 'G3_x'}]
+        obs = strip_suffix(subs, sep='.')
+        exp = [{'G1', 'G2'},
+               {'G1', 'G3_x'}]
+        self.assertListEqual(list(obs), exp)
 
-        # demultiplex
-        rmap = {'S1_R1': {'G1'}, 'S1_R2': {'G2'}, 'S2_R3': {'G3', 'G4'}}
-        obs = reshape_readmap(rmap, demux=True)
-        self.assertDictEqual(obs, {'S1': {'R1': {'G1'}, 'R2': {'G2'}},
-                                   'S2': {'R3': {'G3', 'G4'}}})
+    def test_demultiplex(self):
+        # simple case
+        rmap = [('S1_R1', 5),
+                ('S1_R2', 12),
+                ('S1_R3', 3),
+                ('S2_R1', 10),
+                ('S2_R2', 8),
+                ('S2_R4', 7),
+                ('S3_R2', 15),
+                ('S3_R3', 1),
+                ('S3_R4', 5)]
+        obs = demultiplex(*zip(*rmap))
+        exp = {'S1': [('R1',  5),
+                      ('R2', 12),
+                      ('R3',  3)],
+               'S2': [('R1', 10),
+                      ('R2',  8),
+                      ('R4',  7)],
+               'S3': [('R2', 15),
+                      ('R3',  1),
+                      ('R4',  5)]}
+        self.assertEqual(obs.keys(), exp.keys())
+        for s in obs:
+            self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
-        # demultiplex to given sample Ids
-        rmap = {'S1_R1': {'G1'}, 'S1_R2': {'G2'}, 'S2_R3': {'G3', 'G4'}}
-        obs = reshape_readmap(rmap, demux=True, samples=['S1'])
-        self.assertDictEqual(obs, {'S1': {'R1': {'G1'}, 'R2': {'G2'}}})
+        # change separator, no result
+        obs = demultiplex(*zip(*rmap), sep='.')
+        self.assertEqual(obs.keys(), {''})
+        self.assertListEqual(list(map(tuple, obs[''])), list(zip(*rmap)))
+
+        # enforce sample Ids
+        obs = demultiplex(*zip(*rmap), samples=['S1', 'S2', 'SX'])
+        self.assertEqual(obs.keys(), {'S1', 'S2'})
+        for s in ('S1', 'S2'):
+            self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
     def test_assign_readmap(self):
         # simple gotu assignment
-        rmap = {'R1': {'G1'}, 'R2': {'G1', 'G2'}, 'R3': {'G2', 'G3'}}
+        qryq = ['R1', 'R2', 'R3']
+        subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
+        assigners = {}
         data = {'none': {}}
-        assign_readmap(rmap, data, 'none', 'S1')
-        self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
+        assign_readmap(qryq, subq, data, 'none', 'S1', assigners)
+        self.assertDictEqual(data['none']['S1'], {
+            'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
 
         # write read map
         data = {'none': {'S1': {}}}
-        assign_readmap(rmap, data, 'none', 'S1', rank2dir={
+        assign_readmap(qryq, subq, data, 'none', 'S1', assigners, rank2dir={
             'none': self.tmpdir})
-        self.assertDictEqual(data['none']['S1'], {'G1': 2, 'G2': 1})
+        self.assertDictEqual(data['none']['S1'], {
+            'G1': 1.5, 'G2': 1.0, 'G3': 0.5})
         fp = join(self.tmpdir, 'S1.txt')
         with open(fp, 'r') as f:
             obs = f.read().splitlines()
@@ -390,18 +448,67 @@ class WorkflowTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(fp)
 
+        # unique and unassigned
+        assigners = {}
+        data = {'none': {}}
+        assign_readmap(qryq, subq, data, 'none', 'S1', assigners, uniq=True,
+                       unasgd=True)
+        self.assertDictEqual(data['none']['S1'], {'G1': 1, 'Unassigned': 2})
+
         # free-rank assignment
         tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
                 'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}
         data = {'free': {}}
-        assign_readmap(rmap, data, 'free', 'S1', tree=tree)
+        assign_readmap(qryq, subq, data, 'free', 'S1', assigners, tree=tree)
         self.assertDictEqual(data['free']['S1'], {'T0': 1, 'T1': 2})
 
         # fixed-rank assignment
         rankdic = {'T1': 'ko', 'T2': 'ko', 'T0': 'mo'}
         data = {'ko': {}}
-        assign_readmap(rmap, data, 'ko', 'S1', tree=tree, rankdic=rankdic)
-        self.assertDictEqual(data['ko']['S1'], {'T1': 2})
+        assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
+                       rankdic=rankdic)
+        self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
+
+    def test_round_profiles(self):
+        # free-rank: don't round
+        obs = {'free': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        round_profiles(obs)
+        exp = {'free': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        self.assertEqual(obs, exp)
+
+        # none-rank: round
+        obs = {'none': {'S1': {'G1': 1.3, 'G2': 2.2},
+                        'S2': {'G1': 3.0, 'G3': 2.1}}}
+        round_profiles(obs)
+        exp = {'none': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        self.assertEqual(obs, exp)
+
+        # none-rank and unique: don't round
+        obs = {'none': {'S1': {'G1': 1.5, 'G2': 0},
+                        'S2': {'G1': 3.0, 'G3': 2}}}
+        round_profiles(obs, uniq=True)
+        exp = {'none': {'S1': {'G1': 1.5, 'G2': 0},
+                        'S2': {'G1': 3.0, 'G3': 2}}}
+        self.assertDictEqual(obs, exp)
+
+        # given-rank: round
+        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
+                         'S2': {'G1': 3.0, 'G3': 2}}}
+        round_profiles(obs)
+        exp = {'class': {'S1': {'G1': 2},
+                         'S2': {'G1': 3, 'G3': 2}}}
+        self.assertDictEqual(obs, exp)
+
+        # given-rank: don't round
+        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
+                         'S2': {'G1': 3.0, 'G3': 2}}}
+        round_profiles(obs, uniq=False, major=0, above=True)
+        exp = {'class': {'S1': {'G1': 1.5, 'G2': 0},
+                         'S2': {'G1': 3.0, 'G3': 2}}}
+        self.assertDictEqual(obs, exp)
 
     def test_write_profiles(self):
         # do nothing
@@ -418,7 +525,14 @@ class WorkflowTests(TestCase):
         self.assertListEqual(obs, exp)
         remove(fp)
 
-        # multiple profiles in BIOM format
+        # force BIOM format (even if filename ends with .tsv)
+        write_profiles(data, fp, is_biom=True)
+        obs = load_table(fp).to_dataframe(dense=True).astype(int)
+        exp = pd.DataFrame([[1, 3], [2, 0], [0, 2]], index=['G1', 'G2', 'G3'],
+                           columns=['S1', 'S2'])
+        assert_frame_equal(obs, exp)
+
+        # multiple profiles in BIOM format (default)
         data = {'none': {'S1': {'G1': 1, 'G2': 2},
                          'S2': {'G1': 3, 'G3': 2}},
                 'free': {'S1': {'Ecoli': 3, 'Strep': 0},
@@ -426,8 +540,6 @@ class WorkflowTests(TestCase):
         write_profiles(data, self.tmpdir)
         fp = join(self.tmpdir, 'none.biom')
         obs = load_table(fp).to_dataframe(dense=True).astype(int)
-        exp = pd.DataFrame([[1, 3], [2, 0], [0, 2]], index=['G1', 'G2', 'G3'],
-                           columns=['S1', 'S2'])
         assert_frame_equal(obs, exp)
         remove(fp)
         fp = join(self.tmpdir, 'free.biom')

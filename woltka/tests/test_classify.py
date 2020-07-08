@@ -14,8 +14,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.classify import (
-    assign_none, assign_free, assign_rank, count, count_strata, majority,
-    strip_index, demultiplex)
+    assign_none, assign_free, assign_rank, count, count_strata, majority)
 
 
 class ClassifyTests(TestCase):
@@ -31,12 +30,12 @@ class ClassifyTests(TestCase):
         self.assertEqual(assign_none({'G1'}), 'G1')
 
         # count subjects
-        obs = assign_none({'G1', 'G2'}, ambig=True)
+        obs = assign_none({'G1', 'G2'})
         exp = {'G1': 1, 'G2': 1}
         self.assertDictEqual(obs, exp)
 
         # cannot assign
-        obs = assign_none({'G1', 'G2', 'G3'})
+        obs = assign_none({'G1', 'G2', 'G3'}, uniq=True)
         self.assertIsNone(obs)
 
     def test_assign_free(self):
@@ -75,11 +74,11 @@ class ClassifyTests(TestCase):
         self.assertEqual(obs, 'T1')
 
         # rank that does not exist
-        obs = assign_rank({'G1', 'G2', 'G3'}, 'admiral', **kwargs)
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'admiral', **kwargs, uniq=True)
         self.assertIsNone(obs)
 
         # cannot find consensus at rank
-        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs)
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs, uniq=True)
         self.assertIsNone(obs)
 
         # majority rule
@@ -87,7 +86,7 @@ class ClassifyTests(TestCase):
         self.assertEqual(obs, 'T1')
 
         # consider ambiguity
-        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs, ambig=True)
+        obs = assign_rank({'G1', 'G2', 'G3'}, 'general', **kwargs)
         exp = {'T1': 2, 'T2': 1}
         self.assertDictEqual(obs, exp)
 
@@ -103,17 +102,16 @@ class ClassifyTests(TestCase):
 
     def test_count(self):
         # unique match
-        matches = {'seq1': 'a', 'seq2': 'a',  'seq3': 'b',
-                   'seq4': 'c', 'seq5': None, 'seq6': 'b'}
-        obs = count(matches)
-        exp = {'a': 2, 'b': 2, 'c': 1, None: 1}
+        taxque = ['a', 'a', 'b', 'c', None, 'b', None]
+        obs = count(taxque)
+        exp = {'a': 2, 'b': 2, 'c': 1, None: 2}
         self.assertDictEqual(obs, exp)
 
         # multiple matches
-        matches = {'seq1': {'a': 1, 'b': 2, 'c': 3},
-                   'seq2': {'a': 2, 'b': 5},
-                   'seq3': {'d': 4}}
-        obs = count(matches)
+        taxque = [{'a': 1, 'b': 2, 'c': 3},
+                  {'a': 2, 'b': 5},
+                  {'d': 4}]
+        obs = count(taxque)
         exp = {'a': 1 / 6 + 2 / 7,
                'b': 2 / 6 + 5 / 7,
                'c': 3 / 6,
@@ -136,7 +134,7 @@ class ClassifyTests(TestCase):
                    'seq5': 'nuclease',
                    'seq6': 'ligase',
                    'seq0': 'nothing'}
-        obs = count_strata(matches, strata)
+        obs = count_strata(matches.keys(), matches.values(), strata)
         exp = {('Ecoli',     'ligase'): 2,
                ('Ecoli', 'polymerase'): 1,
                ('Cdiff',   'nuclease'): 1,
@@ -147,7 +145,7 @@ class ClassifyTests(TestCase):
         # multiple matches
         strata['seq7'] = 'Ecoli'
         matches['seq7'] = {'polymerase': 3, 'ligase': 1}
-        obs = count_strata(matches, strata)
+        obs = count_strata(matches.keys(), matches.values(), strata)
         exp = {('Ecoli',     'ligase'): 2.25,
                ('Ecoli', 'polymerase'): 1.75,
                ('Cdiff',   'nuclease'): 1,
@@ -164,45 +162,6 @@ class ClassifyTests(TestCase):
         self.assertIsNone(obs)
         obs = majority([])
         self.assertIsNone(obs)
-
-    def test_strip_index(self):
-        dic = {'R1': {'G1_1', 'G1_2', 'G2_3', 'G3'},
-               'R2': {'G1_1', 'G1.3', 'G4_5', 'G4_x'}}
-        strip_index(dic)
-        self.assertDictEqual(dic, {
-            'R1': {'G1', 'G2', 'G3'},
-            'R2': {'G1', 'G1.3', 'G4', 'G4'}})
-        dic = {'R1': {'G1.1', 'G1.2', 'G2'},
-               'R2': {'G1.1', 'G1.3', 'G3_x'}}
-        strip_index(dic, '.')
-        self.assertDictEqual(dic, {
-            'R1': {'G1', 'G2'}, 'R2': {'G1', 'G3_x'}})
-
-    def test_demultiplex(self):
-        # simple case
-        dic = {'S1_R1': 5,
-               'S1_R2': 12,
-               'S1_R3': 3,
-               'S2_R1': 10,
-               'S2_R2': 8,
-               'S2_R4': 7,
-               'S3_R2': 15,
-               'S3_R3': 1,
-               'S3_R4': 5}
-        obs = demultiplex(dic)
-        exp = {'S1': {'R1': 5, 'R2': 12, 'R3': 3},
-               'S2': {'R1': 10, 'R2': 8, 'R4': 7},
-               'S3': {'R2': 15, 'R3': 1, 'R4': 5}}
-        self.assertDictEqual(obs, exp)
-
-        # change separator, no result
-        obs = demultiplex(dic, sep='.')
-        self.assertDictEqual(obs, {'': dic})
-
-        # enforce sample Ids
-        obs = demultiplex(dic, samples=['S1', 'S2', 'SX'])
-        exp = {x: exp[x] for x in ['S1', 'S2']}
-        self.assertDictEqual(obs, exp)
 
 
 if __name__ == '__main__':

@@ -1,105 +1,99 @@
-# Tree-based classification
+# Classification methods
 
-Woltka features a highly flexible hierarchical classification system. It is represented by a **tree** structure instead of a fixed number of levels (e.g., the eight standard taxonomic ranks). In another word, it is **rank-free**.
-
-Wolkta supports various formats of classification systems, specifically:
-
-1. `--nodes`: NCBI-style `nodes.dmp` (columns are delimited by "\<tab\>|\<tab\>") or a tab-delimited file, in which each taxon (1st column) points to its parent taxon (2nd column). Rank (3rd column) is optional.
-
-2. `--newick`: Newick-format tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
-
-3. `--rank-table`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
-
-4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
-
-   It can be **Greengenes**-style taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
-
-   Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
-
-5. `--map` or `-m`: Simple map of lower taxon \<tab\> higher taxon.
-
-   One can supply multiple maps (by entering multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
-
-   Flag `--map-as-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
-
-If no classification file is provided, Woltka will automatically build a classification system from the alignment files, in which subject identifiers will be parsed as lineage strings.
-
-Subjects themselves are part of the classification system. A map of subject to taxon (e.g., a genome ID to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
-
-Classification files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies -- unless they conflict -- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
-
-```bash
-woltka classify \
-  --map nucl2g.txt \
-  --map g2taxid.txt \
-  --nodes taxdump/nodes.dmp \
-  --names taxdump/names.dmp \
-  ...
-```
-
-In this command, three layers of hierarchies are provided: 1) nucleotide ID to genome ID (`nucl2g.txt`), 2) genome ID to taxonomy ID (`g2taxid.txt`), 3) NCBI taxonomy tree (`nodes.dmp`).
-
-Again, compressed files are supported and automatically recognized. The following command works:
-
-```bash
-woltka classify \
-  --lineage gg_13_5_taxonomy.txt.gz
-  ...
-```
-
-Furthermore, one can supply Woltka with a taxon name dictionary, and the output profile will show taxon names instead of taxon IDs:
-
-* `--names`: NCBI-style `names.dmp` or a simple map of taxon \<tab\> name. Example:
-
-```bash
-woltka classify \
-  --nodes taxdump/nodes.dmp \
-  --names taxdump/names.dmp \
-  ...
-```
-
-One may supply multiple names files.
+Woltka grants users the flexibility to control the classification criteria, in addition to the flexibility in the classification system [itself](hierarchy.md). This maximizes the potential of exploring microbiome big data in various angles, and enables novel applications.
 
 
-## Combined taxonomic & functional analyses
+## Contents
 
-Woltka combines the two fundamental analyses in metagenomics: taxonomic profiling (mapping reads to genomes) and functional profiling (mapping reads to functional genes) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
+- [Target rank (or no rank)](#target-rank-or-no-rank)
+- [Ambiguous assignment](#ambiguous-assignment)
+- ["Unassigned" sequences](#"unassigned"-sequences)
 
-This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their coordinates on the host genome.
 
-The coordinates of read-to-genome alignments are provided in the alignment files. One needs to provide Woltka with a table of gene coordinates. The format is like:
+## Target rank (or no rank)
 
-WoL reannotations (available for [download](https://biocore.github.io/wol/)):
+Woltka features the following modes of classification, as controlled by the `--rank` (or `-r`) parameter:
+
+### 1. **No** classification (`--rank none`)
+
+Simply report subject IDs. A classification system is not required in this analysis. This mode has the highest granularity and is useful in e.g. the [gOTU](gotu.md) analysis.
+
+### 2. **Free-rank** classification (`--rank free`)
+
+Find the best classification unit in the entire hierarchy in describing the query sequence, without forcing it to a particular rank.
+
+This mode uses a lowest common ancestor (LCA) algorithm designed for a tree structure without fixed ranks to tackle ambiguous assignments. It chooses the lowest unit when possible, and go higher in the hierarchy if necessary.
+
+### 3. **Given-rank** classification (`--rank <name>`)
+
+Choose a classification unit at the given rank to describe the query sequence. This is the closest to the conventional notion of "taxonomic classification".
+
+The rank can be `species`, `genus`, `family`..., or `K`, `M`, `R`, `map`..., or `ATC4`, `ATC3`..., or whatever, as long as the classification [hierarchies](hierarchy.md#supported-hierarchy-files) you supplied have them.
+
+### 4. **Given-rank-and-above** classification (add flag `--above` in addition to `--rank <name>`)
+
+Attempt to classify at the given rank, and when this is not possible, go up in hierarchy until a proper unit is reached. The same LCA algorithm is used in this process.
+
+The difference from free-rank classification (2) is that, it discards all units below the given rank, even if some of them may describe the query sequence.
+
+### Multiple ranks
+
+Multiple ranks can be specified simultaneously, delimited by comma (e.g., `--rank none,free,phylum,genus,species`), in which case Woltka will generate one [profile](output.md) for each rank. This is significantly faster than running Woltka multiple times on individual ranks.
+
+
+## Ambiguous assignment
+
+In many cases a query sequence has matches in multiple reference sequences, and those sequences may have have different assignments at the rank you instruct Woltka to classify at. Woltka deals with this situation using your choice of the following mechanisms.
+
+### 1. (Default mode) keep them all, and normalize
+
+In the resulting profile, each subject receives 1 / _k_ count, where _k_ is the total number of subjects of the current query.
+
+For example, sequence A was aligned to five genomes: two under genus [_Escherichia_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=561&lvl=3&lin=f&keep=1&srchmode=1&unlock), one under each of genera [_Salmonella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=590&lvl=3&lin=f&keep=1&srchmode=1&unlock), [_Klebsiella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=570&lvl=3&lin=f&keep=1&srchmode=1&unlock), and [_Enterobacter_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=547&lvl=3&lin=f&keep=1&srchmode=1&unlock). So at **genus** level, _Escherichia_ receives 2/5 count, and each of the other three receives 1/5 each.
+
+In the read-to-feature maps (`--outmap`), a multi-assignment will be reported as:
 
 ```
->G000006745
-1       806     372
-2       2177    816
-3       3896    2271
-4       4446    4123
-5       4629    4492
+A <tab> Escherichia:2 <tab> Salmonella:1 <tab> Klebsiella:1 <tab> Enterobacter:1
 ```
 
-Native NCBI annotations and accessions:
+### 2. Unique assignment (`--uniq`)
 
-```
-## GCF_000005825.2
-# NC_013791.2
-WP_012957018.1  816 2168
-WP_012957019.1  2348    3490
-WP_012957020.1  3744    3959
-WP_012957021.1  3971    5086
-...
-```
+It applies to none (1) or given-rank (3) classifications. With this flag, ambiguous assignments will be considered as **unassigned**.
 
-Again, compressed files are supported.
+In the above case, this query sequence won't receive any genus-level assignment due to the ambiguity.
 
-With the coordinates file, one can streamline the read-to-gene matching step into a Woltka protocol. Here is an example for functional profiling:
+### 3. Lowest common ancestor ([LCA](https://en.wikipedia.org/wiki/Lowest_common_ancestor))
 
-```bash
-woltka classify \
-  --coords coords.txt \
-  --map gene2function.txt \
-  --map function2pathway.txt \
-  ...
-```
+This is how free-rank (2) and given-rank-and-above (4) classifications work. No parameter is needed.
+
+In the above case, the query sequence will be assigned to family [Enterobacteriaceae](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=543&lvl=3&lin=f&keep=1&srchmode=1&unlock), because all four genera belong to this family.
+
+### 4. Majority rule (`--major <%>`)
+
+At a given rank (3), as long as the dominant unit reaches the given percentage threshold of all subjects, it will be considered as the right target.
+
+In the above case, at the family level, all four genera (five genomes) belong to Enterobacteriaceae (100%), so there is no doubt that it can be assigned to Enterobacteriaceae. Now we replace one genome with one under genus [_Pseudomonas_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=286&lvl=3&lin=f&keep=1&srchmode=1&unlock) (family [Pseudomonadaceae](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=135621&lvl=3&lin=f&keep=1&srchmode=1&unlock)). Therefore, the proportion of Enterobacteriaceae becomes 4/5 = 80%.
+
+The query sequence will be assigned to Enterobacteriaceae if you specify `--major 80` or above, or unassigned if this parameter is omitted or below 80.
+
+Note: Majority rule overrides the `--above` flag. Currently, Woltka cannot combine LCA and majority rule due to the rank-free nature of the classification system.
+
+
+## "Unassigned" sequences
+
+With flag `--unassigned`, Woltka reports unassigned sequences in the profile and the feature map. They will be marked as "Unassigned".
+
+A sequence is deemed unassigned because of one of the following reasons:
+
+1. The subject(s) is **not found** in the classification system. For flexibility, Woltka does NOT consider this as a conflict between data and database, and it does NOT halt the program and warn the user. Instead, it is treated as unassigned.
+
+2. The LCA (see above) of subjects is the **root**. A [tree-structured](hierarchy.md) classification hierarchy always have a root, and no matter how diverse subjects are, they always coalesce to the root eventually. But reporting "root" as an assignment is meaningless. So it will be considered as unassigned.
+
+3. In unique-assignment mode, assignments of subjects are not unique (see above).
+
+4. In majority-rule mode, none of the candidate units reaches the threshold (see above).
+
+[**Important**] The "unassigned" part represent query sequences that were **aligned** to one or more **subjects**, but Woltka cannot find a suitable assignment based on those subjects. Therefore, assigned + unassigned is NOT the entire sample, but only the part of sample that are found in the alignment.
+
+In [ordinal mapping](ordinal.md), "subjects" are **genes** instead of genomes, therefore despite that some query sequences can be aligned to one or more genomes, they can still be excluded from the "unassigned" part if their coordinates do not match any gene.

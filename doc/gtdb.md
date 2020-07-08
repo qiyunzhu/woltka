@@ -27,16 +27,10 @@ RS_GCF_000008865.1	d__Bacteria;p__Proteobacteria;c__Gammaproteobacteria;o__Enter
 This format can be directly parsed by Woltka:
 
 ```bash
-woltka classify --lineage bac120_taxonomy_r89.tsv ...
+woltka classify --lineage bac120_taxonomy_r89.tsv --lineage ar122_taxonomy_r89.tsv ...
 ```
 
-If you work with both Bacteria and Archaea (this is the common case), you may simply concatenate the two taxonomy files before use:
-
-```bash
-cat bac120_taxonomy_r89.tsv ar122_taxonomy_r89.tsv > gtdb_taxonomy.tsv
-```
-
-Note: The [GTDB-Tk](https://github.com/Ecogenomics/GtdbTk) database ([`gtdbtk_data.tar.gz`](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdbtk_r89_data.tar.gz)) already provides a combined `gtdb_taxonomy.tsv` file.
+Note: The [GTDB-Tk](https://github.com/Ecogenomics/GtdbTk) database ([`gtdbtk_data.tar.gz`](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/gtdbtk_r89_data.tar.gz)) already provides a combined Bacteria and Archaea taxonomy file: `gtdb_taxonomy.tsv`.
 
 
 ## Reformat GTDB as taxdump style
@@ -115,9 +109,13 @@ cat taxonomy/gtdb_taxonomy.tsv | sed 's/^RS_\|GB_//' > gtdb_taxonomy_rev.tsv
 
 GTDB is a phylogeny-based taxonomy system, which means that instead of staying with the derived, hard-coded taxonomic ranks, you may directly exploit the original phylogenetic trees. However there are some tricks to be considered:
 
-The "GTDB phylogeny" actually consists of two trees: one for Bacteria ([`bac120_r89.sp_labels.tree`](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/bac120_r89.sp_labels.tree)) and the other for Archaea ([`ar122_r89.sp_labels.tree`](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_r89.sp_labels.tree)). In order to use them in one analysis, you need to join them:
+The "GTDB phylogeny" actually consists of two trees: one for Bacteria ([`bac120_r89.sp_labels.tree`](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/bac120_r89.sp_labels.tree)) and the other for Archaea ([`ar122_r89.sp_labels.tree`](https://data.ace.uq.edu.au/public/gtdb/data/releases/release89/89.0/ar122_r89.sp_labels.tree)).
 
-(TODO: Add tutorial for using GTDB phylogeny.)
+```bash
+woltka classify --newick bac120_r89.sp_labels.tree --newick ar122_r89.sp_labels.tree ...
+```
+
+Woltka will automatically join the two trees into one at their roots. This is operational, but note that the two GTDB trees are NOT rooted based on evolutionary origins, so it is your decision whether this merging is fair.
 
 
 ## Use WoL database with GTDB taxonomy

@@ -9,6 +9,8 @@ The input files for Woltka are sequence **alignment** files. The term "alignment
 - [Filename pattern](#filename-pattern)
 - [Sample list](#sample-list)
 - [Demultiplexing](#demultiplexing)
+- [Subject trimming](#subject-trimming)
+
 
 ## Input filepath
 
@@ -32,7 +34,7 @@ S03 S03.sam
 Woltka supports the following alignment formats (specified by parameter `--format` or `-f`):
 
 - `map`: A **simple map** in the format of query \<tab\> subject.
-- `sam`: **SAM** format. Supported by multiple tools such as Bowtie2 and BWA.
+- `sam`: [**SAM**](https://en.wikipedia.org/wiki/SAM_(file_format)) format. Supported by multiple tools such as Bowtie2 and BWA.
 - `b6o`: **BLAST** tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by multiple tools such as BLAST, DIAMOND, VSEARCH, BURST, etc.
 
   If not specified, Woltka will automatically infer the format of input alignment files.
@@ -85,3 +87,9 @@ woltka classify \
   --output profile.biom \
   ...
 ```
+
+## Subject trimming
+
+The parameter `--trim-sub <delim>` lets Woltka trim subject IDs at the last occurrence of the given delimiter. Examples include trimming off version numbers from NCBI accessions (`--trim-sub .`: `NP_123456.1` => `NP_123456`, trimming off ORF indices from nucleotide sequences (`--trim-sub _`: `Contig_5_20` => `Contig_5`).
+
+This allows flexible adaptation to alternative classification systems without manually editing the alignment files. A use case is the stratified taxonomic/functional classification (see [details](stratify.md)).

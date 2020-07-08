@@ -18,58 +18,64 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
+from collections import deque
+from itertools import compress
+from functools import partial, lru_cache
 import click
 
 from .util import update_dict, allkeys, sum_dict, intize
 from .file import (
-    openzip, path2stem, read_ids, id2file_from_dir, id2file_from_map, read_map,
-    write_readmap, write_table)
-from .align import Plain, parse_align_file
+    openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
+    id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
+from .align import plain_mapper
 from .classify import (
-    assign_none, assign_free, assign_rank, count, count_strata, strip_index,
-    demultiplex)
+    assign_none, assign_free, assign_rank, count, count_strata)
 from .tree import (
-    read_names, read_nodes, read_lineage, read_newick, read_rank_table,
+    read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
-from .ordinal import Ordinal, read_gene_coords, whether_prefix
-from .biom import profile_to_biom, write_biom
+from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
+from .table import prep_table, write_table
 
 
-def workflow(input_fp:      str,
-             output_fp:     str,
+def workflow(input_fp:     str,
+             output_fp:    str,
              # input
-             input_fmt:     str = None,
-             input_ext:     str = None,
-             samples:       str = None,
-             demux:        bool = None,
-             lines:         int = 1000000,
+             input_fmt:    str = None,
+             input_ext:    str = None,
+             samples:      str = None,
+             demux:       bool = None,
+             trimsub:      str = None,
              # hierarchies
-             nodes_fp:      str = None,
-             newick_fp:     str = None,
-             lineage_fp:    str = None,
-             rank_table_fp: str = None,
-             map_fps:      list = [],
-             map_as_rank:  bool = False,
-             names_fps:    list = [],
+             nodes_fps:   list = [],
+             newick_fps:  list = [],
+             lineage_fps: list = [],
+             columns_fps: list = [],
+             map_fps:     list = [],
+             map_as_rank: bool = False,
+             names_fps:   list = [],
              # assignment
-             ranks:         str = None,
-             above:        bool = False,
-             major:        bool = None,
-             ambig:        bool = True,
-             subok:        bool = True,
-             deidx:        bool = False,
+             ranks:        str = None,
+             uniq:        bool = False,
+             major:       bool = None,
+             above:       bool = False,
+             subok:       bool = False,
              # gene matching
-             coords_fp:     str = None,
-             overlap:       int = 80,
+             coords_fp:    str = None,
+             overlap:      int = 80,
              # stratification
-             strata_dir:    str = None,
+             strata_dir:   str = None,
              # output
-             output_fmt:    str = None,
-             name_as_id:   bool = False,
-             add_rank:     bool = False,
-             add_lineage:  bool = False,
-             outmap_dir:    str = None,
-             outmap_zip:    str = 'gz') -> dict:
+             output_fmt:   str = None,
+             unassigned:  bool = False,
+             name_as_id:  bool = False,
+             add_rank:    bool = False,
+             add_lineage: bool = False,
+             outmap_dir:   str = None,
+             outmap_zip:   str = 'gz',
+             # performance
+             chunk:        int = None,
+             cache:        int = 1024,
+             no_exe:      bool = False) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -88,6 +94,9 @@ def workflow(input_fp:      str,
     .cli.classify
         Command-line arguments and help information.
     """
+    # available external compressors
+    zippers = None if no_exe else {}
+
     # parse input samples
     samples, files, demux = parse_samples(
         input_fp, input_ext, samples, demux)
@@ -97,20 +106,20 @@ def workflow(input_fp:      str,
 
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
-        names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps,
-        map_as_rank)
+        names_fps, nodes_fps, newick_fps, lineage_fps, columns_fps, map_fps,
+        map_as_rank, zippers)
 
     # build mapping module
-    mapper = build_mapper(coords_fp, overlap)
+    mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
 
     # target classification ranks
-    ranks, rank2dir = prepare_ranks(ranks, outmap_dir)
+    ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree)
 
     # classify query sequences
     data = classify(
-        mapper, files, samples, input_fmt, demux, tree, rankdic, namedic, root,
-        ranks, rank2dir, outmap_zip, above, major, ambig, subok, deidx, lines,
-        stratmap)
+        mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
+        namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
+        uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
 
     # write output profiles
     write_profiles(
@@ -124,8 +133,9 @@ def workflow(input_fp:      str,
 def classify(mapper:  object,
              files:     list or dict,
              samples:   list = None,
-             input_fmt:  str = None,
+             fmt:        str = None,
              demux:     bool = None,
+             trimsub:    str = None,
              tree:      dict = None,
              rankdic:   dict = None,
              namedic:   dict = None,
@@ -133,13 +143,15 @@ def classify(mapper:  object,
              ranks:      str = None,
              rank2dir:  dict = None,
              outzip:     str = None,
-             above:     bool = False,
+             uniq:      bool = False,
              major:      int = None,
-             ambig:      str = True,
-             subok:     bool = None,
-             deidx:     bool = False,
-             lines:      int = None,
-             stratmap:  dict = None) -> dict:
+             above:     bool = False,
+             subok:     bool = False,
+             unasgd:    bool = False,
+             stratmap:  dict = None,
+             chunk:      int = None,
+             cache:      int = 1024,
+             zippers:   dict = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -151,7 +163,7 @@ def classify(mapper:  object,
         paths to sample IDs, if per-sample.
     samples : list of str, optional
         Sample ID list to include.
-    input_fmt : str, optional
+    fmt : str, optional
         Format of input alignment file. Options:
         - 'b6o': BLAST tabular format.
         - 'sam': SAM format.
@@ -159,6 +171,8 @@ def classify(mapper:  object,
         If None, program will automatically infer from file content.
     demux : bool, optional
         Whether perform demultiplexing.
+    trimsub : str, optional
+        Trim subject IDs at the last given delimiter.
     tree : dict, optional
         Taxonomic tree.
     rankdic : dict, optional
@@ -176,75 +190,100 @@ def classify(mapper:  object,
         Write classification map per rank to directory.
     outzip : str, optional
         Output read map compression method (gz, bz2, xz or None).
+    uniq : bool, optional
+        Assignment must be unique. Otherwise, report all possible assignments
+        and normalize counts (for none- and fixed-rank assignments).
+    major : int, optional
+        In given-rank classification, perform majority-rule assignment based on
+        this percentage threshold. Range: [51, 99].
     above : bool, optional
         Allow assigning to a classification unit higher than given rank.
-    major : int, optional
-        Perform majority-rule assignment based on this percentage threshold.
-        Range: [51, 99].
-    ambig : bool, optional
-        Allow one sequence to be assigned to multiple classification units at
-        the same rank. The profile will be normalized by the number of matches
-        per query sequence.
     subok : bool, optional
-        Allow directly reporting subject ID(s) if a sequence cannot be assigned
-        to any higher classification unit.
-    deidx : bool, optional
-        Strip "underscore index" suffixes from subject IDs.
-    lines : int, optional
-        Number of lines to read from alignment file per chunk.
+        In free-rank classification, allow assigning sequences to their direct
+        subjects instead of higher classification units, if applicable.
+    unasgd : bool, optional
+        Report unassigned sequences.
     stratmap : dict, optional
         Map of sample ID to stratification file.
+    chunk : int, optional
+        Number of lines per chunk to read from alignment file.
+    cache : int, optional
+        LRU cache size for classification results at each rank.
+    zippers : dict, optional
+        External compression programs.
 
     Returns
     -------
     dict of dict
         Per-rank profiles generated from classification.
+
+    Notes
+    -----
+    Subject(s) of each query are converted into a frozenset. This is because
+    frozenset is hashable, a property necessary for subsequent assignment
+    result caching.
     """
     data = {x: {} for x in ranks}
 
+    # assigners for each rank
+    assigners = {}
+
     # assignment parameters
-    kwargs = {'tree': tree, 'rankdic': rankdic, 'root':  root, 'above': above,
-              'major': major and major / 100, 'ambig': ambig, 'subok': subok,
-              'namedic': namedic, 'rank2dir': rank2dir, 'outzip': outzip if
+    kwargs = {'assigners': assigners, 'cache': cache, 'tree': tree, 'rankdic':
+              rankdic, 'namedic': namedic, 'root':  root, 'uniq': uniq,
+              'major': major and major / 100, 'above': above, 'subok': subok,
+              'unasgd': unasgd, 'rank2dir': rank2dir, 'outzip': outzip if
               outzip != 'none' else None}
 
     # current sample Id
-    csample = None
+    csample = False
 
-    # parse input maps and generate profile
+    # parse input alignment file(s) and generate profile(s)
     for fp in sorted(files):
-        n = 0
         click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
 
-        # read alignment file into query-subject(s) map
-        with openzip(fp) as fh:
+        # read alignment file into query-to-subject(s) map
+        with readzip(fp, zippers) as fh:
+
+            # query and progress counters
+            nqry, nstep = 0, -1
 
             # parse alignment file by chunk
-            for rmap in parse_align_file(fh, mapper, input_fmt, lines):
+            for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
+                nqry += len(qryque)
 
-                # show progress
-                click.echo('.', nl=False)
-                n += len(rmap)
+                # (optional) strip indices and freeze sets
+                subque = deque(strip_suffix(subque, trimsub) if trimsub else
+                               map(frozenset, subque))
 
-                # reshape read map
-                rmap = reshape_readmap(rmap, deidx, demux, samples, files, fp)
+                # (optional) demultiplex and generate per-sample maps
+                rmaps = demultiplex(qryque, subque, samples) if demux else {
+                    files[fp] if files else None: (qryque, subque)}
 
                 # assign reads at each rank
-                for sample, map_ in rmap.items():
+                for sample, rmap in rmaps.items():
 
-                    # read strata of current sample into cache
+                    # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
-                        with openzip(stratmap[sample]) as fh:
-                            kwargs['strata'] = dict(read_map(fh))
+                        with readzip(stratmap[sample], zippers) as fhs:
+                            kwargs['strata'] = dict(read_map_uniq(fhs))
                         csample = sample
 
+                    # call assignment workflow for each rank
                     for rank in ranks:
+                        assign_readmap(*rmap, data, rank, sample, **kwargs)
 
-                        # call assignment workflow
-                        assign_readmap(map_, data, rank, sample, **kwargs)
+                # show progress
+                istep = nqry // 1000000 - nstep
+                if istep:
+                    click.echo('.' * istep, nl=False)
+                    nstep += istep
+
+        # round values and drop zeros
+        round_profiles(data, uniq, major, above)
 
         click.echo(' Done.')
-        click.echo(f'  Number of query sequences: {n}.')
+        click.echo(f'  Number of sequences classified: {nqry}.')
 
     click.echo('Classification completed.')
     return data
@@ -303,6 +342,7 @@ def parse_samples(fp:        str,
             elif len(map_) < len(samples):
                 raise ValueError(errmsg)
             files = {join(fp, map_[x]): x for x in samples}
+
         click.echo(f'Input directory: {fp}.')
         click.echo(f'Number of alignment files to read: {len(files)}.')
 
@@ -328,6 +368,7 @@ def parse_samples(fp:        str,
             else:
                 samples = [x[0] for x in map_]
                 files = {x[1]: x[0] for x in map_}
+
             click.echo(f'Number of alignment files to read: {len(files)}.')
 
         # treat file as a single alignment file
@@ -345,6 +386,7 @@ def parse_samples(fp:        str,
                     raise ValueError(errmsg)
                 files = {fp: sample}
                 samples = [sample]
+
             click.echo(f'Input alignment file: {fp}.')
 
     else:
@@ -386,8 +428,10 @@ def parse_strata(fp:       str = None,
 
 
 def build_mapper(coords_fp: str = None,
-                 overlap:   int = None) -> object:
-    """Build mapping module (Plain or Ordinal).
+                 overlap:   int = None,
+                 chunk:     int = None,
+                 zippers:  dict = None) -> (callable, int):
+    """Build mapper function (plain or ordinal).
 
     Parameters
     ----------
@@ -395,34 +439,47 @@ def build_mapper(coords_fp: str = None,
         Path to gene coordinates file.
     overlap : int, optional
         Read/gene overlapping percentage threshold.
+    chunk : int, optional
+        Number of lines per chunk to read from alignment file.
+    zippers : dict, optional
+        External compression programs.
 
     Returns
     -------
-    object
-        Mapping module.
+    callable
+        Mapper function.
+    int
+        Number of lines per chunk.
 
     Notes
     -----
-    Currently two mappers are supported: Plain() for regular alignments
-    (i.e., simple query-to-subject maps), Ordinal() for alignments with
+    Currently two mappers are supported: "plain" for regular alignments
+    (i.e., simple query-to-subject maps), "ordinal" for alignments with
     coordinates which will be used to match queries (reads) and genes. The
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
+
+    The chunk size, if not specified, is determined empirically: 1,000 for
+    plain mapper and 1,000,000 for ordinal mapper.
     """
     if coords_fp:
-        click.echo(f'Reading gene coordinates...', nl=False)
-        with openzip(coords_fp) as fh:
+        click.echo('Reading gene coordinates...', nl=False)
+        with readzip(coords_fp, zippers) as fh:
             coords = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
-        click.echo(f'Total number of host sequences: {len(coords)}.')
-        return Ordinal(coords, whether_prefix(coords),
-                       overlap and overlap / 100)
+        click.echo(f'  Total number of host sequences: {len(coords)}.')
+        chunk = chunk or 1000000
+        return partial(ordinal_mapper, coords=coords,
+                       prefix=whether_prefix(coords),
+                       th=overlap and overlap / 100), chunk
     else:
-        return Plain()
+        chunk = chunk or 1000
+        return plain_mapper, chunk
 
 
 def prepare_ranks(ranks:      str = None,
-                  outmap_dir: str = None) -> (list, dict or None):
+                  outmap_dir: str = None,
+                  tree:      dict = None) -> (list, dict or None):
     """Prepare classification ranks and directories of read-to-feature maps.
 
     Parameters
@@ -431,6 +488,8 @@ def prepare_ranks(ranks:      str = None,
         Target ranks (comma-separated).
     outmap_dir : str, optional
         Path to output read map directory.
+    tree : dict, optional
+        Taxonomic tree.
 
     Returns
     -------
@@ -439,8 +498,15 @@ def prepare_ranks(ranks:      str = None,
     dict or None
         Rank-to-directory map (or None if not necessary).
     """
-    # determine ranks
-    ranks = ['none'] if ranks is None else ranks.split(',')
+    # ranks are given
+    if ranks:
+        ranks = ranks.split(',')
+
+    # if classification system is provided, do free-rank classification;
+    # otherwise do no-rank assignment.
+    else:
+        ranks = ['free' if tree else 'none']
+
     click.echo('Classification will operate on these ranks: {}.'.format(
         ', '.join(ranks)))
 
@@ -459,34 +525,38 @@ def prepare_ranks(ranks:      str = None,
             dir_ = join(outmap_dir, rank)
             makedirs(dir_, exist_ok=True)
             rank2dir[rank] = dir_
+
     return ranks, rank2dir
 
 
-def build_hierarchy(names_fps:    list = [],
-                    nodes_fp:      str = None,
-                    newick_fp:     str = None,
-                    lineage_fp:    str = None,
-                    rank_table_fp: str = None,
-                    map_fps:      list = [],
-                    map_as_rank:  bool = False) -> (dict, dict, dict, str):
+def build_hierarchy(names_fps:   list = [],
+                    nodes_fps:   list = [],
+                    newick_fps:  list = [],
+                    lineage_fps: list = [],
+                    columns_fps: list = [],
+                    map_fps:     list = [],
+                    map_as_rank: bool = False,
+                    zippers:     dict = None) -> (dict, dict, dict, str):
     """Construct hierarchical classification system.
 
     Parameters
     ----------
     names_fps : list of str, optional
         Taxonomic names file(s).
-    nodes_fp : str, optional
-        Taxonomic nodes file.
-    newick_fp : str, optional
+    nodes_fps : list of str, optional
+        Taxonomic nodes file(s).
+    newick_fps : list of str, optional
         Newick tree file.
-    lineage_fp : str, optional
+    lineage_fps : list of str, optional
         Lineage strings file.
-    rank_table_fp : str, optional
-        Rank table file.
+    columns_fps : list of str, optional
+        Rank-per-column file.
     map_fps : list of str, optional
         Mapping file(s).
     map_as_rank : bool, optional
         Treat mapping filename stem as rank.
+    zippers : dict, optional
+        External compression programs.
 
     Returns
     -------
@@ -500,63 +570,65 @@ def build_hierarchy(names_fps:    list = [],
         Root identifier.
     """
     tree, rankdic, namedic = {}, {}, {}
+
+    # check if at least one filepath is specified
     is_build = any([
-        names_fps, nodes_fp, newick_fp, lineage_fp, rank_table_fp, map_fps])
+        names_fps, nodes_fps, newick_fps, lineage_fps, columns_fps, map_fps])
     if is_build:
         click.echo('Constructing classification system...')
 
     # taxonomy names
     for fp in names_fps:
-        click.echo(f'  Parsing taxonomy names file: {fp}...', nl=False)
-        with openzip(fp) as f:
+        click.echo(f'  Parsing taxon names file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             names = read_names(f)
         update_dict(namedic, names)
         click.echo(' Done.')
 
     # taxonomy nodes
-    if nodes_fp:
-        click.echo(f'  Parsing taxonomy nodes file: {nodes_fp}...', nl=False)
-        with openzip(nodes_fp) as f:
+    for fp in nodes_fps:
+        click.echo(f'  Parsing taxon nodes file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             tree_, rankdic_ = read_nodes(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
     # Newick-format tree
-    if newick_fp:
-        click.echo(f'  Parsing Newick tree file: {newick_fp}...', nl=False)
-        with openzip(newick_fp) as f:
+    for fp in newick_fps:
+        click.echo(f'  Parsing Newick tree file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             update_dict(tree, read_newick(f))
         click.echo(' Done.')
 
-    # lineage strings file
-    if lineage_fp:
-        click.echo(f'  Parsing lineage file: {lineage_fp}...', nl=False)
-        with openzip(lineage_fp) as f:
+    # lineage file
+    for fp in lineage_fps:
+        click.echo(f'  Parsing lineage file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
             tree_, rankdic_ = read_lineage(f)
         update_dict(tree, tree_)
         update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
-    # rank table file
-    if rank_table_fp:
-        click.echo(f'  Parsing rank table file: {rank_table_fp}...', nl=False)
-        with openzip(rank_table_fp) as f:
-            tree_, rankdic_ = read_rank_table(f)
+    # columns file
+    for fp in columns_fps:
+        click.echo(f'  Parsing columns file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
+            tree_, rankdic_ = read_columns(f)
             update_dict(tree, tree_)
             update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
     # plain mapping files
     for fp in map_fps:
-        click.echo(f'  Parsing simple map file: {fp}...', nl=False)
-        with openzip(fp) as f:
-            map_ = dict(read_map(f, multi=False))
+        click.echo(f'  Parsing simple map file: {basename(fp)}...', nl=False)
+        with readzip(fp, zippers) as f:
+            map_ = dict(read_map_1st(f))
         update_dict(tree, map_)
 
         # filename stem as rank
         if map_as_rank:
-            rank = path2stem(fp)
+            rank = stem2rank(path2stem(fp))
             update_dict(rankdic, {k: rank for k in set(map_.values())})
         click.echo(' Done.')
 
@@ -565,79 +637,146 @@ def build_hierarchy(names_fps:    list = [],
 
     if is_build:
         click.echo('Classification system constructed.')
-        click.echo(f'Total number of classification units: {len(tree)}.')
+        click.echo(f'  Total number of classification units: {len(tree)}.')
+
     return tree, rankdic, namedic, root
 
 
-def reshape_readmap(rmap:    dict,
-                    deidx:   bool = None,
-                    demux:   bool = None,
-                    samples: list = None,
-                    files:   dict = None,
-                    fp:       str = None) -> dict:
-    """Reshape a read map.
+def strip_suffix(subque: list,
+                 sep:     str) -> object:
+    """Strip suffixes from subject IDs at the last separator.
 
     Parameters
     ----------
-    rmap : dict
-        Read map to manipulate.
-    deidx : bool, optional
-        Strip suffixes from subject IDs.
-    demux : bool, optional
-        Whether perform demultiplexing.
-    samples : list of str, optional
-        Sample ID list to include.
-    files : list or dict
-        Map of filepaths to sample IDs.
-    fp : str
-        Path to current alignment file.
+    subque : iterable
+        Subject(s) queue to manipulate.
+    sep : str, optional
+        Separator between subject ID and suffix.
 
     Returns
     -------
-    dict
-        Reshaped read map.
+    generator of frozenset
+        Processed subject(s) queue.
+
+    Notes
+    -----
+    This function will find the last occurrence of separator in a subject Id,
+    and trim from it to the right end. If not found, the whole subject Id will
+    be retained.
     """
-    # strip indices from subjects
-    if deidx:
-        strip_index(rmap)
-
-    # demultiplex into multiple samples
-    if demux:
-        return demultiplex(rmap, samples)
-
-    # sample Id from filename
-    else:
-        return {files[fp] if files else None: rmap}
+    return map(frozenset, map(partial(
+        map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
 
-def assign_readmap(rmap:     dict,
-                   data:     dict,
-                   rank:     str,
-                   sample:   str,
-                   rank2dir: dict = None,
-                   outzip:    str = None,
-                   tree:     dict = None,
-                   rankdic:  dict = None,
-                   namedic:  dict = None,
-                   root:      str = None,
-                   above:    bool = False,
-                   major:   float = None,
-                   ambig:     str = True,
-                   subok:    bool = None,
-                   strata:   dict = None):
+def demultiplex(qryque:  list,
+                subque:  list,
+                samples: list = None,
+                sep:      str = '_') -> dict:
+    """Demultiplex a query-to-subject(s) map.
+
+    Parameters
+    ----------
+    qryque : iterable
+        Query queue to demultiplex.
+    subque : iterable
+        Corresponding subject(s) queue.
+    samples : iterable of str, optional
+        Sample IDs to keep.
+    sep : str, optional
+        Separator between sample ID and read ID.
+
+    Returns
+    -------
+    dict of (deque, deque)
+        Per-sample read-to-subject(s) maps.
+
+    Notes
+    -----
+    In a multiplexed alignment file, query IDs are composed of sample ID and
+    read ID, separated by a character (default: "_"). This function separates
+    them at the first occurrence of the separator from left. If the separator
+    is not found, the entire query ID will be retained as read ID and sample
+    ID will be `None`.
+    """
+    if samples:
+        samset = set(samples)
+
+    # per-sample read and subject(s) queues
+    qryques, subques = {}, {}
+
+    # current sample Id (it can be None so start with False)
+    csample = False
+
+    # list append method references
+    qry_add, sub_add = None, None
+
+    for query, subjects in zip(qryque, subque):
+
+        # split query Id by first separator
+        left, _, right = query.partition(sep)
+
+        # if separator is present, take left and right
+        # if there is no separator, take None and left
+        sample, read = right and left, right or left
+
+        # append read Id and subject(s) to queues
+        if sample == csample:
+            qry_add(read)
+            sub_add(subjects)
+
+        # check if sample Id is to be included
+        elif not samples or sample in samset:
+            csample = sample
+
+            # create queues for current sample Id
+            qryques[sample] = deque([read])
+            subques[sample] = deque([subjects])
+
+            # (re-)assign method references to current sample
+            qry_add = qryques[sample].append
+            sub_add = subques[sample].append
+
+    return {x: (qryques[x], subques[x]) for x in qryques}
+
+
+def assign_readmap(qryque:    list,
+                   subque:    list,
+                   data:      dict,
+                   rank:       str,
+                   sample:     str,
+                   assigners: dict,
+                   cache:      int = 1024,
+                   rank2dir:  dict = None,
+                   outzip:     str = None,
+                   tree:      dict = None,
+                   rankdic:   dict = None,
+                   namedic:   dict = None,
+                   root:       str = None,
+                   uniq:      bool = False,
+                   major:    float = None,
+                   above:     bool = False,
+                   subok:     bool = False,
+                   unasgd:    bool = False,
+                   strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
     units based on their subjects.
 
     Parameters
     ----------
-    rmap : dict
-        Read map to assign.
+    qryque : iterable of str
+        Query queue to assign.
+    subque : iterable of frozenset
+        Subject(s) queue for assignment.
     data : dict
         Master data structure.
     rank : str
         Target rank to assign to.
     sample : str
         Sample ID.
+    assigners : dict of callable
+        Per-rank assigners.
+    cache : int, optional
+        LRU cache size for classification results at each rank.
     rank2dir : dict, optional
         Directory of output maps per rank.
     outzip : str, optional
@@ -650,55 +789,104 @@ def assign_readmap(rmap:     dict,
         Taxon name directory.
     root : str, optional
         Root identifier.
-    above : bool, optional
-        Assignment above given rank is acceptable (for fixed ranks).
+    uniq : bool, optional
+        Assignment must be unique. Otherwise, report all possible assignments
+        and normalize counts (for none- and fixed-rank assignments).
     major : float, optional
-        Majority-rule assignment threshold (available only with a fixed rank
-        and not above or ambig).
-    ambig : bool, optional
-        Count occurrence of each possible assignment instead of targeting one
-        assignment (available only with a fixed rank and not above).
+        In given-rank classification, perform majority-rule assignment based on
+        this fraction threshold.
+    above : bool, optional
+        In given-rank classification, assignment above the specified rank is
+        acceptable.
     subok : bool, optional
-        Allow assignment to subject(s) itself instead of higher classification
-        units.
+        In free-rank classification, allow assigning sequences to their direct
+        subjects instead of higher classification units, if applicable.
+    unasgd : bool, optional
+        Report unassigned sequences.
     strata : dict, optional
         Read-to-feature map for stratification.
     """
-    # determine assigner
+    # determine assigner and initiate (if not already)
     if rank is None or rank == 'none' or tree is None:
-        assigner = assign_none
-        args = (ambig,)
+        if 'none' not in assigners:
+            assigners['none'] = lru_cache(maxsize=cache)(partial(
+                assign_none, uniq=uniq))
+        assigner = assigners['none']
     elif rank == 'free':
-        assigner = assign_free
-        args = (tree, root, subok)
+        if 'free' not in assigners:
+            assigners['free'] = lru_cache(maxsize=cache)(partial(
+                assign_free, tree=tree, root=root, subok=subok))
+        assigner = assigners['free']
     else:
-        assigner = assign_rank
-        args = (rank, tree, rankdic, root, above, major, ambig)
+        if rank not in assigners:
+            assigners[rank] = lru_cache(maxsize=cache)(partial(
+                assign_rank, rank=rank, tree=tree, rankdic=rankdic, root=root,
+                major=major, above=above, uniq=uniq))
+        assigner = assigners[rank]
 
-    # call assigner
-    asgmt = {}
-    for query, subjects in rmap.items():
-        res = assigner(subjects, *args)
-        if res is not None:
-            asgmt[query] = res
+    # call assigner on suject(s) per query
+    resque = map(assigner, subque)
+
+    # report or drop unassigned
+    if unasgd:
+        resque = [x or 'Unassigned' for x in resque]
+    else:
+        resque = list(resque)
+        keep = list(map(None.__ne__, resque))
+        qryque, resque = list(compress(qryque, keep)), list(compress(
+            resque, keep))
 
     # write classification map
     if rank2dir is not None:
         outfp = join(rank2dir[rank], f'{sample}.txt')
         with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
-            write_readmap(fh, asgmt, namedic)
+            write_readmap(fh, qryque, resque, namedic)
 
     # count taxa
-    counts = count_strata(asgmt, strata) if strata else count(asgmt)
-
-    # round floats
-    intize(counts)
+    counts = count_strata(qryque, resque, strata) if strata else count(resque)
 
     # combine old and new counts
     if sample in data[rank]:
         sum_dict(data[rank][sample], counts)
     else:
         data[rank][sample] = counts
+
+
+def round_profiles(data:   list,
+                   uniq:   bool = False,
+                   major: float = None,
+                   above:  bool = False):
+    """Round counts in the profile into integers, and drop zero counts.
+
+    Parameters
+    ----------
+    data : dict
+        Profile data.
+    uniq : bool, optional
+        Assignment is unique.
+    major : int, optional
+        Majority-rule assignment threshold.
+    above : bool, optional
+        Assignment above given rank.
+    """
+    for rank in data:
+
+        # free-rank classification is always unique
+        if rank == 'free':
+            continue
+
+        # non-unique no-rank classification needs to be rounded
+        elif rank == 'none':
+            if uniq:
+                continue
+            for datum in data[rank].values():
+                intize(datum)
+
+        # given rank classification needs rounding when all three criteria
+        # are not met
+        elif not any((uniq, major, above)):
+            for datum in data[rank].values():
+                intize(datum)
 
 
 def write_profiles(data:        dict,
@@ -720,7 +908,7 @@ def write_profiles(data:        dict,
     fp : str
         Path to output file or directory.
     is_biom : bool, optional
-        Output BIOM instead of TSV format.
+        Output BIOM or TSV format.
     samples : list, optional
         Ordered sample ID list.
     tree : dict, optional
@@ -775,19 +963,13 @@ def write_profiles(data:        dict,
         name_as_id = False
 
     # write output profile(s)
-    click.echo('Writing output profiles...')
+    fmt = 'BIOM' if is_biom else 'TSV'
+    click.echo(f'Writing output profiles in {fmt} format...')
     for rank, fp in rank2fp.items():
-        if is_biom:
-            biom = profile_to_biom(
-                data[rank], samples, tree if add_lineage else None, rankdic
-                if add_rank else None, namedic, name_as_id)
-            write_biom(biom, fp)
-            m, n = biom.shape
-        else:
-            with open(fp, 'w') as fh:
-                n, m = write_table(
-                    fh, data[rank], samples, tree if add_lineage else None,
-                    rankdic if add_rank else None, namedic, name_as_id)
+        table = prep_table(data[rank], samples, tree if add_lineage else None,
+                           rankdic if add_rank else None, namedic, name_as_id)
+        write_table(table, fp, is_biom)
+        n, m = len(table[2]), len(table[1])
         click.echo(f'  Rank: {rank}, samples: {n}, features: {m}.')
 
     click.echo('Profiles written.')

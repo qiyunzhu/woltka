@@ -23,25 +23,29 @@ A parser function returns a tuple of:
     start : alignment end (3') coordinate, optional
 """
 
+from collections import deque
+from itertools import chain
+from functools import lru_cache
 
-def parse_align_file(fh, mapper, fmt=None, n=None):
+
+def plain_mapper(fh, fmt=None, n=1000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
     Parameters
     ----------
     fh : file handle
         Alignment file to parse.
-    mapper : object
-        Module for handling alignments.
     fmt : str, optional
-        Format of mapping file.
+        Alignment file format.
     n : int, optional
-        Number of lines per chunck.
+        Number of lines per chunk.
 
     Yields
     ------
-    dict of set
-        Query-to-subject(s) map.
+    deque of str
+        Query queue.
+    deque of set of str
+        Subject(s) queue.
 
     Notes
     -----
@@ -50,137 +54,82 @@ def parse_align_file(fh, mapper, fmt=None, n=None):
     processes current cache for every _n_ lines, yields and clears cache, then
     proceeds.
     """
-    n = n or 1000000  # default chunk size: 1 million
-    i = 0        # current line number
-    j = n        # target line number at end of current chunk
-    last = None  # last query Id
+    # determine alignment file format
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
-    # determine file format based on first line
-    if fmt is None:
-        try:
-            line = next(fh)
-        except StopIteration:
-            return
-        fmt = infer_align_format(line)
-        parser = assign_parser(fmt)
-        try:
-            last = mapper.parse(line, parser)
-            i = 1
-        except TypeError:
-            pass
-        mapper.append()
-    else:
-        parser = assign_parser(fmt)
+    # assign parser for given format
+    parser = assign_parser(fmt)
 
-    # parse remaining content
-    for line in fh:
+    # query queue and subject(s) queue
+    qryque, subque = deque(), deque()
+
+    # pre-load method references
+    qry_append, sub_append = qryque.append, subque.append
+
+    # parse alignment file
+    this = None  # current query Id
+    target = n   # target line number at end of current chunk
+    for i, line in enumerate(chain(iter(head), fh)):
+
+        # parse current alignment line
         try:
-            query = mapper.parse(line, parser)
-            i += 1
-        except TypeError:
+            query, subject = parser(line)[:2]
+        except (TypeError, IndexError):
             continue
 
-        # flush when query Id changes and chunk size was already reached
-        if query != last:
-            if i >= j:
-                yield mapper.flush()
-                j = i + n
-            last = query
-        mapper.append()
+        # add subject to subject set of the same query Id
+        if query == this:
+            subque[-1].append(subject)
 
-    # finish last chunk
-    yield mapper.flush()
+        # when query Id changes,
+        else:
 
+            # line number has reached target
+            if i >= target:
 
-class Plain(object):
-    """Mapping module for plain sequence alignments.
+                # flush current queries and subject sets
+                # this happens only when: 1) query Id changes, and 2) line
+                # number has reached target, so that subjects of the same query
+                # won't be separated in multiple flushes
+                yield qryque, subque
 
-    Attributes
-    ----------
-    map : dict
-        Cache of query-to-subject(s) map.
-    buf : (str, str)
-        Buffer of last (query, subject) pair.
+                # re-initiate queues and method references
+                qryque, subque = deque(), deque()
+                qry_append, sub_append = qryque.append, subque.append
 
-    See Also
-    --------
-    parse_align_file
-    ordinal.Ordinal
+                # next target line number
+                target = i + n
 
-    Notes
-    -----
-    The design of this class provides an interface for parsing extremely large
-    alignment files. The other class of the same type is `Ordinal`. They both
-    provide three instance methods: `parse`, `append` and `flush` which can be
-    called from parent process.
-    """
+            # create new query and subject set pair
+            qry_append(query)
+            sub_append([subject])
 
-    def __init__(self):
-        """Initiate mapper.
-        """
-        self.map = {}
+            # update current query Id
+            this = query
 
-    def parse(self, line, parser):
-        """Parse one line in alignment file.
-
-        Parameters
-        ----------
-        line : str
-            Line in alignment file.
-        parser : callable
-            Function to parse the line.
-
-        Returns
-        -------
-        str
-            Query identifier.
-
-        Raises
-        ------
-        TypeError
-            Query and subject cannot be extracted from line.
-        """
-        self.buf = parser(line)[:2]
-        return self.buf[0]
-
-    def append(self):
-        """Append buffered last line to cached read map.
-        """
-        try:
-            query, subject = self.buf
-        except (AttributeError, TypeError):
-            return
-        self.map.setdefault(query, []).append(subject)
-
-    def flush(self):
-        """Process, return and clear read map.
-
-        Returns
-        -------
-        dict of set
-            Processed read map.
-        """
-        for query, subjects in self.map.items():
-            self.map[query] = set(subjects)
-        res, self.map = self.map, {}
-        return res
+    # final flush
+    yield qryque, subque
 
 
-def infer_align_format(line):
-    """Guess the format of an alignment file based on first line.
+def infer_align_format(fh):
+    """Guess the format of an alignment file based on content.
 
     Parameters
     ----------
-    line : str
-        First line of alignment file.
+    fh : file handle
+        Input alignment file.
 
     Returns
     -------
-    str or None
+    str
         Alignment file format (map, b6o or sam).
+    list of str
+        Lines that are read in order to infer format.
 
     Raises
     ------
+    ValueError
+        Alignment file cannot be read.
     ValueError
         Alignment file format cannot be determined.
 
@@ -188,18 +137,42 @@ def infer_align_format(line):
     --------
     parse_b6o_line
     parse_sam_line
+
+    TODO
+    ----
+    Currently this function guesses format only based on the first line.
+    This can be more robust.
     """
-    if line.split()[0] == '@HD':
-        return 'sam'
+    # read first line of file
+    try:
+        line = next(fh)
+
+    # file is empty or not readable
+    except StopIteration:
+        raise ValueError('Cannot read alignment file.')
+
+    # SAM file header
+    if line.split()[0] in ('@HD', '@PG'):
+        return 'sam', [line]
+
+    # tab-delimited row
     row = line.rstrip().split('\t')
+
+    # simple query-to-subject map
     if len(row) == 2:
-        return 'map'
+        return 'map', [line]
+
+    # BLAST standard tabular format
     if len(row) >= 12:
         if all(row[i].isdigit() for i in range(3, 10)):
-            return 'b6o'
+            return 'b6o', [line]
+
+    # SAM format
     if len(row) >= 11:
         if all(row[i].isdigit() for i in (1, 3, 4)):
-            return 'sam'
+            return 'sam', [line]
+
+    # cannot determine
     raise ValueError('Cannot determine alignment file format.')
 
 
@@ -243,13 +216,12 @@ def parse_map_line(line, *args):
 
     Notes
     -----
-    Only first two columns are considered.
+    Only the first two columns are considered.
     """
-    try:
-        query, subject = line.rstrip().split('\t', 2)[:2]
-        return query, subject
-    except ValueError:
-        pass
+    query, found, rest = line.partition('\t')
+    if found:
+        subject, found, rest = rest.partition('\t')
+        return query, subject.rstrip()
 
 
 def parse_b6o_line(line):
@@ -274,14 +246,14 @@ def parse_b6o_line(line):
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
-    x = line.rstrip().split('\t')
+    x = line.split('\t')
     qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
-    sstart, send = sorted([int(x[8]), int(x[9])])
+    sstart, send = sorted((int(x[8]), int(x[9])))
     return qseqid, sseqid, score, length, sstart, send
 
 
 def parse_sam_line(line):
-    """Parse a line in a SAM format (sam).
+    """Parse a line in a SAM file (sam).
 
     Parameters
     ----------
@@ -307,30 +279,38 @@ def parse_sam_line(line):
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
     """
     # skip header
-    if line.startswith('@'):
+    if line[0] == '@':
         return
-    x = line.rstrip().split('\t')
-    qname, rname = x[0], x[2]  # query and subject identifiers
+
+    # relevant fields
+    qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
 
     # skip unmapped
     if rname == '*':
         return
-    pos = int(x[3])  # leftmost mapping position
+
+    # leftmost mapping position
+    pos = int(pos)
 
     # parse CIGAR string
-    length, offset = cigar_to_lens(x[5])
+    length, offset = cigar_to_lens(cigar)
 
     # append strand to read Id if not already
-    if not qname.endswith(('/1', '/2')):
-        flag = int(x[1])
-        if flag & (1 << 6):  # forward strand: bit 64
+    if qname[-2:] not in ('/1', '/2'):
+        flag = int(flag)
+
+        # forward strand: bit 64
+        if flag & (1 << 6):
             qname += '/1'
-        elif flag & (1 << 7):  # reverse strand: bit 128
+
+        # reverse strand: bit 128
+        elif flag & (1 << 7):
             qname += '/2'
 
     return qname, rname, None, length, pos, pos + offset - 1
 
 
+@lru_cache(maxsize=128)
 def cigar_to_lens(cigar):
     """Extract lengths from a CIGAR string.
 
@@ -345,6 +325,12 @@ def cigar_to_lens(cigar):
         Alignment length.
     int
         Offset in subject sequence.
+
+    Notes
+    -----
+    This function significantly benefits from LRU cache because high-frequency
+    CIGAR strings (e.g., "150M") are common and redundant calculations can be
+    saved.
     """
     align, offset = 0, 0
     n = ''  # current step size
@@ -381,7 +367,7 @@ def parse_kraken(line):
     .. _Kraken2 manual:
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
-    x = line.rstrip().split('\t')
+    x = line.split('\t')
     return (x[1], x[2]) if x[0] == 'C' else (None, None)
 
 
@@ -408,6 +394,6 @@ def parse_centrifuge(line):
         https://ccb.jhu.edu/software/centrifuge/manual.shtml
     """
     if line.startswith('readID'):
-        return None
-    x = line.rstrip().split('\t')
+        return
+    x = line.split('\t')
     return x[0], x[1], int(x[3]), int(x[5])
