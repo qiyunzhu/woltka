@@ -10,7 +10,7 @@
 
 __name__ = 'woltka'
 __description__ = 'Web of Life ToolKit App'
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 __license__ = 'BSD-3-Clause'
 __author__ = 'Qiyun Zhu',
 __email__ = 'qiyunzhu@gmail.com',

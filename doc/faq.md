@@ -1,6 +1,5 @@
 # Frequently asked questions
 
-
 ## Input files
 
 ### Can Woltka parse compressed files?

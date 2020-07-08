@@ -14,6 +14,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 
 ## Contents
 
+- [Overview](#overview)
 - [Installation](#installation)
 - [Example usage](#example-usage)
 - Details
@@ -21,16 +22,13 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Output files](doc/output.md)
   - [Classification systems](doc/hierarchy.md)
   - [Classification methods](doc/classify.md)
-  - [Ordinal matching](doc/ordinal.md)
+  - [Coordinates matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
 - Tutorials
+  - [Working with WoL](doc/wol.md)
   - [gOTU analysis](doc/gotu.md)
-  - Tree-based classification
-  - Combined taxonomic & functional analyses
 - For users of
-  - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), [GTDB](doc/gtdb.md), SHOGUN
-  - Bowtie2, BWA, Minimap2
-  - BLAST, DIAMOND, VSEARCH
+  - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), [SHOGUN](doc/wol.md#sequence-alignment), [GTDB](doc/gtdb.md)
 - References
   - [Command-line interface](doc/cli.md)
   - [Computational efficiency](doc/perform.md)
@@ -54,12 +52,6 @@ Woltka does NOT **align** sequences. You need to align your FastQ (or Fast5, etc
 
 Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime2.org/) for robust downstream analyses of the profiles to decode the relationships among micobial communities and with their environments.
 
-## Flexible
-
-
-
-
-## What is
 
 ## Installation
 
@@ -83,7 +75,9 @@ Woltka provides several small test datasets under [woltka/tests/data](woltka/tes
 
 One can execute the following commands to make sure that Woltka functions correctly, and to get an impression of the basic usage of Woltka.
 
-1\. gOTU table generation ([details](doc/gotu)):
+(Note: a more complete list of commands at provided [here](woltka/tests/data). Alternatively, you can skip this test dataset check out the [instructions](doc/wol.md) for working with WoL.)
+
+1\. gOTU table generation ([details](doc/gotu.md)):
 
 ```bash
 woltka gotu -i align/bowtie2 -o table.biom
@@ -93,7 +87,7 @@ The input path, [`align/bowtie2`](woltka/tests/data/align/bowtie2), is a directo
 
 The output file, `table.biom`, is a feature table in BIOM format, which can then be analyzed using various bioformatics programs such as [QIIME 2](https://qiime2.org/).
 
-2\. Taxonomic profiling at the ranks of phylum, genus and species ([details](doc/classify)):
+2\. Taxonomic profiling at the ranks of phylum, genus and species ([details](doc/hierarchy.md)):
 
 ```bash
 woltka classify \
