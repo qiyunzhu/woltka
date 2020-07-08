@@ -17,8 +17,9 @@ import gzip
 import bz2
 
 from woltka.file import (
-    openzip, readzip, file2stem, path2stem, read_ids, id2file_from_dir,
-    id2file_from_map, read_map_uniq, read_map_1st, read_map_all, write_readmap)
+    openzip, readzip, file2stem, path2stem, stem2rank, read_ids,
+    id2file_from_dir, id2file_from_map, read_map_uniq, read_map_1st,
+    read_map_all, write_readmap)
 
 
 class FileTests(TestCase):
@@ -121,6 +122,14 @@ class FileTests(TestCase):
         self.assertEqual(path2stem('/home/input.txt'), 'input')
         self.assertEqual(path2stem('/home/input.fa', ext='a'), 'input.f')
         self.assertEqual(path2stem('/home/.bashrc'), '.bashrc')
+
+    def test_stem2rank(self):
+        self.assertEqual(stem2rank('/path/to/db'), 'db')
+        self.assertEqual(stem2rank('gene.map.gz'), 'gene')
+        self.assertEqual(stem2rank('accession2taxid.txt.bz2'), 'taxid')
+        self.assertEqual(stem2rank('compound_2_reaction.txt'), 'reaction')
+        self.assertEqual(stem2rank('strain-to-species.map'), 'species')
+        self.assertEqual(stem2rank('you_and_i.txt'), 'you_and_i')
 
     def test_read_ids(self):
         # simple list

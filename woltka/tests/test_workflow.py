@@ -292,7 +292,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'nodes.dmp')
         with open(fp, 'w') as f:
             f.write('a\td\nb\te\nc\td\nd\te\n')
-        obs = build_hierarchy(nodes_fp=fp)
+        obs = build_hierarchy(nodes_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertEqual(obs[3], 'e')
@@ -301,7 +301,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'nodes.dmp')
         with open(fp, 'w') as f:
             f.write('a\td\tlv3\nb\te\tlv3\nc\td\tlv3\nd\te\tlv2\ne\te\tlv1\n')
-        obs = build_hierarchy(nodes_fp=fp)
+        obs = build_hierarchy(nodes_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertDictEqual(obs[1], {'a': 'lv3', 'b': 'lv3', 'c': 'lv3',
@@ -313,7 +313,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'tree.nwk')
         with open(fp, 'w') as f:
             f.write('((a,c)d,b)e;')
-        obs = build_hierarchy(newick_fp=fp)
+        obs = build_hierarchy(newick_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertEqual(obs[3], 'e')
@@ -323,7 +323,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'lineage.txt')
         with open(fp, 'w') as f:
             f.write('a\te;d\nb\te\nc\te;d\n')
-        obs = build_hierarchy(lineage_fp=fp)
+        obs = build_hierarchy(lineage_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'e;d', 'b': 'e', 'c': 'e;d', 'e;d': 'e', 'e': 'e'})
         self.assertEqual(obs[3], 'e')
@@ -331,7 +331,7 @@ class WorkflowTests(TestCase):
         # lineage with rank code
         with open(fp, 'w') as f:
             f.write('a\tk__e;p__d\nb\tk__e\nc\tk__e;p__d\n')
-        obs = build_hierarchy(lineage_fp=fp)
+        obs = build_hierarchy(lineage_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'k__e;p__d', 'b': 'k__e', 'c': 'k__e;p__d',
             'k__e;p__d': 'k__e', 'k__e': 'k__e'})
@@ -340,21 +340,21 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs[3], 'k__e')
         remove(fp)
 
-        # rank table
-        fp = join(self.tmpdir, 'ranks.tsv')
+        # rank-per-column table
+        fp = join(self.tmpdir, 'columns.tsv')
         with open(fp, 'w') as f:
             f.write('#ID\tlv1\tlv2\n'
                     'a\te\td\n'
                     'b\te\t\n'
                     'c\te\td\n')
-        obs = build_hierarchy(columns_fp=fp)
+        obs = build_hierarchy(columns_fps=[fp])
         self.assertDictEqual(obs[0], {
             'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
         self.assertDictEqual(obs[1], {'d': 'lv2', 'e': 'lv1'})
         self.assertEqual(obs[3], 'e')
         remove(fp)
 
-        # map
+        # simple map
         fp = join(self.tmpdir, 'map.txt')
         with open(fp, 'w') as f:
             f.write('a\tBac\nb\tArc\nc\tBac\n')

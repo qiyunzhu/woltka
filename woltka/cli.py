@@ -42,7 +42,7 @@ def cli():
 @click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True),
-    help=('Path to output gOTU table.'))
+    help='Path to output gOTU table.')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of nucleotides to genomes.'))
@@ -90,28 +90,27 @@ def gotu_cmd(ctx, **kwargs):
     help='Trim subject IDs at the last given delimiter.')
 # hierarchies
 @click.option(
-    '--nodes', 'nodes_fp', type=click.Path(exists=True),
+    '--nodes', 'nodes_fps', type=click.Path(exists=True), multiple=True,
     help='Hierarchies defined by NCBI nodes.dmp or compatible formats.')
 @click.option(
-    '--newick', 'newick_fp', type=click.Path(exists=True),
+    '--newick', 'newick_fps', type=click.Path(exists=True), multiple=True,
     help='Hierarchies defined by a tree in Newick format.')
 @click.option(
-    '--lineage', 'lineage_fp', type=click.Path(exists=True),
-    help='Map of lineage strings. Can accept Greengenes-style rank prefix.')
+    '--lineage', 'lineage_fps', type=click.Path(exists=True), multiple=True,
+    help='Lineage strings. Can accept Greengenes-style rank prefix.')
 @click.option(
-    '--columns', 'columns_fp', type=click.Path(exists=True),
+    '--columns', 'columns_fps', type=click.Path(exists=True), multiple=True,
     help='Table of classification units per rank (column).')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('Map of lower classification units to higher ones. Can accept '
-          'multiple files.'))
+    help='Mapping of lower classification units to higher ones.')
 @click.option(
     '--map-as-rank', is_flag=True,
-    help='Map filename stem is rank name.')
+    help='Extract rank name from map filename.')
 @click.option(
     '--names', '-n', 'names_fps', type=click.Path(exists=True), multiple=True,
     help=('Names of classification units as defined by NCBI names.dmp or a '
-          'simple map. Can accept multiple files.'))
+          'simple map.'))
 # assignment
 @click.option(
     '--rank', '-r', 'ranks', type=click.STRING,
@@ -154,7 +153,7 @@ def gotu_cmd(ctx, **kwargs):
     help='Output profile format (BIOM or TSV).')
 @click.option(
     '--unassigned', is_flag=True,
-    help=('Report unassigned sequences.'))
+    help='Report unassigned sequences.')
 @click.option(
     '--name-as-id', is_flag=True,
     help='Replace feature IDs with names.')
@@ -177,7 +176,7 @@ def gotu_cmd(ctx, **kwargs):
     '--chunk', type=click.INT, default=None,
     help='Number of alignment lines to read and parse in each chunk.')
 @click.option(
-    '--cache', type=click.INT, default=128,
+    '--cache', type=click.INT, default=1024,
     help='Number of recent results to cache for faster classification.')
 @click.option(
     '--no-exe', is_flag=True,

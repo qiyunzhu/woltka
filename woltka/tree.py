@@ -168,8 +168,8 @@ def read_newick(fh):
     return res
 
 
-def read_rank_table(fh):
-    """Read taxonomic information from a rank table.
+def read_columns(fh):
+    """Read taxonomic information from a rank-per-column table.
 
     Parameters
     ----------
@@ -258,8 +258,11 @@ def read_lineage(fh):
     Therefore, the taxon itself does not have to be unique, but the ancestral
     lineage does.
 
-    Empty taxon is allowed, in consistency with QIIME convention (e.g.,
-    "k__Bacteria;p__" is considered a valid phylum).
+    Empty levels in the end are discarded. e.g., "k__Bacteria;p__" is not a
+    valid taxon.
+
+    Empty levels in the middle are kept. e.g., "k__Bacteria;p__;c_Clostridia"
+    will not be shortened into "k__Bacteria;c_Clostridia".
     """
     p = re.compile(r'([a-z])__.*')
     tree, rankdic = {}, {}
@@ -267,16 +270,16 @@ def read_lineage(fh):
         if line.startswith('#'):
             continue
         id_, lineage = line.rstrip().split('\t')
-        parent = None
+        parent, this = None, None
         for taxon in lineage.split(';'):
             taxon = taxon.strip()
 
-            # skip empty taxon (currently disabled)
-            # if taxon.lower() in notax or taxon[1:] == '__':
-            #     continue
+            # build the entire lineage
+            this = f'{this};{taxon}' if this else taxon
 
-            # append entire ancestral lineage
-            this = f'{parent};{taxon}' if parent else taxon
+            # skip empty taxon
+            if taxon.lower() in notax or taxon[1:] == '__':
+                continue
 
             # add current taxon to dictionary
             tree[this] = parent
@@ -312,8 +315,8 @@ def fill_root(tree):
     Notes
     -----
     A root is defined as having parent as itself, a behavior derived from the
-    NCBI convention. Only root must be present in a tree, so that all taxa can
-    be traced back to the same root.
+    NCBI convention. Exactly one root must be present in a tree, so that all
+    taxa can be traced back to the same root.
 
     In custom trees, there may or may not be a clearly defined root. This
     function aims as defining a root for any given tree. Specifically, if

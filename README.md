@@ -19,7 +19,8 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - Details
   - [Input files](doc/input.md)
   - [Output files](doc/output.md)
-  - [Classification system](doc/hierarchy.md)
+  - [Classification systems](doc/hierarchy.md)
+  - [Classification methods](doc/classify.md)
   - [Ordinal matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
 - Tutorials
