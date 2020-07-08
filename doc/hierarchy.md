@@ -12,40 +12,39 @@ That being said, Woltka still supports ranked hierarchies and one can instruct t
 ## Contents
 
 - [Supported hierarchy files](#supported-hierarchy-files)
-- [How Woltka handles hierarchies](#how-woltka-handles-hierarchies)
+- [Combining hierarchies](#combining-hierarchies)
 - [Feature name dictionary](#feature-name-dictionary)
+- [How Woltka handles hierarchies](#how-woltka-handles-hierarchies)
+- [Hierarchy file specs](#hierarchy-file-specifications)
 
 
 ## Supported hierarchy files
 
-Wolkta supports various types and formats of classification systems, specifically:
+Wolkta supports various types and formats of classification systems, as listed below. Details specs of formats are provided at the [bottom](#hierarchy-file-specifications) of this page.
 
 1. `--nodes`: [NCBI-style](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/) `nodes.dmp` (columns are delimited by "\<tab\>|\<tab\>") or a tab-delimited file, in which each taxon (1st column) points to its parent taxon (2nd column). Rank (3rd column) is optional.
 
 2. `--newick`: [Newick-format](https://en.wikipedia.org/wiki/Newick_format) tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
 
-3. `--columns`: Table of per-taxon per-rank assignments. Each column represents a rank. Column header will be treated as rank name.
-
-4. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
+3. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
 
    It can be [Greengenes-style](http://greengenes.secondgenome.com/) taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
 
    Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
 
-5. `--map` or `-m`: Simple map of lower taxon \<tab\> higher taxon.
+3. `--columns`: Table of per-rank assignments. Each column represents a rank. The column header will be treated as the rank name.
 
-   One can supply multiple maps (by entering multiple `--map` parameters) to constitute several hierarchies. For example, the 1st file maps genes to UniRef entries, the 2nd maps UniRef entries to GO terms, the 3rd maps GO terms to GO slim terms, so on so forth.
+5. `--map` or `-m`: Simple map of lower taxon \<tab\> higher taxon.
 
    Flag `--map-as-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
 
-Compressed files are supported and automatically recognized. For example:
+Compressed files are supported and automatically recognized. For example, reading the gzipped Greengenes taxonomy file is as simple as:
 
 ```bash
-woltka classify  --lineage gg_13_5_taxonomy.txt.gz ...
+woltka classify --lineage gg_13_5_taxonomy.txt.gz ...
 ```
 
-
-## How Woltka handles hierarchies
+## Combining hierarchies
 
 Hierarchy files are **additive**, i.e., if multiple files of the same or different formats are provided, all of them will be parsed and added to the classification hierarchies -- unless they conflict -- which will be noted by Woltka. Example command (example files provided under [`taxonomy`](woltka/tests/data/taxonomy), same below):
 
@@ -53,18 +52,45 @@ Hierarchy files are **additive**, i.e., if multiple files of the same or differe
 woltka classify \
   --map nucl2g.txt \
   --map g2taxid.txt \
-  --nodes taxdump/nodes.dmp \
+  --nodes nodes.dmp \
   ...
 ```
 
 In this command, three layers of hierarchies are provided: 1) nucleotide ID to genome ID (`nucl2g.txt`), 2) genome ID to taxonomy ID (`g2taxid.txt`), 3) NCBI taxonomy tree (`nodes.dmp`).
 
-**Subjects** themselves are part of the classification system. A map of subjects to one-level-higher features (e.g., a nucleotide accession to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
+Another example, in which three simple mapping files are provided, allowing Woltka to group genes into UniRef entries, then to GO terms, then to GO slim terms.
+
+```bash
+woltka classify \
+  --map gene2uniref.map \
+  --map uniref2go.map \
+  --map go2goslim.map \
+  --rank go,goslim \
+  ...
+```
+
+A third example, in which two [GTDB](gtdb.md) lineage files (Bacteria and Archaea) are directly read without the need for merging them beforehand:
+
+```bash
+woltka classify \
+  --lineage bac120_taxonomy.tsv \
+  --lineage ar122_taxonomy.tsv \
+  --rank species \
+  ...
+```
+
+
+
+
+
+[Note] **Subjects** themselves are part of the classification system. A map of subjects to one-level-higher features (e.g., a nucleotide accession to NCBI TaxID map) can be supplied with the `--map` parameter if necessary.
+
+
 
 
 ## Feature name dictionary
 
-Optionally, one can supply Woltka with a feature name dictionary:
+Optionally, one can supply Woltka with a feature (a.k.a. classification unit) name dictionary:
 
 * `--names` or `-n`: NCBI-style `names.dmp` or a simple map of taxon \<tab\> name.
 
@@ -84,3 +110,47 @@ woltka classify \
 ```
 
 Similarily, multiple name files are acceptable, and names dictionaries will be merged, unless Woltka detects any conflict among them.
+
+
+## How Woltka handles hierarchies
+
+## Hierarchy file specifications
+
+### 1. Nodes (`--nodes`)
+
+The classical format used by the NCBI taxonomy database (i.e., "[taxdump](ftp://ftp.ncbi.nlm.nih.gov/pub/taxonomy/taxdump.tar.gz)"). It is a multi-column text file with columns delimited by "\<tab\>|\<tab\>".
+
+Woltka cares only the first three columns: 1st: the **taxon** (i.e., TaxID), 2nd: its **parent** taxon, and 3rd: the **rank**. The 3rd column is optional, because Woltka uses but [does not rely](classify.md) on ranks.
+
+Therefore, it is okay to provide a **custom** nodes file, with only first three or two columns.
+
+To make things simple, Woltka further allows using a simple \<tab\> as the column delimiter.
+
+Example (simplified from [taxonomy/nodes.dmp](../woltka/tests/data/taxonomy/nodes.dmp)):
+
+```
+1 <tab> 1 <tab> root
+2 <tab> 1 <tab> domain
+2157 <tab> 1 <tab> domain
+1224 <tab> 2 <tab> phylum
+...
+```
+
+### 2. Newick tree (`--newick`)
+
+[Newick](https://en.wikipedia.org/wiki/Newick_format) is the standard file format for phylogenetic trees.
+
+tree, in which labels of nodes (tips, internal nodes and root) are considered as taxa. All nodes must have labels and all labels must be unique.
+
+3. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
+
+   It can be [Greengenes-style](http://greengenes.secondgenome.com/) taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
+
+   Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
+
+3. `--columns`: Table of per-rank assignments. Each column represents a rank. The column header will be treated as the rank name.
+
+5. `--map` or `-m`: Simple map of lower taxon \<tab\> higher taxon.
+
+   Flag `--map-as-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
+

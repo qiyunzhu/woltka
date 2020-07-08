@@ -328,20 +328,18 @@ class TreeTests(TestCase):
                'k1;p1':       'k1',
                'k1;p2':       'k1',
                'k2;p3':       'k2',
-               'k2;':         'k2',
                'k1;p1;c1':    'k1;p1',
                'k1;p2;c2':    'k1;p2',
                'k1;p2;c3':    'k1;p2',
                'k2;p3;c1':    'k2;p3',
-               'k2;;c4':      'k2;',
+               'k2;;c4':      'k2',
                'k1;p1;c1;o1': 'k1;p1;c1',
                'k1;p2;c2;o2': 'k1;p2;c2',
-               'k1;p2;c3;':   'k1;p2;c3',
                'k2;p3;c1;o3': 'k2;p3;c1',
                'k2;;c4;o4':   'k2;;c4',
                'seq1':        'k1;p1;c1;o1',
                'seq2':        'k1;p2;c2;o2',
-               'seq3':        'k1;p2;c3;',
+               'seq3':        'k1;p2;c3',
                'seq4':        'k2;p3;c1;o3',
                'seq5':        'k2;;c4;o4'}
         self.assertDictEqual(obs, exp)
@@ -357,14 +355,13 @@ class TreeTests(TestCase):
                     'k__Viruses': None,
                     'k__Bacteria;p__Firmicutes': 'k__Bacteria',
                     'k__Bacteria;p__Tenericutes': 'k__Bacteria',
-                    'k__Viruses;x__': 'k__Viruses',
                     'k__Bacteria;p__Firmicutes;c__Bacilli':
                     'k__Bacteria;p__Firmicutes',
                     'k__Bacteria;p__Firmicutes;c__Clostridia':
                     'k__Bacteria;p__Firmicutes',
                     'k__Bacteria;p__Tenericutes;c__Mollicutes':
                     'k__Bacteria;p__Tenericutes',
-                    'k__Viruses;x__;c__Inoviridae': 'k__Viruses;x__',
+                    'k__Viruses;x__;c__Inoviridae': 'k__Viruses',
                     'G1': 'k__Bacteria;p__Firmicutes;c__Bacilli',
                     'G2': 'k__Bacteria;p__Firmicutes;c__Clostridia',
                     'G3': 'k__Bacteria;p__Tenericutes;c__Mollicutes',
@@ -384,8 +381,8 @@ class TreeTests(TestCase):
         fp = join(self.datdir, 'taxonomy', 'lineage.txt')
         with open(fp, 'r') as f:
             tree, rankdic = read_lineage(f)
-        self.assertEqual(len(tree), 429)
-        self.assertEqual(len(rankdic), 322)
+        self.assertEqual(len(tree), 426)
+        self.assertEqual(len(rankdic), 319)
         self.assertEqual(tree['k__Bacteria;p__Firmicutes'], 'k__Bacteria')
         self.assertEqual(rankdic['k__Bacteria;p__Firmicutes'], 'phylum')
         self.assertIsNone(tree['k__Bacteria'])

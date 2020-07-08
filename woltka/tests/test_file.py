@@ -129,6 +129,7 @@ class FileTests(TestCase):
         self.assertEqual(stem2rank('accession2taxid.txt.bz2'), 'taxid')
         self.assertEqual(stem2rank('compound_2_reaction.txt'), 'reaction')
         self.assertEqual(stem2rank('strain-to-species.map'), 'species')
+        self.assertEqual(stem2rank('you_and_i.txt'), 'you_and_i')
 
     def test_read_ids(self):
         # simple list

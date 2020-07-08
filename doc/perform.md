@@ -30,7 +30,7 @@ For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which incl
 
 ## Benchmarks on a typical dataset
 
-**TL;DR**: It takes 1 hr (taxonomic classification) or 4 hr (coordinates-based functional classification) For every 40 GB gzipped SAM files.
+**TL;DR**: It takes 1 hr (taxonomic classification) or 4.5 hr (coordinates-based functional classification) For every 40 GB gzipped SAM files.
 
 In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) aligner through [SHOGUN](https://github.com/knights-lab/SHOGUN), against the Web of Life ([WoL](https://biocore.github.io/wol/)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
 
@@ -38,14 +38,14 @@ The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in si
 
 Here are the benchmarks of multiple typical Woltka analyses:
 
-Analysis | Runtime (h:m:s) | Memory
---- | --- | ---
-gOTU (no classification) | 1:17:43 | 102.7 MB
-Free-rank taxonomic classification | 1:27:43 | 108.0 MB
-Taxonomic classification at genus | 1:20:32 | 107.5 MB
-Taxonomic classification at genus, while writing gzipped read maps | 1:33:21 | 107.8 MB
-Taxonomic classification at three ranks: phylum, genus and species | 1:46:25 | 118.0 MB
-Coordinates-based functional classification | 5:36:49 | 20.40 GB
+Analysis | Runtime | Memory
+--- | ---: | ---:
+gOTU (no classification) | 50:13 | 101.6 MB
+Free-rank taxonomic classification | 1:00:19 | 107.0 MB
+Taxonomic classification at genus | 52:20 | 106.2 MB
+Taxonomic classification at genus, while writing gzipped read maps | 1:05:35 | 106.3 MB
+Taxonomic classification at three ranks: phylum, genus and species | 1:18:26 | 107.5 MB
+Coordinates-based functional classification | 4:24:10 | 19.7 GB
 
 
 ## Tips for efficient computing

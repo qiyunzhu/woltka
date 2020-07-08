@@ -258,8 +258,11 @@ def read_lineage(fh):
     Therefore, the taxon itself does not have to be unique, but the ancestral
     lineage does.
 
-    Empty taxon is allowed, in consistency with QIIME convention (e.g.,
-    "k__Bacteria;p__" is considered a valid phylum).
+    Empty levels in the end are discarded. e.g., "k__Bacteria;p__" is not a
+    valid taxon.
+
+    Empty levels in the middle are kept. e.g., "k__Bacteria;p__;c_Clostridia"
+    will not be shortened into "k__Bacteria;c_Clostridia".
     """
     p = re.compile(r'([a-z])__.*')
     tree, rankdic = {}, {}
@@ -267,16 +270,16 @@ def read_lineage(fh):
         if line.startswith('#'):
             continue
         id_, lineage = line.rstrip().split('\t')
-        parent = None
+        parent, this = None, None
         for taxon in lineage.split(';'):
             taxon = taxon.strip()
 
-            # skip empty taxon (currently disabled)
-            # if taxon.lower() in notax or taxon[1:] == '__':
-            #     continue
+            # build the entire lineage
+            this = f'{this};{taxon}' if this else taxon
 
-            # append entire ancestral lineage
-            this = f'{parent};{taxon}' if parent else taxon
+            # skip empty taxon
+            if taxon.lower() in notax or taxon[1:] == '__':
+                continue
 
             # add current taxon to dictionary
             tree[this] = parent

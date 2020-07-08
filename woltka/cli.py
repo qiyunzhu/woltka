@@ -42,7 +42,7 @@ def cli():
 @click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True),
-    help=('Path to output gOTU table.'))
+    help='Path to output gOTU table.')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help=('Map of nucleotides to genomes.'))
@@ -103,7 +103,7 @@ def gotu_cmd(ctx, **kwargs):
     help='Table of classification units per rank (column).')
 @click.option(
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('Mapping of lower classification units to higher ones.'))
+    help='Mapping of lower classification units to higher ones.')
 @click.option(
     '--map-as-rank', is_flag=True,
     help='Extract rank name from map filename.')
@@ -153,7 +153,7 @@ def gotu_cmd(ctx, **kwargs):
     help='Output profile format (BIOM or TSV).')
 @click.option(
     '--unassigned', is_flag=True,
-    help=('Report unassigned sequences.'))
+    help='Report unassigned sequences.')
 @click.option(
     '--name-as-id', is_flag=True,
     help='Replace feature IDs with names.')
@@ -176,7 +176,7 @@ def gotu_cmd(ctx, **kwargs):
     '--chunk', type=click.INT, default=None,
     help='Number of alignment lines to read and parse in each chunk.')
 @click.option(
-    '--cache', type=click.INT, default=128,
+    '--cache', type=click.INT, default=1024,
     help='Number of recent results to cache for faster classification.')
 @click.option(
     '--no-exe', is_flag=True,
