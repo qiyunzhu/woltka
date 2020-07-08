@@ -14,23 +14,23 @@ Woltka grants users the flexibility to control the classification criteria, in a
 
 Woltka features the following modes of classification, as controlled by the `--rank` (or `-r`) parameter:
 
-### 1\. **No** classification (`--rank none`)
+### 1. **No** classification (`--rank none`)
 
 Simply report subject IDs. A classification system is not required in this analysis. This mode has the highest granularity and is useful in e.g. the [gOTU](gotu.md) analysis.
 
-### 2\. **Free-rank** classification (`--rank free`)
+### 2. **Free-rank** classification (`--rank free`)
 
 Find the best classification unit in the entire hierarchy in describing the query sequence, without forcing it to a particular rank.
 
 This mode uses a lowest common ancestor (LCA) algorithm designed for a tree structure without fixed ranks to tackle ambiguous assignments. It chooses the lowest unit when possible, and go higher in the hierarchy if necessary.
 
-### 3\. **Given-rank** classification (`--rank <name>`)
+### 3. **Given-rank** classification (`--rank <name>`)
 
 Choose a classification unit at the given rank to describe the query sequence. This is the closest to the conventional notion of "taxonomic classification".
 
 The rank can be `species`, `genus`, `family`..., or `K`, `M`, `R`, `map`..., or `ATC4`, `ATC3`..., or whatever, as long as the classification [hierarchies](hierarchy.md#supported-hierarchy-files) you supplied have them.
 
-### 4\. **Given-rank-and-above** classification (add flag `--above` in addition to `--rank <name>`)
+### 4. **Given-rank-and-above** classification (add flag `--above` in addition to `--rank <name>`)
 
 Attempt to classify at the given rank, and when this is not possible, go up in hierarchy until a proper unit is reached. The same LCA algorithm is used in this process.
 
@@ -45,7 +45,7 @@ Multiple ranks can be specified simultaneously, delimited by comma (e.g., `--ran
 
 In many cases a query sequence has matches in multiple reference sequences, and those sequences may have have different assignments at the rank you instruct Woltka to classify at. Woltka deals with this situation using your choice of the following mechanisms.
 
-### 1\. (Default mode) keep them all, and normalize
+### 1. (Default mode) keep them all, and normalize
 
 In the resulting profile, each subject receives 1 / _k_ count, where _k_ is the total number of subjects of the current query.
 
@@ -57,19 +57,19 @@ In the read-to-feature maps (`--outmap`), a multi-assignment will be reported as
 A <tab> Escherichia:2 <tab> Salmonella:1 <tab> Klebsiella:1 <tab> Enterobacter:1
 ```
 
-### 2\. Unique assignment (`--uniq`)
+### 2. Unique assignment (`--uniq`)
 
 It applies to none (1) or given-rank (3) classifications. With this flag, ambiguous assignments will be considered as **unassigned**.
 
 In the above case, this query sequence won't receive any genus-level assignment due to the ambiguity.
 
-### 3\. Lowest common ancestor ([LCA](https://en.wikipedia.org/wiki/Lowest_common_ancestor))
+### 3. Lowest common ancestor ([LCA](https://en.wikipedia.org/wiki/Lowest_common_ancestor))
 
 This is how free-rank (2) and given-rank-and-above (4) classifications work. No parameter is needed.
 
 In the above case, the query sequence will be assigned to family [Enterobacteriaceae](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=543&lvl=3&lin=f&keep=1&srchmode=1&unlock), because all four genera belong to this family.
 
-### 4\. Majority rule (`--major <%>`)
+### 4. Majority rule (`--major <%>`)
 
 At a given rank (3), as long as the dominant unit reaches the given percentage threshold of all subjects, it will be considered as the right target.
 
