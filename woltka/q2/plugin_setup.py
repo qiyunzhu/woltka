@@ -8,11 +8,22 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import Plugin, Str
+from importlib import import_module
+
+from qiime2.plugin import Plugin, Str, Bool, Int, Float, Range
 from q2_types.feature_table import FeatureTable, Frequency
+from q2_types.feature_data import FeatureData, Taxonomy
+from q2_types.tree import Phylogeny, Rooted
+
+from ._format import (SeqAlnMapFormat, SeqAlnMapDirFmt,
+                      BLAST6OutFormat, BLAST6OutDirFmt,
+                      SimpleMapFormat, SimpleMapDirFmt,
+                      NCBINodesFormat, NCBINodesDirFmt,
+                      GeneCoordFormat, GeneCoordDirFmt)
+from ._type import SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates
 
 from woltka import __version__
-from woltka.q2.plugin import gotu
+from woltka.q2.plugin import gotu, classify, filter_table
 
 
 plugin = Plugin(
@@ -26,25 +37,134 @@ plugin = Plugin(
     package='woltka')
 
 
+plugin.register_semantic_types(
+    SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates)
+
+plugin.register_formats(SeqAlnMapFormat, SeqAlnMapDirFmt,
+                        BLAST6OutFormat, BLAST6OutDirFmt,
+                        SimpleMapFormat, SimpleMapDirFmt,
+                        NCBINodesFormat, NCBINodesDirFmt,
+                        GeneCoordFormat, GeneCoordDirFmt)
+
+plugin.register_semantic_type_to_format(
+    FeatureData[SeqAlnMap], artifact_format=SeqAlnMapDirFmt)
+plugin.register_semantic_type_to_format(
+    FeatureData[BLAST6Out], artifact_format=BLAST6OutDirFmt)
+plugin.register_semantic_type_to_format(
+    FeatureData[SimpleMap], artifact_format=SimpleMapDirFmt)
+plugin.register_semantic_type_to_format(
+    FeatureData[NCBINodes], artifact_format=NCBINodesDirFmt)
+plugin.register_semantic_type_to_format(
+    GeneCoordinates, artifact_format=GeneCoordDirFmt)
+
+alnfmts = SeqAlnMap | BLAST6Out | SimpleMap
+
 plugin.methods.register_function(
     function=gotu,
-    inputs={},
-    input_descriptions={},
-    parameters={
-        'input_path': Str,
-    },
-    parameter_descriptions={
-        'input_path': ('Path to a multiplexed alignment file, or a directory '
-                       'of per-sample alignment files.')
-    },
-    outputs=[
-        ('table', FeatureTable[Frequency])
-    ],
-    output_descriptions={
-        'table': 'Output gOTU table.'
-    },
+    inputs={'alignment': FeatureData[alnfmts]},
+    input_descriptions={'alignment': (
+        'Multiplexed sequence alignment map to be classified. Can accept '
+        'SAM, BLAST6 or simple map format.')},
+    parameters={},
+    parameter_descriptions={},
+    outputs=[('gotu_table', FeatureTable[Frequency])],
+    output_descriptions={'gotu_table': 'Output gOTU table.'},
     name='gOTU table generation',
     description=('Generate a gOTU table based on sequence alignments against '
                  'a reference genome database.'),
     citations=[]
 )
+
+plugin.methods.register_function(
+    function=classify,
+    inputs={
+        'alignment': FeatureData[alnfmts],
+        'reference_taxonomy': FeatureData[Taxonomy],
+        'reference_tree': Phylogeny[Rooted],
+        'reference_nodes': FeatureData[NCBINodes],
+        'taxon_map': FeatureData[SimpleMap],
+        'gene_coordinates': GeneCoordinates
+    },
+    input_descriptions={
+        'alignment': (
+            'Multiplexed sequence alignment map to be classified. Can accept '
+            'SAM, BLAST6 or simple map format.'),
+        'reference_taxonomy': (
+            'Reference taxonomic lineage strings.'),
+        'reference_tree': (
+            'Reference phylogenetic tree.'),
+        'reference_nodes': (
+            'Reference taxonomic nodes.'),
+        'taxon_map': (
+            'Mapping of subject IDs to taxon IDs.'),
+        'gene_coordinates': (
+            'Mapping of gene IDs to start and end positions on host genomes.')
+    },
+    parameters={
+        'target_rank': Str,
+        'overlap_threshold': Int % Range(1, 100),
+        'trim_subject': Bool,
+        'unique_assignment': Bool,
+        'majority_threshold': Int % Range(51, 99),
+        'above_given_rank': Bool,
+        'subject_is_okay': Bool,
+        'report_unassigned': Bool
+    },
+    parameter_descriptions={
+        'target_rank': (
+            'Classify sequences at this rank. Enter "none" to directly report '
+            'subjects; enter "free" for free-rank classification.'),
+        'overlap_threshold': (
+            'Read/gene overlapping percentage threshold.'),
+        'trim_subject': (
+            'Trim subject IDs at the last underscore.'),
+        'unique_assignment': (
+            'One sequence can only be assigned to one classification unit, or '
+            'remain unassigned if there is ambiguity. Otherwise, all candidate'
+            ' units are reported and their counts are normalized.'),
+        'majority_threshold': (
+            'In given-rank classification, use majority rule at this '
+            'percentage threshold to determine assignment when there are '
+            'multiple candidates.'),
+        'above_given_rank': (
+            'In given-rank classification, allow assigning a sequence to '
+            'a higher rank if it cannot be assigned to the current rank.'),
+        'subject_is_okay': (
+            'In free-rank classification, allow assigning a sequence to its '
+            'direct subject, if applicable, before going up in hierarchy.'),
+        'report_unassigned': (
+            'Report Frequency of unassigned sequences (will be marked as '
+            '"Unassigned").')
+    },
+    outputs=[
+        ('classified_table', FeatureTable[Frequency])
+    ],
+    output_descriptions={
+        'classified_table': (
+            'The resulting table of frequencies of classification units.')
+    },
+    name='Flexible hierarchical sequence classifier',
+    description=('Classify sequences based on their alignments to references '
+                 'through a hierarchical classification system.'),
+    citations=[]
+)
+
+
+plugin.methods.register_function(
+    function=filter_table,
+    inputs={'table': FeatureTable[Frequency]},
+    input_descriptions={'table': 'Feature table to be filtered'},
+    parameters={'min_count': Int % Range(1, None),
+                'min_percent': Float % Range(0.0, 100)},
+    parameter_descriptions={
+        'min_count': 'Per-sample minimum count threshold',
+        'min_percent': 'Per-sample minimum count threshold.'},
+    outputs=[('filtered_table', FeatureTable[Frequency])],
+    output_descriptions={'filtered_table': 'Filtered feature table'},
+    name='Per-sample feature filter',
+    description=('Filter a feature table by per-sample feature abundance.'),
+    citations=[]
+)
+
+
+import_module('woltka.q2._transformer')

@@ -17,27 +17,133 @@ Minimum requirement: QIIME 2 2019.1
     QIIME 2 since 2019.1.
 """
 
+from io import StringIO
+
 import biom
+from pandas import Series
+from skbio import TreeNode
 
-from woltka.biom import profile_to_biom
-from woltka.workflow import workflow
+from woltka.workflow import build_mapper, classify as cwf
+from woltka.align import plain_mapper
+from woltka.file import read_map_1st
+from woltka.table import prep_table
+from woltka.biom import table_to_biom, filter_biom
+from woltka.tree import read_nodes, read_lineage, read_newick, fill_root
+from woltka.__init__ import __name__, __version__
 
 
-def gotu(input_path: str) -> biom.Table:
+def gotu(alignment: str) -> biom.Table:
     """Generate a gOTU table based on sequence alignments.
     """
-    profile = workflow(input_path, None)['none']
-    return profile_to_biom(profile)
+    profile = cwf(mapper=plain_mapper, files=[alignment], demux=True,
+                  ranks=['none'], chunk=1000, zippers={})['none']
+    table = table_to_biom(*prep_table(profile))
+    table.generated_by = f'{__name__}-{__version__}'
+    return table
 
 
-def filter_values(table: biom.Table, th: float) -> biom.Table:
-    """Filter out low-abundance features within each sample in a table.
+def classify(alignment:             str,
+             target_rank:           str,
+             reference_taxonomy: Series = None,
+             reference_tree:   TreeNode = None,
+             reference_nodes:       str = None,
+             taxon_map:             str = None,
+             trim_subject:         bool = False,
+             gene_coordinates:      str = None,
+             overlap_threshold:     int = 80,
+             unique_assignment:    bool = False,
+             majority_threshold:    int = None,
+             above_given_rank:     bool = False,
+             subject_is_okay:      bool = False,
+             report_unassigned:    bool = False) -> biom.Table:
+    """Classify sequences based on their alignments to references through a
+    hierarchical classification system.
     """
-    def filter_otus(data, id_, md):
-        bound = th if th > 1 else data.sum() * th
-        data[data < bound] = 0
-        return data
+    # validate classification system
+    num_ref = len(list(filter(None.__ne__, (
+        reference_taxonomy, reference_tree, reference_nodes))))
+    if num_ref > 1:
+        raise ValueError('Only one reference classification system can be '
+                         'specified.')
+    elif num_ref == 0 and target_rank != 'none':
+        raise ValueError('A reference classification system must be specified '
+                         f'for classification at the rank "{target_rank}".')
 
-    table.transform(filter_otus, axis='sample')
-    table.remove_empty(axis='observation')
+    # build classification hierarchy
+    tree, rankdic, namedic = {}, {}, {}
+
+    # read taxonomy
+    if reference_taxonomy is not None:
+        tree, rankdic = read_lineage(StringIO(reference_taxonomy.to_csv(
+            sep='\t', header=False)))
+
+    # read phylogeny
+    if reference_tree is not None:
+        tree = read_newick(StringIO(str(reference_tree)))
+
+    # read taxdump
+    if reference_nodes is not None:
+        with open(reference_nodes, 'r') as fh:
+            tree, rankdic = read_nodes(fh)
+
+    # read taxon mapping
+    if taxon_map is not None:
+        with open(taxon_map, 'r') as fh:
+            tree.update(read_map_1st(fh))
+
+    # fill root
+    root = fill_root(tree)
+
+    # build mapping module
+    mapper, chunk = build_mapper(
+        coords_fp=gene_coordinates, overlap=overlap_threshold)
+
+    # classify query sequences
+    profile = cwf(mapper=mapper,
+                  files=[alignment],
+                  demux=True,
+                  trimsub=trim_subject and '_',
+                  tree=tree,
+                  rankdic=rankdic,
+                  namedic=namedic,
+                  root=root,
+                  ranks=[target_rank],
+                  uniq=unique_assignment,
+                  major=majority_threshold,
+                  above=above_given_rank,
+                  subok=subject_is_okay,
+                  unasgd=report_unassigned,
+                  chunk=chunk,
+                  zippers={})[target_rank]
+
+    # generate feature table
+    table = table_to_biom(*prep_table(
+        profile, rankdic=rankdic, namedic=namedic))
+    table.generated_by = f'{__name__}-{__version__}'
+
+    return table
+
+
+def filter_table(table:  biom.Table,
+                 min_count:     int = None,
+                 min_percent: float = None) -> biom.Table:
+    """Filter a feature table by per-sample abundance of features.
+    """
+    # validate parameters
+    if not any((min_count, min_percent)):
+        raise ValueError('Please specify either minimum count or minimum '
+                         'percentage threshold.')
+    if all((min_count, min_percent)):
+        raise ValueError('Only one of minimum count or minimum percentage '
+                         'thresholds can be specified.')
+    if min_percent and min_percent >= 100:
+        raise ValueError('Minimum percentage threshold must be below 100.')
+
+    # determine threshold
+    th = min_count or min_percent / 100
+
+    # filter feature table
+    table = filter_biom(table, th)
+    table.generated_by = f'{__name__}-{__version__}'
+
     return table

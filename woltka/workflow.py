@@ -18,7 +18,7 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
-from collections import deque
+from collections import deque, defaultdict
 from itertools import compress
 from functools import partial, lru_cache
 import click
@@ -702,7 +702,7 @@ def demultiplex(qryque:  list,
         samset = set(samples)
 
     # per-sample read and subject(s) queues
-    qryques, subques = {}, {}
+    qryques, subques = defaultdict(deque), defaultdict(deque)
 
     # current sample Id (it can be None so start with False)
     csample = False
@@ -724,17 +724,14 @@ def demultiplex(qryque:  list,
             qry_add(read)
             sub_add(subjects)
 
-        # check if sample Id is to be included
+        # (re-)assign method references to current sample
         elif not samples or sample in samset:
             csample = sample
-
-            # create queues for current sample Id
-            qryques[sample] = deque([read])
-            subques[sample] = deque([subjects])
-
-            # (re-)assign method references to current sample
             qry_add = qryques[sample].append
             sub_add = subques[sample].append
+
+            qry_add(read)
+            sub_add(subjects)
 
     return {x: (qryques[x], subques[x]) for x in qryques}
 
