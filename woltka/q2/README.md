@@ -163,10 +163,10 @@ q2-woltka option | Woltka option | Description
 q2-woltka option | Woltka option | Description
 --- | --- | ---
 `--p-target-rank` | `-r\|--rank` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification (required).
-`--p-trim-subject` | `-trim-sub` | Trim subject IDs at the last underscore.
+`--p-trim-subject` | `--trim-sub` | Trim subject IDs at the last underscore.
 `--p-overlap-threshold` | `--overlap` | Read/gene overlapping percentage threshold.
 `--p-unique-assignment` | `--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
-`--p-majority-threshold` | `--majority` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates.
+`--p-majority-threshold` | `--major` | In given-rank classification, use majority rule at this percentage threshold to determine assignment when there are multiple candidates.
 `--p-above-given-rank` | `--above` | In given-rank classification, allow assigning a sequence to a higher rank if it cannot be assigned to the current rank.
 `--p-subject-is-okay` | `--subok` | In free-rank classification, allow assigning a sequence to its direct subject, if applicable, before going up in hierarchy.
 `--p-report-unassigned` | `--unassigned` | Report Frequency of unassigned sequences (will be marked as "Unassigned").
