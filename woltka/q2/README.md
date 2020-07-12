@@ -151,18 +151,18 @@ The following table lists all parameters under `q2-woltka classify` and their co
 
 q2-woltka option | Woltka option | Description
 --- | --- | ---
-`--i-alignment` | `-i|--input` | Multiplexed sequence alignment map to be classified. Can accept SAM, BLAST6 or simple map format (required).
+`--i-alignment` | `-i\|--input` | Multiplexed sequence alignment map to be classified. Can accept SAM, BLAST6 or simple map format (required).
 `--i-reference-taxonomy` | `--lineage` | Reference taxonomic lineage strings.
 `--i-reference-tree` | `--newick` | Reference phylogenetic tree.
 `--i-reference-nodes` | `--nodes` | Reference taxonomic nodes.
-`--i-taxon-map` | `-m|--map` | Mapping of subject IDs to taxon IDs.
-`--i-gene-coordinates` | `-c|--coords` | Reference taxonomic lineage strings.
+`--i-taxon-map` | `-m\|--map` | Mapping of subject IDs to taxon IDs.
+`--i-gene-coordinates` | `-c\|--coords` | Reference taxonomic lineage strings.
 
 ### Parameters
 
 q2-woltka option | Woltka option | Description
 --- | --- | ---
-`--p-target-rank` | `-r|--rank` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification (required).
+`--p-target-rank` | `-r\|--rank` | Classify sequences at this rank. Enter "none" to directly report subjects; enter "free" for free-rank classification (required).
 `--p-trim-subject` | `-trim-sub` | Trim subject IDs at the last underscore.
 `--p-overlap-threshold` | `--overlap` | Read/gene overlapping percentage threshold.
 `--p-unique-assignment` | `--uniq` | One sequence can only be assigned to one classification unit, or remain unassigned if there is ambiguity. Otherwise, all candidate units are reported and their counts are normalized.
@@ -175,7 +175,7 @@ q2-woltka option | Woltka option | Description
 
 q2-woltka option | Woltka option | Description
 --- | --- | ---
-`--o-classified-table` | `-o|--output` | The resulting table of frequencies of classification units (required).
+`--o-classified-table` | `-o\|--output` | The resulting table of frequencies of classification units (required).
 
 
 ## Difference from Woltka
