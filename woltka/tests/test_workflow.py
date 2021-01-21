@@ -263,6 +263,13 @@ class WorkflowTests(TestCase):
         obs = prepare_ranks('phylum,genus,species')
         self.assertListEqual(obs[0], ['phylum', 'genus', 'species'])
 
+        # missing rank
+        with self.assertRaises(ValueError) as ctx:
+            prepare_ranks('kingdom,phylum,class', rankdic={
+                1: 'domain', 2: 'phylum', 3: 'phylum', 4: 'phylum'})
+        self.assertEqual(str(ctx.exception), (
+            'Ranks class, kingdom are not found in classification system.'))
+
         # free rank when there is tree
         obs = prepare_ranks(tree={'a': 1})
         self.assertListEqual(obs[0], ['free'])

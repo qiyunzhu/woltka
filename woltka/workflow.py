@@ -113,7 +113,7 @@ def workflow(input_fp:     str,
     mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
 
     # target classification ranks
-    ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree)
+    ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree, rankdic)
 
     # classify query sequences
     data = classify(
@@ -479,7 +479,8 @@ def build_mapper(coords_fp: str = None,
 
 def prepare_ranks(ranks:      str = None,
                   outmap_dir: str = None,
-                  tree:      dict = None) -> (list, dict or None):
+                  tree:      dict = None,
+                  rankdic:   dict = None) -> (list, dict or None):
     """Prepare classification ranks and directories of read-to-feature maps.
 
     Parameters
@@ -490,6 +491,8 @@ def prepare_ranks(ranks:      str = None,
         Path to output read map directory.
     tree : dict, optional
         Taxonomic tree.
+    rankdic : dict, optional
+        Rank dictionary.
 
     Returns
     -------
@@ -501,6 +504,13 @@ def prepare_ranks(ranks:      str = None,
     # ranks are given
     if ranks:
         ranks = ranks.split(',')
+
+        # check presence of ranks in classification system
+        if rankdic is not None:
+            missing = set(ranks) - {'free', 'none'} - set(rankdic.values())
+            if missing:
+                raise ValueError(f'Ranks {", ".join(sorted(missing))} are not'
+                                 ' found in classification system.')
 
     # if classification system is provided, do free-rank classification;
     # otherwise do no-rank assignment.
