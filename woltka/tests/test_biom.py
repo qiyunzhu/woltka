@@ -20,7 +20,9 @@ import pandas as pd
 from biom import load_table, Table
 from pandas.testing import assert_frame_equal
 
-from woltka.biom import table_to_biom, biom_to_table, write_biom, filter_biom
+from woltka.biom import (
+    table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
+    collapse_biom)
 from woltka.table import prep_table
 
 
@@ -136,6 +138,75 @@ class BiomTests(TestCase):
         # empty BIOM table cannot be directly compared
         obs = filter_biom(table, th=10)
         self.assertTupleEqual(obs.to_dataframe(True).shape, (0, 3))
+
+    def test_round_biom(self):
+        obs = Table(*map(np.array, prep_table({
+            'S1': {'G1': 0.5, 'G2': 0.0, 'G3': 2.3, 'G4': 0.50000000001},
+            'S2': {'G1': 1.5, 'G2': 0.2, 'G3': 1.49999999999, 'G4': 0.2},
+            'S3': {'G1': 2.5, 'G2': 0.3, 'G3': 3.8, 'G4': 0.1}})))
+        round_biom(obs)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 0, 'G3': 2},
+            'S2': {'G1': 2, 'G3': 2},
+            'S3': {'G1': 2, 'G3': 4}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+    def test_collapse_biom(self):
+        table = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4, 'G6': 2},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0, 'G6': 9}})))
+
+        # one-to-one mapping (e.g., direct translation)
+        mapping = {'G1': ['H1'], 'G2': ['H2'], 'G3': ['H3'],
+                   'G4': ['H4'], 'G5': ['H5'], 'G6': ['H6']}
+        obs = collapse_biom(table.copy(), mapping)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'H1': 4, 'H2': 5, 'H3': 8, 'H4': 0, 'H5': 3, 'H6': 0},
+            'S2': {'H1': 1, 'H2': 8, 'H3': 0, 'H4': 7, 'H5': 4, 'H6': 2},
+            'S3': {'H1': 0, 'H2': 2, 'H3': 3, 'H4': 5, 'H5': 0, 'H6': 9}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # some missing, some extra
+        mapping = {'G1': ['H1'], 'G2': ['H2'], 'G3': ['H3'], 'G9': ['H9']}
+        obs = collapse_biom(table.copy(), mapping)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'H1': 4, 'H2': 5, 'H3': 8},
+            'S2': {'H1': 1, 'H2': 8, 'H3': 0},
+            'S3': {'H1': 0, 'H2': 2, 'H3': 3}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # many-to-one mapping (e.g., taxonomic rank up)
+        mapping = {'G1': ['H1'], 'G2': ['H1'], 'G3': ['H2'],
+                   'G4': ['H2'], 'G5': ['H2'], 'G6': ['H3']}
+        obs = collapse_biom(table.copy(), mapping)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'H1': 9, 'H2': 11, 'H3': 0},
+            'S2': {'H1': 9, 'H2': 11, 'H3': 2},
+            'S3': {'H1': 2, 'H2':  8, 'H3': 9}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # many-to-many mapping (e.g., genes to pathways)
+        mapping = {'G1': ['H1'],
+                   'G2': ['H1', 'H2'],
+                   'G3': ['H2', 'H3', 'H4'],
+                   'G4': ['H2', 'H5'],
+                   'G5': ['H4'],
+                   'G6': ['H3', 'H5']}
+        obs = collapse_biom(table.copy(), mapping)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'H1': 9, 'H2': 13, 'H3':  8, 'H4': 11, 'H5':  0},
+            'S2': {'H1': 9, 'H2': 15, 'H3':  2, 'H4':  4, 'H5':  9},
+            'S3': {'H1': 2, 'H2': 10, 'H3': 12, 'H4':  3, 'H5': 14}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # many-to-many mapping, with normalization
+        obs = collapse_biom(table.copy(), mapping, normalize=True)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'H1': 6, 'H2': 5, 'H3': 3, 'H4': 6, 'H5': 0},
+            'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
+            'S3': {'H1': 1, 'H2': 4, 'H3': 6, 'H4': 1, 'H5': 7}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
 
 if __name__ == '__main__':

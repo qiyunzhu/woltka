@@ -14,8 +14,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.util import (
-    add_dict, update_dict, sum_dict, intize, delnone, allkeys, count_list,
-    last_value, feature_count)
+    add_dict, update_dict, sum_dict, intize, intize_list, intize_dict,
+    delnone, allkeys, count_list, last_value, feature_count)
 
 
 class UtilTests(TestCase):
@@ -64,20 +64,44 @@ class UtilTests(TestCase):
         self.assertDictEqual(d0, {'a': 2, 'b': 5, 'c': 3, 'd': 4, 'e': 5})
 
     def test_intize(self):
+        self.assertEqual(intize(1), 1)
+        self.assertEqual(intize(1.0), 1)
+        self.assertEqual(intize(1.1), 1)
+        self.assertEqual(intize(1.49), 1)
+        self.assertEqual(intize(1.49999), 1)
+        self.assertEqual(intize(1.49999999999), 2)
+        self.assertEqual(intize(1.5), 2)
+        self.assertEqual(intize(1.8), 2)
+        self.assertEqual(intize(2.2), 2)
+        self.assertEqual(intize(2.5), 2)
+        self.assertEqual(intize(2.50001), 3)
+        self.assertEqual(intize(2.50000000001), 2)
+        self.assertEqual(intize(2.7), 3)
+        self.assertEqual(intize(-1.0), -1)
+        self.assertEqual(intize(-1.5), -2)
+        self.assertEqual(intize(-1.49999999999), -2)
+
+    def test_intize_list(self):
+        lst = [0.1, 1.2, 2.4, 3.8, 4.5, 5.5]
+        intize_list(lst)
+        exp = [0, 1, 2, 4, 4, 6]
+        self.assertListEqual(lst, exp)
+
+    def test_intize_dict(self):
         dic = {'a': 1.0, 'b': 2.2, 'c': 3.6}
-        intize(dic)
+        intize_dict(dic)
         exp = {'a': 1, 'b': 2, 'c': 4}
         self.assertDictEqual(dic, exp)
         dic = {'a': -0.2, 'b': -3.3, 'c': 1.8, 'd': 0.4}
-        intize(dic)
+        intize_dict(dic)
         exp = {'b': -3, 'c': 2}
         self.assertDictEqual(dic, exp)
         dic = {'a': -0.2, 'b': -3.3, 'c': 1.8, 'd': 0.4}
-        intize(dic, zero=True)
+        intize_dict(dic, zero=True)
         exp = {'a': 0, 'b': -3, 'c': 2, 'd': 0}
         self.assertDictEqual(dic, exp)
         dic = {'a': 2.5, 'b': 3.5, 'c': 1.49999999999, 'd': 1.50000000001}
-        intize(dic)
+        intize_dict(dic)
         exp = {'a': 2, 'b': 4, 'c': 2, 'd': 2}
         self.assertDictEqual(dic, exp)
 

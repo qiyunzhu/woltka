@@ -17,7 +17,9 @@ from os.path import isdir, join, basename
 import click
 
 from .table import (
-    read_table, table_shape, filter_table, write_table, merge_tables)
+    read_table, table_shape, filter_table, write_table, merge_tables,
+    collapse_table)
+from .file import readzip, read_map_all
 
 
 def filter_wf(input_fp:      str,
@@ -120,3 +122,46 @@ def merge_wf(input_fps: list,
     # write merged profile
     write_table(table, output_fp)
     click.echo('Merged profile written.')
+
+
+def collapse_wf(input_fp:   str,
+                map_fp:     str,
+                output_fp:  str,
+                normalize: bool = False):
+    """Workflow for collapsing a profile based on many-to-many mapping file.
+
+    Raises
+    ------
+    SystemExit
+        No relationship is found in mapping file.
+
+    See Also
+    --------
+    .cli.collapse_cmd
+        Command-line arguments and help information.
+    """
+    # read input profile
+    table, fmt = read_table(input_fp)
+    n = table_shape(table)[0]
+    click.echo(f'Number of features before collapsing: {n}.')
+
+    # read mapping file (many-to-many okay)
+    with readzip(map_fp, {}) as f:
+        mapping = {}
+        for key, vals in read_map_all(f):
+            mapping.setdefault(key, []).extend(vals)
+    nsrc = len(mapping.keys())
+    ntgt = len(set().union(*mapping.values()))
+    click.echo(f'Number of source features in mapping: {nsrc}.')
+    click.echo(f'Number of target features in mapping: {ntgt}.')
+
+    # collapse profile by mapping
+    click.echo('Collapsing profile...', nl=False)
+    table = collapse_table(table, mapping, normalize)
+    click.echo(' Done.')
+    n = table_shape(table)[0]
+    click.echo(f'Number of features after collapsing: {n}.')
+
+    # write collapsed profile
+    write_table(table, output_fp)
+    click.echo('Collapsed profile written.')

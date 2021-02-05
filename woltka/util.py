@@ -93,18 +93,24 @@ def sum_dict(dic, other):
         dic[key] = dic.get(key, 0) + value
 
 
-def intize(dic, zero=False):
-    """Convert a dictionary of numbers to integers.
+def intize(num):
+    """Round a floating point number to an integer.
 
     Parameters
     ----------
-    dic : dict
-        Input dictionary.
-    zero : bool, optional
-        Whether keep zero values.
+    num : float
+        Number to round.
+
+    See Also
+    --------
+    initize_list
+    initize_dict
 
     Notes
     -----
+    This function is for demo purpose. Use `initize_list` or `initize_dict` to
+    save function-calling overhead in data-intensive operations.
+
     Limited by Python floating point arithmetic, odds are that when ambiguous
     assignment is on, counts will be sums of fractions and they can be rounded
     either up or down when converted to integers, depending how these numbers
@@ -132,16 +138,56 @@ def intize(dic, zero=False):
     >>> round(1.5)
     2
     """
+    # first, round to the nearest half number
+    near = round(num * 2) / 2
+
+    # check if the difference is small enough:
+    # yes - round the half number
+    # no - round the original number
+    if abs(num - near) <= 0.0000001:
+        return round(near)
+    else:
+        return round(num)
+
+
+def intize_list(lst):
+    """Convert list elements to integers in place.
+
+    Parameters
+    ----------
+    list : list
+        Input list.
+
+    See Also
+    --------
+    intize
+    """
+    for i, element in enumerate(lst):
+        near = round(element * 2) / 2
+        if abs(element - near) <= 0.0000001:
+            lst[i] = round(near)
+        else:
+            lst[i] = round(element)
+
+
+def intize_dict(dic, zero=False):
+    """Convert dictionary values to integers in place.
+
+    Parameters
+    ----------
+    dic : dict
+        Input dictionary.
+    zero : bool, optional
+        Whether keep zero values.
+
+    See Also
+    --------
+    intize
+    """
     todel = []
     add_todel = todel.append
     for key, value in dic.items():
-
-        # first, round to the nearest half number
         near = round(value * 2) / 2
-
-        # check if the difference is small enough:
-        # yes - round the half number
-        # no - round the original number
         if abs(value - near) <= 0.0000001:
             intval = round(near)
         else:

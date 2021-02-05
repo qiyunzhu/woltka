@@ -13,12 +13,15 @@
 
 from functools import reduce
 from collections import defaultdict
+from operator import add
 from biom import Table, load_table
 
-from .util import allkeys, update_dict
+from .util import allkeys, update_dict, intize_list
 from .tree import lineage_str
 from .file import openzip
-from .biom import table_to_biom, biom_to_table, write_biom, filter_biom
+from .biom import (
+    table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
+    collapse_biom)
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -403,3 +406,84 @@ def merge_tables(tables):
 
     res = prep_table(data)
     return res[0], res[1], res[2], [metadata[x] for x in res[1]]
+
+
+def round_table(table):
+    """Round table data to integers and remove all-zero rows in place.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to round (data, features, samples, metadata).
+
+    See Also
+    --------
+    .util.intize
+        Rationale for this rounding method.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        round_biom(table)
+        return
+
+    # round table data
+    todel = []
+    for i, datum in enumerate(table[0]):
+        intize_list(datum)
+        if not any(datum):
+            todel.append(i)
+
+    # remove empty rows
+    for i in reversed(todel):
+        del(table[0][i])
+        del(table[1][i])
+        del(table[3][i])
+
+
+def collapse_table(table, mapping, normalize=False):
+    """Collapse a table by many-to-many mapping.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to collapse (data, features, samples, metadata).
+    mapping : dict of list of str
+        Source-to-target(s) mapping.
+    normalize : bool, optional
+        Whether normalize per-target counts by number of targets per source.
+
+    Returns
+    -------
+    biom.Table, or tuple of (list, list, list, list)
+        Collapsed table.
+
+    Notes
+    -----
+    Metadata will not be retained in the collapsed table.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        return collapse_biom(table, mapping, normalize)
+
+    # collapse table
+    samples = table[2]
+    width = len(samples)
+    res = defaultdict(lambda: [0] * width)
+    for datum, feature in zip(*table[:2]):
+        try:
+            targets = mapping[feature]
+        except KeyError:
+            continue
+        if normalize:
+            k = 1 / len(targets)
+            datum = [x * k for x in datum]
+        for target in targets:
+            res[target] = list(map(add, res[target], datum))
+
+    # reformat table
+    res = list(res.values()), list(res.keys()), samples, [{}] * len(res)
+
+    # round table
+    if normalize:
+        round_table(res)
+    return res

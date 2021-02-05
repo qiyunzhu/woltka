@@ -15,7 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
-from .tools import filter_wf, merge_wf
+from .tools import filter_wf, merge_wf, collapse_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -233,6 +233,31 @@ def merge_cmd(ctx, **kwargs):
     """Merge multiple profiles into one profile.
     """
     merge_wf(**kwargs)
+
+
+@tools.command('collapse')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--map', '-m', 'map_fp', type=click.Path(exists=True),
+    help=('Mapping of lower classification units to higher ones (supports '
+          'many-to-many relationships).'))
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--normalize', '-n', is_flag=True,
+    help=('Count each higher classification unit as 1/k (k is the number of '
+          'higher classification units mapped to a lower one). Otherwise, '
+          'count as one.'))
+@click.pass_context
+def collapse_cmd(ctx, **kwargs):
+    """Collapse a profile based on feature mapping.
+    """
+    collapse_wf(**kwargs)
 
 
 if __name__ == '__main__':
