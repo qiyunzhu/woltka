@@ -22,7 +22,7 @@ from pandas.testing import assert_frame_equal
 
 from woltka.biom import (
     table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
-    collapse_biom)
+    biom_add_metacol, collapse_biom)
 from woltka.table import prep_table
 
 
@@ -151,6 +151,29 @@ class BiomTests(TestCase):
             'S3': {'G1': 2, 'G3': 4}})))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
+    def test_biom_add_metacol(self):
+        obs = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0}})))
+        self.assertIsNone(obs.metadata(axis='observation'))
+        rankdic = {'G1': 'S', 'G2': 'S', 'G3': 'F', 'G4': 'O', 'G5': 'P'}
+        biom_add_metacol(obs, rankdic, 'Rank')
+        exp = [{'Rank': 'S'}, {'Rank': 'S'}, {'Rank': 'F'}, {'Rank': 'O'},
+               {'Rank': 'P'}]
+        self.assertListEqual(list(map(
+            dict, obs.metadata(axis='observation'))), exp)
+        namedic = {'G1': 'Proteo', 'G3': 'Actino', 'G2': 'Firmic',
+                   'G4': 'Bacter'}
+        biom_add_metacol(obs, namedic, 'Name', missing='X')
+        exp = [{'Rank': 'S', 'Name': 'Proteo'},
+               {'Rank': 'S', 'Name': 'Firmic'},
+               {'Rank': 'F', 'Name': 'Actino'},
+               {'Rank': 'O', 'Name': 'Bacter'},
+               {'Rank': 'P', 'Name': 'X'}]
+        self.assertListEqual(list(map(
+            dict, obs.metadata(axis='observation'))), exp)
+
     def test_collapse_biom(self):
         table = Table(*map(np.array, prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
@@ -175,6 +198,13 @@ class BiomTests(TestCase):
             'S2': {'H1': 1, 'H2': 8, 'H3': 0},
             'S3': {'H1': 0, 'H2': 2, 'H3': 3}})))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # wrong mapping (no match)
+        mapping = {'H1': ['I1'], 'H2': ['I2'], 'H3': ['I3']}
+        obs = collapse_biom(table.copy(), mapping)
+        self.assertTrue(obs.is_empty())
+        self.assertListEqual(list(obs.ids('sample')), ['S1', 'S2', 'S3'])
+        self.assertListEqual(list(obs.ids('observation')), [])
 
         # many-to-one mapping (e.g., taxonomic rank up)
         mapping = {'G1': ['H1'], 'G2': ['H1'], 'G3': ['H2'],
@@ -207,6 +237,15 @@ class BiomTests(TestCase):
             'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
             'S3': {'H1': 1, 'H2': 4, 'H3': 6, 'H4': 1, 'H5': 7}})))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # nothing left after normalization
+        table = Table(*map(np.array, prep_table({
+            'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})))
+        mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
+        obs = collapse_biom(table.copy(), mapping, normalize=True)
+        self.assertTrue(obs.is_empty())
+        self.assertListEqual(list(obs.ids('sample')), ['S1', 'S2', 'S3'])
+        self.assertListEqual(list(obs.ids('observation')), [])
 
 
 if __name__ == '__main__':

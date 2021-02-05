@@ -241,7 +241,8 @@ def merge_cmd(ctx, **kwargs):
     type=click.Path(exists=True, dir_okay=False),
     help='Path to input profile.')
 @click.option(
-    '--map', '-m', 'map_fp', type=click.Path(exists=True),
+    '--map', '-m', 'map_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
     help=('Mapping of lower classification units to higher ones (supports '
           'many-to-many relationships).'))
 @click.option(
@@ -249,10 +250,13 @@ def merge_cmd(ctx, **kwargs):
     type=click.Path(writable=True, dir_okay=False),
     help='Path to output profile.')
 @click.option(
-    '--normalize', '-n', is_flag=True,
+    '--normalize', '-z', is_flag=True,
     help=('Count each higher classification unit as 1/k (k is the number of '
           'higher classification units mapped to a lower one). Otherwise, '
           'count as one.'))
+@click.option(
+    '--names', '-n', 'names_fp', type=click.Path(exists=True),
+    help='Names of higher classification units to append to output profile.')
 @click.pass_context
 def collapse_cmd(ctx, **kwargs):
     """Collapse a profile based on feature mapping.

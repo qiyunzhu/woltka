@@ -18,7 +18,8 @@ from biom import Table, load_table
 
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
-    table_shape, filter_table, merge_tables, round_table, collapse_table)
+    table_shape, filter_table, merge_tables, round_table, table_add_metacol,
+    collapse_table)
 from woltka.biom import table_to_biom
 
 
@@ -500,6 +501,41 @@ class TableTests(TestCase):
         ex2 = Table(*map(np.array, exp))
         self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
 
+    def test_table_add_metacol(self):
+        obs = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0}})
+        self.assertListEqual(obs[3], [{}] * 5)
+        ob2 = Table(*map(np.array, obs))
+
+        # regular table
+        rankdic = {'G1': 'S', 'G2': 'S', 'G3': 'F', 'G4': 'O', 'G5': 'P'}
+        table_add_metacol(obs, rankdic, 'Rank')
+        exp = [{'Rank': 'S'}, {'Rank': 'S'}, {'Rank': 'F'}, {'Rank': 'O'},
+               {'Rank': 'P'}]
+        self.assertListEqual(obs[3], exp)
+
+        # BIOM table
+        table_add_metacol(ob2, rankdic, 'Rank')
+        self.assertListEqual(list(map(
+            dict, ob2.metadata(axis='observation'))), exp)
+
+        # unordered, missing value, append
+        namedic = {'G1': 'Proteo', 'G3': 'Actino', 'G2': 'Firmic',
+                   'G4': 'Bacter'}
+        table_add_metacol(obs, namedic, 'Name', missing='X')
+        exp = [{'Rank': 'S', 'Name': 'Proteo'},
+               {'Rank': 'S', 'Name': 'Firmic'},
+               {'Rank': 'F', 'Name': 'Actino'},
+               {'Rank': 'O', 'Name': 'Bacter'},
+               {'Rank': 'P', 'Name': 'X'}]
+        self.assertListEqual(obs[3], exp)
+
+        table_add_metacol(ob2, namedic, 'Name', missing='X')
+        self.assertListEqual(list(map(
+            dict, ob2.metadata(axis='observation'))), exp)
+
     def test_collapse_table(self):
         table = prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
@@ -526,6 +562,13 @@ class TableTests(TestCase):
             'S3': {'H1': 0, 'H2': 2, 'H3': 3}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
+
+        # wrong mapping (no match)
+        mapping = {'H1': ['I1'], 'H2': ['I2'], 'H3': ['I3']}
+        obs = collapse_table(table, mapping)
+        for i in (0, 1, 3):
+            self.assertListEqual(obs[i], [])
+        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
 
         # many-to-one mapping (e.g., taxonomic rank up)
         mapping = {'G1': ['H1'], 'G2': ['H1'], 'G3': ['H2'],
@@ -561,6 +604,14 @@ class TableTests(TestCase):
             'S3': {'H1': 1, 'H2': 4, 'H3': 6, 'H4': 1, 'H5': 7}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
+
+        # nothing left after normalization
+        table = prep_table({'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})
+        mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
+        obs = collapse_table(table, mapping, normalize=True)
+        for i in (0, 1, 3):
+            self.assertListEqual(obs[i], [])
+        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
 
 
 if __name__ == '__main__':

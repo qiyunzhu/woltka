@@ -21,7 +21,7 @@ from .tree import lineage_str
 from .file import openzip
 from .biom import (
     table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
-    collapse_biom)
+    biom_add_metacol, collapse_biom)
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -440,6 +440,30 @@ def round_table(table):
         del(table[3][i])
 
 
+def table_add_metacol(table, dic, name, missing=''):
+    """Add a metadata column to a table in place based on a dictionary.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to add metadata column (data, features, samples, metadata).
+    dict : dict
+        Metadata column (feature-to-value mapping).
+    name : str
+        Metadata column name.
+    missing : any type, optional
+        Default value if not found in dictionary.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        biom_add_metacol(table, dic, name, missing='')
+        return
+
+    # add metadata column
+    for feature, metadatum in zip(*(table[1], table[3])):
+        metadatum[name] = dic.get(feature, missing)
+
+
 def collapse_table(table, mapping, normalize=False):
     """Collapse a table by many-to-many mapping.
 
@@ -470,10 +494,9 @@ def collapse_table(table, mapping, normalize=False):
     width = len(samples)
     res = defaultdict(lambda: [0] * width)
     for datum, feature in zip(*table[:2]):
-        try:
-            targets = mapping[feature]
-        except KeyError:
+        if feature not in mapping:
             continue
+        targets = mapping[feature]
         if normalize:
             k = 1 / len(targets)
             datum = [x * k for x in datum]
@@ -481,7 +504,7 @@ def collapse_table(table, mapping, normalize=False):
             res[target] = list(map(add, res[target], datum))
 
     # reformat table
-    res = list(res.values()), list(res.keys()), samples, [{}] * len(res)
+    res = list(res.values()), list(res.keys()), samples, [dict() for _ in res]
 
     # round table
     if normalize:

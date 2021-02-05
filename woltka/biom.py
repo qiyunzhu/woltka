@@ -129,6 +129,25 @@ def round_biom(table: biom.Table):
     table.remove_empty(axis='observation')
 
 
+def biom_add_metacol(table: biom.Table, dic, name, missing=''):
+    """Add a metadata column to a table in place based on a dictionary.
+
+    Parameters
+    ----------
+    table : biom.Table
+        Table to add metadata column.
+    dict : dict
+        Metadata column (feature-to-value mapping).
+    name : str
+        Metadata column name.
+    missing : any type, optional
+        Default value if not found in dictionary.
+    """
+    metadata = {x: {name: dic.get(x, missing)} for x in table.ids(
+        'observation')}
+    table.add_metadata(metadata, axis='observation')
+
+
 def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
     """Collapse a BIOM table in many-to-many mode.
 
@@ -157,6 +176,10 @@ def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
     # filter table features
     table = table.filter(lambda data, id_, md: id_ in mapping,
                          axis='observation', inplace=False)
+
+    # stop if no feature left
+    if table.is_empty():
+        return table
 
     # add mapping to table metadata
     table.add_metadata({k: dict(part=v) for k, v in mapping.items()},

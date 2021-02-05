@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree, copy
 from tempfile import mkdtemp
 
-from woltka.tools import filter_wf, merge_wf
+from woltka.tools import filter_wf, merge_wf, collapse_wf
 
 
 class ToolsTests(TestCase):
@@ -102,6 +102,44 @@ class ToolsTests(TestCase):
         with self.assertRaises(SystemExit) as ctx:
             merge_wf([input_fp], output_fp)
         errmsg = 'Cannot parse test3.tsv as a profile.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+    def test_collapse_wf(self):
+        input_fp = join(self.datdir, 'output', 'truth.gene.tsv')
+        map_fp = join(self.datdir, 'function', 'nucl', 'uniref.map.xz')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+
+        # one-to-one
+        collapse_wf(input_fp, map_fp, output_fp)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 2489)
+        for line in obs:
+            if line.startswith('A0A069B1G8'):
+                self.assertEqual(line[11:], '1\t0\t0\t0\t0')
+            if line.startswith('P0AGG9\t'):
+                self.assertEqual(line[7:], '0\t0\t0\t2\t0')
+
+        # one-to-many
+        input_fp = join(self.datdir, 'output', 'truth.uniref.tsv')
+        map_fp = join(self.datdir, 'function', 'go', 'goslim.tsv.xz')
+        names_fp = join(self.datdir, 'function', 'go', 'name.txt.xz')
+        collapse_wf(input_fp, map_fp, output_fp, names_fp=names_fp)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 84)
+        for line in obs:
+            if line.startswith('GO:0005737'):
+                self.assertEqual(line[11:], '59\t55\t62\t22\t47\tcytoplasm')
+            if line.startswith('GO:0004518'):
+                self.assertEqual(line[11:], '3\t7\t9\t1\t4\tnuclease activity')
+        remove(output_fp)
+
+        # wrong mapping file
+        map_fp = join(self.datdir, 'tree.nwk')
+        with self.assertRaises(SystemExit) as ctx:
+            collapse_wf(input_fp, map_fp, output_fp, normalize=True)
+        errmsg = 'No source-target relationship is found in tree.nwk.'
         self.assertEqual(str(ctx.exception), errmsg)
 
 

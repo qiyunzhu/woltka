@@ -1,0 +1,2489 @@
+#FeatureID	S01	S02	S03	S04	S05	Name
+A0A015SAL2	0	1	0	0	0	Uroporphyrinogen-III synthase HemD family protein
+A0A015V412	0	4	0	0	0	Uncharacterized protein
+A0A015Y4R3	0	1	0	0	0	Uncharacterized protein
+A0A017PED3	0	3	0	0	0	Prolyl tripeptidyl peptidase
+A0A023RQ14	0	0	0	0	1	RNA polymerase sigma factor RpoH
+A0A023RR47	0	0	0	0	1	ABC-type sugar transporter, permease component
+A0A024LB35	0	0	1	0	0	Cation efflux system protein CusB
+A0A037Y1N2	0	0	1	0	0	DUF4102 domain-containing protein
+A0A037Y6J9	0	0	1	0	0	General stress protein A
+A0A037YCB1	0	0	1	0	0	ATP-binding protein
+A0A037YM56	0	0	1	0	0	Copper-sensing two-component system response regulator CusR
+A0A060VER8	0	3	0	0	0	Melibiose operon regulatory protein
+A0A060VIW4	0	0	0	1	0	Inositol-1-monophosphatase
+A0A066Q7K0	0	0	1	0	0	DNA repair protein
+A0A066QSQ5	0	0	1	0	0	Fe-S oxidoreductase
+A0A068DGV5	0	0	0	1	0	ThiF family protein
+A0A069B1G8	1	0	0	0	0	ABC transporter permease
+A0A069B9Z6	2	0	0	0	0	NADPH-dependent ferric siderophore reductase
+A0A069BA18	3	0	0	0	0	3-oxoadipate enol-lactonase
+A0A069BCT0	0	0	1	0	0	Glutathione S-transferase
+A0A073KKC3	0	1	0	0	0	TPR_REGION domain-containing protein
+A0A073KRV0	0	1	0	0	0	Carbonic anhydrase
+A0A076Z282	0	0	0	1	0	Beta sliding clamp
+A0A078LLN1	0	0	0	1	0	Gluconate transporter
+A0A078LM07	0	0	0	0	1	Ribosomal RNA small subunit methyltransferase H
+A0A078LNY9	0	0	0	1	0	Glucarate transporter
+A0A081LLH4	0	0	0	0	1	Signal transduction histidine kinase
+A0A081LM75	0	0	0	0	1	Glutamine synthetase
+A0A081M0M3	0	0	0	2	0	Enzyme yhhN
+A0A081Q7M7	0	0	1	0	0	Putative exported protein
+A0A081QK25	0	0	1	0	0	Accessory gene regulator protein A
+A0A081UXQ0	0	0	0	0	1	Serine acetyltransferase
+A0A083ZYV0	0	0	2	0	0	Ribose import ATP-binding protein RbsA
+A0A084A2M1	0	0	2	0	0	Ribose transport system permease protein RbsC
+A0A084ZSB0	0	0	0	1	0	ATP-binding component of an ABC superfamily transporter
+A0A085A2N6	0	0	0	1	0	Glutathione reductase
+A0A085A8J1	0	0	0	1	0	Putative CBS domain-containing hemolysin
+A0A085A8V3	0	0	0	2	0	Putative 3-phenylpropionic acid transporter
+A0A085P896	0	0	0	2	0	Glutamate synthase
+A0A085P977	0	0	1	0	0	Cyclic di-GMP-binding protein
+A0A085U3S3	0	0	1	0	0	Putative inner membrane protein
+A0A085U3S7	0	0	3	0	0	Bifunctional (P)ppGpp synthetase II/ guanosine-3&apos;,5&apos;-bis pyrophosphate 3&apos;-pyrophosphohydrolase
+A0A085U3S9	0	0	3	0	0	ATP-dependent DNA helicase RecG
+A0A085U3T1	0	0	3	0	0	Transport protein, symporter
+A0A085U6D1	0	0	1	0	0	ATP-dependent DNA helicase Rep
+A0A085U6E3	0	0	1	0	0	dTDP-4-amino-4,6-dideoxygalactose transaminase
+A0A085U6L9	0	0	1	0	0	Carbon starvation protein A
+A0A086IKE7	0	0	0	1	0	Uncharacterized MFS-type transporter BANRA_00273
+A0A086ILQ6	0	0	0	1	0	Dienelactone hydrolase
+A0A086IVY6	0	0	0	1	0	Acireductone dioxygenase
+A0A086TMN3	0	0	1	0	0	Antirestriction protein
+A0A087FKP7	0	0	0	1	0	Uncharacterized protein
+A0A090G2F0	1	0	0	0	0	Beta sliding clamp
+A0A090UZK4	0	0	0	3	0	Lactose permease
+A0A094X2R0	0	0	0	1	0	DedA family inner membrane protein YqjA
+A0A094Y3I6	0	0	0	2	0	PTS glucitol/sorbitol transporter subunit IIB
+A0A095KHL4	1	0	0	0	0	DNA-binding protein
+A0A095Q9D6	2	0	0	0	0	Flippase
+A0A095RIL1	1	0	0	0	0	Bacterial regulatory, Fis family protein
+A0A095RJJ4	2	0	0	0	0	Alpha/beta hydrolase family protein
+A0A098CIB2	0	0	0	1	0	Thiol:disulfide interchange protein
+A0A099BYJ0	0	1	0	0	0	Relaxase
+A0A0A0GVQ6	0	0	1	0	0	DUF4942 domain-containing protein
+A0A0A2HBY7	0	3	0	0	0	Transmembrane protein
+A0A0A3YAV9	0	0	0	0	1	Cardiolipin synthase
+A0A0A5LDZ7	0	0	0	0	1	MurR/RpiR family transcriptional regulator
+A0A0A5MRI5	0	0	0	0	1	dTTP/UTP pyrophosphatase
+A0A0A5N099	0	0	0	0	1	Ribonuclease G
+A0A0A6TW87	0	0	0	0	8	Glutamate synthase
+A0A0B2I876	0	0	0	2	0	3-hydroxy-fatty acyl-ACP dehydratase
+A0A0B5B654	0	0	0	0	3	DNA gyrase subunit B
+A0A0B6FKS2	0	0	1	0	0	Divergent polysaccharide deacetylase family protein
+A0A0B6FKV7	0	0	1	0	0	Ferredoxin-NADP reductase
+A0A0B7GGF3	0	0	0	7	0	Alpha-2-macroglobulin
+A0A0B7GHE9	0	1	0	0	0	Multifunctional fusion protein
+A0A0B7GI08	0	1	0	0	0	dTDP-fucosamine acetyltransferase
+A0A0B7GJB5	0	0	0	2	0	DTW domain-containing protein
+A0A0B7IYH5	0	0	1	0	0	Teichoic acids export ATP-binding protein TagH
+A0A0B7LLH2	0	0	1	0	0	Phosphorylase
+A0A0B7LU07	0	0	1	0	0	IS66 family insertion sequence element accessory protein TnpB
+A0A0B7LYP9	0	0	1	0	0	tRNA-specific adenosine deaminase
+A0A0C1U830	0	0	0	0	1	Capsular biosynthesis protein
+A0A0C4MC62	0	2	0	0	0	AraC family transcriptional regulator
+A0A0C7KAZ5	0	2	0	0	0	AraC family transcriptional regulator
+A0A0C7KFT2	0	3	0	0	0	Galactoside permease
+A0A0C7KHM1	0	3	0	0	0	TDP-N-acetylfucosamine:lipid II N-acetylfucosaminyltransferase
+A0A0C7KI06	0	1	0	0	0	Outer membrane protein assembly factor BamA
+A0A0C7KI61	0	1	0	0	0	Integral membrane protein, YjbE family
+A0A0C7KIV4	0	2	0	0	0	Diguanylate cyclase/phosphodiesterase
+A0A0C7KLM7	0	1	0	0	0	Isovaleryl-CoA dehydrogenase
+A0A0D0PP86	0	0	0	0	1	Potassium-transporting ATPase ATP-binding subunit
+A0A0D4CC73	0	0	1	0	0	CopG protein
+A0A0D5L828	4	0	1	0	0	KfrA_N domain-containing protein
+A0A0D5MG78	0	0	2	0	0	Phosphate ABC transporter substrate-binding protein
+A0A0D5N6H5	0	0	0	0	1	Uncharacterized protein
+A0A0D5N6I3	0	0	0	0	1	Chaperone SurA
+A0A0D5N7B4	0	0	0	0	3	Biopolymer transport protein ExbD
+A0A0D5NE18	0	0	0	0	1	Cell division coordinator CpoB
+A0A0D6FRY2	1	0	0	0	0	ABC transporter
+A0A0D6FRZ4	3	0	0	0	0	ABC transporter ATPase and permease component
+A0A0D6FSG1	15	0	0	0	0	Peptide synthetase
+A0A0D6FSM7	1	0	0	0	0	Methionyl-tRNA formyltransferase
+A0A0D6FSV4	2	0	0	0	0	Extradiol ring-cleavage dioxygenase, class III enzyme, subunit B
+A0A0D7LJZ4	0	0	0	0	1	Uncharacterized protein
+A0A0D7M4L6	0	0	0	0	1	LPS-assembly protein LptD
+A0A0D8L351	0	0	0	1	0	4-hydroxybenzoyl-CoA thioesterase
+A0A0D8LFF3	0	0	0	1	0	Type VI secretion system tube protein Hcp
+A0A0D8VYC9	0	0	1	0	0	DNA damage-inducible protein D
+A0A0E0UKS8	0	1	0	0	0	3-oxoacyl-(Acyl-carrier-protein) reductase
+A0A0E1CRF1	0	3	0	0	0	Adenylate cyclase
+A0A0E1EEI2	0	0	0	1	0	Serine hydrolase
+A0A0E1EEI5	0	0	0	1	0	ATP-dependent zinc metalloprotease FtsH
+A0A0E1GUW8	0	1	0	0	0	ABC transporter arginine-binding protein 1
+A0A0E1NBY6	0	0	3	0	0	Branched-chain amino acid transporter permease subunit LivH
+A0A0E1NF72	0	0	1	0	0	Stress response kinase A
+A0A0E1NHF6	0	0	1	0	0	Uncharacterized conserved small protein
+A0A0E1TU43	4	0	0	0	0	Cytochrome P450 family protein
+A0A0E2AW59	0	1	0	0	0	Uncharacterized protein
+A0A0E2AWE8	0	4	0	0	0	Uncharacterized protein
+A0A0E2M0S6	0	0	0	0	1	Beta-galactosidase
+A0A0E2UGZ4	0	1	0	0	0	Ribosome-binding ATPase YchF
+A0A0E7TVM4	0	0	1	0	0	Histidine kinase
+A0A0E8MXB6	0	0	1	0	0	Acetolactate synthase 2 regulatory subunit
+A0A0E8P8H6	0	0	2	0	0	Amidophosphoribosyltransferase
+A0A0E9GX36	0	0	1	0	0	Ribosome-binding ATPase YchF
+A0A0F0JJP9	0	0	0	2	0	Heme chaperone HemW
+A0A0F0PPH1	0	0	0	1	0	D-alanyl-D-alanine dipeptidase
+A0A0F0Q4G6	0	0	0	4	0	Ornithine decarboxylase
+A0A0F0Q5C1	0	0	0	1	0	Anaerobic sulfatase maturase
+A0A0F0Q6N8	0	0	0	1	0	Arylsulfatase
+A0A0F0YVI9	0	0	0	2	0	ABC transporter substrate-binding protein
+A0A0F1AKV7	0	0	1	0	0	DUF305 domain-containing protein
+A0A0F1K5N7	0	0	0	3	0	Lipoprotein
+A0A0F1KQ87	0	0	0	2	0	Serine transporter
+A0A0F1KR34	0	0	0	1	0	Protein of uncharacterized function (DUF2502)
+A0A0F1T0K0	0	0	0	1	0	GDP-mannose pyrophosphatase
+A0A0F1T1J2	0	2	0	0	0	dTDP-4-amino-4,6-dideoxygalactose transaminase
+A0A0F1T295	0	0	0	2	0	Phosphoribosylglycinamide formyltransferase
+A0A0F1TMZ3	0	0	0	1	0	Protein TusC
+A0A0F1TQL4	0	0	0	2	0	MFS sugar transporter
+A0A0F1TSU5	0	0	0	1	0	ArsR family transcriptional regulator
+A0A0F1TVE1	0	0	0	1	0	UPF0306 protein ASV18_10930
+A0A0F1TXY9	0	0	0	1	0	Protein-methionine-sulfoxide reductase heme-binding subunit MsrQ
+A0A0F1U9U7	0	0	0	1	0	LacI family transcriptional regulator
+A0A0F1UEL6	0	0	0	2	0	Cytochrome c-type protein
+A0A0F2DW48	0	0	1	0	0	Sensor histidine kinase ComD
+A0A0F4ESH2	0	0	0	0	1	ESX component EccB1
+A0A0F4ESX6	0	0	0	0	2	ESX component EccCb1
+A0A0F4ET33	0	0	0	0	3	Penicillin-binding protein
+A0A0F4EW96	0	0	0	0	1	ESX component EccD1
+A0A0F4EWC3	0	0	0	0	1	ESX component EccCa1
+A0A0F6RDL0	0	0	0	0	3	3-methyl-2-oxobutanoate hydroxymethyltransferase
+A0A0F6ZK13	0	0	1	0	0	Inner membrane ABC transporter permease YjfF
+A0A0G3RZL0	0	1	0	0	0	Malate synthase
+A0A0G3RZU2	0	1	0	0	0	L-lysine permease
+A0A0G3S073	0	2	0	0	0	DNA-binding transcriptional regulator CytR
+A0A0G3S237	0	0	0	1	0	Serine/threonine transporter SstT
+A0A0G3S251	0	0	0	3	0	Amino acid permease
+A0A0G3S2A9	0	0	0	2	0	Aldehyde reductase
+A0A0G3S2S1	0	0	0	1	0	Transcriptional regulator
+A0A0G3S3M4	0	0	0	1	0	UPF0235 protein AB185_11350
+A0A0G3S3R7	0	0	0	1	0	Dipeptide transport system permease DppC
+A0A0G3S3T4	0	0	0	2	0	2-octaprenyl-3-methyl-6-methoxy-1,4-benzoquino l hydroxylase
+A0A0G3S3T8	0	0	0	3	0	6-phospho-beta-glucosidase
+A0A0G3S3Y0	0	0	0	1	0	CDP-diacylglycerol--serine O-phosphatidyltransferase
+A0A0G3S4C1	0	0	0	4	0	Periplasmic serine endoprotease DegP-like
+A0A0G3S4V8	0	0	0	2	0	Bifunctional glutathionylspermidine amidase/synthase
+A0A0G3S5D5	0	0	0	1	0	L-aspartate oxidase
+A0A0G3S706	0	0	0	1	0	Beta-D-galactosidase
+A0A0G3S927	0	0	0	2	0	Protein acetyltransferase
+A0A0G3S951	0	0	0	2	0	MurR/RpiR family transcriptional regulator
+A0A0G3S9H7	0	0	0	1	0	Glycine cleavage system transcriptional repressor
+A0A0G3SEB7	0	1	0	0	0	Anaerobic C4-dicarboxylate transporter
+A0A0G3SJ14	0	2	0	0	0	2&apos;, 3&apos;-cyclic nucleotide 2&apos;-phosphodiesterase
+A0A0G9NXN6	0	0	0	1	0	tRNA-binding protein
+A0A0G9QB65	0	0	0	1	0	Glutathione S-transferase
+A0A0G9UWE3	0	0	0	1	0	Alcohol dehydrogenase
+A0A0H2VDI7	0	2	0	0	0	D-serine/D-alanine/glycine transporter
+A0A0H2W9G6	1	0	0	0	0	4-hydroxybenzoate transporter
+A0A0H2W9J3	1	0	0	0	0	Radical SAM domain/B12 binding domain protein
+A0A0H2WHF0	1	0	0	0	0	PAP2 family protein
+A0A0H2WHF2	1	0	0	0	0	2`,3`-cyclic-nucleotide 2`-phosphodiesterase
+A0A0H2WI78	5	0	3	0	0	FG-GAP/YD repeat domain protein
+A0A0H2WIC8	1	0	0	0	0	Lipoprotein, putative
+A0A0H2WJ43	1	0	0	0	0	Aldolase, class II
+A0A0H2WKD2	1	0	0	0	0	Uncharacterized protein
+A0A0H3CT40	0	0	1	0	0	Uncharacterized protein
+A0A0H3FI43	0	0	0	1	0	Fimbrial protein
+A0A0H3FI54	0	0	0	1	0	Uncharacterized protein
+A0A0H3FI63	0	0	0	1	0	Probable 2-(5&apos;&apos;-triphosphoribosyl)-3&apos;-dephosphocoenzyme-A synthase
+A0A0H3FI64	0	0	0	1	0	Putative ion-transport protein EAE_00270
+A0A0H3FI66	0	0	0	1	0	[Citrate [pro-3S]-lyase] ligase
+A0A0H3FI74	0	0	0	1	0	Putative outer membrane usher protein
+A0A0H3FI75	0	0	0	2	0	Cell division protein ZipA
+A0A0H3FI90	0	0	0	1	0	Oxygen-dependent coproporphyrinogen-III oxidase
+A0A0H3FI96	0	0	0	3	0	Uncharacterized protein
+A0A0H3FIB2	0	0	0	1	0	Polygalacturonase family protein
+A0A0H3FIB3	0	0	0	1	0	Uncharacterized protein
+A0A0H3FIG3	0	0	0	1	0	Uncharacterized protein
+A0A0H3FIK3	0	0	0	2	0	Stationary phase inducible protein CsiE
+A0A0H3FIQ0	0	0	0	1	0	YddO
+A0A0H3FIT0	0	0	0	1	0	Putative ABC transporter ATP-binding protein
+A0A0H3FIT6	0	0	0	1	0	Putative transferase
+A0A0H3FIU8	0	0	0	3	0	Formate hydrogenlyase subunit 3
+A0A0H3FIV8	0	0	0	1	0	Periplasmic binding protein
+A0A0H3FJ25	0	0	0	1	0	Uncharacterized protein
+A0A0H3FJB3	0	0	0	1	0	Na(+)-translocating NADH-quinone reductase subunit E
+A0A0H3FJC4	0	0	0	1	0	Major subunit of type 1 fimbria
+A0A0H3FJI4	0	0	0	2	0	Two-component system, CitB family, cit operon sensor histidine kinase CitA
+A0A0H3FJM2	0	0	0	1	0	Permease for cytosine/purines, uracil, thiamine, allantoin
+A0A0H3FJM5	0	0	0	2	0	EAL domain-containing protein
+A0A0H3FJM7	0	0	0	1	0	Permease, cytosine/purine, uracil, thiamine, allantoin family protein
+A0A0H3FJN0	0	0	0	1	0	LysR family transcriptional regulator
+A0A0H3FJP8	0	0	0	1	0	RpoE-regulated lipoprotein
+A0A0H3FJT2	0	0	0	3	0	Diguanylate cyclase/phosphodiesterase
+A0A0H3FJT8	0	0	0	2	0	N-acetylneuraminate lyase
+A0A0H3FJU5	0	0	0	2	0	Uncharacterized protein
+A0A0H3FJV4	0	0	0	2	0	Uncharacterized protein
+A0A0H3FK28	0	0	0	1	0	Integrase
+A0A0H3FK30	0	0	0	1	0	MoxR-like ATPase
+A0A0H3FK88	0	0	0	1	0	Glutaredoxin-like protein
+A0A0H3FKA3	0	0	0	2	0	Glycerate kinase I
+A0A0H3FKC1	0	0	0	1	0	Uncharacterized protein
+A0A0H3FKD3	0	0	0	2	0	Acetolactate synthase catalytic subunit
+A0A0H3FKF6	0	0	0	1	0	NAD dependent epimerase/dehydratase family protein
+A0A0H3FKG0	0	0	0	1	0	23S rRNA (uracil(1939)-C(5))-methyltransferase RlmD
+A0A0H3FKH5	0	0	0	1	0	Cytoplasmic protein
+A0A0H3FKM6	0	0	0	1	0	Transcriptional regulatory protein
+A0A0H3FKN9	0	0	0	1	0	Uncharacterized protein
+A0A0H3FKQ1	0	0	0	1	0	Sucrose-6-phosphate hydrolase
+A0A0H3FKS5	0	0	0	1	0	Ketoacyl_synth_N domain-containing protein
+A0A0H3FKT4	0	0	0	1	0	EAL domain-containing protein
+A0A0H3FKU9	0	0	0	2	0	L-fucose transporter
+A0A0H3FKW3	0	0	0	1	0	Nickel transporter ATP-binding protein NikE
+A0A0H3FKW5	0	0	0	3	0	tRNA(Met) cytidine acetyltransferase TmcA
+A0A0H3FKX4	0	0	0	2	0	Transposase YhgA family protein
+A0A0H3FKX5	0	0	0	1	0	Uncharacterized protein
+A0A0H3FL46	0	0	0	1	0	tRNA1(Val) (adenine(37)-N6)-methyltransferase
+A0A0H3FL63	0	0	0	2	0	Cellulose biosynthesis protein BcsG
+A0A0H3FL95	0	0	0	2	0	NTP_transf_2 domain-containing protein
+A0A0H3FLA3	0	0	0	1	0	Putative N-acetylmannosamine-6-phosphate 2-epimerase
+A0A0H3FLA7	0	0	0	5	0	Putative ABC transporter
+A0A0H3FLC8	0	0	0	2	0	Putative purine cytosine permease
+A0A0H3FLJ2	0	0	0	2	0	Formate hydrogenlyase regulatory protein HycA
+A0A0H3FLK8	0	0	0	1	0	Hemin import ATP-binding protein HmuV
+A0A0H3FLR2	0	0	0	5	0	RecBCD enzyme subunit RecB
+A0A0H3FLU3	0	0	0	1	0	Putative lipoprotein
+A0A0H3FLV5	0	0	0	1	0	D-tagatose-1,6-bisphosphate aldolase subunit KbaY
+A0A0H3FM08	0	0	0	1	0	Uncharacterized protein
+A0A0H3FM39	0	0	0	2	0	Outer membrane usher protein
+A0A0H3FM42	0	0	0	2	0	Uncharacterized protein
+A0A0H3FM95	0	0	0	1	0	Outer membrane lipoprotein
+A0A0H3FMB9	0	0	0	1	0	Uncharacterized protein
+A0A0H3FMI3	0	0	0	1	0	4-alpha-glucanotransferase
+A0A0H3FMI7	0	0	0	1	0	Adenylate cyclase
+A0A0H3FMJ5	0	0	0	3	0	Glycogen debranching enzyme
+A0A0H3FML2	0	0	0	1	0	Radical SAM domain protein
+A0A0H3FMN4	0	0	0	1	0	PlsC domain-containing protein
+A0A0H3FMP4	0	0	0	1	0	Holo-(Acyl carrier protein) synthase 2
+A0A0H3FMQ5	0	0	0	1	0	Nickel transport system periplasmic binding component
+A0A0H3FMT6	0	0	0	2	0	Enterotoxin
+A0A0H3FNB4	0	0	0	1	0	Mandelate racemase/muconate lactonizing protein
+A0A0H3FNE9	0	0	0	1	0	Gamma-glutamyltranspeptidase
+A0A0H3FNI3	0	0	0	1	0	Glyco_trans_2-like domain-containing protein
+A0A0H3FQ12	0	0	0	1	0	DNA repair protein RadC
+A0A0H3FQ69	0	0	0	1	0	Uncharacterized protein
+A0A0H3FQI7	0	0	0	2	0	Polyphenol oxidase
+A0A0H3FQJ2	0	0	0	2	0	Gluconolactonase
+A0A0H3FQN1	0	0	0	2	0	Cytochrome c-type biogenesis protein CcmE
+A0A0H3FQP3	0	0	0	2	0	Short-chain dehydrogenase/reductase SDR
+A0A0H3FQQ9	0	2	0	0	0	L-ribulose-5-phosphate 4-epimerase UlaF
+A0A0H3FQV2	0	0	0	1	0	Ribonucleoside-diphosphate reductase subunit beta
+A0A0H3FR06	0	0	0	1	0	Iron transport system periplasmic binding component
+A0A0H3FR11	0	0	0	2	0	Transcriptional regulator, LysR family protein
+A0A0H3FR22	0	0	0	2	0	Putative major fimbrial protein SthE
+A0A0H3FR94	0	0	0	2	0	RecBCD enzyme subunit RecC
+A0A0H3FRG3	0	0	0	1	0	Inositol-1-monophosphatase
+A0A0H3FRJ9	0	0	0	1	0	Uncharacterized protein
+A0A0H3FRT9	0	0	0	1	0	Twitching motility protein
+A0A0H3FRV9	0	0	0	2	0	Nucleoside permease NupG
+A0A0H3FRY8	0	0	0	1	0	Short chain dehydrogenase
+A0A0H3FRZ2	0	0	0	3	0	FAD dependent oxidoreductase
+A0A0H3FSC1	0	0	0	1	0	Siderophore-interacting protein
+A0A0H3FSC7	0	0	0	2	0	Beta-galactosidase
+A0A0H3FSI4	0	0	0	5	0	Penicillin-binding protein activator LpoA
+A0A0H3FSK9	0	0	0	2	0	Crp/Fnr family transcriptional regulator
+A0A0H3FSP6	0	0	0	2	0	Biosynthetic peptidoglycan transglycosylase
+A0A0H3FT41	0	0	0	2	0	Cell division protein DamX
+A0A0H3FT53	0	0	0	1	0	Uncharacterized protein
+A0A0H3FTJ5	0	0	0	1	0	Phage-related lysozyme (Muraminidase)
+A0A0H3H6N6	0	0	0	1	0	Protein NrdI
+A0A0H3NWU2	0	0	1	0	0	Ribosomal protein S3
+A0A0H5G9I4	0	0	4	0	0	Putative inner-membrane transport protein
+A0A0I9TJR3	0	0	0	0	2	Membrane protein
+A0A0I9UKN9	0	3	0	0	0	Helix-hairpin-helix domain-containing protein
+A0A0I9Y764	0	0	0	0	1	Anthranilate synthase
+A0A0J2EF82	0	0	0	1	0	tRNA (cytidine/uridine-2&apos;-O-)-methyltransferase TrmJ
+A0A0J4AAR5	0	2	0	0	0	gp32 domain-containing protein
+A0A0J4N659	0	0	0	3	0	Exopolyphosphatase
+A0A0J4QY82	0	1	0	0	0	KamA family protein
+A0A0J4R8C4	0	0	0	2	0	Disulfide-bond oxidoreductase YghU
+A0A0J4VCG7	0	1	0	0	0	Bifunctional ligase/repressor BirA
+A0A0J4VPI7	0	0	0	1	0	Exu regulon transcriptional regulator
+A0A0J4VSP7	0	0	0	1	0	ADP-ribose pyrophosphatase
+A0A0J4X6C4	0	0	0	1	0	Flavodoxin
+A0A0J4XAF0	0	1	0	0	0	DNA polymerase I
+A0A0J4Y660	0	1	0	0	0	HTH-type transcriptional regulator YjdC
+A0A0J6DQI9	0	0	0	0	1	Fimbrial chaperone protein
+A0A0J8X100	0	1	0	0	1	DNA recombination and repair protein RecA
+A0A0K0H6V5	0	0	0	0	1	Acetyltransferase component of pyruvate dehydrogenase complex
+A0A0K0H724	0	0	0	0	4	DNA polymerase
+A0A0K0HFF1	0	0	0	1	0	Uncharacterized protein
+A0A0K0X2I4	1	0	0	0	0	Iron ABC transporter permease
+A0A0K0X2K7	2	0	0	0	0	Potassium ABC transporter ATPase
+A0A0K0X2T2	1	0	0	0	0	Iron-dicitrate transporter ATP-binding subunit
+A0A0K0X2Z2	3	0	0	0	0	D-beta-D-heptose 1-phosphate adenosyltransferase
+A0A0K2HHF2	0	2	0	0	0	ATP-binding protein
+A0A0K6BNA8	0	1	0	0	0	Deoxyribose-phosphate aldolase
+A0A0K6BNK0	0	1	0	0	0	Uncharacterized protein
+A0A0K6BNN3	0	1	0	0	0	MazG-like nucleotide pyrophosphohydrolase domain protein
+A0A0L9ZZH4	0	2	0	0	0	ABC transporter permease
+A0A0L9ZZV8	0	1	0	0	0	ABC transporter ATP-binding protein
+A0A0L9ZZY0	0	1	0	0	0	Membrane protein
+A0A0M3H3S0	0	0	0	1	0	Glycoside hydrolase 105 family protein
+A0A0M3HAB6	0	0	0	1	0	Rhomboid protease GlpG
+A0A0M3HAC7	0	0	0	2	0	IgaA: a membrane protein that prevents overactivation of the Rcs regulatory system
+A0A0M3HAQ2	0	0	0	2	0	AsmA domain-containing protein
+A0A0M3HAZ4	0	0	0	1	0	Pilus assembly protein
+A0A0M3HC56	0	0	0	1	0	Ribosomal RNA small subunit methyltransferase D
+A0A0M3HCF4	0	0	0	1	0	Nuclear transport factor 2 family protein
+A0A0M3HCK6	0	0	0	1	0	Histidine-histamine antiporter
+A0A0M3HCL6	0	0	0	1	0	Coenzyme F420 hydrogenase maturation protease
+A0A0M3HCT5	0	0	0	1	0	Helix-turn-helix transcriptional regulator
+A0A0M3HCW9	0	0	0	1	0	ABC transporter permease
+A0A0M3HD26	0	0	0	1	0	Cellulase
+A0A0M3HDH3	0	0	0	2	0	Glyoxalase
+A0A0M3HDQ3	0	0	0	1	0	Dehydrogenase
+A0A0M3HDV7	0	0	0	1	0	Aldo-keto reductase
+A0A0M3HDW3	0	0	0	1	0	Acyl-CoA dehydrogenase
+A0A0M3HDW7	0	0	0	1	0	Diguanylate cyclase
+A0A0M3HE52	0	0	0	2	0	Histidine kinase
+A0A0M3HEF5	0	0	0	1	0	MexE family multidrug efflux RND transporter periplasmic adaptor subunit
+A0A0M9AC84	1	0	0	0	0	3-oxoacyl-[acyl-carrier-protein] reductase FabG
+A0A0M9ACK2	1	0	0	0	0	Putative oxidoreductase YdhV
+A0A0M9AD52	1	0	0	0	0	NAD(P) transhydrogenase subunit alpha part 1
+A0A0M9AEL1	1	0	0	0	0	Negative regulator of genetic competence ClpC/MecB
+A0A0M9AEN0	1	0	0	0	0	Gluconate 5-dehydrogenase
+A0A0M9AFR9	2	0	0	0	0	Maltose/maltodextrin import ATP-binding protein MalK
+A0A0M9AGL0	1	0	0	0	0	Phospho-2-dehydro-3-deoxyheptonate aldolase
+A0A0M9AGL7	1	0	0	0	0	Cation/acetate symporter ActP
+A0A0M9AH74	1	0	0	0	0	Nickel/cobalt efflux system
+A0A0M9AHB4	2	0	0	0	0	1,2-phenylacetyl-CoA epoxidase, subunit A
+A0A0N0BL84	1	0	0	0	0	Putative oxidoreductase
+A0A0N0BM82	1	0	0	0	0	Cobalt-precorrin-4 C(11)-methyltransferase
+A0A0N0BMF4	1	0	0	0	0	L-serine dehydratase, beta chain
+A0A0N0BMG5	2	0	0	0	0	3 beta-hydroxysteroid dehydrogenase/Delta 5--&gt;4-isomerase
+A0A0N0U854	3	0	0	0	0	Inosine-5&apos;-monophosphate dehydrogenase
+A0A0N0U8I0	1	0	0	0	0	AAA_PrkA domain-containing protein
+A0A0N0U8Q4	1	0	0	0	0	Precorrin-6Y C(5,15)-methyltransferase [decarboxylating]
+A0A0N1IUE0	1	0	0	0	0	Precorrin-8X methylmutase
+A0A0N2QRE7	0	0	0	1	0	Response regulator receiver domain protein
+A0A0N9SS85	0	0	0	1	0	DNA-binding response regulator
+A0A0P0F1B6	0	2	0	0	0	Acetyl-CoA hydrolase/transferase family protein
+A0A0R1NW83	0	0	1	0	0	DNA gyrase subunit A
+A0A0S2SCP1	0	0	0	0	1	Branched-chain amino acid transporter permease subunit LivH
+A0A0S2SEQ1	0	0	0	0	1	Thioredoxin
+A0A0S3D5Z5	0	2	0	0	0	HTH-type transcriptional regulator HdfR
+A0A0T6SSL9	0	0	0	0	1	Aquacobalamin reductase / NAD(P)H-flavin reductase
+A0A0T6TY70	0	0	0	0	1	Serine/threonine protein kinase
+A0A0T7NX77	0	0	1	0	0	DNA-binding transcriptional regulator OxyR
+A0A0T8JVW5	0	0	1	0	0	Aminotransferase
+A0A0T8NI77	0	0	3	0	0	Transcription-repair-coupling factor
+A0A0T9LUN8	0	0	1	0	0	Phosphomethylpyrimidine synthase
+A0A0T9LV57	0	0	1	0	0	Serine acetyltransferase
+A0A0T9MID6	0	0	2	0	0	UPF0261 protein CBW57_10275
+A0A0T9MJG9	0	0	1	0	0	Branched-chain amino acid ABC transporter permease
+A0A0T9MQI6	0	0	1	0	0	Two-component sensor protein
+A0A0T9MQM6	0	0	2	0	0	Enoyl-CoA hydratase
+A0A0T9P0W2	0	0	2	0	0	Putative membrane transport ATP-binding protein
+A0A0T9Q7R5	0	0	1	0	0	Putative fimbrial chaperone
+A0A0T9QEU7	0	0	2	0	0	D-ribose transporter subunit RbsB
+A0A0T9QWX5	0	0	1	0	0	ECA polysaccharide chain length modulation protein
+A0A0T9QXY4	0	0	2	0	0	sn-glycerol-3-phosphate dehydrogenase subunit C
+A0A0T9S340	0	0	1	0	0	Putative transmembrane protein
+A0A0T9S765	0	0	1	0	0	Putative two-component response regulator
+A0A0T9S7M9	0	0	1	0	0	YeeE/YedE family protein
+A0A0T9SG69	0	0	1	0	0	3&apos;-5&apos; ssDNA/RNA exonuclease TatD
+A0A0T9SG75	0	0	2	0	0	Alpha-related fimbriae chaperone 2
+A0A0T9SGC8	0	0	2	0	0	Signal recognition particle receptor FtsY
+A0A0T9SGD0	0	0	1	0	0	Glycerophosphodiester phosphodiesterase
+A0A0T9SGG2	0	0	1	0	0	4HBT domain-containing protein
+A0A0T9SGI7	0	0	2	0	0	Zinc/cadmium/mercury/lead-transporting ATPase
+A0A0T9SGP5	0	0	4	0	0	Putative outer membrane usher protein
+A0A0T9SGT4	0	0	2	0	0	Sodium/glutamate symporter
+A0A0T9SGW9	0	0	1	0	0	Nucleoside permease
+A0A0T9SHE1	0	0	1	0	0	Inner membrane protein yhaH
+A0A0T9SHP3	0	0	3	0	0	Putative TonB dependent receptor protein
+A0A0T9SHP6	0	0	1	0	0	Membrane fusion protein (MFP) family protein
+A0A0T9U684	0	0	1	0	0	Putative carboxymethylenebutenolidase
+A0A0T9UMC5	0	0	1	0	0	LysR family transcriptional regulator
+A0A0T9WPZ9	0	0	0	0	1	Acetolactate synthase
+A0A0T9X7T7	0	0	0	0	2	Fimbrial subunit
+A0A0T9Y0C6	0	0	0	0	3	Sensor histidine kinase DpiB
+A0A0U0EYG0	0	0	2	0	0	Beta-galactosidase 3
+A0A0U0IX49	0	0	2	0	0	Phosphoribosylformylglycinamidine synthase
+A0A0U1HHG2	0	0	1	0	0	Nitrogen regulation protein NR(II)
+A0A0U1HIF8	0	0	1	0	0	Dihydrolipoamide dehydrogenase
+A0A0U1HSB2	0	0	1	0	0	Predicted transporter component
+A0A0U1I9N8	0	0	1	0	0	Putative sugar transport system ATP-binding protein
+A0A0U2Q2H5	0	0	0	3	0	Efflux pump membrane transporter
+A0A0V9HYT5	0	2	0	0	0	Der GTPase-activating protein YihI
+A0A0W2A5R8	0	0	0	1	0	DNA processing protein DprA
+A0A0W2DB81	0	0	0	1	0	Hydrogenase 3 membrane subunit
+A0A0W2DRK0	0	0	0	1	0	Uncharacterized protein
+A0A0W2R4P7	0	0	0	1	0	Fimbrial protein
+A0A0W8ANL4	0	0	0	1	0	Thymidylate synthase
+A0A0W8APV3	0	1	0	0	0	Redox-sensitive transcriptional activator SoxR
+A0A0W8APX0	0	1	0	0	0	Sel1 repeat
+A0A0W8APY6	0	2	0	0	0	Ribose import ATP-binding protein RbsA
+A0A0W8ATR3	0	0	0	1	0	Peroxiredoxin
+A0A0W8AWK8	0	0	0	1	0	3&apos;,5&apos;-cyclic adenosine monophosphate phosphodiesterase CpdA
+A0A0X8D7H9	1	0	0	0	0	Serine hydrolase
+A0A0X8D7N8	1	0	0	0	0	DNA-binding protein
+A0A0X8D998	1	0	0	0	0	Thiol:disulfide interchange protein
+A0A0X8DDN2	1	0	0	0	0	ATP-dependent protease
+A0A103ENY9	2	0	0	0	0	Alpha/beta hydrolase
+A0A103ZH89	2	0	0	0	0	3-oxoacid CoA-transferase A subunit
+A0A109X3I5	0	0	0	0	1	Uncharacterized protein
+A0A118PIZ5	3	0	0	0	0	2-amino-3-ketobutyrate coenzyme A ligase
+A0A124PBR3	0	0	1	0	0	Tartrate dehydrogenase
+A0A125Y3G0	0	0	0	0	1	Flagellin N-methylase
+A0A125Y3S5	0	0	0	0	1	Trk system potassium uptake protein
+A0A132CIT7	1	0	0	0	0	Uncharacterized protein
+A0A133CLX3	0	0	0	5	0	Cyclic-di-AMP phosphodiesterase
+A0A135PTA7	0	0	0	1	0	6-carboxy-5,6,7,8-tetrahydropterin synthase
+A0A139R8R0	0	0	2	0	0	Mannose permease IID component
+A0A140PRK0	0	0	0	0	2	ETF domain-containing protein
+A0A140PTH6	0	0	0	0	2	ABC transporter domain-containing protein
+A0A144SAN3	0	4	0	0	0	Acetate operon repressor
+A0A149MVB9	0	4	0	0	0	Tricorn protease homolog
+A0A149NNP8	0	1	0	0	0	Dihydrolipoyl dehydrogenase
+A0A149NNZ1	0	1	0	0	0	Phosphoribosylamine--glycine ligase
+A0A155QP65	0	0	0	1	0	Phosphoenolpyruvate-dihydroxyacetone phosphotransferase, ADP-binding subunit DhaL
+A0A156EU40	0	0	0	1	0	5-oxopent-3-ene-1,2,5-tricarboxylate decarboxylase
+A0A156GIX2	0	0	0	1	0	Alcohol dehydrogenase
+A0A157U622	0	0	0	3	0	Protein yhjK
+A0A157U9J8	0	0	0	1	0	Type IV pilus biogenesis protein PilQ
+A0A157UBY9	0	0	0	2	0	N-acetylglucosamine-regulated outer membrane porin
+A0A157UCC2	0	0	0	1	0	Histidyl-tRNA synthetase
+A0A157UCH4	0	0	0	1	0	Uncharacterized protein
+A0A157UCM9	0	0	0	3	0	Catalase-related peroxidase
+A0A157UCV5	0	0	0	3	0	Mannose-specific adhesin FimH
+A0A157UD79	0	0	0	3	0	Fimbriae usher protein StcC
+A0A157UE86	0	0	0	1	0	Carbamoyltransferase HypF
+A0A157UED2	0	0	0	1	0	Nickel/cobalt efflux system
+A0A157UER3	0	0	0	2	0	Transcriptional regulator, GntR family domain / Aspartate aminotransferase
+A0A157UF43	0	0	0	2	0	Formate hydrogenlyase transcriptional activator
+A0A157UP28	0	0	0	1	0	MltA-interacting protein MipA
+A0A157USC4	0	0	0	2	0	Outer membrane stress sensor protease DegS
+A0A160EVL2	0	0	0	0	1	Glyoxalase
+A0A160EZ02	0	3	0	0	0	Lactamase_B domain-containing protein
+A0A163W9Q0	0	0	0	2	0	sn-glycerol-3-phosphate transport system permease protein UgpE
+A0A163YN02	0	0	0	2	0	Phosphocarrier protein kinase/phosphorylase
+A0A167P2Y9	0	3	0	0	0	Bifunctional aspartokinase/homoserine dehydrogenase
+A0A168AA67	0	1	0	0	0	Proline/betaine transporter
+A0A168IMF2	0	0	0	1	0	Probable UbiX-like flavin prenyltransferase
+A0A168K534	0	0	0	1	0	Diaminopimelate decarboxylase
+A0A168ZR87	0	0	0	1	0	Outer membrane lipoprotein
+A0A169D6Y7	0	0	0	1	0	Cystathionine beta-lyase
+A0A169HYQ1	0	0	0	2	0	HTH-type transcriptional regulator MalT
+A0A169QKN5	0	0	0	1	0	DUF1471 domain-containing protein
+A0A170BUF6	0	0	0	1	0	Transaldolase
+A0A171CU51	0	0	0	2	0	Transporter
+A0A174VC66	0	1	0	0	0	Conjugate transposon protein
+A0A174WG64	0	1	0	0	0	Transcriptional regulatory protein ZraR
+A0A178MEK0	3	0	0	0	0	Propionyl-CoA synthetase
+A0A181VPG2	0	0	0	2	0	Peptidase M28
+A0A181X7G2	0	0	0	1	0	Fructose-bisphosphate aldolase
+A0A181Y1H7	0	0	0	1	0	Aerobic respiration control sensor protein
+A0A181Y2N0	0	0	0	1	0	M48 family peptidase
+A0A181Y2Z7	0	0	0	1	0	Integral membrane protein TerC
+A0A181Y3G8	0	0	0	1	0	Divisome-associated lipoprotein YraP
+A0A197S9G1	0	0	0	0	1	Uncharacterized protein
+A0A197SA38	0	0	0	0	1	Uncharacterized protein
+A0A1A7UBD0	0	0	0	2	0	DNA replication and repair protein RecF
+A0A1C0X5J3	0	1	0	0	0	DUF1573 domain-containing protein
+A0A1C1RJ98	0	1	0	0	0	Alanine racemase
+A0A1C1RN09	0	0	0	2	0	Aldehyde dehydrogenase
+A0A1C3PRF5	0	0	0	1	0	sn-glycerol-3-phosphate import ATP-binding protein UgpC
+A0A1C3PRT7	0	0	0	3	0	Kdo(2)-lipid A phosphoethanolamine 7&apos;&apos;-transferase
+A0A1C3Q0S5	0	0	0	1	0	Membrane protein hemolysin III
+A0A1C3Q806	0	3	0	0	0	Inositol monophosphatase
+A0A1C3Q884	0	1	0	0	0	ABC transporter substrate-binding protein
+A0A1C3QBP7	0	1	0	0	0	ATP-dependent protease
+A0A1C7PN45	0	0	0	0	1	OmpA-like domain-containing protein
+A0A1D9N9X0	0	1	0	0	0	Uncharacterized protein
+A0A1E3UUB5	0	1	0	0	0	DUF4953 domain-containing protein
+A0A1E3UUF7	0	1	0	0	0	Cell division protein Fic
+A0A1E3UV58	0	1	0	0	0	Cyclic nucleotide-binding domain-containing protein
+A0A1E4X1V4	0	0	0	0	1	Peptidase M23
+A0A1E4X596	0	0	0	0	3	HD family phosphohydrolase
+A0A1F2LR17	0	0	0	1	0	HATPase_c domain-containing protein
+A0A1F2MHD9	0	1	0	0	0	Uncharacterized protein
+A0A1G7ECA7	1	0	0	0	0	Pribosyltran domain-containing protein
+A0A1G7GMW6	1	0	0	0	0	Carboxypeptidase regulatory-like domain-containing protein
+A0A1J0LQ29	1	0	0	0	0	VWFA domain-containing protein
+A0A1J1EHG0	1	0	0	0	0	Alpha-glucosidase
+A0A1J1EHK1	1	0	0	0	0	Vancomycin B-type resistance protein vanW
+A0A1J1EJ10	1	0	0	0	0	Glucose-1-phosphate thymidylyltransferase
+A0A1J1EJ97	1	0	0	0	0	Uncharacterized protein
+A0A1J1ELZ1	1	0	0	0	0	Luciferase-like monooxygenase
+A0A1J1EMK9	1	0	0	0	0	Oligopeptide transport system permease appB
+A0A1J1EMS9	1	0	0	0	0	S-(Hydroxymethyl)glutathione dehydrogenase
+A0A1J1ESI0	1	0	0	0	0	YceI domain-containing protein
+A0A1J3CDJ1	0	0	0	0	3	DNA gyrase subunit B
+A0A1L3NFQ3	0	1	0	0	0	Uncharacterized protein
+A0A1L3NLT2	0	1	0	0	0	4Fe-4S dicluster domain protein
+A0A1L5CIY9	1	0	0	0	0	FMN-binding protein MioC
+A0A1L5HJ19	0	1	0	0	0	Beta-barrel assembly-enhancing protease
+A0A1L5KV11	0	1	0	0	0	Putative transposase DNA-binding domain (Fragment)
+A0A1M0NBA2	0	0	1	0	0	ATP-binding protein
+A0A1M2TEJ4	0	1	0	0	0	Uncharacterized protein
+A0A1N6ZAU1	0	0	0	0	2	S1 motif domain-containing protein
+A0A1N6ZB99	0	0	0	0	1	ComF family protein
+A0A1N7A1G9	0	1	0	0	0	Transcriptional regulator, TetR family
+A0A1N7BTT1	0	0	0	2	0	Lysine--tRNA ligase
+A0A1Q4SP21	1	0	0	0	0	Uncharacterized protein
+A0A1Q8YQT5	0	0	0	1	0	BON domain-containing protein
+A0A1Q8YTC9	0	0	0	2	0	MFS domain-containing protein
+A0A1V0L9L2	0	0	0	2	0	Ribosomal RNA large subunit methyltransferase M
+A0A1V2BKW8	0	0	0	1	0	ABC transporter permease
+A0A1V3ZBY6	0	0	0	1	0	Sensor-like histidine kinase YfhK
+A0A1V3ZCP6	0	0	0	2	0	HAD hydrolase, family IF
+A0A1V9IM51	0	1	0	0	0	Methionine--tRNA ligase
+A0A1W1KMV9	0	2	0	0	0	Protein HflK
+A0A1W2ITH4	0	1	0	0	0	Primosomal protein N&apos;
+A0A1W6FT85	1	0	0	0	0	Integrase
+A0A1X1JZZ0	0	0	1	0	0	Uncharacterized protein
+A0A1Y6GAG5	0	0	0	1	0	Phosphate transporter
+A0A1Y6GBG4	0	0	0	1	0	Hexuronate transporter
+A0A1Y6GCU5	0	0	0	1	0	Formate dehydrogenase
+A0A1Y6GCW4	0	0	0	1	0	Nicotinamide-nucleotide amidase
+A0A1Y6GFN0	0	0	0	1	0	1-acyl-sn-glycerol-3-phosphate acyltransferase
+A0A1Y6GIW8	0	0	0	2	0	Galactose operon repressor
+A0A1Y6GQT1	0	1	0	0	0	Probable ECA polymerase
+A0A1Z1NVI2	0	0	0	0	2	HemY_N domain-containing protein
+A0A210UJN9	0	2	0	0	0	Alpha-galactosidase
+A0A222JA52	0	1	0	0	0	Signal peptide peptidase SppA
+A0A223AZP1	0	0	0	0	4	Autotransporter domain-containing protein (Fragment)
+A0A231U0E3	0	1	0	0	0	Lipoprotein
+A0A240C788	0	0	0	1	0	Uncharacterized HTH-type transcriptional regulator ydfH
+A0A241QFJ3	0	0	0	4	0	Fimbrial assembly protein
+A0A241QG22	0	0	0	0	1	Family 31 glucosidase
+A0A251ZR57	0	0	0	1	0	Putrescine transporter PotE
+A0A261E5U6	0	0	0	0	1	SCO family protein
+A0A266Q4C3	0	1	0	0	0	Collar domain-containing protein
+A0A2A2BEW8	0	0	0	2	0	2,5-didehydrogluconate reductase DkgA
+A0A2A6DCR7	0	0	0	0	1	Nitrite reductase
+A0A2A7SQY2	0	0	0	2	0	Replicative DNA helicase
+A0A2A8LLN2	0	0	2	0	0	DNA gyrase subunit A
+A0A2C5V4G0	0	0	0	1	0	Ribonucleoside-diphosphate reductase
+A0A2D1QAF9	0	0	0	0	1	Response regulator/lytR domain protein YpdB
+A0A2D1QMM4	0	0	0	0	3	Diguanylate cyclase / EAL-type diguanylate phosphodiesterase
+A0A2H6AQR2	1	0	0	0	0	(R)-benzylsuccinyl-CoA dehydrogenase
+A0A2H6AQW9	1	0	0	0	0	Methylthioribulose-1-phosphate dehydratase
+A0A2I8RA96	0	0	0	0	2	Collagenase
+A0A2I8W7I5	0	0	0	3	0	Cell division protein ZapE
+A0A2I8W9V8	0	0	0	1	0	4Fe-4S ferredoxin
+A0A2I8XXX1	0	0	0	2	0	Autoinducer 2 ABC transporter substrate-binding protein LsrB
+A0A2J6WZV0	1	0	0	0	0	Acetate--CoA ligase
+A0A2L1C559	0	2	0	0	0	UDP-N-acetylglucosamine 2-epimerase
+A0A2M9UP39	0	1	0	0	0	Gluconate 5-dehydrogenase
+A0A2M9VAY9	0	2	0	0	0	D-inositol 3-phosphate glycosyltransferase
+A0A2M9VB65	0	3	0	0	0	All-trans-nonaprenyl-diphosphate synthase (Geranyl-diphosphate specific)
+A0A2N0U6G9	0	0	0	0	1	Peptidoglycan lytic exotransglycosylase
+A0A2P0BF32	0	2	0	0	0	Beta-lactamase
+A0A2P8VHA4	0	0	0	0	2	Probable peptidoglycan glycosyltransferase FtsW
+A0A2P8VM67	0	0	0	2	0	Glucarate dehydratase
+A0A2P9E1W6	0	0	1	0	0	EAL domain protein Urf2
+A0A2R4NV91	0	0	2	0	0	EamA family transporter RarD
+A0A2R4NVG8	0	0	4	0	0	Bifunctional aspartokinase/homoserine dehydrogenase
+A0A2R4U0D7	0	0	0	0	1	Protein tyrosine phosphatase
+A0A2R4U283	0	0	0	0	1	PAS domain S-box protein
+A0A2S4JUI5	0	0	0	0	1	Glutamine amidotransferase
+A0A2S5F6D2	0	0	0	0	2	Sec-independent protein translocase protein TatC
+A0A2S9PF49	0	1	0	0	3	Exonuclease
+A0A2S9PHP5	0	0	2	0	0	Coproporphyrinogen III oxidase
+A0A2U0LM76	0	1	0	0	0	Sulfur carrier protein ThiS adenylyltransferase
+A0A2U0MDS4	0	4	0	0	0	Fimbrial biogenesis outer membrane usher protein
+A0A2U0N343	0	0	0	1	0	Single-stranded-DNA-specific exonuclease RecJ
+A0A2U4E1Q7	0	1	0	0	0	Coproporphyrinogen-III oxidase
+A0A2V1YTA7	0	0	0	2	0	S-adenosylmethionine synthase
+A0A2V3KBW1	0	0	0	1	0	Dihydroxyacetone kinase
+A0A2V3KEM8	0	0	0	1	0	Protein-disulfide reductase
+A0A2V4GSL7	0	1	0	0	0	Protein-disulfide isomerase
+A0A2X1PIB4	0	0	2	0	0	Alpha-amylase
+A0A2X1Q850	0	0	0	2	0	Galactoside transport ATP-binding protein
+A0A2X2E8M6	0	0	0	1	0	Arabinose 5-phosphate isomerase
+A0A2X2EDK9	0	0	0	1	0	RNA-binding protein YhbY
+A0A2X2EE05	0	0	0	1	0	Histidinol dehydrogenase
+A0A2X2EE39	0	1	0	0	0	Quaternary Ammonium compound-resistance protein SugE
+A0A2X2GEP8	0	0	0	1	0	Membrane-bound lytic murein transglycosylase A
+A0A2X2H5B9	0	0	1	0	0	Glycerol kinase
+A0A2X3AJ67	0	4	0	0	0	Orn/Lys/Arg decarboxylase
+A0A2X3CTP0	0	1	0	0	0	Putative macrolide efflux ABC transporter ATP-binding protein
+A0A2X3DB87	0	0	0	1	0	ABC transporter periplasmic substrate-binding protein
+A0A2X3DMW5	0	1	0	0	0	Sec-independent protein translocase protein TatC
+A0A2X3HLD1	0	2	0	0	0	TonB-dependent receptor
+A0A2X3JLS0	0	0	1	0	0	Glutamate decarboxylase
+A0A2X4NIA9	0	0	0	0	1	EamA family transporter
+A0A2X4NKC0	0	0	0	0	2	O-acetylhomoserine sulfhydrylase MetY
+A0A2X4NKI5	0	0	0	0	1	Rhodanese domain-containing protein
+A0A2X4NP52	0	0	0	0	1	Thiazole biosynthesis adenylyltransferase ThiF
+A0A2X4NPJ1	0	0	0	0	2	Coproporphyrinogen-III oxidase
+A0A2X4NTG0	0	0	0	0	3	Elongation factor G
+A0A2X4RMJ5	0	0	0	0	2	Aminopeptidase
+A0A2X8I2P4	0	0	0	0	1	Uncharacterized protein
+A0A2Z5SB11	0	0	0	0	2	Phytochrome-like protein cph1
+A0A2Z5SB15	0	0	0	0	1	Sec-independent protein translocase protein TatA
+A0A2Z5SB16	0	0	0	0	1	Secreted effector protein PipB2
+A0A2Z5SC39	0	0	0	0	2	Sensor histidine kinase YycG
+A0A2Z5SC44	0	0	0	0	2	HTH-type transcriptional regulator NorG
+A0A2Z5SD23	0	0	0	0	1	Daunorubicin/doxorubicin resistance ATP-binding protein DrrA
+A0A2Z5SFS0	0	0	0	0	1	Uncharacterized protein
+A0A2Z5SGY5	0	0	0	0	3	Sensor histidine kinase YycG
+A0A2Z5SQS8	0	0	0	0	2	Alkaline phosphatase synthesis sensor protein PhoR
+A0A2Z5SQU7	0	0	0	0	1	Heme chaperone HemW
+A0A330VFU5	0	1	0	0	0	Hydrolase
+A0A336Q3M5	0	0	0	0	2	Predicted membrane protein
+A0A336QXJ6	0	0	0	1	0	Major facilitator superfamily protein
+A0A343IZZ5	0	0	3	0	0	TnsD domain-containing protein
+A0A346GTB2	0	1	0	0	0	Phosphohydrolase
+A0A347AB30	0	0	0	0	2	TPR_REGION domain-containing protein
+A0A347ABQ1	0	0	0	0	2	Trk system potassium uptake protein
+A0A369HIS0	0	2	0	0	0	Integral membrane protein
+A0A370YUI4	0	0	0	0	1	Citrate lyase alpha chain
+A0A376SC72	0	0	1	0	0	Conjugal transfer protein TraQ
+A0A377L1C0	0	0	0	2	0	Beta sliding clamp
+A0A377T474	0	0	0	3	0	Exodeoxyribonuclease 7 large subunit
+A0A377U5N5	0	1	0	0	0	Ketose-bisphosphate aldolase
+A0A377U719	0	0	0	2	0	Cytosine deaminase
+A0A377U7I9	0	0	0	1	0	Protein YhjJ, putative peptidase
+A0A377U7L1	0	2	0	0	0	Chaperone protein FimC
+A0A377UAY5	0	1	0	0	0	Membrane protein
+A0A377WR05	0	1	0	0	0	Uncharacterized protein
+A0A377X8I2	0	0	0	1	0	Glycogen synthase
+A0A377X9D8	0	0	0	1	0	Thiamine pyrophosphate enzyme
+A0A377XHL1	0	1	0	0	0	LysR family transcriptional regulator
+A0A377XKE5	0	0	0	2	0	Glycerol-3-phosphate ABC transporter
+A0A377XM88	0	2	0	0	0	Undecaprenyl-phosphate alpha-N-acetylglucosaminyl 1-phosphate transferase
+A0A377ZBG9	0	0	0	2	0	Outer membrane protein assembly factor BamC
+A0A378A8F4	0	0	0	1	0	1,6-dihydroxycyclohexa-2,4-diene-1-carboxylate dehydrogenase
+A0A378BFK5	0	1	0	0	0	Response regulator of zinc sigma-54-dependent two-component system
+A0A378BG08	0	0	0	1	0	Cellulose synthase catalytic subunit [UDP-forming]
+A0A378BSP2	0	0	0	1	0	5-formyltetrahydrofolate cyclo-ligase
+A0A378DMJ9	0	0	0	3	0	Galactarate dehydratase (L-threo-forming)
+A0A378FR96	0	0	0	1	0	Murein hydrolase B
+A0A378FW22	0	0	0	2	0	Bile acid/Na+ symporter family transporter
+A0A378FXV6	0	1	0	0	0	Glucose-1-phosphate thymidylyltransferase
+A0A378FZL6	0	1	0	0	0	Cell division protein FtsN
+A0A378GE91	0	0	2	0	0	2,3-diketo-L-gulonate reductase
+A0A379PS22	0	0	0	0	1	Molybdenum cofactor biosynthesis protein MogA
+A0A379QN84	0	0	0	0	2	LysR family transcriptional regulator
+A0A379T131	0	0	0	0	2	Anaerobic sulfatase maturase
+A0A379V2S1	0	0	0	0	3	Citrate-sodium symporter
+A0A379WZN5	0	0	0	0	2	Ferrichrome outer membrane transporter
+A0A380AYQ6	0	1	0	0	0	Pullulanase secretion envelope pulD
+A0A380I6A4	0	0	0	2	0	Transcription-repair-coupling factor
+A0A380KU33	0	0	1	0	0	Choline binding protein Cbp3
+A0A380PWS7	0	0	1	0	0	GntR family transcriptional regulator
+A0A380SFX9	0	0	0	2	0	DNA ligase
+A0A380YUY5	0	1	0	0	0	Putative sulfate permease transmembrane protein
+A0A380YVL6	0	1	0	0	0	Peptidase domain-containing ABC transporter
+A0A381BVB7	1	0	0	0	0	Domain of uncharacterized function (DUF1839)
+A0A381IJX2	1	0	0	0	0	3-oxoacyl-[acyl-carrier-protein] reductase FabG
+A0A384KWD2	0	0	3	0	0	DNA polymerase I
+A0A3A1Q8X1	0	0	2	0	0	Uncharacterized protein
+A0A3A3JJ85	0	0	0	0	1	Carnitine metabolism transcriptional regulator CaiF
+A0A3B0NI18	0	0	0	1	0	Anthranilate 1,2-dioxygenase system ferredoxin--NAD(+) reductase component
+A0A3B6WEA0	3	0	0	0	0	Diguanylate phosphodiesterase
+A0A3B6WQW0	3	0	3	0	0	Protein kinase domain-containing protein
+A0A3G4RI09	0	0	0	3	0	Pimeloyl-[acyl-carrier protein] methyl ester esterase
+A0A3G9IGL3	0	0	0	0	1	DNA replication and repair protein RecF
+A0A3L0VZ83	0	0	0	0	2	Phosphoenolpyruvate carboxykinase (ATP)
+A0A3L0W431	0	0	0	0	1	Universal stress protein
+A0A3L0X0U1	0	0	0	0	2	Tyrosine recombinase XerC
+A0A3N2EFX6	0	0	0	1	0	Sulfite reductase [NADPH] flavoprotein alpha-component
+A0A3N4AW72	0	0	1	0	0	Ribokinase
+A0A3N4B6D7	0	0	2	0	0	Sec-independent protein translocase protein TatC
+A0A3N4D9S8	0	4	0	0	0	ParA family protein
+A0A3P0RG54	2	0	0	0	0	Mannose-1-phosphate guanylyltransferase/mannose-6-phosphate isomerase
+A0A3P1VUJ3	0	0	0	0	1	Ion-translocating oxidoreductase complex subunit C
+A0A3P4APW1	2	0	0	0	0	Metallophos domain-containing protein
+A0A3P4APY8	2	0	0	0	0	Probable sensor histidine kinase TcrY
+A0A3P4AQ05	2	0	0	0	0	Glycerol-3-phosphate acyltransferase
+A0A3P4AQ14	1	0	0	0	0	Diguanylate cyclase DosC
+A0A3P4AQ32	1	0	0	0	0	Serine protease HhoB
+A0A3P4AQA2	1	0	0	0	0	Molybdate-binding protein
+A0A3P4AQC4	1	0	0	0	0	Phosphoadenylyl-sulfate reductase (thioredoxin)
+A0A3P4AQP1	3	0	0	0	0	Outer membrane protein assembly factor BamA
+A0A3P4AQQ7	1	0	0	0	0	16S/23S rRNA (Cytidine-2&apos;-O)-methyltransferase TlyA
+A0A3P4AQV2	2	0	0	0	0	L-aspartate oxidase
+A0A3P4AQV5	1	0	0	0	0	Riboflavin biosynthesis protein
+A0A3P4ARA7	1	0	0	0	0	Endopeptidase La
+A0A3P4ARF4	1	0	0	0	0	Tungstate-binding protein TupA
+A0A3P4ARG6	1	0	0	0	0	Bacterioferritin
+A0A3P4ARJ7	3	0	0	0	0	Multifunctional CCA protein
+A0A3P4ARM0	2	0	0	0	0	Murein DD-endopeptidase MepM
+A0A3P4ARN6	1	0	0	0	0	1D-myo-inositol 2-acetamido-2-deoxy-alpha-D-glucopyranoside deacetylase
+A0A3P4ARN9	1	0	0	0	0	Ribonuclease R
+A0A3P4ARR2	1	0	0	0	0	PS_pyruv_trans domain-containing protein
+A0A3P4ARU1	1	0	0	0	0	Multidrug resistance protein MdtA
+A0A3P4ARX2	1	0	0	0	0	Carboxylic ester hydrolase
+A0A3P4ARX4	3	0	0	0	0	Glutathione-regulated potassium-efflux system protein KefC
+A0A3P4ARX7	6	0	0	0	0	Alpha-amylase 1
+A0A3P4AS01	2	0	0	0	0	Protoporphyrinogen oxidase
+A0A3P4AS06	1	0	0	0	0	Metalloprotease MmpA
+A0A3P4AS44	1	0	0	0	0	Iron-dependent repressor IdeR
+A0A3P4AS89	2	0	0	0	0	Manganese-binding lipoprotein MntA
+A0A3P4ASG5	3	0	0	0	0	Phenylacetate-coenzyme A ligase
+A0A3P4ASJ6	2	0	0	0	0	Peptidyl-prolyl cis-trans isomerase
+A0A3P4ASL7	1	0	0	0	0	Polbeta domain-containing protein
+A0A3P4ASP1	2	0	0	0	0	NFACT-R_1 domain-containing protein
+A0A3P4AT16	4	0	0	0	0	Probable primosomal protein N&apos;
+A0A3P4AT37	2	0	0	0	0	Chromosome partition protein Smc
+A0A3P4AT99	2	0	0	0	0	Hydroxyacylglutathione hydrolase GloC
+A0A3P4ATP1	1	0	0	0	0	D-beta-hydroxybutyrate dehydrogenase
+A0A3P4ATZ9	3	0	0	0	0	C4-dicarboxylate TRAP transporter large permease protein DctM
+A0A3P4AU04	1	0	0	0	0	Peptidylprolyl isomerase
+A0A3P4AU46	1	0	0	0	0	Glycerol-3-phosphate acyltransferase
+A0A3P4AUH0	1	0	0	0	0	Uncharacterized sugar kinase YdjH
+A0A3P4AUL7	1	0	0	0	0	Galactose-1-phosphate uridylyltransferase
+A0A3P4AUP1	1	0	0	0	0	Sialic acid TRAP transporter permease protein SiaT
+A0A3P4AUQ1	1	0	0	0	0	Catabolite control protein A
+A0A3P4AUR4	1	0	0	0	0	BTAD domain-containing protein
+A0A3P4AUT6	1	0	0	0	0	Metallophos domain-containing protein
+A0A3P4AXL2	1	0	0	0	0	PhoU domain-containing protein
+A0A3P4I8W5	0	1	0	0	0	EamA domain-containing protein
+A0A3P4I9Y3	0	1	0	0	0	Stress response kinase A
+A0A3P4IBI9	0	1	0	0	0	Fimbrial domain-containing protein
+A0A3P4IFW1	0	0	0	1	0	AB hydrolase-1 domain-containing protein
+A0A3P8JTN5	0	4	0	0	0	Potassium efflux system KefA
+A0A3Q8DMU8	0	0	0	0	1	Signal recognition particle receptor FtsY
+A0A3Q9QCH6	0	0	0	0	2	Gluconate transporter
+A0A3R0YE72	0	0	0	0	2	MFS transporter
+A0A3R2DK79	0	0	0	0	2	Cytosine deaminase
+A0A3R2GG36	0	0	0	0	2	GTP-binding protein TypA/BipA
+A0A3R2H1Y7	0	0	0	0	3	Na(+)/H(+) antiporter NhaP
+A0A3R2JXT0	0	0	0	0	1	Small-conductance mechanosensitive channel
+A0A3R2UHU7	0	0	0	0	1	Sensor histidine kinase YpdA
+A0A3R3EHL3	0	0	0	0	2	Putative poly(Glycerol-phosphate) alpha-glucosyltransferase
+A0A3R3URS1	0	0	0	0	3	HTH-type transcriptional regulator GntR
+A0A3R5A0L6	0	0	0	0	1	Regulatory protein UhpC
+A0A3R5DR20	0	0	0	0	1	Pyridoxal phosphate phosphatase YigL
+A0A3R5E0D6	0	0	0	0	2	Lipopolysaccharide export system ATP-binding protein LptB
+A0A3R7G1N1	0	0	0	0	3	Pirin domain-containing protein
+A0A3R9KJK5	0	0	1	0	0	Ktr system potassium uptake protein A
+A0A3S4DMR7	0	0	0	1	0	Ion-channel protein
+A0A3S4DNS5	0	0	0	1	0	Glutamate synthase [NADPH] small chain
+A0A3S4DRS5	0	0	0	1	0	Cytochrome B561
+A0A3S4DVV6	0	0	0	2	0	Cyclic di-GMP-binding protein
+A0A3S4DY16	0	0	0	1	0	NADH dehydrogenase
+A0A3S4E0N5	0	0	0	1	0	Peptide ABC transporter substrate-binding protein
+A0A3S4E4B1	0	0	0	1	0	FIG138056: a glutathione-dependent thiol reductase
+A0A3S4EAU6	0	0	0	2	0	Uncharacterized protein
+A0A3S4EST3	0	0	1	0	0	30S ribosomal protein S12
+A0A3S4F6R1	0	0	0	3	0	Monooxygenase oxidoreductase
+A0A3S4FTH9	0	0	0	1	0	Heme exporter protein D
+A0A3S4G0I7	0	0	0	1	0	GntR family transcriptional regulator
+A0A3S4HTJ8	0	0	0	1	0	C-type cytochrome biogenesis protein CcmI
+A0A3S4HX54	0	0	0	2	0	Small-conductance mechanosensitive channel
+A0A3S4IDX6	0	0	0	3	0	Peptidase B
+A0A3S4KBF2	0	0	0	1	0	Adenosylmethionine-8-amino-7-oxononanoate aminotransferase
+A0A3S4KG54	0	0	0	1	0	Aldehyde dehydrogenase
+A0A3S4KKZ2	0	0	0	1	0	Arylsulfatase
+A0A3S4KYU3	0	0	0	3	0	Isomerase
+A0A3S4LC08	0	0	0	1	0	Transcriptional regulator, AsnC family
+A0A3S4PB22	0	0	0	2	0	Altronate hydrolase
+A0A3S4PC56	0	0	0	5	0	Phosphoribosylformylglycinamidine synthase
+A0A3S4RZ18	0	1	0	0	0	Carbon starvation induced regulator
+A0A3S4SV40	0	0	0	0	1	Rrf2 family protein
+A0A3S4T464	0	0	0	0	3	Oligopeptidase A
+A0A3S4U9H6	0	0	0	0	1	Glycosyl transferase family protein
+A0A3S4UWZ9	0	0	0	0	1	Histidine ammonia-lyase
+A0A3S4WPP6	0	0	0	0	1	Carbonic anhydrase
+A0A3S4WPV9	0	0	0	0	1	Nucleoside permease NupC
+A0A3S4WZX1	0	0	0	0	2	Low affinity tryptophan permease
+A0A3S5D8G8	0	0	0	1	0	Trilactone hydrolase IroD
+A0A3S5DAK4	0	0	0	1	0	Oxygen-independent coproporphyrinogen-III oxidase 2
+A0A3S5KMM4	0	1	0	0	0	ACR3 family arsenite efflux transporter
+A0A3T0NSV3	0	0	0	1	0	Histidine kinase
+A0A3T1A2W9	0	0	0	0	1	Branched-chain amino acid transport system carrier protein
+A0A3T1A2Z3	0	0	0	0	1	Uncharacterized protein
+A0A3T1A3Q0	0	0	0	0	1	Methyl-accepting chemotaxis protein
+A0A3T1A3R8	0	0	0	0	1	DM13 domain-containing protein
+A0A3T7AV19	0	0	0	0	1	ABC transporter integral membrane protein
+A0A3T9U2E0	0	0	0	1	0	Fimbrial protein
+A0A3T9U2E4	0	0	0	1	0	Molecular chaperone FimC
+A0A3U3P3A7	0	0	0	0	1	PapC_C domain-containing protein
+A0A3U4MUH4	0	0	0	0	1	Fimbrial protein
+A0A3V8SRI1	0	0	0	0	1	ATP-dependent helicase HrpB
+A0A3Y4A9V3	0	0	0	2	0	Dihydroxyacetone kinase subunit DhaM
+A0A3Y5MTI2	0	0	0	0	1	Uncharacterized protein
+A0A3Y5WIC5	0	0	0	0	1	Citrate (Pro-3S)-lyase subunit beta
+A0A3Z3NAB9	0	0	0	0	1	Sodium:alanine symporter family protein
+A0A404W7F2	0	0	0	0	1	Putative electron transport protein YccM
+A0A415AE19	0	1	0	0	0	Fib_succ_major domain-containing protein
+A0A422V9I9	0	0	0	1	0	Fimbrial protein
+A0A422W6E5	0	0	0	1	0	2-octaprenyl-6-methoxyphenyl hydroxylase
+A0A428VQ77	0	0	0	0	1	Transport permease protein
+A0A430EUD0	0	0	0	1	0	Protein of uncharacterized function (DUF1407)
+A0A433GL64	0	0	0	0	1	Type II secretion system protein GspJ
+A0A443WWA8	0	0	0	2	0	Carboxypeptidase/penicillin-binding protein 1A
+A0A446CF05	0	0	0	1	0	Putative chromosome-partitioning protein ParB
+A0A447JDU9	0	0	0	1	0	Transposase
+A0A447L887	0	0	0	2	0	TonB-dependent siderophore receptor
+A0A447L9E0	0	0	0	1	0	Transcriptional regulator, GntR family
+A0A447L9R6	0	0	0	1	0	FIGfam138462: Acyl-CoA synthetase, AMP-(Fatty) acid ligase
+A0A447RSZ7	0	1	0	0	0	Xaa-Pro dipeptidase
+A0A447WHX2	0	1	0	0	0	Putrescine/spermidine ABC transporter ATPase
+A0A447WU41	0	0	0	1	0	D-ala-D-ala transporter subunit
+A0A447Y944	0	0	0	3	0	Ring hydroxylating dioxygenase, alpha subunit/Rieske (2Fe-2S) protein
+A0A447YB28	0	0	0	4	0	Permease PerM (= YfgO)
+A0A448KRQ1	0	0	0	0	2	2&apos;,3&apos;-cyclic-nucleotide 2&apos;-phosphodiesterase
+A0A448L1K8	0	0	0	0	1	DNA-binding transcriptional regulator NtrC
+A0A448L1S6	0	0	0	0	1	DNA-binding transcriptional repressor EbgR
+A0A449F1T6	0	0	0	1	0	Heat shock protein
+A0A449HQ34	0	0	0	0	3	Dipeptidase
+A0A449HQN4	0	0	0	0	3	Regulatory components of sensory transduction system
+A0A449HQV9	0	0	0	0	3	Protease II
+A0A449HRJ5	0	0	0	0	1	Amino acid transporter LysE
+A0A449HVU3	0	0	0	0	1	Sensor histidine kinase
+A0A454E0R3	0	0	0	0	3	Penicillin-binding protein 1B
+A0A454GA86	0	0	0	0	1	Amidohydrolase
+A0A454GIY4	0	0	0	0	2	Protoporphyrinogen oxidase
+A0A455TCE4	0	0	0	1	0	Single-stranded DNA-binding protein
+A0A481Q9J7	0	0	1	0	0	NAD(P)H-flavin reductase
+A0A482M8F2	0	0	2	0	0	AAA_15 domain-containing protein
+A0A483IFW7	0	0	0	2	0	6-phospho-beta-glucosidase
+A0A483L0B6	0	2	0	0	0	Histidine kinase
+A0A483LTH7	0	0	0	2	0	DNA-binding transcriptional repressor EbgR
+A0A483VC12	0	0	0	1	0	Transketolase
+A0A484X7M8	0	1	0	0	0	Thiamine biosynthesis protein ThiS
+A0A484YRK1	0	2	0	0	0	Ribose import ATP-binding protein RbsA
+A0A485RLH0	0	1	0	0	0	Vitamin B12 transporter BtuB
+A0A485YNV7	0	0	0	1	0	Osmolarity sensory histidine kinase EnvZ
+A0A486DDJ9	0	0	0	1	0	Manganese ABC transporter, ATP-binding protein SitB
+A0A486RDZ0	0	1	0	0	0	Biofilm formation protein HmsH
+A0A486URF7	0	1	0	0	0	Endoribonuclease L-PSP
+A0A486VIR1	0	1	0	0	0	L-rhamnose ABC transporter, transmembrane component 2
+A0A4Q2G014	0	0	0	1	0	TonB-dependent receptor
+A0A4U9G663	0	0	0	0	1	Outer membrane usher protein FimD
+A0KEB2	0	0	0	0	2	Virulence sensor protein BvgS
+A0KEB8	0	0	0	0	1	Tetratricopeptide repeat family
+A0KEC5	0	0	0	0	2	Uncharacterized protein
+A0KED7	0	0	0	0	2	Uncharacterized protein
+A0KED8	0	0	0	0	2	Uncharacterized protein
+A0KED9	0	0	0	0	1	EcpB_C domain-containing protein
+A0KEE1	0	0	0	0	1	N5-carboxyaminoimidazole ribonucleotide synthase
+A0KEE6	0	0	0	0	1	Vitamin B12 transporter BtuB
+A0KEF8	0	0	0	0	3	Probable protein kinase UbiB
+A0KEG7	0	0	0	0	1	DUF4382 domain-containing protein
+A0KEG8	0	0	0	0	1	Guanosine-5&apos;-triphosphate,3&apos;-diphosphate pyrophosphatase
+A0KEH3	0	0	0	0	4	3-octaprenyl-4-hydroxybenzoate carboxy-lyase
+A0KEJ0	0	0	0	0	1	Anaerobic nitric oxide reductase transcription regulator NorR
+A0KEJ1	0	0	0	0	1	Anaerobic nitric oxide reductase flavorubredoxin
+A0KEJ8	0	0	0	0	1	Putative kinase
+A0KEJ9	0	0	0	0	5	Glycine--tRNA ligase beta subunit
+A0KEK2	0	0	0	0	1	Methyl-accepting chemotaxis protein
+A0KEK7	0	0	0	0	2	ABC-type sugar transport system, periplasmic component
+A0KEL0	0	0	0	0	2	3-ketoacyl-CoA thiolase
+A0KEM2	0	0	0	0	1	Glucose-6-phosphate isomerase
+A0KEN1	0	0	0	0	1	Uncharacterized protein
+A0KEN2	0	0	0	0	1	Formamidopyrimidine-DNA glycosylase
+A0KEN3	0	0	0	0	1	Uncharacterized protein
+A0KEN8	0	0	0	0	3	3-deoxy-D-manno-octulosonic acid transferase
+A0KEQ0	0	0	0	0	4	Glycerol-3-phosphate acyltransferase
+A0KEQ5	0	0	0	0	1	DNA-damage-inducible protein F
+A0KEQ7	0	0	0	0	3	Sensor histidine kinase CpxA
+A0KES2	0	0	0	0	2	Sodium/bile acid symporter family protein
+A0KET2	0	0	0	0	1	DNA helicase
+A0KET3	0	0	0	0	1	ATPase_AAA_core domain-containing protein
+A0KET4	0	0	0	0	1	Conserved domain protein
+A0KEU4	0	0	0	0	1	LysR family transcriptional regulator
+A0KEU7	0	0	0	0	2	Uncharacterized protein
+A0KEV0	0	0	0	0	3	Magnesium-translocating P-type ATPase
+A0KEV9	0	0	0	0	1	Glutamine amidotransferase, class I
+A0KEW0	0	0	0	0	2	Alanine dehydrogenase
+A0KEW5	0	0	0	0	3	DNA recombination protein RmuC
+A0KEY0	0	0	0	0	2	Probable GTP-binding protein EngB
+A0KEY5	0	0	0	0	1	Adenosine deaminase
+A0KEY8	0	0	0	0	1	DUF4124 domain-containing protein
+A0KEZ3	0	0	0	0	2	Methyltransf_25 domain-containing protein
+A0KF08	0	0	0	0	2	Glycerol-3-phosphate dehydrogenase [NAD(P)+]
+A0KF11	0	0	0	0	1	Pimeloyl-[acyl-carrier protein] methyl ester esterase
+A0KF13	0	0	0	0	1	Uncharacterized protein
+A0KF18	0	0	0	0	1	Osmolarity sensor protein EnvZ
+A0KF19	0	0	0	0	2	Transporter, drug/metabolite exporter family
+A0KF24	0	0	0	0	1	50S ribosomal protein L2
+A0KF27	0	0	0	0	1	30S ribosomal protein S3
+A0KF28	0	0	0	0	1	50S ribosomal protein L16
+A0KF31	0	0	0	0	1	50S ribosomal protein L14
+A0KF40	0	0	0	0	1	50S ribosomal protein L15
+A0KF44	0	0	0	0	1	30S ribosomal protein S4
+A0KF45	0	0	0	0	2	DNA-directed RNA polymerase subunit alpha
+A0KF57	0	0	0	0	1	TRAP transporter, 4TM/12TM fusion protein
+A0KF84	0	0	0	0	2	Imidazolonepropionase
+A0KF85	0	0	0	0	1	Formimidoylglutamase
+A0KF86	0	0	0	0	2	Urocanate hydratase
+A0KF89	0	0	0	0	2	EAL domain protein
+A0KF96	0	0	0	0	2	Msha biogenesis protein mshl
+A0KFA2	0	0	0	0	1	Msha pilin protein mshb
+A0KFA6	0	0	0	0	1	MshQ
+A0KFB2	0	0	0	0	2	Uncharacterized protein
+A0KFB9	0	0	0	0	2	PTS system, IIBC components
+A0KFC0	0	0	0	0	1	N-acetylmuramic acid 6-phosphate etherase
+A0KFC2	0	0	0	0	1	UPF0056 inner membrane protein
+A0KFC4	0	0	0	0	1	Diphthami_syn_2 domain-containing protein
+A0KFC6	0	0	0	0	1	Hybrid sensory kinase
+A0KFD1	0	0	0	0	1	Uncharacterized protein
+A0KFD5	0	0	0	0	1	HDOD domain-containing protein
+A0KFD9	0	0	0	0	3	Methionine synthase
+A0KFF0	0	0	0	0	1	Thiazole synthase
+A0KFF3	0	0	0	0	1	Putative acetyltransferase
+A0KFF7	0	0	0	0	1	GGDEF family protein
+A0KFG0	0	0	0	0	1	OMP_b-brl domain-containing protein
+A0KFG1	0	0	0	0	1	Acetyltransferase, GNAT family
+A0KFG7	0	0	0	0	1	PepSY-associated TM helix family
+A0KFH1	0	0	0	0	2	Fructose-1,6-bisphosphatase
+A0KFH6	0	0	0	0	1	Porphobilinogen deaminase
+A0KFH9	0	0	0	0	2	Iron-sulfur cluster assembly protein CyaY
+A0KFI0	0	0	0	0	1	Diaminopimelate decarboxylase
+A0KFI1	0	0	0	0	1	Diaminopimelate epimerase
+A0KFJ4	0	0	0	0	1	CinA-like protein
+A0KFK1	0	0	0	0	1	TonB-dependent copper receptor
+A0KFK6	0	0	0	0	2	Uncharacterized protein
+A0KFL8	0	0	0	0	1	Lipase chaperone, putative
+A0KFM1	0	0	0	0	1	Uncharacterized protein
+A0KFM8	0	0	0	0	1	Outer membrane usher protein
+A0KFM9	0	0	0	0	1	Fimbrial chaperone protein
+A0KFN2	0	0	0	0	2	Uncharacterized protein
+A0KFN3	0	0	0	0	1	Transcriptional regulatory protein, C terminal
+A0KFN4	0	0	0	0	1	O-succinylbenzoate-CoA ligase
+A0KFN5	0	0	0	0	1	o-succinylbenzoate synthase
+A0KFN8	0	0	0	0	1	2-succinyl-5-enolpyruvyl-6-hydroxy-3-cyclohexene-1-carboxylate synthase
+A0KFN9	0	0	0	0	1	Isochorismate synthase MenF
+A0KFP0	0	0	0	0	1	1,4-dihydroxy-2-naphthoate octaprenyltransferase
+A0KFP7	0	0	0	0	2	Putative hydrolase
+A0KFQ8	0	0	0	0	1	Pts system mannitol-specific eiicba component (Eiicba-mtl) (Eii-mtl)
+A0KFR1	0	0	0	0	3	Exoribonuclease 2
+A0KFT8	0	0	0	0	1	Tyrosine--tRNA ligase
+A0KFU6	0	0	0	0	2	O-succinylhomoserine (Thiol)-lyase
+A0KR13	0	0	0	0	3	Hypothetical phosphoglycerate transport regulatory protein PgtB
+A0KR14	0	0	0	0	2	C4-dicarboxylate transport transcriptional regulatory protein DctD
+A0KR16	0	0	0	0	1	Glutathione-disulfide reductase
+A0KR19	0	0	0	0	2	Acriflavin resistance plasma membrane protein
+A0KR24	0	0	0	0	1	Chloramphenicol acetyltransferase
+A0KR25	0	0	0	0	1	tRNA (guanosine(18)-2&apos;-O)-methyltransferase
+A0QNF3	1	0	0	0	0	Aspartate 1-decarboxylase
+A0QNF4	1	0	0	0	0	L-ornithine 5-monooxygenase
+A0QNF7	1	0	0	0	0	Uncharacterized protein
+A0QNG1	1	0	0	0	0	Serine/threonine-protein kinase PknB
+A0QNH4	1	0	0	0	0	Putative ESX-1 scaffolding and assembly protein SaeA
+A0QNH5	2	0	0	0	0	Putative ESX-1 scaffolding and assembly protein SaeB
+A0QNH6	1	0	0	0	0	Putative ESX-1 scaffolding and assembly protein SaeC
+A0QNI2	1	0	0	0	0	Uncharacterized protein
+A0QNI5	1	0	0	0	0	ESX-1 secretion-associated protein EspE
+A0QNI7	2	0	0	0	0	ESX-1 secretion-associated protein EspG1
+A0QNJ0	4	0	0	0	0	ESX-1 secretion system ATPase EccB1
+A0QNJ7	3	0	0	0	0	CbiA domain-containing protein
+A0QNJ9	1	0	0	0	0	Translation initiation factor IF-2 protein
+A0QNK2	4	0	0	0	0	IS1549, transposase
+A0QNK5	1	0	0	0	0	Uncharacterized protein
+A0QNK7	2	0	0	0	0	Uncharacterized protein
+A0QNL0	1	0	0	0	0	ESX-1 secretion system protein EccE1
+A0QNL8	2	0	0	0	0	Uncharacterized protein
+A0QNM2	1	0	0	0	0	Putative S-adenosyl-L-methionine-dependent methyltransferase MSMEG_0095/MSMEI_0092
+A1JHR0	0	0	1	0	0	Aspartate--ammonia ligase
+A1JHR3	0	0	0	0	1	Protein ViaA
+A1JHR6	0	0	4	0	1	Low affinity potassium transport system protein kup
+A1JHR7	0	0	1	0	0	Formamidopyrimidine-DNA glycosylase
+A1JHT5	0	0	1	0	0	Der GTPase-activating protein YihI
+A1JHU4	0	0	1	0	0	D-aminoacyl-tRNA deacylase
+A1JHU7	0	0	1	0	0	LuxR family transcription regulatory protein
+A1JHU8	0	0	2	0	0	LuxR family transcription regulatory protein
+A1JHV0	0	0	1	0	0	LuxR family transcription regulatory protein
+A1JHV9	0	0	1	0	0	DNA ligase B
+A1JHW9	0	0	2	0	0	Nucleoid occlusion factor SlmA
+A1JHY1	0	0	1	0	0	2,3-bisphosphoglycerate-independent phosphoglycerate mutase
+A1JHZ3	0	0	2	0	0	ATP-dependent 6-phosphofructokinase
+A1JHZ7	0	0	4	0	0	Triosephosphate isomerase
+A1JI01	0	0	1	0	0	Multidrug resistance protein D
+A1JI09	0	0	2	0	0	ATP-dependent protease subunit HslV
+A1JI12	0	0	1	0	0	Primosomal protein N&apos;
+A1JI17	0	0	4	0	0	Uncharacterized protein
+A1JI20	0	0	4	0	0	Phosphoenolpyruvate carboxylase
+A1JI24	0	0	1	0	0	Argininosuccinate lyase
+A1JI30	0	0	3	0	0	ABC transporter protein
+A1JI33	0	0	1	0	0	Transposase for IS1330
+A1JI37	0	0	1	0	0	Soluble pyridine nucleotide transhydrogenase
+A1JI41	0	0	1	0	0	Vitamin B12 transporter BtuB
+A1JI42	0	0	3	0	0	Glutamate racemase
+A1JI47	0	0	1	0	0	HTH-type transcriptional regulator HdfR
+A1JI50	0	0	2	0	0	Acetolactate synthase
+A1JI55	0	0	1	0	0	Putative membrane protein
+A1JI65	0	0	2	0	0	Exo-poly-alpha-D-galacturonosidase
+A1JI66	0	0	2	0	0	Guanosine-5&apos;-triphosphate,3&apos;-diphosphate pyrophosphatase
+A1JI79	0	0	2	0	0	TDP-N-acetylfucosamine:lipid II N-acetylfucosaminyltransferase
+A1JI85	0	0	1	0	0	Uroporphyrinogen-III synthase
+A1JI86	0	0	1	0	0	Porphobilinogen deaminase
+A1JID5	0	0	2	0	0	Putative exported protein
+A1JID9	0	0	2	0	0	sn-glycerol-3-phosphate transport system permease protein UgpE
+A1JIE0	0	0	1	0	0	sn-glycerol-3-phosphate import ATP-binding protein UgpC
+A1JIE2	0	0	2	0	0	Putative membrane protein
+A1JIE5	0	0	4	0	0	5-methyltetrahydropteroyltriglutamate--homocysteine methyltransferase
+A1JIF2	0	0	1	0	0	Ubiquinone/menaquinone biosynthesis C-methyltransferase UbiE
+A1JIF9	0	0	2	0	0	Delta-aminolevulinic acid dehydratase
+A1JIG4	0	0	3	0	0	Fatty acid oxidation complex subunit alpha
+A1JIG5	0	0	2	0	0	Xaa-Pro dipeptidase
+A1JIH9	0	0	1	0	0	50S ribosomal protein L7/L12
+A1JII4	0	0	1	0	0	Thiazole synthase
+A1JIJ2	0	0	1	0	0	Endonuclease V
+A1JIJ7	0	0	3	0	0	Bifunctional purine biosynthesis protein PurH
+A1JIJ9	0	0	1	0	0	Putative transposase for insertion element IS1669
+A1JIM5	0	0	1	0	0	Uncharacterized protein
+A1JJC5	0	0	2	0	0	Transposase for insertion sequence element IS1660
+A1JS01	0	0	2	0	0	DNA-directed RNA polymerase subunit alpha
+A1JU61	0	0	2	0	0	Putative transposase
+A1S223	0	1	0	0	0	50S ribosomal protein L22
+A2RZX4	1	0	0	0	0	Isoprenylcysteine carboxyl methyltransferase family protein
+A3CJW6	0	1	0	0	0	Chromosomal replication initiator protein DnaA
+A3CJW7	0	2	0	0	0	Beta sliding clamp
+A3DAL3	0	2	0	0	0	Integrase, catalytic region
+A3N357	0	0	1	0	0	30S ribosomal protein S10
+A3N5Q3	1	0	1	0	0	YcaO domain-containing protein
+A3N5R1	2	0	0	0	0	ElaA family protein
+A3N5S9	1	0	0	0	0	Glycosyltransferase, group 1 family
+A3NQX0	2	0	0	0	0	D-alanyl-D-alanine carboxypeptidase
+A4SS45	0	0	0	0	2	Mannitol-1-phosphate 5-dehydrogenase
+A4SS61	0	0	0	0	1	33 kDa chaperonin
+A4SS85	0	0	0	0	2	Bifunctional aspartokinase/homoserine dehydrogenase
+A4ST23	0	0	0	0	3	2,3-bisphosphoglycerate-independent phosphoglycerate mutase
+A4ST32	0	0	0	0	2	ATP-dependent DNA helicase RecG
+A4STB5	0	0	0	0	1	4-hydroxybenzoate octaprenyltransferase
+A4W500	0	0	1	0	0	DNA-directed RNA polymerase subunit omega
+A4W5A0	0	0	5	1	0	Elongation factor Tu
+A4W5R8	0	2	0	0	0	Adenylosuccinate synthetase
+A4W6D5	0	0	0	0	2	Chaperone protein DnaK
+A4W6J9	0	0	0	0	1	UDP-3-O-acyl-N-acetylglucosamine deacetylase
+A4W6K1	0	0	0	0	3	Protein translocase subunit SecA
+A4W6N6	0	0	0	0	1	Aspartate 1-decarboxylase
+A4WD56	0	0	0	1	0	Phosphoribosylaminoimidazole-succinocarboxamide synthase
+A4WDU5	0	0	0	4	0	DNA mismatch repair protein MutS
+A4WDV3	0	0	0	1	0	Cell division protein FtsB
+A4WE66	0	0	0	3	0	HTH-type transcriptional regulator ArgP
+A4WE75	0	0	0	1	0	Agmatinase
+A4WEY4	0	0	0	2	0	Transcription termination/antitermination protein NusA
+A4WFE4	0	0	2	0	0	Glutathione-regulated potassium-efflux system protein KefB
+A4WFY5	0	2	0	0	0	Ubiquinone/menaquinone biosynthesis C-methyltransferase UbiE
+A4WG08	0	1	0	0	0	Diaminopimelate epimerase
+A4WG55	0	3	0	0	0	Phosphoenolpyruvate carboxylase
+A5HXQ7	0	3	0	0	0	UPF0182 protein CBO0011/CLC_0020
+A5HXS3	0	2	0	0	0	Probable regulatory protein
+A5HXU0	0	1	0	0	0	Uncharacterized protein
+A5HXU5	0	1	0	0	0	Putative muramoyl-tetrapeptide carboxypeptidase
+A5HXU8	0	2	0	0	0	Peptidase M20 domain-containing protein 2
+A5HXV7	0	2	0	0	0	MTS domain-containing protein
+A5HXX3	0	1	0	0	0	Putative membrane protein
+A5TVF5	0	0	0	0	1	dTDP-glucose 4,6-dehydratase
+A6TC38	0	0	0	1	0	Divalent metal cation transporter MntH
+A6TCE3	0	0	0	1	0	Enhanced serine sensitivity
+A6TCE7	0	0	0	1	0	Chaperone protein HscA
+A6TCV9	0	0	0	2	0	Alanine--tRNA ligase
+A6TCX4	0	0	0	1	0	Anaerobic nitric oxide reductase transcription regulator NorR
+A6TCX5	0	0	0	2	0	Anaerobic nitric oxide reductase flavorubredoxin
+A6TCX6	0	0	0	2	0	Nitric oxide reductase FlRd-NAD(+) reductase
+A6TD37	0	0	0	1	0	tRNA pseudouridine synthase D
+A6TDG7	0	0	0	1	0	DNA mismatch repair protein MutH
+A6TDH1	0	0	0	1	0	Lysophospholipid transporter LplT
+A6TDH2	0	0	0	1	0	Bifunctional protein Aas
+A6TDV3	0	0	0	1	0	Protein SprT
+A6TDZ7	0	0	0	1	0	UPF0114 protein KPN78578_33570
+A6TE25	0	0	0	1	0	UPF0441 protein KPN78578_33850
+A6TE31	0	0	0	1	0	Bifunctional protein HldE
+A6TE32	0	0	0	4	0	Bifunctional glutamine synthetase adenylyltransferase/adenylyl-removing enzyme
+A6TE38	0	0	0	2	0	Glycerol-3-phosphate acyltransferase
+A6TEB8	0	0	0	2	0	Autoinducer 2 import ATP-binding protein LsrA
+A6TEI5	0	0	0	1	0	tRNA pseudouridine synthase B
+A6TET6	0	0	0	2	0	Threonylcarbamoyl-AMP synthase
+A6TEU1	0	0	0	1	0	Methionyl-tRNA formyltransferase
+A6TF13	0	0	0	1	0	3-dehydroquinate synthase
+A6TF97	0	0	0	1	0	Probable 4-deoxy-4-formamido-L-arabinose-phosphoundecaprenol deformylase ArnD
+A6TF98	0	0	0	1	0	Bifunctional polymyxin resistance protein ArnA
+A6TF99	0	0	0	1	0	Undecaprenyl-phosphate 4-deoxy-4-formamido-L-arabinose transferase
+A6TFA9	0	0	0	1	0	Putative Mg/Co/Ni transporter MgtE
+A6TG48	0	2	0	0	0	Aspartate--ammonia ligase
+A6TG57	0	1	0	0	0	Regulator for rbs operon
+A6TG76	0	1	0	0	0	UPF0761 membrane protein KPN78578_41360
+A6TGA6	0	2	0	0	0	Rhamnulose-1-phosphate aldolase
+A6TGB0	0	3	0	0	0	HTH-type transcriptional activator RhaR
+A6TGB7	0	1	0	0	0	Cation-efflux pump FieF
+A6TGD0	0	1	0	0	0	Zn_Tnp_IS1 domain-containing protein
+A6TGE2	0	1	0	0	0	N-acetyl-gamma-glutamyl-phosphate reductase
+A6TGL5	0	1	0	0	0	Probable protein kinase UbiB
+A6TGR8	0	1	0	0	0	Isocitrate dehydrogenase kinase/phosphatase
+A6TGU0	0	1	0	0	0	UPF0597 protein KPN78578_43500
+A6TH13	0	1	0	0	0	Ribose 1,5-bisphosphate phosphokinase PhnN
+A6TH51	0	2	0	0	0	Putative transport
+A6U5D5	0	2	0	0	0	Activator of Hsp90 ATPase 1 family protein
+A6U5D6	0	1	0	0	0	Glyoxalase/bleomycin resistance protein/dioxygenase
+A6U5E1	0	2	0	0	0	Heat-inducible transcription repressor HrcA
+A6U5E2	0	1	0	0	0	Protein GrpE
+A6U5E8	0	1	0	0	0	Uncharacterized protein
+A6U5F8	0	1	0	0	0	Uncharacterized protein
+A6U5G0	0	2	0	0	0	DNA mismatch repair protein MutS
+A6U5G1	0	1	0	0	0	Bifunctional uridylyltransferase/uridylyl-removing enzyme
+A6UFG5	0	1	0	0	0	Uncharacterized protein
+A6UFG8	0	1	0	0	0	DUF2384 domain-containing protein
+A6UJK8	0	1	0	0	0	Alpha/beta hydrolase fold
+A6UJL2	0	1	0	0	0	Oligopeptide/dipeptide ABC transporter, ATPase subunit
+A6UKI1	0	2	0	0	0	Ti-type conjugative transfer relaxase TraA
+A6VLJ8	0	0	1	1	0	50S ribosomal protein L14
+A7FCZ8	0	0	1	0	0	Acetylornithine deacetylase
+A7FPF3	0	2	0	0	0	DNA replication and repair protein RecF
+A7FQ59	0	1	0	0	0	Phosphatidylserine decarboxylase proenzyme
+A7GJR9	0	0	1	0	0	Chromosomal replication initiator protein DnaA
+A7GJS2	0	0	1	0	0	DNA replication and repair protein RecF
+A7MGY5	0	0	0	1	0	Serine hydroxymethyltransferase
+A7MJD4	0	0	1	0	0	RNase adapter protein RapZ
+A7MKP4	0	0	0	1	0	C4-dicarboxylate transport protein
+A7MNS2	0	0	0	2	0	UDP-N-acetylglucosamine 1-carboxyvinyltransferase
+A7MQ75	0	0	1	0	0	Glycerol-3-phosphate dehydrogenase [NAD(P)+]
+A7ZHF3	0	0	0	0	1	L-arabinose isomerase
+A7ZQ55	0	0	0	1	0	NAD kinase
+A7ZSJ7	0	0	1	2	0	50S ribosomal protein L5
+A7ZSK6	0	0	1	1	0	50S ribosomal protein L2
+A7ZSN0	0	0	2	0	0	UPF0270 protein YheU
+A7ZSR5	0	0	1	0	0	Shikimate kinase 1
+A7ZTE9	0	0	1	0	0	Mannitol-1-phosphate 5-dehydrogenase
+A7ZTY2	0	1	0	0	0	ATP-dependent RNA helicase RhlB
+A7ZUK2	0	1	0	0	0	DNA-directed RNA polymerase subunit beta&apos;
+A7ZV33	0	1	0	0	0	Oligoribonuclease
+A8ALC0	0	0	0	0	1	Elongation factor Ts
+A8ALJ5	0	0	0	0	1	Cell division protein ZapD
+A8AN29	0	2	0	0	0	Acetyl-coenzyme A synthetase
+A8AR31	0	0	1	0	0	Sulfur carrier protein TusA
+A8AUA2	0	0	1	0	0	Bifunctional purine biosynthesis protein PurH
+A8F0C9	0	0	1	0	0	ATP synthase subunit a
+A8GCZ4	0	0	0	2	0	Amino acid/peptide transporter
+A9AI97	1	0	2	0	0	Chromosomal replication initiator protein DnaA
+A9CEI7	0	0	1	0	0	Uncharacterized protein
+A9CKT4	0	0	1	0	0	NAD(P)H-flavin oxidoreductase
+A9MKN9	0	0	2	0	0	Formamidopyrimidine-DNA glycosylase
+A9MN68	0	0	1	0	0	50S ribosomal protein L15
+A9MQA1	0	0	0	0	2	T2SP_E domain-containing protein
+A9MQC6	0	0	0	0	1	UDP-N-acetylmuramoyl-tripeptide--D-alanyl-D-alanine ligase
+A9MR51	0	0	0	0	2	Arylsulfotran_N domain-containing protein
+A9MR55	0	0	0	0	1	Uncharacterized protein
+A9MR57	0	0	0	0	2	Arylsulfotran_N domain-containing protein
+A9MYK3	0	0	0	0	1	Protein FixA
+A9WAN1	1	0	0	0	0	Chromosomal replication initiator protein DnaA
+B0RLE5	0	0	0	0	1	Protein TonB
+B1KRT5	0	1	0	0	0	DNA polymerase III subunit gamma/tau
+B1KRV9	0	2	0	0	0	Uncharacterized protein
+B1KRX8	0	1	0	0	0	Spore maturation protein A
+B1L1L2	0	1	0	0	0	DNA gyrase subunit A
+B1P7N9	0	1	0	0	0	ATP-dependent endonuclease
+B5R1Q8	0	0	0	0	1	Carnitine operon protein CaiE
+B5RCP1	0	0	0	1	0	Glutamate--tRNA ligase
+B5RH80	0	0	0	0	2	Protein transport protein HofC
+B5XNF8	0	0	0	1	0	Uracil-DNA glycosylase
+B5XNK8	0	0	0	2	0	Sulfurtransferase
+B5XSW5	0	0	0	2	0	Phosphoglucosamine mutase
+B5XSY4	0	0	0	2	0	Peptidase, U32 family
+B5XUD3	0	0	0	2	0	Aminomethyltransferase
+B5XV76	0	0	0	1	0	Hydrogenase maturation factor
+B5XXX7	0	1	0	0	0	Class B acid phosphatase
+B5XYF7	0	1	0	0	0	50S ribosomal protein L10
+B5XZH9	0	1	0	0	0	Protein FdhE homolog
+B5Y365	0	3	0	0	0	Microcin H47 ABC transporter, permease/ATP-binding protein
+B5Y366	0	1	0	0	0	Uncharacterized protein
+B5Y378	0	3	0	0	0	Conserved domain protein
+B7LMT9	0	0	0	1	0	Ribosomal RNA small subunit methyltransferase I
+B7LRS1	0	0	0	1	0	50S ribosomal protein L6
+B7LSY9	0	0	1	0	0	Putative membrane protein
+B7MGB3	0	0	1	0	0	D-galactonate dehydratase
+B7NDU8	0	0	3	2	0	Elongation factor G
+B7NEL7	0	0	1	0	0	Xylose isomerase
+B8ZTP0	0	0	0	0	1	DNA replication and repair protein RecF
+B8ZTR5	0	0	0	0	1	Leucine--tRNA ligase
+C1FPH3	0	4	0	0	0	Chromosomal replication initiator protein DnaA
+C1FPI2	0	1	0	0	0	Iron-sulfur cluster-binding protein
+C1FPI7	0	1	0	0	0	Serine--tRNA ligase
+C3SHC2	0	1	0	0	0	Cation/proton antiporter
+C3SNW7	0	0	1	0	0	Ribosomal RNA large subunit methyltransferase J
+C3SSR2	0	0	0	3	0	Polyribonucleotide nucleotidyltransferase
+C4AU30	1	0	0	0	0	Non-specific serine/threonine protein kinase
+C4AU69	1	0	0	0	0	Aldehyde dehydrogenase
+C4KNT8	1	0	0	0	0	ABC transporter, ATP-binding protein
+C4NUQ5	0	2	0	0	0	Uncharacterized protein
+C4NUQ8	0	1	0	0	0	Uncharacterized protein
+C4NUR7	0	1	0	0	0	Fe3+-siderophore ABC transporter permease
+C4NW59	0	1	0	0	0	Uncharacterized protein
+C4SEE1	0	0	3	0	0	MFS domain-containing protein
+C4SH79	0	0	2	0	0	AA_permease domain-containing protein
+C6DBJ1	0	0	0	1	0	Cysteine desulfurase IscS
+C6DG58	0	0	1	0	0	50S ribosomal protein L18
+C7SA56	0	0	2	0	0	Conjugal transfer protein
+C7XQN9	0	1	0	0	1	MFS domain-containing protein
+C7XQP5	0	1	0	0	0	ABC transmembrane type-1 domain-containing protein
+C7XQT8	0	0	0	0	1	Protein translocase subunit SecY
+C7XQW7	0	0	0	0	1	ABC transmembrane type-1 domain-containing protein
+C7XQX1	0	0	0	0	2	DUF1858 domain-containing protein
+C7XRY3	0	0	0	0	2	DHHA1 domain-containing protein
+C8T0G0	0	1	0	0	0	RmuC domain protein
+C9XZJ1	0	0	0	1	0	Amino-acid acetyltransferase
+D1B7I9	0	0	0	0	1	Chromosomal replication initiator protein DnaA
+D1B7J0	0	0	0	0	1	Beta sliding clamp
+D1B7J5	0	0	0	0	1	Superoxide reductase
+D1B7J6	0	0	0	0	2	Extracellular solute-binding protein family 5
+D1B7K2	0	0	0	0	1	Glycosyl transferase group 1
+D1B7K8	0	0	0	0	2	Isocitrate dehydrogenase [NADP]
+D1B7L1	0	0	0	0	1	Citrate lyase alpha chain
+D1B7L2	0	0	0	0	1	Uncharacterized protein
+D1B7L3	0	0	0	0	1	ATPase_AAA_core domain-containing protein
+D1B7L4	0	0	0	0	3	Peptidase T-like protein
+D1B7L5	0	0	0	0	2	AbgT putative transporter
+D1B7L6	0	0	0	0	2	Ornithine aminotransferase
+D1B7L7	0	0	0	0	3	Acriflavin resistance protein
+D1JQ45	0	1	0	0	0	Uncharacterized protein
+D1W253	0	3	0	0	0	Conjugation system ATPase, TraG family
+D2TQ96	0	0	0	3	0	Trimethylamine-N-oxide reductase 2
+D3H626	0	0	4	0	0	tRNA(Ile)-lysidine synthase
+D3H639	0	0	1	0	0	Uncharacterized protein
+D3H643	0	0	1	0	0	Uncharacterized protein
+D3H644	0	0	1	0	0	Choline binding protein Cbp1
+D3H663	0	0	3	0	0	HTH cro/C1-type domain-containing protein
+D3H6A2	0	0	1	0	0	Cell wall surface anchor family protein
+D3H6A7	0	0	1	0	0	Cys_rich_CPCC domain-containing protein
+D3H6T1	0	0	2	0	0	Transposase, ISSmi1
+D4E0E9	0	0	1	0	0	Trk system potassium uptake protein
+D4GKM1	0	0	0	2	0	Ribonuclease 3
+D5RAW5	0	0	0	0	1	Riboflavin transporter ImpX
+D5RAX3	0	1	0	0	0	Riboflavin biosynthesis protein RibD
+D5RB70	0	0	0	0	1	Cell shape-determining protein MreB
+D5REL3	0	0	0	0	1	Acyl-CoA dehydrogenase, C-terminal domain protein
+D5REN2	0	0	0	0	1	ATPase_AAA_core domain-containing protein
+D5RF98	0	0	0	0	1	Mg chelatase-like protein
+E0SLR8	0	0	0	1	0	ISEch12 OrfB
+E1LLE3	0	0	2	0	0	DDE_Tnp_IS66_C domain-containing protein
+E1WJQ2	0	2	0	0	0	Uncharacterized protein
+E1WJR2	0	1	0	0	0	Conserved hypothetical iron transport-related transmembrane protein
+E1WJR9	0	1	0	0	0	Putative exported D-alanyl-D-alanine carboxypeptidase penicillin-binding protein
+E1WJT8	0	1	0	0	0	Uncharacterized protein
+E1WJZ1	0	3	0	0	0	Putative lipoprotein
+E3G0Z7	0	0	0	1	0	GCN5-related N-acetyltransferase
+E3G4P9	0	1	0	0	0	Acetylornithine deacetylase
+E3G7T0	0	0	0	1	0	Sigma 54 modulation protein/ribosomal protein S30EA
+E3GA68	0	0	0	1	0	Dipeptide and tripeptide permease B
+E4VWT3	0	1	0	0	0	DNA polymerase I
+E4VWV2	0	2	0	0	0	Uncharacterized protein
+E4VWX5	0	1	0	0	0	Methyltransferase domain protein
+E5WY64	0	2	0	0	0	Uncharacterized protein
+E5WY69	0	1	0	0	0	Uncharacterized protein
+E5WY71	0	1	0	0	0	CtnDOT_TraJ domain-containing protein
+E8PM64	2	0	0	0	0	3-oxoacyl-[acyl-carrier-protein] synthase 3
+E8PP22	1	0	0	0	0	Acetylornithine aminotransferase
+F0F849	0	1	0	0	0	TraG family protein
+F0KPK5	0	0	0	0	2	Big_6 domain-containing protein
+F0KPK6	0	0	0	0	1	Uncharacterized protein
+F0R8X3	0	1	0	0	0	Helicase domain protein
+F0THC7	0	0	1	0	0	Cyclic-di-AMP phosphodiesterase
+F1SW01	0	0	0	0	1	Lipase
+F3WR61	0	1	0	0	0	Formate dehydrogenase, alpha subunit
+F4MXK0	0	0	2	0	0	Uncharacterized protein yicH
+F4N3A4	0	0	1	0	0	STN domain-containing protein
+F4N3R4	0	0	2	0	0	HTH tetR-type domain-containing protein
+F5P379	0	0	1	0	0	Acetylornithine/succinyldiaminopimelate aminotransferase
+F5RR77	0	1	0	0	0	ATP-dependent 6-phosphofructokinase
+F6DD49	1	0	0	0	0	Uncharacterized protein
+F6DD81	2	0	0	0	0	Transketolase
+F6DDP8	2	0	0	0	0	3-oxoacyl-(Acyl-carrier-protein) reductase
+F6DEE5	1	0	0	0	0	Oligopeptide/dipeptide ABC transporter, ATPase subunit
+F6DFC7	1	0	0	0	0	Estradiol 17-beta-dehydrogenase
+F6DFM7	1	0	0	0	0	3-hydroxy-2-methylbutyryl-CoA dehydrogenase
+F6DFR0	1	0	0	0	0	Polyamine-transporting ATPase
+F6DFR5	1	0	0	0	0	Uncharacterized protein
+F6DG57	1	0	0	0	0	Prephenate dehydrogenase
+F6DG71	1	0	0	0	0	Putative PAS/PAC sensor protein
+F6DGB8	1	0	0	0	0	Glycosyl transferase family 2
+F6DGQ1	2	0	0	0	0	Glycerol-3-phosphate-transporting ATPase
+F6DI89	2	0	0	0	0	Uncharacterized protein
+F6DID8	1	0	0	0	0	NADPH dehydrogenase
+F6DJL3	1	0	0	0	0	Uncharacterized protein
+F6DJN4	1	0	0	0	0	Ribonuclease VapC
+F7LJI5	0	1	0	0	0	Uncharacterized protein
+F7LRN8	0	1	0	0	0	Conjugative transposon protein TraK
+F7M268	0	2	0	0	0	KAP NTPase domain-containing protein
+F7RT71	0	3	0	0	0	APH domain-containing protein
+F7RT78	0	2	0	0	0	Long-chain-fatty-acid--CoA ligase
+F7X5S6	0	1	0	0	0	Heme chaperone HemW
+F9EKZ5	0	0	0	0	1	Murein hydrolase export regulator LrgB
+F9EM65	0	0	0	0	2	Ser/Thr protein phosphatase
+G0CGQ4	0	0	0	0	1	Uncharacterized protein
+G0CGQ8	0	0	0	0	1	Endoglucanase
+G0CGS2	0	0	0	0	1	Lipoprotein, putative
+G0FET0	0	1	0	0	0	Insertion element IS1 1/5/6 protein insB
+G3F9D4	0	1	0	0	0	Uncharacterized protein
+G6C0J5	0	0	0	0	3	Tr-type G domain-containing protein
+G6C3G6	0	0	0	0	1	PHB domain-containing protein
+G6C533	0	0	0	0	1	ABC transmembrane type-1 domain-containing protein
+G8LCL6	0	0	0	1	0	Serine transporter
+G8LE00	0	0	0	4	0	Citrate lyase alpha chain
+G8LHG8	0	4	0	0	0	YjbB
+G8LHM8	0	2	0	0	0	Formate dehydrogenase H
+G8LKY7	0	1	0	0	0	UPF0438 protein yifE
+G8LNC0	0	0	0	1	0	Signal peptidase I
+G8NBP2	1	0	0	0	0	ABC transmembrane type-1 domain-containing protein
+G8NCY8	2	0	0	0	0	Transcription elongation factor GreA
+H3N2T7	0	0	0	2	0	HTH lysR-type domain-containing protein
+H3N306	0	0	0	2	0	Sigma-54 factor interaction domain-containing protein
+H4J6U6	0	0	1	0	0	Hg(II)-responsive transcriptional regulator
+H5T7C9	0	0	0	0	3	Cell shape-determining protein MreB
+H7GDR4	2	0	0	0	0	NodB homology domain-containing protein
+H7GDV4	1	0	0	0	0	MFS domain-containing protein
+H7GDY2	3	0	0	0	0	30S ribosomal protein S1
+H7GEX8	1	0	0	0	0	ZnF_CDGSH domain-containing protein
+H7GF32	1	0	0	0	0	Deoxyguanosinetriphosphate triphosphohydrolase-like protein
+H7GFN7	1	0	0	0	0	TPR_REGION domain-containing protein
+H7GFZ7	1	0	0	0	0	Adenosylmethionine decarboxylase
+H7GGL3	6	0	0	0	0	2-oxoglutarate dehydrogenase E1 component
+H7GIX2	1	0	0	0	0	Phosphoglucomutase
+H8FA72	0	0	0	0	1	Uncharacterized zinc-type alcohol dehydrogenase-like protein YahK
+H9ZNM8	3	0	0	0	0	Phage shock protein A (IM30), suppresses sigma54-dependent transcription
+H9ZNV7	1	0	0	0	0	Uncharacterized protein
+H9ZP26	1	0	0	0	0	Dihydrolipoamide acetyltransferase component of pyruvate dehydrogenase complex
+H9ZRK6	1	0	0	0	0	ABC-type sugar transport system, periplasmic component
+H9ZSF5	2	0	0	0	0	Transcriptional regulator/sugar kinase
+H9ZT72	2	0	0	0	0	TPR_REGION domain-containing protein
+H9ZT98	3	0	0	0	0	Uncharacterized protein
+H9ZTB4	1	0	0	0	0	ABC-type sugar transport system, periplasmic component
+H9ZTB5	3	0	0	0	0	ABC-type sugar transport system, permease component
+H9ZTE7	1	0	0	0	0	Arabinose efflux permease family protein
+H9ZTH4	1	0	0	0	0	FAD-binding PCMH-type domain-containing protein
+H9ZTL4	1	0	0	0	0	Cupin domain-containing protein
+H9ZTL6	1	0	0	0	0	Ribulose-phosphate 3-epimerase
+H9ZTM3	1	0	0	0	0	ASCH domain-containing protein
+H9ZTR2	1	0	0	0	0	Putative metal-dependent hydrolase related to alanyl-tRNA synthetase HxxxH domain protein
+H9ZTT0	1	0	0	0	0	Transcriptional regulator
+I0SNS9	0	0	3	0	0	DNA repair protein RadA
+I0T534	0	0	1	0	0	Septum formation initiator
+I3RYA3	0	1	0	0	0	Uncharacterized protein
+I4SJ65	0	0	1	0	0	DUF3251 domain-containing protein
+I6CZW4	0	0	1	0	0	YhiS
+I7F4F7	1	0	0	0	0	Uncharacterized protein
+I7FVE3	1	0	0	0	0	Cell division protein RodA
+I7FVF9	1	0	0	0	0	CbiA domain-containing protein
+I7G145	1	0	0	0	0	TetR-family transcriptional regulator
+I7G2F2	2	0	0	0	0	Transposase IS4 family protein
+I8WZR6	0	1	0	0	0	Uncharacterized protein
+I9BQ66	0	3	0	0	0	NodB homology domain-containing protein
+I9BQ81	0	1	0	0	0	Response regulatory domain-containing protein
+I9JUR1	0	1	0	0	0	ZnF_CHCC domain-containing protein
+J2DQN9	0	1	0	0	0	EAL domain-containing protein
+J6HNP6	0	0	0	2	0	Protease 3
+J7RAM8	0	0	1	0	0	Sel1 repeat family protein
+J7TA22	0	1	0	0	0	Methionine gamma-lyase
+J7TD31	0	1	0	0	0	Uracil-DNA glycosylase, family 4
+J8VLP8	0	0	0	0	1	HTH_17 domain-containing protein
+K1FY95	0	1	0	0	0	Uncharacterized protein
+K1FY98	0	2	0	0	0	TPR_REGION domain-containing protein
+K1G0I3	0	1	0	0	0	Glyco_trans_2-like domain-containing protein
+K1G5U6	0	1	0	0	0	Methyltransf_30 domain-containing protein
+K1GBL8	0	1	0	0	0	OmpR/PhoB-type domain-containing protein
+K1GTU3	0	1	0	0	0	Flavin_Reduct domain-containing protein
+K1GTV2	0	1	0	0	0	Uncharacterized protein
+K1IU54	0	0	0	0	1	DUF3382 domain-containing protein
+K1IZF5	0	0	0	0	1	RCK N-terminal domain-containing protein
+K1J110	0	0	0	0	1	HTH lysR-type domain-containing protein
+K1J160	0	0	0	0	2	Porin_4 domain-containing protein
+K1J2L0	0	0	0	0	1	N-acetyltransferase domain-containing protein
+K1J367	0	0	0	0	1	Stress-response A/B barrel domain-containing protein
+K1J372	0	0	0	0	1	MFS domain-containing protein
+K1J3G0	0	0	0	0	1	Uncharacterized protein
+K1J3H7	0	0	0	0	1	Sulfatase domain-containing protein
+K1J4D7	0	0	0	0	2	Histidine kinase domain-containing protein
+K1J4F1	0	0	0	0	1	Transcriptional regulator
+K1J5Z2	0	0	0	0	1	DUF418 domain-containing protein
+K1J6R5	0	0	0	0	1	Cyclic nucleotide-binding domain-containing protein
+K1J7T5	0	0	0	0	2	Uncharacterized protein
+K1JDW4	0	0	0	0	1	HTH araC/xylS-type domain-containing protein
+K1JE64	0	0	0	0	1	ABC transporter domain-containing protein
+K1JEL7	0	0	0	0	1	Uncharacterized protein
+K1JF57	0	0	0	0	2	MFS domain-containing protein
+K1JHK9	0	0	0	0	4	Histidine kinase domain-containing protein
+K1JHR0	0	0	0	0	1	Abhydrolase_2 domain-containing protein
+K1JHU3	0	0	0	0	1	Aamy domain-containing protein
+K1JIC7	0	0	0	0	2	AsmA_2 domain-containing protein
+K1JIG2	0	0	0	0	1	HTH lysR-type domain-containing protein
+K1JIP1	0	0	0	0	1	HTH lysR-type domain-containing protein
+K1JX96	0	0	0	0	1	HTH lysR-type domain-containing protein
+K1K1L7	0	0	0	0	1	PepSY domain-containing protein
+K1K2S7	0	0	0	0	2	HTH lysR-type domain-containing protein
+K1K2T9	0	0	0	0	1	Uncharacterized protein
+K1K3I5	0	0	0	0	1	HTH lacI-type domain-containing protein
+K1K3M6	0	0	0	0	2	HTH lysR-type domain-containing protein
+K7RK30	1	0	0	0	0	2-nitropropane dioxygenase-like enzyme
+K7RK93	1	0	0	0	0	ABC-type branched-chain amino acid transport systems, ATPase component
+L0IQJ2	2	0	0	0	0	Serine/threonine protein kinase
+L0M1S6	0	0	0	1	0	Uncharacterized protein
+L2LAP8	0	0	0	1	0	VanZ like family protein
+L4IXX3	0	0	1	0	0	PBP_domain domain-containing protein
+M8BE01	0	0	1	0	0	ArsR family transcriptional regulator
+O06458	1	0	0	0	0	Trehalose synthase
+O06672	0	0	2	0	0	Beta sliding clamp
+O30808	0	5	0	0	0	NADP-dependent malic enzyme
+O33075	0	0	0	0	1	Proline-rich 28 kDa antigen homolog
+O33077	0	0	0	0	2	Uncharacterized protein MLCB628.05
+O33078	0	0	0	0	1	Uncharacterized protein MLCB628.06
+O52049	2	0	0	0	0	Glucose-1-phosphate adenylyltransferase
+O66200	0	1	0	0	0	60 kDa chaperonin (Fragment)
+O66431	0	0	1	0	0	50S ribosomal protein L3
+O66442	0	0	2	0	0	Acetylornithine aminotransferase
+O66445	0	0	1	0	0	SCP2 domain-containing protein
+O66447	0	0	1	0	0	PAS domain-containing protein
+O66448	0	0	1	0	0	Molybdopterin molybdenumtransferase
+O66449	0	0	1	0	0	Transporter (Pho87 family)
+O66450	0	0	2	0	0	RNA-splicing ligase RtcB
+O66454	0	0	1	0	0	3-hydroxyisobutyrate dehydrogenase
+O66455	0	0	2	0	0	Imidazoleglycerol-phosphate dehydratase
+O66456	0	0	1	0	0	Uncharacterized protein
+O66459	0	0	2	0	0	Cytochrome b
+O68703	0	0	1	0	0	Cysteine protease YopT
+O68770	0	2	0	0	0	DNA polymerase III subunit alpha
+O68932	0	0	1	0	0	Leader peptidase HopD
+O85746	0	1	0	0	0	Tyrosine aminotransferase
+O86025	3	0	0	0	0	Alkaline phosphatase
+P00363	0	1	0	0	0	Fumarate reductase flavoprotein subunit
+P00490	0	0	6	0	0	Maltodextrin phosphorylase
+P00550	0	0	1	0	0	PTS system mannitol-specific EIICBA component
+P00561	0	1	0	0	1	Bifunctional aspartokinase/homoserine dehydrogenase 1
+P00954	0	0	0	1	0	Tryptophan--tRNA ligase
+P00960	0	0	0	0	1	Glycine--tRNA ligase alpha subunit
+P00968	0	0	0	0	3	Carbamoyl-phosphate synthase large chain
+P02918	0	0	5	0	0	Penicillin-binding protein 1A
+P03018	0	3	0	0	0	DNA helicase II
+P03022	0	0	0	0	1	Arabinose operon regulatory protein
+P03029	0	0	1	0	0	DNA-binding transcriptional regulator NtrC
+P04846	0	0	1	0	0	Lipoprotein 28
+P04968	0	2	0	0	0	L-threonine dehydratase biosynthetic IlvA
+P05100	0	0	1	0	0	DNA-3-methyladenine glycosylase 1
+P05989	0	3	0	0	0	Ketol-acid reductoisomerase (NADP(+))
+P06173	0	3	0	0	0	DNA-directed RNA polymerase subunit beta
+P06188	0	0	0	0	3	Ribulokinase
+P06694	0	0	2	0	0	Transposase for transposon Tn21
+P06715	0	0	1	0	0	Glutathione reductase
+P07023	0	0	0	1	0	T-protein
+P08142	0	0	1	0	0	Acetolactate synthase isozyme 1 large subunit
+P08201	0	0	1	0	0	Nitrite reductase (NADH) large subunit
+P08203	0	0	0	0	2	L-ribulose-5-phosphate 4-epimerase AraD
+P09099	0	0	1	0	0	Xylulose kinase
+P09143	1	0	0	0	0	Succinate--CoA ligase [GDP-forming] subunit alpha
+P09167	0	0	0	0	3	Aerolysin
+P09403	1	0	0	0	0	Phosphoglycerate kinase
+P09763	0	1	1	0	0	50S ribosomal protein L11
+P09764	0	1	0	0	0	50S ribosomal protein L1
+P09831	0	0	3	1	0	Glutamate synthase [NADPH] large chain
+P09835	0	0	1	0	0	Signal transduction histidine-protein kinase/phosphatase UhpB
+P09996	0	0	1	0	0	Uncharacterized protein YidB
+P0A188	0	0	0	0	2	Aromatic amino acid transport protein AroP
+P0A1E4	0	0	0	2	0	Cysteine synthase A
+P0A1P7	0	1	1	0	0	Glutamine synthetase
+P0A1X7	0	0	0	0	1	Methionine aminopeptidase
+P0A219	0	0	1	0	0	Mercuric transport protein MerT
+P0A284	0	0	0	1	0	PTS system glucose-specific EIIA component
+P0A2E0	0	1	0	0	0	Sensory histidine kinase/phosphatase NtrB
+P0A2J2	0	0	0	1	0	High-affinity branched-chain amino acid transport system permease protein LivH
+P0A2K0	0	0	2	0	0	Trk system potassium uptake protein TrkA
+P0A698	0	1	0	0	0	UvrABC system protein A
+P0A6F2	0	0	0	0	1	Carbamoyl-phosphate synthase small chain
+P0A6H6	0	1	0	0	0	ATP-dependent protease ATPase subunit HslU
+P0A8Y6	0	0	1	0	0	Sugar phosphatase YidA
+P0A9A8	0	0	0	0	2	Cell division protein FtsZ
+P0A9F8	0	0	0	1	0	Glycine cleavage system transcriptional activator
+P0A9J2	0	0	1	1	0	Ribonuclease G
+P0A9P2	0	0	0	0	1	Dihydrolipoyl dehydrogenase
+P0A9R5	0	0	0	1	0	2Fe-2S ferredoxin
+P0A9R9	0	0	1	0	0	Cell division ATP-binding protein FtsE
+P0A9V3	0	0	1	2	0	Lipopolysaccharide export system ATP-binding protein LptB
+P0A9X5	0	0	1	1	0	Cell shape-determining protein MreB
+P0AA18	0	0	1	0	0	Transcriptional regulatory protein OmpR
+P0AA77	0	0	1	0	0	D-galactonate transporter
+P0AAD2	0	0	0	1	0	Tryptophan-specific transport protein
+P0AAG1	0	0	1	0	0	Dipeptide transport ATP-binding protein DppD
+P0AAI3	0	0	0	4	0	ATP-dependent zinc metalloprotease FtsH
+P0AB82	0	1	0	0	0	Branched-chain-amino-acid aminotransferase
+P0AB94	0	0	2	0	0	Arsenical pump membrane protein
+P0AB96	0	0	1	0	0	Arsenate reductase
+P0ABE0	0	0	1	0	0	Biotin carboxyl carrier protein of acetyl-CoA carboxylase
+P0ABH3	0	0	0	0	1	Cell division protein FtsA
+P0ABI6	0	1	0	0	1	Magnesium transport protein CorA
+P0ABQ3	0	0	0	2	0	2-hydroxy-3-oxopropionate reductase
+P0ABU5	0	0	1	0	0	Glyoxalase ElbB
+P0AC00	0	0	1	0	0	Fructoselysine 6-phosphate deglycase
+P0AC31	0	0	1	0	0	Cell division protein FtsX
+P0AC77	0	0	2	0	0	3-deoxy-D-manno-octulosonic acid transferase
+P0AC86	0	0	6	0	0	Glycogen phosphorylase
+P0AC97	0	0	3	2	0	Low-affinity gluconate transporter
+P0ACB0	0	1	0	0	0	Replicative DNA helicase
+P0ACI5	0	0	1	0	0	Xylose operon regulatory protein
+P0ACK0	0	0	1	0	0	cAMP-activated global transcriptional regulator CRP
+P0ACP6	0	0	0	1	0	HTH-type transcriptional regulator GntR
+P0AD69	0	0	0	0	1	Peptidoglycan D,D-transpeptidase FtsI
+P0AD98	0	0	1	1	0	Leu/Ile/Val-binding protein
+P0ADG0	0	0	1	0	0	Acetolactate synthase isozyme 1 small subunit
+P0ADJ1	0	0	2	0	0	Uncharacterized membrane protein YhhN
+P0ADK7	0	0	1	0	0	Protein YibA
+P0ADL5	0	0	1	0	0	Uncharacterized protein YicN
+P0ADQ4	0	2	0	0	0	Uncharacterized protein YiiD
+P0ADV6	0	0	0	3	0	Luciferase-like monooxygenase
+P0AE84	0	2	0	0	0	Sensor protein CpxA
+P0AEB1	0	0	0	1	0	Sulfate transport system permease protein CysW
+P0AEC3	0	0	1	0	0	Aerobic respiration control sensor protein ArcB
+P0AEE1	0	0	1	0	0	Protein DcrB
+P0AEE4	0	0	1	0	0	Serine endoprotease DegS
+P0AEG3	0	0	1	0	0	Dipeptide transport system permease protein DppC
+P0AEJ1	0	0	0	1	0	Multidrug export protein EmrB
+P0AER8	0	0	1	0	0	Sodium/glutamate symporter
+P0AES7	0	0	1	0	0	DNA gyrase subunit B
+P0AET3	0	0	1	0	0	Acid stress chaperone HdeB
+P0AEX5	0	0	1	1	0	Probable phosphoribulokinase
+P0AF11	0	0	1	0	0	Mannitol operon repressor
+P0AFB3	0	0	0	2	0	Lipoprotein NlpI
+P0AFF3	0	0	0	1	0	Nucleoside permease NupC
+P0AFG9	0	0	0	0	3	Pyruvate dehydrogenase E1 component
+P0AFJ9	0	0	1	0	0	Low-affinity inorganic phosphate transporter 1
+P0AFN8	0	0	0	0	1	Inner membrane transport permease YadH
+P0AFU4	0	0	0	1	0	Transcriptional regulatory protein GlrR
+P0AFV1	0	0	2	0	0	Inner membrane protein YibH
+P0AFV3	0	0	1	0	0	Uncharacterized protein YhiD
+P0AG25	0	0	1	0	0	Guanosine-3&apos;,5&apos;-bis(diphosphate) 3&apos;-pyrophosphohydrolase
+P0AG81	0	0	2	0	0	sn-glycerol-3-phosphate-binding periplasmic protein UgpB
+P0AGG9	0	0	0	2	0	Metalloprotease TldD
+P0AGI6	0	0	1	0	0	Xylose transport system permease protein XylH
+P0AGM1	0	0	2	0	0	Putative transport protein YhhT
+P0AGM8	0	0	0	3	0	Uracil permease
+P0AGN1	0	0	1	0	0	Xanthine permease XanP
+P0C2V9	0	0	1	0	0	Chaperone protein SycT
+P0CG19	0	0	3	0	0	Truncated inactive ribonuclease PH
+P0DP92	0	0	1	0	0	Cellulose biosynthesis protein BcsQ
+P10121	0	0	1	0	0	Signal recognition particle receptor FtsY
+P10905	0	0	1	0	0	sn-glycerol-3-phosphate transport system permease protein UgpA
+P10907	0	0	2	0	0	sn-glycerol-3-phosphate import ATP-binding protein UgpC
+P10908	0	0	2	0	0	Glycerophosphodiester phosphodiesterase, cytoplasmic
+P11539	0	0	0	1	0	RNA polymerase sigma factor RpoH
+P12758	0	1	0	0	0	Uridine phosphorylase
+P13035	0	0	1	0	0	Aerobic glycerol-3-phosphate dehydrogenase
+P13156	0	0	0	1	0	Oxaloacetate decarboxylase beta chain
+P13445	0	0	0	1	0	RNA polymerase sigma factor RpoS
+P13518	0	0	1	0	0	RNase E specificity factor CsrD
+P14175	0	0	0	2	0	Glycine betaine/proline betaine transport system ATP-binding protein ProV
+P15043	0	3	0	0	0	ATP-dependent DNA helicase RecQ
+P15877	0	0	0	0	2	Quinoprotein glucose dehydrogenase
+P15977	0	0	4	0	0	4-alpha-glucanotransferase
+P16256	0	0	1	0	0	Sodium/pantothenate symporter
+P16433	0	0	0	1	0	Formate hydrogenlyase subunit 7
+P16676	0	0	0	4	0	Sulfate/thiosulfate import ATP-binding protein CysA
+P16700	0	0	0	1	0	Thiosulfate-binding protein
+P16701	0	0	0	1	0	Sulfate transport system permease protein CysT
+P16917	0	0	4	0	0	Protein RhsB
+P16926	0	0	0	1	0	Cell shape-determining protein MreC
+P17265	0	1	0	0	0	Ribosome hibernation promotion factor
+P20099	0	0	3	0	0	Biotin sulfoxide reductase
+P20102	0	0	1	0	0	HTH-type transcriptional regulator MerD
+P21499	0	2	0	0	0	Ribonuclease R
+P22188	0	0	0	0	2	UDP-N-acetylmuramoyl-L-alanyl-D-glutamate--2,6-diaminopimelate ligase
+P22729	0	0	2	0	0	High-affinity branched-chain amino acid transport system permease protein LivM
+P23839	0	0	2	0	0	UPF0701 protein YicC
+P24177	0	0	0	2	0	Probable aminoglycoside efflux pump
+P24180	0	0	2	0	0	Multidrug export protein AcrE
+P24181	0	0	1	0	0	Multidrug export protein AcrF
+P24230	0	0	2	0	0	ATP-dependent DNA helicase RecG
+P24255	0	0	1	0	0	RNA polymerase sigma-54 factor
+P24577	1	0	1	0	0	Insertion element IS407 uncharacterized 31.7 kDa protein
+P25125	1	0	0	0	0	N(4)-bis(aminopropyl)spermidine synthase
+P25519	0	1	0	0	0	GTPase HflX
+P25666	0	0	1	0	0	Protein HtrL
+P25893	0	1	0	0	0	Uncharacterized protein R00383
+P26468	0	1	0	0	0	Maltose/maltodextrin transport system permease protein MalG
+P26973	0	0	0	1	0	DNA topoisomerase 4 subunit A
+P26982	0	0	0	0	1	Periplasmic serine endoprotease DegP
+P27000	2	0	0	0	0	Glutamate--tRNA ligase
+P27298	0	0	4	0	0	Oligopeptidase A
+P27474	0	0	2	0	0	Protein YopQ
+P27670	0	0	2	0	0	Hexose-6-phosphate:phosphate antiporter
+P27837	0	2	0	0	0	Probable transport protein YifK
+P28577	0	0	0	1	0	Histidine decarboxylase
+P29847	0	0	1	0	0	Serine acetyltransferase
+P29848	0	0	0	1	0	Cysteine synthase B
+P30296	0	0	0	1	0	High-affinity branched-chain amino acid transport system permease protein LivM
+P30744	0	0	0	2	0	L-serine dehydratase 2
+P31073	0	0	0	0	1	Dihydrofolate reductase
+P31434	0	0	2	0	0	Alpha-xylosidase
+P31436	0	0	1	0	0	Sugar efflux transporter C
+P31440	0	0	2	0	0	Adenine permease AdeQ
+P31442	0	0	2	0	0	Multidrug resistance protein D
+P31449	0	0	3	0	0	Uncharacterized HTH-type transcriptional regulator YidL
+P31450	0	0	2	0	0	Putative inactive 6-phospho-alpha-glucosidase
+P31459	0	0	2	0	0	2-dehydro-3-deoxygalactonokinase
+P31460	0	0	1	0	0	Galactonate operon transcriptional repressor
+P31499	0	0	2	0	0	Hemin receptor
+P31733	0	0	0	0	1	Type II secretion system protein G
+P31760	0	0	0	0	1	Type II secretion system protein K
+P32662	0	0	1	0	0	Phosphoglycolate phosphatase
+P33038	0	0	1	0	0	UDP-N-acetylglucosamine 1-carboxyvinyltransferase
+P33231	0	0	2	0	0	L-lactate permease
+P33591	0	0	2	0	0	Nickel transport system permease protein NikB
+P33594	0	0	1	0	0	Nickel import ATP-binding protein NikE
+P33650	0	0	1	0	0	Fe(2+) transporter FeoB
+P33985	0	4	0	0	0	RNA polymerase sigma-54 factor
+P34749	0	0	1	0	0	DNA utilization protein HofQ
+P35872	2	0	0	0	0	Transcription termination/antitermination protein NusG
+P36498	0	0	1	0	0	Transport protein ComB
+P36683	0	0	0	0	5	Aconitate hydratase B
+P36837	0	0	1	0	0	Dipeptide and tripeptide permease B
+P36879	0	0	0	0	1	Uncharacterized ABC transporter ATP-binding protein YadG
+P37078	0	1	0	0	0	Sorbitol operon regulator
+P37079	0	1	0	0	0	Sorbitol-6-phosphate 2-dehydrogenase
+P37083	0	1	0	0	0	PTS system sorbose-specific EIID component
+P37084	0	1	0	0	0	L-sorbose 1-phosphate reductase
+P37197	0	0	1	0	0	Probable cytochrome c peroxidase
+P37309	0	0	1	0	0	Arsenical resistance operon repressor
+P37313	0	0	1	1	0	Dipeptide transport ATP-binding protein DppF
+P37387	0	0	1	0	0	D-xylose-binding periplasmic protein
+P37388	0	0	1	0	0	Xylose import ATP-binding protein XylG
+P37446	0	2	0	0	0	Phospholipase A1
+P37613	0	0	1	0	0	PanD regulatory factor
+P37617	0	0	2	0	0	Zinc/cadmium/lead-transporting P-type ATPase
+P37619	0	0	2	0	0	Queuosine precursor transporter
+P37624	0	0	4	0	0	Ribosome-associated ATPase
+P37626	0	0	1	0	0	Uncharacterized protein YhiI
+P37627	0	0	1	0	0	Uncharacterized protein YhiJ
+P37636	0	0	2	0	0	Multidrug resistance protein MdtE
+P37637	0	0	3	0	0	Multidrug resistance protein MdtF
+P37643	0	0	0	1	0	Inner membrane metabolite transport protein YhjE
+P37647	0	0	1	0	0	2-dehydro-3-deoxygluconokinase
+P37648	0	0	1	0	0	Protein YhjJ
+P37649	0	0	2	0	0	Probable cyclic di-GMP phosphodiesterase PdeK
+P37650	0	0	3	0	0	Cellulose synthase operon protein C
+P37653	0	0	2	0	0	Cellulose synthase catalytic subunit [UDP-forming]
+P37660	0	0	3	0	0	Inner membrane transport protein YhjV
+P37661	0	0	3	0	0	Kdo(2)-lipid A phosphoethanolamine 7&apos;&apos;-transferase
+P37662	0	0	1	0	0	Uncharacterized MFS-type transporter YhjX
+P37669	0	0	2	0	0	O-acetyltransferase WecH
+P37674	0	0	1	0	0	2,3-diketo-L-gulonate TRAP transporter small permease protein YiaM
+P37676	0	0	1	0	0	2,3-diketo-L-gulonate-binding periplasmic protein YiaO
+P37680	0	0	1	0	0	L-ribulose-5-phosphate 4-epimerase SgbE
+P37686	0	0	3	0	0	Probable alcohol dehydrogenase
+P37691	0	0	2	0	0	Uncharacterized protein YibQ
+P37692	0	0	2	0	0	ADP-heptose--LPS heptosyltransferase 2
+P38035	0	0	1	0	0	Transcriptional regulatory protein RtcR
+P39099	0	0	1	0	0	Periplasmic pH-dependent serine endoprotease DegQ
+P39301	0	3	0	0	0	Ascorbate-specific PTS system EIIC component
+P40127	0	0	2	0	0	Adenylate cyclase
+P40733	0	0	0	0	1	Deoxyguanosinetriphosphate triphosphohydrolase
+P41033	0	0	1	0	0	Phosphoenolpyruvate carboxykinase (ATP)
+P41850	0	0	0	0	1	Type II secretion system protein M
+P41852	0	0	0	0	2	Type II secretion system protein N
+P42590	0	0	0	1	0	Inner membrane transporter YgjI
+P43464	0	0	1	0	0	Transcriptional activator AggR
+P43895	1	0	0	0	0	Elongation factor Ts
+P45394	0	0	2	0	0	Inner membrane protein YrbG
+P45428	0	0	1	0	0	Putative cryptic C4-dicarboxylate transporter DcuD
+P45523	0	0	1	0	0	FKBP-type peptidyl-prolyl cis-trans isomerase FkpA
+P45524	0	0	2	0	0	Putative esterase YheT
+P45543	0	0	1	0	0	Fructoselysine 6-kinase
+P45546	0	0	1	0	0	Uncharacterized protein YhfT
+P45550	0	0	2	0	0	Uncharacterized protein YhfX
+P45598	0	0	0	2	0	Arabinose-proton symporter
+P45753	0	0	1	0	0	DNA utilization protein HofM
+P45772	0	0	0	0	1	Type II secretion system protein C
+P45800	0	0	1	0	0	Putative membrane protein IgaA homolog
+P45804	0	0	1	0	0	Uncharacterized protein YhgE
+P46211	0	0	2	0	0	Elongation factor G
+P46474	0	0	1	0	0	Uncharacterized protein YhdP
+P46481	0	0	1	0	0	p-hydroxybenzoic acid efflux pump subunit AaeB
+P46837	0	0	0	1	0	Protein YhgF
+P46850	0	0	1	0	0	RNA-splicing ligase RtcB
+P46924	0	0	0	0	2	Probable HTH-type transcriptional regulator LeuO
+P48514	2	0	0	0	0	Transcription termination/antitermination protein NusA
+P50510	0	0	1	0	0	RNA polymerase sigma factor RpoH
+P51185	0	0	1	0	0	Phosphocarrier protein NPr
+P54893	2	0	0	0	0	Pyrroline-5-carboxylate reductase
+P56206	1	0	0	0	0	Glycine--tRNA ligase
+P56220	0	0	0	0	1	2,3,4,5-tetrahydropyridine-2,6-dicarboxylate N-succinyltransferase
+P56256	0	0	2	0	0	Putative electron transport protein YsaA
+P56882	0	2	0	0	0	Probable lipid II flippase MurJ
+P58130	0	2	0	0	0	Glycerol-3-phosphate acyltransferase
+P58580	0	0	0	1	0	Glutathione synthetase
+P58670	0	0	0	1	0	4-hydroxy-3-methylbut-2-en-1-yl diphosphate synthase (flavodoxin)
+P58717	0	0	0	0	1	4-hydroxythreonine-4-phosphate dehydrogenase
+P58793	0	0	0	0	1	Adenylosuccinate synthetase
+P59131	0	3	0	0	0	30S ribosomal protein S4
+P59132	0	0	1	1	0	30S ribosomal protein S4
+P59652	0	0	2	0	0	ATP-dependent zinc metalloprotease FtsH
+P59846	1	0	0	0	0	Argininosuccinate synthase
+P61489	2	0	0	0	0	Aspartokinase
+P61490	1	0	0	0	0	60 kDa chaperonin
+P61608	0	0	0	0	1	LexA repressor 1
+P61740	0	0	0	0	1	Glycerol-3-phosphate dehydrogenase [NAD(P)+]
+P62360	1	0	0	0	0	ATP phosphoribosyltransferase regulatory subunit
+P62590	0	0	2	0	0	Integrase/recombinase
+P62602	0	0	1	0	0	Cytoplasmic trehalase
+P62659	1	0	0	0	0	30S ribosomal protein S18
+P63202	0	0	1	0	0	HTH-type transcriptional regulator GadW
+P63206	0	0	1	0	0	Transcriptional regulator GadE
+P63284-2	0	0	0	3	0	Isoform ClpB-3 of Chaperone protein ClpB
+P63390	0	0	2	3	0	Uncharacterized ABC transporter ATP-binding protein YheS
+P63829	0	0	0	0	1	Dephospho-CoA kinase
+P64258	0	0	0	0	1	Phospho-N-acetylmuramoyl-pentapeptide-transferase
+P64602	0	0	1	0	0	Intermembrane phospholipid transport system binding protein MlaB
+P64625	0	0	0	1	0	Uncharacterized protein YheO
+P64629	0	0	1	0	0	Uncharacterized protein YhfL
+P64632	0	0	1	0	0	Uncharacterized protein YhfU
+P65208	0	0	0	0	1	2-keto-3-deoxygluconate permease 1
+P66834	0	0	0	0	1	Polyamine aminopropyltransferase
+P69829	0	0	1	0	0	Nitrogen regulatory protein
+P70775	0	0	0	0	1	Putative amino-acid transporter YggA
+P72478	0	0	1	0	0	Adenylosuccinate lyase
+P74979	0	0	2	0	0	Hemin binding protein
+P76071	0	0	1	0	0	Transposase InsH for insertion sequence element IS5Y
+P77434	0	0	0	1	0	Glutamate-pyruvate aminotransferase AlaC
+P98005	1	0	0	0	0	Cytochrome c oxidase polypeptide I+III
+Q01674	0	0	2	0	0	Ferrioxamine receptor
+Q03727	0	0	7	0	0	Transport/processing ATP-binding protein ComA
+Q03D52	0	0	0	0	3	DNA replication and repair protein RecF
+Q03D55	0	0	0	0	1	Chromosomal replication initiator protein DnaA
+Q04N59	0	0	1	0	0	Peptidyl-tRNA hydrolase
+Q08425	0	1	0	0	0	Tetracycline resistance protein TetQ
+Q0HNU4	0	4	0	0	0	DNA-directed RNA polymerase subunit beta
+Q0I0K2	0	1	0	0	0	Formate dehydrogenase alpha subunit
+Q0T014	0	0	2	0	0	Ribosomal RNA small subunit methyltransferase B
+Q2L2M3	0	0	0	1	0	DNA-directed RNA polymerase subunit beta
+Q2L2P3	0	0	0	1	0	Transcription termination/antitermination protein NusG
+Q2STL4	0	0	1	0	0	DNA gyrase subunit B
+Q2T184	1	0	1	0	0	TcA_TcB_BD domain-containing protein
+Q2T9E1	1	0	1	0	0	L-threonine 3-dehydrogenase
+Q328L4	0	0	1	0	0	Glyoxylate/hydroxypyruvate reductase B
+Q329C8	0	0	1	0	0	Putative transport protein YidE
+Q32AZ8	0	0	3	0	0	Siroheme synthase
+Q39ZR9	0	0	0	0	4	DNA gyrase subunit A
+Q3Z5J1	0	0	0	0	1	Bifunctional uridylyltransferase/uridylyl-removing enzyme
+Q46861	0	0	0	1	0	UPF0313 protein YgiQ
+Q47452	0	0	4	0	0	Copper resistance protein A
+Q47454	0	0	1	0	0	Copper resistance protein C
+Q47455	0	0	1	0	0	Copper resistance protein D
+Q4L0W7	0	0	0	0	1	3-deoxy-D-manno-octulosonic acid kinase
+Q53W25	2	0	0	0	0	Putative glycerophosphoryl diester phosphodiesterase
+Q53W27	1	0	0	0	0	Permease of the major facilitator superfamily
+Q53W29	1	0	0	0	0	Uncharacterized protein
+Q53W35	1	0	0	0	0	Uncharacterized protein
+Q53W38	1	0	0	0	0	Arsenite oxidase, small subunit
+Q53W62	1	0	0	0	0	HTH-type transcriptional repressor CarH
+Q53W71	1	0	0	0	0	Hydrolase_4 domain-containing protein
+Q53W72	1	0	0	0	0	Methyltransf_11 domain-containing protein
+Q53W84	1	0	0	0	0	Malate/L-lactate dehydrogenase family protein
+Q53W91	1	0	0	0	0	AP_endonuc_2 domain-containing protein
+Q53W92	1	0	0	0	0	5&apos;-nucleotidase SurE
+Q53W98	1	0	0	0	0	NTP_transf_2 domain-containing protein
+Q53WA2	2	0	0	0	0	S-adenosyl-L-methionine uroporphyrinogen methyltransferase
+Q53WB5	2	0	0	0	0	Uncharacterized protein
+Q53WC0	3	0	0	0	0	Uncharacterized protein
+Q53WC3	1	0	0	0	0	Uncharacterized protein
+Q53WD0	2	0	0	0	0	Putative beta-galactosidase
+Q53WD2	2	0	0	0	0	Probable sugar transporter
+Q53WD3	2	0	0	0	0	Carbohydrate deacetylase
+Q53WD6	1	0	0	0	0	Uncharacterized protein
+Q53WD8	2	0	0	0	0	Uncharacterized protein
+Q53WH2	1	0	0	0	0	3-oxoacyl-[acyl carrier protein] reductase
+Q56222	6	0	0	0	0	NADH-quinone oxidoreductase subunit 1
+Q56225	1	0	0	0	0	NADH-quinone oxidoreductase subunit 10
+Q56227	1	0	0	0	0	NADH-quinone oxidoreductase subunit 12
+Q56229	1	0	0	0	0	NADH-quinone oxidoreductase subunit 14
+Q56232	3	0	0	0	0	Aspartate aminotransferase
+Q56992	0	0	1	0	0	Hemin transport system permease protein HmuU
+Q56VG8	0	1	0	0	0	TraO
+Q57532	0	0	0	0	2	DNA gyrase subunit A
+Q57T35	0	0	0	0	1	1-deoxy-D-xylulose 5-phosphate reductoisomerase
+Q57T37	0	0	0	0	1	Uridylate kinase
+Q59119	0	0	0	0	1	Adenylate cyclase
+Q5FAJ3	0	0	2	0	0	Leucine--tRNA ligase
+Q5FN12	0	0	1	0	0	DNA replication and repair protein RecF
+Q5FN15	0	0	1	0	0	Chromosomal replication initiator protein DnaA
+Q5J475	0	0	1	0	0	Relaxase/helicase
+Q5LIY5	0	1	0	0	0	tRNA uridine 5-carboxymethylaminomethyl modification enzyme MnmG
+Q5LIY7	0	2	0	0	0	UvrABC system protein C
+Q5LJ26	0	1	0	0	0	S-adenosylmethionine synthase
+Q5LJ44	0	1	0	0	0	Uncharacterized protein
+Q5MCN5	1	0	0	0	0	Trehalose 6-phosphate phosphatase
+Q5PDE6	0	0	0	0	2	Chaperone SurA
+Q5PF15	0	0	0	1	0	Protein RecA
+Q5PLQ7	0	0	1	0	0	L-lactate dehydrogenase
+Q5SHN6	1	0	0	0	0	Elongation factor Tu-A
+Q5SIU5	2	0	0	0	0	Mutator family transposase
+Q5SJM4	2	0	0	0	0	Quinolinate synthase A
+Q5SJN0	1	0	0	0	0	Uncharacterized protein
+Q5SJN4	2	0	0	0	0	Integrase/recombinase
+Q5SJP3	1	0	0	0	0	Phenylacetic acid degradation protein PaaI
+Q5SJP7	2	0	0	0	0	4-hydroxyphenylacetate 3-monooxygenase, reductase component
+Q5SJP8	2	0	0	0	0	4-hydroxyphenylacetate 3-monooxygenase oxygenase component
+Q5SJP9	3	0	0	0	0	5-carboxymethyl-2-hydroxymuconate semialdehyde dehydrogenaseiheyensis HTE831]
+Q5SJQ5	1	0	0	0	0	HTH marR-type domain-containing protein
+Q5SJR1	2	0	0	0	0	Triosephosphate isomerase
+Q5SJR4	2	0	0	0	0	Uncharacterized protein
+Q5SJR5	1	0	0	0	0	Uncharacterized protein
+Q5SJS1	1	0	0	0	0	Uma2 domain-containing protein
+Q5SJS3	1	0	0	0	0	Quaternary ammonium compound-resistance protein
+Q5SJS4	1	0	0	0	0	Glutamate-1-semialdehyde 2,1-aminomutase
+Q5SJS8	1	0	0	0	0	Bifunctional purine biosynthesis protein PurH
+Q5SJV1	1	0	0	0	0	Ribosome-binding factor A
+Q5SJV3	1	0	0	0	0	Chromosome segregation SMC protein
+Q5SJV9	1	0	0	0	0	Cysteine--tRNA ligase
+Q5SJX8	1	0	0	0	0	o-succinylbenzoate synthase
+Q5SJY6	1	0	0	0	0	WD_REPEATS_REGION domain-containing protein
+Q5SJZ6	1	0	0	0	0	1-deoxy-D-xylulose 5-phosphate reductoisomerase
+Q5SJZ9	1	0	0	0	0	Uncharacterized protein
+Q5SK01	2	0	0	0	0	Ribosomal RNA small subunit methyltransferase B
+Q5SK08	1	0	0	0	0	CAAX amino terminal protease family protein
+Q5SK20	1	0	0	0	0	Uncharacterized protein
+Q5SK23	1	0	0	0	0	Putative acetoin utilization protein, acetoin dehydrogenase
+Q5SK24	1	0	0	0	0	Uncharacterized protein
+Q5SK41	1	0	0	0	0	Phosphoribosylglycinamide formyltransferase
+Q5SK47	1	0	0	0	0	Uncharacterized protein
+Q5SK48	2	0	0	0	0	Aminodeoxyfutalosine synthase
+Q5SK49	2	0	0	0	0	Chorismate dehydratase
+Q5SK59	1	0	0	0	0	YrdC-like domain-containing protein
+Q5SK62	1	0	0	0	0	Putative acetyltransferase
+Q5SK63	1	0	0	0	0	Putative glutaryl-CoA dehydrogenase
+Q5SK64	1	0	0	0	0	Uncharacterized protein
+Q5SK68	1	0	0	0	0	Uma2 domain-containing protein
+Q5SK70	1	0	0	0	0	Uncharacterized protein
+Q5SK71	3	0	0	0	0	Uncharacterized protein
+Q5SK75	1	0	0	0	0	Uncharacterized protein
+Q5SK77	1	0	0	0	0	Uncharacterized protein
+Q5SK83	2	0	0	0	0	Probable hydrolase
+Q5SK85	4	0	0	0	0	Zinc-dependent dehydrogenase
+Q5SK98	1	0	0	0	0	3-oxoacyl-[acyl carrier protein] reductase
+Q5SKA3	3	0	0	0	0	Uncharacterized protein
+Q5SKA5	1	0	0	0	0	Glycosyltransferase related protein
+Q5SKA6	4	0	0	0	0	Uncharacterized protein
+Q5SKB0	1	0	0	0	0	Uncharacterized protein
+Q5SKC0	1	0	0	0	0	Iron(III) ABC transporter, solute-binding protein
+Q5SKC2	1	0	0	0	0	Uncharacterized protein
+Q5SKD3	1	0	0	0	0	Phenazine biosynthesis protein related protein
+Q5SKD6	1	0	0	0	0	Pyridoxal 5&apos;-phosphate synthase subunit PdxT
+Q5SKD7	2	0	0	0	0	Cation-transporting ATPase
+Q5SKD9	1	0	0	0	0	Pyridoxal 5&apos;-phosphate synthase subunit PdxS
+Q5SKG2	1	0	0	0	0	Uncharacterized protein
+Q5SKG5	1	0	0	0	0	Phosphomethylpyrimidine synthase
+Q5SKG7	1	0	0	0	0	Thiazole synthase
+Q5SKH0	1	0	0	0	0	Uncharacterized protein
+Q5SKH7	2	0	0	0	0	ATP sulfurylase (Sulfate adenylyltransferase)
+Q5SKI1	2	0	0	0	0	Uncharacterized protein
+Q5SKI2	2	0	0	0	0	MFS domain-containing protein
+Q5SKI4	1	0	0	0	0	Uncharacterized protein
+Q5SKJ1	1	0	0	0	0	Uncharacterized protein
+Q5SKJ4	1	0	0	0	0	Putative O-antigen transporter
+Q5SKJ5	2	0	0	0	0	Probable glycosyltransferase
+Q5SKJ6	2	0	0	0	0	Putative glycosyltransferase
+Q5SKJ9	1	0	0	0	0	Uncharacterized protein
+Q5SKK1	1	0	0	0	0	Putative glycosyltransferase
+Q5SKL2	1	0	0	0	0	ATP-dependent protease subunit HslV
+Q5SKL8	2	0	0	0	0	PGA_cap domain-containing protein
+Q5SKM0	1	0	0	0	0	DNA repair protein RecO
+Q5SKM5	2	0	0	0	0	Methionine synthase
+Q5SKM9	2	0	0	0	0	Trigger factor
+Q5SKN1	2	0	0	0	0	Carbamoyl-phosphate synthase large chain
+Q5SKN3	1	0	0	0	0	Thioredoxin domain-containing protein
+Q5SKP5	1	0	0	0	0	Putative transport integral membrane protein (Chloride channel)
+Q5SKQ8	2	0	0	0	0	Branched-chain amino acid ABC transporter, permease protein
+Q5SKR3	2	0	0	0	0	Uncharacterized protein
+Q5SKS4	2	0	0	0	0	L-threonine 3-dehydrogenase
+Q5SKS5	5	0	0	0	0	Uncharacterized protein
+Q5SKS7	1	0	0	0	0	GTPase HflX
+Q5SKT7	2	0	0	0	0	Futalosine hydrolase
+Q5SKT9	1	0	0	0	0	Small multidrug export protein
+Q5SKU4	3	0	0	0	0	Glutamine--tRNA ligase
+Q5SKU8	3	0	0	0	0	Aspartate-semialdehyde dehydrogenase
+Q5SKV2	1	0	0	0	0	DNA repair protein RadA
+Q5SKW2	1	0	0	0	0	Uncharacterized protein
+Q5SKW7	3	0	0	0	0	Probable glycine dehydrogenase (decarboxylating) subunit 2
+Q5SKW8	1	0	0	0	0	Probable glycine dehydrogenase (decarboxylating) subunit 1
+Q5SKX1	2	0	0	0	0	Uncharacterized protein
+Q5SKX5	1	0	0	0	0	TerC family protein
+Q5SKY0	1	0	0	0	0	N5-carboxyaminoimidazole ribonucleotide synthase
+Q5SL02	1	0	0	0	0	Threonine synthase
+Q5SL10	1	0	0	0	0	Probable transcriptional regulator, ArsR family
+Q5SL19	1	0	0	0	0	Acetoin utilization protein AcuB (Acetoin dehydrogenase)
+Q5SL27	1	0	0	0	0	Alcohol dehydrogenase
+Q5SL28	1	0	0	0	0	Ferredoxin--NADP reductase
+Q5SL34	1	0	0	0	0	Uncharacterized protein
+Q5SL42	1	0	0	0	0	Probable branched-chain amino acid ABC transporter, amno acid binding protein
+Q5SL54	1	0	0	0	0	ABC transporter, ATP-binding protein
+Q5SL59	2	0	0	0	0	Uncharacterized protein
+Q5SL64	1	0	0	0	0	Imidazoleglycerol-phosphate dehydratase
+Q5SL66	1	0	0	0	0	HEPN domain-containing protein
+Q5SL74	1	0	0	0	0	Uncharacterized protein
+Q5SL77	1	0	0	0	0	Malonyl CoA-acyl carrier protein transacylase
+Q5SL80	1	0	0	0	0	3-oxoacyl-[acyl-carrier-protein] synthase 2
+Q5SL88	2	0	0	0	0	DUF4388 domain-containing protein
+Q5SLA2	1	0	0	0	0	FAD_binding_2 domain-containing protein
+Q5SLA8	1	0	0	0	0	Bifunctional protein GlmU
+Q5SLA9	1	0	0	0	0	Phosphatidylglycerol--prolipoprotein diacylglyceryl transferase
+Q5SLB2	1	0	0	0	0	DUF58 domain-containing protein
+Q5SLB6	1	0	0	0	0	Sugar ABC transporter, permease protein
+Q5SLC6	2	0	0	0	0	Phosphoribosylformylglycinamidine cyclo-ligase
+Q5SLC9	4	0	0	0	0	Type IV pilus assembly protein PilF
+Q5SLE3	3	0	0	0	0	Usp domain-containing protein
+Q5SLG0	1	0	0	0	0	Oxidored_molyb domain-containing protein
+Q5SLG6	1	0	0	0	0	Methylenetetrahydrofolate reductase
+Q5SLG7	1	0	0	0	0	Putative ATP/GTP-binding integral membrane protein
+Q5SLG9	1	0	0	0	0	Phosphopentomutase
+Q5SLH1	1	0	0	0	0	Uncharacterized protein
+Q5SLH3	1	0	0	0	0	Methionyl-tRNA formyltransferase
+Q5SLH5	1	0	0	0	0	Putative gluconeogenesis factor
+Q5SLH7	1	0	0	0	0	Uncharacterized protein
+Q5SLH8	1	0	0	0	0	TPR_REGION domain-containing protein
+Q5SLI2	1	0	0	0	0	Cytochrome c oxidase subunit 2
+Q5SLI3	1	0	0	0	0	Protoheme IX farnesyltransferase
+Q5SLI7	3	0	0	0	0	Queuine tRNA-ribosyltransferase
+Q5SLI9	1	0	0	0	0	Enoyl-[acyl-carrier-protein] reductase [NADH]
+Q5SLJ7	3	0	0	0	0	RNA methyltransferase, TrmH family
+Q5SLK6	1	0	0	0	0	Dihydrolipoyl dehydrogenase
+Q5SLK7	2	0	0	0	0	Serine protease, subtilase family
+Q5SLL0	2	0	0	0	0	Argininosuccinate lyase
+Q5SLL5	4	0	0	0	0	Phosphoenolpyruvate carboxykinase (ATP)
+Q5SLM0	1	0	0	0	0	DDE_Tnp_1 domain-containing protein
+Q5SLM3	3	0	0	0	0	Thermostable carboxypeptidase 1
+Q5SLM7	1	0	0	0	0	Cell wall-binding endopeptidase-related protein
+Q5SLN0	1	0	0	0	0	Multidrug-efflux transporter
+Q5SLN3	1	0	0	0	0	Phosphate transport system permease protein
+Q5SLN6	2	0	0	0	0	Uncharacterized protein
+Q5SLP9	1	0	0	0	0	Single-stranded DNA-binding protein
+Q5SLQ1	1	0	0	0	0	50S ribosomal protein L9
+Q5SLQ6	2	0	0	0	0	3-hydroxyisobutyrate dehydrogenase
+Q5SLQ7	2	0	0	0	0	Methyltransf_25 domain-containing protein
+Q5SLR0	3	0	0	0	0	Dihydrolipoyl dehydrogenase
+Q5SLR4	2	0	0	0	0	2-oxoisovalerate dehydrogenase subunit alpha
+Q5SLT1	1	0	0	0	0	Uncharacterized protein
+Q5SLT8	1	0	0	0	0	Uncharacterized protein
+Q5SLT9	1	0	0	0	0	Uncharacterized protein
+Q5SLU0	1	0	0	0	0	MFS domain-containing protein
+Q5SLV6	1	0	0	0	0	PPM-type phosphatase domain-containing protein
+Q5SLV8	1	0	0	0	0	Pyruvate dehydrogenase E1 component
+Q5SLW1	1	0	0	0	0	PINc domain-containing protein
+Q5SLW3	6	0	0	0	0	DNA polymerase III subunit alpha
+Q5SLW5	1	0	0	0	0	Uncharacterized protein
+Q5SLX6	1	0	0	0	0	Transcriptional regulator (TetR/AcrR family)
+Q5SLX7	1	0	0	0	0	Uncharacterized protein
+Q5SM01	1	0	0	0	0	Peptide chain release factor RF2
+Q5SM23	1	0	0	0	0	GTPase Era
+Q5SM27	1	0	0	0	0	Probable 2,3-bisphosphoglycerate-independent phosphoglycerate mutase
+Q5SM28	1	0	0	0	0	Proline--tRNA ligase
+Q5SM45	1	0	0	0	0	Arginine--tRNA ligase
+Q5SM60	1	0	0	0	0	Ribosomal RNA small subunit methyltransferase A
+Q5SM62	1	0	0	0	0	Uncharacterized protein
+Q5SM68	9	0	0	0	0	Ribonucleoside-diphosphate reductase
+Q5SM69	1	0	0	0	0	DNA topoisomerase 1
+Q5SM85	3	0	0	0	0	Heat-inducible transcription repressor HrcA
+Q5SMB4	1	0	0	0	0	Uncharacterized protein
+Q5SMB5	1	0	0	0	0	Putative macrolide-efflux protein
+Q5SMD0	1	0	0	0	0	Geranylgeranyl diphosphate synthetase
+Q5SMD1	2	0	0	0	0	Uncharacterized protein
+Q5SMD2	1	0	0	0	0	GTP 3&apos;,8-cyclase
+Q5SMD6	1	0	0	0	0	Uncharacterized protein
+Q5SMD7	1	0	0	0	0	1-deoxy-D-xylulose-5-phosphate synthase
+Q5SMF6	2	0	0	0	0	Aconitate hydratase A
+Q5SMF7	1	0	0	0	0	Membrane-bound protein LytR
+Q5SMG3	1	0	0	0	0	Germane domain-containing protein
+Q5SMG4	4	0	0	0	0	DNA polymerase III, delta subunit
+Q5SMG7	1	0	0	0	0	Probable membrane transporter protein
+Q60019	1	0	0	0	0	NADH-quinone oxidoreductase subunit 8
+Q62N15	4	0	0	0	0	Octanoyltransferase
+Q63PB7	3	0	0	0	0	Methyltransf_25 domain-containing protein
+Q63XE2	0	0	1	0	0	Uncharacterized protein
+Q650H6	0	2	0	0	0	Adenine phosphoribosyltransferase
+Q650J7	0	2	0	0	0	DUF4469 domain-containing protein
+Q650M3	0	2	0	0	0	Uncharacterized protein
+Q650S3	0	4	0	0	0	Putative outer membrane protein TolC
+Q66GA7	0	0	1	0	0	ABC type periplasmic sulfate-binding protein
+Q6BF16	0	0	1	0	0	2-dehydro-3-deoxy-6-phosphogalactonate aldolase
+Q6CZ89	0	0	2	0	0	Regulator of ribonuclease activity A
+Q6CZD9	0	0	1	0	0	ATP-dependent RNA helicase RhlB
+Q6CZW4	0	0	0	1	0	30S ribosomal protein S7
+Q6CZX1	0	0	1	0	0	50S ribosomal protein L4
+Q6CZY4	0	0	0	2	0	30S ribosomal protein S8
+Q6DAM9	0	0	3	0	0	DNA-directed RNA polymerase subunit beta&apos;
+Q6HQ01	0	0	1	0	0	S4 RNA-binding domain-containing protein
+Q72G71	1	0	0	0	0	Glucose-1-phosphate adenylyltransferase
+Q72G76	4	0	0	0	0	Penicillin acylase
+Q72G82	1	0	0	0	0	(S)-2-hydroxy-acid oxidase chain D
+Q72G93	1	0	0	0	0	Acetyltransferase
+Q72GH7	2	0	0	0	0	Transcriptional regulatory protein, lysR family (Hydrogen peroxide-inducible genes activator)
+Q72GJ2	2	0	0	0	0	Serine/threonine protein kinase
+Q72GJ4	1	0	0	0	0	UDP-N-acetylglucosamine 1-carboxyvinyltransferase
+Q72GL5	1	0	0	0	0	Quinone oxidoreductase
+Q72GM3	3	0	0	0	0	Leucine--tRNA ligase
+Q72GP8	1	0	0	0	0	Transcriptional regulatory protein, lysR family
+Q72GT0	1	0	0	0	0	Enoyl-CoA hydratase
+Q72GT1	2	0	0	0	0	Pseudouridine synthase
+Q72GV2	1	0	0	0	0	Octanoyltransferase
+Q72GY5	1	0	0	0	0	6-carboxyhexanoate-CoA ligase
+Q72GY6	1	0	0	0	0	Glucose-6-phosphate isomerase
+Q72H18	2	0	0	0	0	4-hydroxy-3-methylbut-2-en-1-yl diphosphate synthase (flavodoxin)
+Q72H26	3	0	0	0	0	MFS domain-containing protein
+Q72H57	1	0	0	0	0	Porphobilinogen deaminase
+Q72H82	1	0	0	0	0	Metal dependent hydrolase
+Q72H85	1	0	0	0	0	Enolase
+Q72K02	1	0	0	0	0	Fructose-1,6-bisphosphate aldolase/phosphatase
+Q72K09	1	0	0	0	0	Transcriptional regulator, tetR family
+Q72K12	1	0	0	0	0	Phenylacetic acid degradation protein paaC
+Q72K14	3	0	0	0	0	PaaZ
+Q72K16	1	0	0	0	0	Phenylacetate-coenzyme A ligase
+Q72K26	1	0	0	0	0	2-hydroxyhepta-2,4-diene-1,7-dioate isomerase/5-carboxymethyl-2-oxo-hex-3-ene-1,7-dioate decarboxylase
+Q72K36	1	0	0	0	0	Omega-(3) fatty acid desaturase
+Q72K46	2	0	0	0	0	Probable transposase
+Q72K53	1	0	0	0	0	Cell division protein ftsK
+Q72KB3	2	0	0	0	0	Enoyl-CoA hydratase/3,2-trans-enoyl-CoA isomerase/3-hydroxyacyl-CoA dehydrogenase
+Q72KB4	2	0	0	0	0	Transcription-repair-coupling factor
+Q72KB8	1	0	0	0	0	UDP-galactopyranose mutase
+Q72KC0	2	0	0	0	0	Glycosyltransferase
+Q72KC2	3	0	0	0	0	MFS domain-containing protein
+Q72KD3	4	0	0	0	0	Aldehyde dehydrogenase
+Q72KD6	2	0	0	0	0	4-aminobutyrate aminotransferase
+Q72KE8	3	0	0	0	0	Translation initiation factor IF-2
+Q72KF6	1	0	0	0	0	Hydrolase (HAD superfamily)
+Q72KH6	3	0	0	0	0	Aspartate--tRNA ligase
+Q72KH8	2	0	0	0	0	Probable endonuclease 4
+Q72KI8	1	0	0	0	0	Putative transferase/hydrolase
+Q72KK7	1	0	0	0	0	Pyruvate phosphate dikinase
+Q72KL8	1	0	0	0	0	Thiamine-phosphate synthase
+Q72KM0	3	0	0	0	0	Ferredoxin-nitrite reductase
+Q72KM2	1	0	0	0	0	Uroporphyrin-III C-methyltransferase/precorrin-2 oxidase/ferrochelatase
+Q72KP5	1	0	0	0	0	Sugar transport protein
+Q72KQ8	1	0	0	0	0	Phosphoribosylamine--glycine ligase
+Q72KR1	1	0	0	0	0	Fumarylacetoacetate hydrolase family protein
+Q72KR3	3	0	0	0	0	Transcriptional repressor
+Q72KS4	1	0	0	0	0	Lon protease 1
+Q72KT6	1	0	0	0	0	Glycerate dehydrogenase/glyoxylate reductase
+Q72KU0	1	0	0	0	0	Aspartate carbamoyltransferase
+Q72KV0	1	0	0	0	0	Iron(III) dicitrate transport system permease protein fecD
+Q72KX0	1	0	0	0	0	Acetyl-CoA acetyltransferase
+Q72KX2	1	0	0	0	0	Glucose-binding protein
+Q72KY9	1	0	0	0	0	Second mannosyl transferase
+Q72L05	2	0	0	0	0	Phosphoenolpyruvate carboxylase
+Q72L24	2	0	0	0	0	Transcriptional regulator, tetR family
+Q72L25	1	0	0	0	0	Acyl-CoA dehydrogenase, short-chain specific
+Q72L35	4	0	0	0	0	Isopentenyl-diphosphate delta-isomerase
+Q72L72	1	0	0	0	0	Acetyl-CoA acetyltransferase
+Q72L78	2	0	0	0	0	Enoyl-CoA hydratase
+Q72LB4	1	0	0	0	0	Uncharacterized protein
+Q72LC6	1	0	0	0	0	N-acyl-L-amino acid amidohydrolase
+Q72LD1	1	0	0	0	0	(S)-2-hydroxy-acid oxidase subunit glcE
+Q72LF3	1	0	0	0	0	tRNA-5-methyluridine(54) 2-sulfurtransferase
+Q72LH6	1	0	0	0	0	Branched-chain amino acid transport ATP-binding protein livF
+Q72LI0	1	0	0	0	0	Long-chain-fatty-acid-CoA ligase
+Q72LJ1	1	0	0	0	0	Signal recognition particle receptor FtsY
+Q72LL6	1	0	0	0	0	2-aminoadipate transaminase
+Q72LL9	2	0	0	0	0	Pseudouridine synthase
+Q72LM2	1	0	0	0	0	Hypothetical conserved protein
+Q72LN8	2	0	0	0	0	Phospho-2-dehydro-3-deoxyheptonate aldolase/chorismate mutase
+Q72LP6	1	0	0	0	0	Probable tungsten-containing aldehyde ferredoxin oxidoreductase
+Q72LQ0	1	0	0	0	0	O-sialoglycoprotein endopeptidase
+Q72LQ5	1	0	0	0	0	Hypothetical conserved protein
+Q745T4	1	0	0	0	0	Hypothetical conserved protein
+Q745T5	4	0	0	0	0	Probable beta-galactosidase
+Q746H0	1	0	0	0	0	Hypothetical conserved protein
+Q746H1	1	0	0	0	0	Probable plasmid-partitioning protein ParA
+Q746H2	1	0	0	0	0	Probable plasmid-partitioning protein ParB
+Q746I9	1	0	0	0	0	Phytoene dehydrogenase
+Q746J8	1	0	0	0	0	Transcriptional regulator LdrP
+Q746K6	1	0	0	0	0	Probable phytoene dehydrogenase
+Q746L0	1	0	0	0	0	Metal dependent hydrolase
+Q746M7	3	0	0	0	0	Piwi domain-containing protein
+Q746N0	1	0	0	0	0	Cobyric acid synthase
+Q746N1	1	0	0	0	0	Histidinol-phosphate aminotransferase
+Q746N5	1	0	0	0	0	Nicotinate-nucleotide--dimethylbenzimidazole phosphoribosyltransferase
+Q746N8	3	0	0	0	0	CbiX protein
+Q746P2	1	0	0	0	0	Precorrin-2 C20-methyltransferase
+Q749Z8	0	0	0	0	2	Transposase of ISGsu6, IS21 family
+Q74H42	0	0	0	0	3	CRISPR-associated helicase Cas3
+Q74H48	0	0	0	0	3	Uncharacterized protein
+Q74H49	0	0	0	0	2	TcdB_toxin_midN domain-containing protein
+Q74H50	0	0	0	0	2	DNA polymerase IV
+Q74H55	0	0	0	0	2	Serine--tRNA ligase
+Q74H58	0	0	0	0	1	Chaperone protein DnaJ
+Q74H59	0	0	0	0	1	Chaperone protein DnaK
+Q74H60	0	0	0	0	1	Protein GrpE
+Q74H90	0	0	0	0	3	DNA replication and repair protein RecF
+Q7A9L5	0	0	1	0	0	Adenine deaminase
+Q7ATJ6	0	0	1	0	0	3&apos;-kinase
+Q7CR81	0	0	0	0	1	Cell division protein FtsQ
+Q7DJ60	0	0	5	0	0	Autotransporter adhesin EhaG
+Q7SIC7	1	0	0	0	0	Nicotinate-nucleotide--dimethylbenzimidazole phosphoribosyltransferase
+Q7W0T0	0	0	0	1	0	tRNA uridine 5-carboxymethylaminomethyl modification enzyme MnmG
+Q7WRD8	0	0	0	2	0	DNA-directed RNA polymerase subunit beta&apos;
+Q839Y4	0	0	0	2	0	Adenylosuccinate synthetase
+Q839Y8	0	0	0	1	0	30S ribosomal protein S18
+Q839Z1	3	0	0	0	0	DNA gyrase subunit B
+Q839Z2	1	0	0	0	0	DNA replication and repair protein RecF
+Q839Z5	1	0	0	0	0	Chromosomal replication initiator protein DnaA
+Q83IJ0	0	2	0	0	0	Probable L-ascorbate-6-phosphate lactonase UlaG
+Q83IN9	0	1	0	0	0	Glucose-6-phosphate isomerase
+Q83PW0	0	0	1	0	0	Pimeloyl-[acyl-carrier protein] methyl ester esterase
+Q83PZ5	0	0	0	1	0	tRNA-dihydrouridine synthase B
+Q84BQ9	1	0	0	0	0	Ribosomal protein L11 methyltransferase
+Q8A2S5	0	4	0	0	0	Tyrosine--tRNA ligase
+Q8A2W0	0	1	0	0	0	tRNA-2-methylthio-N(6)-dimethylallyladenosine synthase
+Q8CMJ3	0	2	0	0	0	Mutator family transposase
+Q8CWI4	0	0	2	0	0	2-amino-3-ketobutyrate coenzyme A ligase
+Q8CX52	0	2	0	0	0	tRNA modification GTPase MnmE
+Q8D1H2	0	0	1	0	0	ThiH protein
+Q8D1I4	0	0	1	0	0	Uridine phosphorylase
+Q8D1I9	0	0	2	0	0	High-affinity branched-chain amino acid transport ATP-binding protein
+Q8DRK9	0	0	1	0	0	Tagatose-6-phosphate ketose/aldose isomerase
+Q8DWN4	0	1	0	0	0	Transcription-repair-coupling factor
+Q8DWN9	0	2	0	0	0	Chromosomal replication initiator protein DnaA
+Q8E897	0	1	0	0	0	DNA polymerase V subunit UmuC
+Q8E8A6	0	1	0	0	0	Type II restriction-modication system restriction endonuclease
+Q8E8A8	0	1	0	0	0	Plasmid replication initiation protein RepA
+Q8EGQ1	0	2	0	0	0	Y1_Tnp domain-containing protein
+Q8EJR1	0	1	0	0	0	Zinc-type alcohol dehydrogenase-like protein
+Q8EJR4	0	3	0	0	0	Quinol:fumarate reductase FAD-binding subunit FrdA
+Q8EJR5	0	1	0	0	0	Quinol:fumarate reductase menaquinol-oxidizing subunit FrdC
+Q8EJS1	0	1	0	0	0	Uncharacterized protein
+Q8EJS4	0	1	0	0	0	Integrase bacteriophage P4 family
+Q8EJS5	0	2	0	0	0	Uncharacterized protein
+Q8EJT2	0	2	0	0	0	Type I restriction enzyme R Protein
+Q8EJT3	0	1	0	0	0	Uncharacterized protein
+Q8EJT9	0	1	0	0	0	Type III restriction-modification system restriction subunit Res
+Q8EJU5	0	1	0	0	0	Predicted inner membrane protein
+Q8EJU8	0	1	0	0	0	Bifunctional ppGpp phosphohydrolase/GTP diphosphokinase SpoT
+Q8EJU9	0	1	0	0	0	Endoribonuclease L-PSP
+Q8EJV6	0	2	0	0	0	Uncharacterized protein
+Q8EJV7	0	2	0	0	0	ATP-dependent serine peptidase S16 family YifB
+Q8EJW1	0	1	0	0	0	2-methylisocitrate lyase
+Q8EJW3	0	3	0	0	0	2-methylcitrate dehydratase (2-methyl-trans-aconitate forming)
+Q8EJW4	0	1	0	0	0	2-methyl-aconitate isomerase
+Q8EJW5	0	3	0	0	0	Multifunctional sensory protein/diguanylate cyclase/signalling protein with EAL domain
+Q8EJW6	0	1	0	0	0	Branched-chain-amino-acid transaminase IlvE
+Q8EJX3	0	1	0	0	0	Thiol:disulfide interchange protein
+Q8EJX6	0	1	0	0	0	Protein adenylyltransferase SelO
+Q8EJY0	0	1	0	0	0	Uncharacterized protein
+Q8EJY2	0	1	0	0	0	Nitrosative stress induced protein YgbA
+Q8EJY7	0	2	0	0	0	Uncharacterized protein
+Q8EJZ3	0	1	0	0	0	Putrescine transporter PotE
+Q8EK00	0	2	0	0	0	Outer membrane protein COG4775 family
+Q8EK05	0	1	0	0	0	Ribosomal RNA small subunit methyltransferase I
+Q8EK06	0	1	0	0	0	Outer membrane lipoprotein LppC
+Q8EK08	0	1	0	0	0	Phosphoheptose isomerase
+Q8EK11	0	1	0	0	0	Transcriptional regulator LysR family
+Q8EK14	0	1	0	0	0	Ribulose-phosphate 3-epimerase
+Q8EK19	0	1	0	0	0	3-dehydroquinate synthase
+Q8EK24	0	1	0	0	0	Type IV pilus biogenesis protein PilN
+Q8EK26	0	2	0	0	0	Penicillin-binding protein 1A McrA
+Q8EK27	0	3	0	0	0	Argininosuccinate lyase
+Q8EK28	0	2	0	0	0	Argininosuccinate synthase
+Q8EK29	0	1	0	0	0	Ornithine carbamoyltransferase
+Q8EK30	0	1	0	0	0	Phosphoenolpyruvate carboxylase
+Q8EK32	0	1	0	0	0	Nicotinamide-nucleotide amidohydrolase PncC
+Q8EK37	0	1	0	0	0	Cytochrome c synthetase cytochrome b containing quinol-haem oxidoreductase subunit CcmF
+Q8EK46	0	1	0	0	0	50S ribosomal protein L17
+Q8EK48	0	1	0	0	0	30S ribosomal protein S13
+Q8EK50	0	2	0	0	0	Protein translocase subunit SecY
+Q8EK51	0	2	0	0	0	50S ribosomal protein L15
+Q8EK71	0	2	0	0	0	Elongation factor G 1
+Q8EK72	0	1	0	0	0	30S ribosomal protein S7
+Q8EK73	0	5	0	0	0	DNA-directed RNA polymerase subunit beta&apos;
+Q8EK81	0	2	0	0	0	Elongation factor Tu 1
+Q8EK83	0	2	0	0	0	Pantothenate kinase
+Q8EK90	0	1	0	0	0	Glutamate racemase
+Q8EK99	0	1	0	0	0	Selenide, water dikinase
+Q8EKA0	0	1	0	0	0	tRNA 2-selenouridine synthase
+Q8EKA1	0	1	0	0	0	Bifunctional lysophospholipid transporter-2-acyl glycerophosphoethanolamine acyl transferase/acyl ACP synthetase
+Q8EKA3	0	2	0	0	0	Acteyltransferase GNAT family
+Q8EKA6	0	13	0	0	0	Bifunctional autotransporter / adhesin cadherin family
+Q8EKA8	0	1	0	0	0	Peptidase subtilase family
+Q8EKB5	0	2	0	0	0	Phytanoyl-CoA dioxygenase PhyH
+Q8EKB6	0	1	0	0	0	Aspartyl/asparaginyl beta-hydroxylase family protein
+Q8EKB8	0	1	0	0	0	HAD-superfamily hydrolase subfamily IA variant 3 protein family YrfG
+Q8EKC3	0	1	0	0	0	T2aSS secretion system protein GspJ
+Q8EKC8	0	1	0	0	0	T2aSS secretion system assembly ATPase GspE
+Q8EKD0	0	1	0	0	0	T2aSS secretion system protein GspC
+Q8EKD1	0	1	0	0	0	Heat shock protein 15
+Q8EKD3	0	3	0	0	0	Phosphoenolpyruvate carboxykinase (ATP)
+Q8EKD5	0	2	0	0	0	Aminobenzoyl-glutamate transporter AbgT family
+Q8EKD8	0	2	0	0	0	Proton:glutamate symporter DAACS family
+Q8EKE1	0	2	0	0	0	Uncharacterized protein
+Q8EKE3	0	3	0	0	0	Peptidase M14 carboxypeptidase A family
+Q8EKE7	0	1	0	0	0	Uncharacterized protein
+Q8EKE9	0	1	0	0	0	Endo/excinuclease domain protein
+Q8EKF0	0	3	0	0	0	Oligopeptidase B PtrB
+Q8EKF2	0	1	0	0	0	3,4-dihydroxy-2-butanone 4-phosphate synthase
+Q8EKF3	0	3	0	0	0	Nitrate/nitrite-responsive bifunctional diguanylate cyclase/phosphodiesterase with PAS sensory domain
+Q8EKF4	0	1	0	0	0	Ferritin
+Q8EKF9	0	1	0	0	0	Ribosomal RNA large subunit methyltransferase F
+Q8EKG3	0	2	0	0	0	Extracellular metalloprotease PrtV
+Q8EKG6	0	3	0	0	0	Metal transporter
+Q8EKG7	0	1	0	0	0	DUF833 family protein
+Q8EKH5	0	2	0	0	0	Uncharacterized protein
+Q8EKI0	0	1	0	0	0	Uncharacterized protein
+Q8EKI1	0	2	0	0	0	Inhibitor of invertebrate-type lysozyme PliI-like family
+Q8EKI2	0	1	0	0	0	Uncharacterized protein
+Q8EKI5	0	1	0	0	0	Uncharacterized protein
+Q8EKI7	0	3	0	0	0	Selenocysteine-specific translation elongation factor SelB
+Q8EKI8	0	2	0	0	0	L-seryl-tRNA(Sec) selenium transferase
+Q8EKJ4	0	2	0	0	0	Histidine ammonia-lyase
+Q8EKK4	0	1	0	0	0	Predicted periplasmic protein
+Q8EKK6	0	1	0	0	0	Predicted membrane protein
+Q8EKL1	0	1	0	0	0	Glutathione-dependent formaldehyde-activating enzyme GfaB
+Q8EKL4	0	1	0	0	0	Predicted lipoprotein
+Q8EKL6	0	1	0	0	0	Outer membrane morn variant repeat-containing protein
+Q8EKL7	0	2	0	0	0	Long-chain-fatty-acid--CoA ligase IcfE
+Q8EKM0	0	1	0	0	0	Transcriptional repressor of ABC-type efflux system GntR family
+Q8EKM1	0	2	0	0	0	Hydrolase alpha/beta hydrolase fold family
+Q8EKM6	0	7	0	0	0	YfhM family alpha2-macroglobulin
+Q8EKM9	0	1	0	0	0	Toxin-antitoxin system toxin HipA family
+Q8EKN1	0	1	0	0	0	Family C40 peptidase lipoprotein NlpC
+Q8EKN2	0	2	0	0	0	Two component signal transduction system controlling the osmosenstive K+ channel histidine kinase KdpD
+Q8EKN7	0	2	0	0	0	Tetratricopeptide repeat-containing protein
+Q8EKN9	0	2	0	0	0	Glycerol-3-phosphate dehydrogenase [NAD(P)+]
+Q8EKP0	0	1	0	0	0	Protein-export protein SecB
+Q8EKP4	0	1	0	0	0	Periplasmic C-terminal peptidase S41 family
+Q8EKQ2	0	1	0	0	0	Oxygen-dependent coproporphyrinogen-III oxidase
+Q8EKQ3	0	3	0	0	0	Threonylcarbamoyl-AMP synthase
+Q8EKQ6	0	1	0	0	0	DNA processing protein DprA
+Q8EKQ8	0	1	0	0	0	Peptide deformylase 1
+Q8EKR0	0	3	0	0	0	Ribosomal RNA small subunit methyltransferase B
+Q8EKR2	0	1	0	0	0	Trk system potassium uptake protein
+Q8EKR3	0	1	0	0	0	Oxygen-independent protoporphyrinogen oxidase HemG
+Q8EKR6	0	1	0	0	0	Trk system potassium uptake protein
+Q8EKR9	0	1	0	0	0	Fatty acid oxidation complex subunit alpha
+Q8EKS1	0	1	0	0	0	Sulfur carrier protein TusA
+Q8EKS2	0	1	0	0	0	MOSC domain protein
+Q8EKS6	0	5	0	0	0	Glycine--tRNA ligase beta subunit
+Q8EKT1	0	1	0	0	0	Beta sliding clamp
+Q8EKT2	0	1	0	0	0	Chromosomal replication initiator protein DnaA
+Q8EKT3	0	1	0	0	0	50S ribosomal protein L34
+Q8EKT6	0	2	0	0	0	Membrane protein insertase YidC
+Q8FB37	0	2	0	0	0	Maltose/maltodextrin import ATP-binding protein MalK
+Q8FBI2	0	3	0	0	0	Fatty acid oxidation complex subunit alpha
+Q8FD59	0	0	2	1	0	Sialic acid transporter NanT 1
+Q8FDF5	0	0	0	1	0	Putrescine aminotransferase
+Q8FF70	0	0	0	2	0	Polyphosphate kinase
+Q8GLC3	0	0	3	0	0	TnpA
+Q8PEF8	0	0	0	0	1	Peptidase_M23 domain-containing protein
+Q8PEG0	0	0	0	0	1	D-3-phosphoglycerate dehydrogenase
+Q8PEG4	0	0	0	0	1	Fe2OG dioxygenase domain-containing protein
+Q8PEG5	0	0	0	0	1	Elp3 domain-containing protein
+Q8R600	0	0	0	0	2	Elongation factor Ts
+Q8R601	0	0	0	0	1	tRNA pseudouridine synthase A
+Q8R603	0	0	0	0	1	Elongation factor Tu
+Q8R6G4	0	0	0	0	1	ATP-dependent DNA helicase RecG
+Q8R6G5	0	0	0	0	1	Uridylate kinase
+Q8R6G7	0	0	0	0	1	Ribosomal protein L11 methyltransferase
+Q8RDZ9	0	1	0	0	0	Transposase
+Q8RHU4	0	0	0	0	1	Hypothetical lipoprotein
+Q8RIE0	0	0	0	0	1	Probable transcriptional regulatory protein FN1661
+Q8RIE2	0	0	0	0	1	Proline--tRNA ligase
+Q8RIE6	0	0	0	0	1	AAA-ATPase_like domain-containing protein
+Q8RIF5	0	0	0	0	1	50S ribosomal protein L3
+Q8RIG1	0	0	0	0	1	30S ribosomal protein S3
+Q8RIG8	0	0	0	0	1	50S ribosomal protein L5
+Q8RIG9	0	0	0	0	1	30S ribosomal protein S14
+Q8RIH1	0	0	0	0	2	50S ribosomal protein L6
+Q8RIH7	0	0	0	0	1	30S ribosomal protein S2
+Q8RII8	0	0	0	0	1	Cytidylate kinase
+Q8RIJ5	0	0	0	0	1	Peptidyl-tRNA hydrolase
+Q8RIJ7	0	0	0	0	1	Ion-translocating oxidoreductase complex subunit G
+Q8RIK4	0	0	0	0	2	Uncharacterized protein
+Q8RIK8	0	0	0	0	1	Endonuclease MutS2
+Q8RIK9	0	0	0	0	1	Cysteine--tRNA ligase
+Q8RIL2	0	0	0	0	1	ATPases and helicase subunits involved in DNA replication
+Q8RIL3	0	0	0	0	1	UPF0213 protein FN1575
+Q8RIL8	0	0	0	0	1	Na(+)/H(+) antiporter
+Q8RIM3	0	0	0	0	1	Abortive phage resistance protein
+Q8RIM5	0	0	0	0	1	Guanylate cyclase domain-containing protein
+Q8RIN1	0	0	0	0	2	Iron-sulfur cluster-binding protein
+Q8RIN3	0	0	0	0	2	Arsenical pump-driving ATPase
+Q8RIN5	0	0	0	0	2	(S)-2-hydroxy-acid oxidase chain D
+Q8RIQ1	0	0	0	0	2	UDP-N-acetylglucosamine 1-carboxyvinyltransferase
+Q8RIQ3	0	0	0	0	5	Leucine--tRNA ligase
+Q8RIR1	0	1	0	0	0	Riboflavin biosynthesis protein RibBA
+Q8RIR2	0	1	0	0	0	Riboflavin synthase alpha chain
+Q8RIR8	0	0	0	0	1	Nickel transport ATP-binding protein nikD
+Q8RIR9	0	0	0	0	2	Nickel transport ATP-binding protein nikE
+Q8RIS0	0	2	0	0	0	Cell surface protein
+Q8UJC5	0	0	1	0	0	Shikimate dehydrogenase (NADP(+))
+Q8UJC6	0	0	1	0	0	Nucleoside triphosphate pyrophosphatase
+Q8X610	0	1	0	0	0	Homoserine O-succinyltransferase
+Q8X611	0	1	0	0	0	Bifunctional purine biosynthesis protein PurH
+Q8X6X6	0	0	1	0	0	1,4-alpha-glucan branching enzyme GlgB
+Q8X6X8	0	0	2	0	0	Glycogen debranching enzyme
+Q8X727	0	1	0	0	0	Soluble pyridine nucleotide transhydrogenase
+Q8X7U3	0	0	0	1	0	Phosphoadenosine phosphosulfate reductase
+Q8X8L5	0	1	0	0	0	5-methyltetrahydropteroyltriglutamate--homocysteine methyltransferase
+Q8X9H0	0	0	2	0	0	N-acetylmannosamine kinase
+Q8X9Z9	0	0	0	0	1	3-isopropylmalate dehydrogenase
+Q8XA15	0	0	0	0	1	Bis(5&apos;-nucleosyl)-tetraphosphatase, symmetrical
+Q8XA30	0	0	0	0	4	L-carnitine/gamma-butyrobetaine antiporter
+Q8XAC5	0	0	0	1	0	Phosphoribosylformylglycinamidine cyclo-ligase
+Q8XAI7	0	0	0	1	0	Uronate isomerase
+Q8XAV1	0	1	0	0	0	Dihydroxy-acid dehydratase
+Q8XAW9	0	2	0	0	0	Low affinity potassium transport system protein kup
+Q8XGX8	0	0	0	0	1	Oxaloacetate decarboxylase alpha chain
+Q8Z2B3	0	0	2	0	0	Glycine--tRNA ligase beta subunit
+Q8Z2N4	0	0	1	0	0	DNA replication and repair protein RecF
+Q8Z9I0	0	0	0	0	1	2-isopropylmalate synthase
+Q8Z9K8	0	0	0	0	1	Ferredoxin-like protein FixX
+Q8Z9L5	0	0	0	0	1	Carnitinyl-CoA dehydratase
+Q8Z9M9	0	0	0	0	1	Non-specific ribonucleoside hydrolase RihC
+Q8Z9N7	0	0	0	0	1	Uncharacterized protein
+Q8ZAE1	0	0	2	0	0	Undecaprenyl-phosphate alpha-N-acetylglucosaminyl 1-phosphate transferase
+Q8ZAE4	0	0	2	0	0	UDP-N-acetyl-D-mannosamine dehydrogenase
+Q8ZJR1	0	0	1	0	0	UPF0761 membrane protein YPO0028/y3801/YP_0029
+Q8ZK86	0	1	0	0	0	L-ribulose-5-phosphate 3-epimerase UlaE
+Q8ZLG5	0	0	0	2	0	1,4-alpha-glucan branching enzyme GlgB
+Q8ZLJ4	0	0	1	0	0	33 kDa chaperonin
+Q8ZN60	0	0	0	1	0	GMP synthase [glutamine-hydrolyzing]
+Q8ZRP8	0	0	0	0	2	H(+)/Cl(-) exchange transporter ClcA
+Q8ZRQ8	0	0	0	0	1	Poly(A) polymerase I
+Q8ZRR1	0	0	0	0	3	Pantothenate synthetase
+Q8ZRS5	0	0	0	0	1	D-threonate kinase
+Q8ZRU4	0	0	0	0	1	UDP-N-acetylmuramoylalanine--D-glutamate ligase
+Q8ZRV8	0	0	0	0	5	RNA polymerase-associated protein RapA
+Q8ZRW2	0	0	0	0	3	Glutathione-regulated potassium-efflux system protein KefC
+Q8ZRW9	0	0	0	0	1	Protein FixC
+Q8ZRX8	0	0	0	0	2	4-hydroxy-tetrahydrodipicolinate reductase
+Q8ZS14	0	0	0	0	2	UPF0412 protein YaaI
+Q92JR3	0	0	2	0	0	Transport permease protein
+Q93UN8	0	0	1	0	0	Mercuric reductase
+Q97TC4	0	0	1	0	0	Hypoxanthine-guanine phosphoribosyltransferase
+Q98BH1	0	0	0	1	0	DNA replication and repair protein RecF
+Q9CDD8	0	0	0	0	1	CbiA domain-containing protein
+Q9CDE0	0	0	0	0	1	Possible membrane protein
+Q9CDE4	0	0	0	0	2	FHA domain-containing protein
+Q9CDE5	0	0	0	0	1	PPM-type phosphatase domain-containing protein
+Q9CL43	0	0	0	1	0	30S ribosomal protein S14
+Q9CL47	0	0	1	0	0	30S ribosomal protein S5
+Q9EYY5	0	0	0	2	0	Phosphoglycolate phosphatase
+Q9F1Q2	1	0	0	0	0	Uncharacterized protein
+Q9JXS7	0	0	1	0	0	Chromosomal replication initiator protein DnaA
+Q9JXT0	0	0	1	0	0	Uncharacterized protein
+Q9L5Q2	0	0	0	0	1	Uncharacterized protein
+Q9L6L2	0	1	0	0	0	Trk system potassium uptake protein TrkH
+Q9L6S1	0	4	0	0	0	ATP-dependent DNA helicase Rep
+Q9L9I4	0	1	0	0	0	Uroporphyrinogen decarboxylase
+Q9LCX2	2	0	0	0	0	Aspartyl/glutamyl-tRNA(Asn/Gln) amidotransferase subunit B
+Q9LCX3	2	0	0	0	0	Glutamyl-tRNA(Gln) amidotransferase subunit A
+Q9R9D5	0	0	2	0	0	Lipopolysaccharide core heptosyltransferase RfaQ
+Q9R9D6	0	0	1	0	0	Lipopolysaccharide core heptose(I) kinase RfaP
+Q9RA48	1	0	0	0	0	ORF protein
+Q9RA51	1	0	0	0	0	Homoserine O-acetyltransferase
+Q9RA62	3	0	0	0	0	Alpha-glucosidase
+Q9S0Q8	0	1	0	0	0	DNA-directed RNA polymerase subunit alpha
+Q9X3Y6	0	0	2	0	0	DNA gyrase subunit B
+Q9XBV2	0	0	1	0	0	Thiol:disulfide interchange protein DsbA
+Q9XCA1	0	0	1	0	0	ADP-L-glycero-D-manno-heptose-6-epimerase
+Q9ZEB1	0	0	1	0	0	Uncharacterized protein RP034
+Q9ZEB2	0	0	1	0	0	Uncharacterized protein
+Q9ZEB3	0	0	1	0	0	UPF0301 protein RP032
+Q9ZEB4	0	0	1	0	0	SCO2-like protein RP031
+Q9ZEC6	0	0	1	0	0	Uncharacterized protein RP017
+Q9ZED2	0	0	1	0	0	Probable tRNA-dihydrouridine synthase
+Q9ZED3	0	0	2	0	0	UDP-3-O-acylglucosamine N-acyltransferase
+Q9ZED6	0	0	3	0	0	Uncharacterized protein RP006
+Q9ZED7	0	0	1	0	0	Uncharacterized protein RP005
+Q9ZF28	0	0	0	2	0	Translation initiation factor IF-2
+Q9ZHC7	0	0	4	0	0	Silver exporting P-type ATPase
+Q9ZHC9	0	0	5	0	0	Putative cation efflux system protein SilA
+Q9ZI44	0	0	1	0	0	30S ribosomal protein S3
+Q9ZI49	0	0	2	0	0	50S ribosomal protein L4
+Q9ZIT5	0	0	1	0	0	LPS biosynthesis protein
+Q9ZIT7	0	0	3	0	0	Lipopolysaccharide 1,2-N-acetylglucosamine transferase WaaD
+Q9ZIT8	0	0	1	0	0	Ligase
+R1F1P2	0	0	0	0	2	ABC-type sugar transporter permease component
+R4Y4Y4	0	1	0	0	0	OmpR/PhoB-type domain-containing protein
+R4Y7S9	0	1	0	0	0	Diacylglycerol kinase
+R4Y9Z6	0	1	0	0	0	YigM protein
+R9RDF1	0	0	0	0	1	ABC transmembrane type-1 domain-containing protein
+S0KDX6	0	0	0	1	0	30S ribosomal protein S6
+S4DCJ5	0	0	0	1	0	Metal cation transporter, ZIP family
+S4DHB0	0	0	0	2	0	DNA gyrase subunit A
+S4VGY6	0	0	1	0	0	Replication initiator protein C
+T0PHR7	0	0	0	0	3	Enoyl-[acyl-carrier-protein] reductase [NADH]
+T0PK41	0	0	0	0	1	3&apos;-5&apos; ssDNA/RNA exonuclease TatD
+T0QKY3	0	0	0	0	2	S-(hydroxymethyl)glutathione dehydrogenase
+T0QLV0	0	0	0	0	4	Protein lysine acetyltransferase Pka
+T0QPW4	0	0	0	0	1	YhiN family protein YhiN
+U4Q377	0	0	2	0	0	DNA gyrase subunit B
+U6C991	0	0	2	0	0	Conjugal transfer protein TraO
+U7R8G6	0	1	0	0	0	Uncharacterized protein
+U7TC74	0	0	0	0	1	T2SP_E domain-containing protein
+U9Z656	0	0	1	0	0	Uncharacterized protein
+UPI000029E5BD	0	0	0	0	1	leucine efflux protein LeuE
+UPI00016AD203	0	0	1	0	0	hypothetical protein
+UPI00035DD067	0	0	0	0	2	HTH-type transcriptional regulator SgrR
+UPI0003714035	0	0	0	1	0	multidrug transporter subunit MdtN
+UPI00037E0B99	1	0	0	0	0	aminotransferase class V-fold PLP-dependent enzyme
+UPI0003B3BA9E	1	0	0	0	0	NYN domain-containing protein
+UPI0003B64D72	1	0	0	0	0	pyruvate dehydrogenase (acetyl-transferring) E1 component subunit alpha
+UPI0004610FFB	0	0	0	2	0	DEAD/DEAH family ATP-dependent RNA helicase
+UPI000501DE58	0	0	0	2	0	AraC family transcriptional regulator
+UPI00052CD7E9	0	0	3	0	0	autotransporter adhesin Ag43
+UPI00053809C6	1	0	0	0	0	teicoplanin resistance protein VanZ
+UPI00058D59A7	0	0	0	3	0	aminomethyl-transferring glycine dehydrogenase
+UPI0005ED6D68	0	0	0	1	0	hydrogenase expression/formation protein HypE
+UPI00063CAFFC	0	0	0	1	0	tRNA-modifying protein YgfZ
+UPI00064B04B7	0	0	0	1	0	epoxyqueuosine reductase QueH
+UPI0006503796	0	0	0	1	0	oxidoreductase
+UPI00067C4A2F	0	0	0	0	1	hypothetical protein
+UPI00076E8FC9	0	0	0	0	1	undecaprenyldiphospho-muramoylpentapeptide beta-N-acetylglucosaminyltransferase
+UPI0008800298	0	0	1	0	0	membrane protein FxsA
+UPI00090809A9	0	0	0	1	0	adhesin
+UPI00092ED586	0	0	0	0	2	IS200/IS605 family element transposase accessory protein TnpB
+UPI000936EB9C	0	2	0	0	0	maltose ABC transporter permease MalF
+UPI00098352B0	0	1	0	0	0	helix-turn-helix domain-containing protein
+UPI0009838730	0	1	0	0	0	methionine synthase
+UPI0009AE979C	0	0	0	0	3	chitinase
+UPI0009B8CC9D	0	0	0	0	1	type 1 fimbrial protein
+UPI000B3E615C	0	0	0	1	0	two-component system sensor histidine kinase QseC
+UPI000B41F63E	0	1	0	0	0	L-rhamnose isomerase
+UPI000BE592EA	0	0	2	0	0	HTH-type transcriptional regulator MalT
+UPI000C2A4C08	0	1	0	0	0	fimbrial biogenesis outer membrane usher protein
+UPI000C7AE3F1	0	1	0	0	0	chromosomal replication initiator protein DnaA
+UPI000D2020E8	0	2	0	0	0	poly-beta-1,6 N-acetyl-D-glucosamine synthase
+UPI000D3D3116	0	0	0	1	0	iron ABC transporter permease
+UPI000DDDA9B5	0	0	0	1	0	nickel import ATP-binding protein NikD
+UPI000DDFBAFE	0	0	0	1	0	helix-turn-helix domain-containing protein
+UPI000E09613F	0	1	0	0	0	transporter substrate-binding domain-containing protein
+UPI000E2F704C	0	0	0	1	0	hypothetical protein
+UPI000E3E66C7	1	0	0	0	0	superoxide dismutase
+UPI000E6A746C	0	0	0	0	1	DUF1067 domain-containing protein
+UPI000E74440D	2	0	0	0	0	IS630 family transposase
+UPI000FDED179	0	0	1	0	0	ribosome-dependent GTPase TypA
+UPI00101363C5	0	1	0	0	0	DUF3763 domain-containing protein
+UPI001035333B	0	0	0	1	0	multifunctional CCA addition/repair protein
+V1DN98	0	2	0	0	0	Na+/h+ antiporter
+V1HDE0	0	0	0	0	1	HTH_46 domain-containing protein
+V7ZJB9	0	0	0	0	2	Peptidase_M48 domain-containing protein
+V9ZTQ2	0	0	0	0	1	Phosphotransferase enzyme II, B component
+W0LWG7	0	0	1	0	0	DNA primase
+W1B3K4	0	1	0	0	0	ABC transmembrane type-1 domain-containing protein
+W1ENQ6	0	0	0	2	0	Protein TsgA homolog
+W1GJV7	0	0	0	1	0	Glutathione S-transferase, omega
+W1UEG1	0	0	1	0	0	DNA polymerase I
+W3V831	0	3	0	0	0	Signal peptide peptidase SppA, 36K type
+W3Y8B2	0	0	0	0	2	3-deoxy-7-phosphoheptulonate synthase
+W3Y9X7	0	0	0	0	2	Coproporphyrinogen dehydrogenase HemZ
+W3YVV4	0	1	0	0	1	Nickel ABC transporter, nickel/metallophore periplasmic binding protein
+W8TB91	0	0	1	0	0	Aminotransferase class I and II
+W9B2P0	0	0	0	1	0	Cell division protein FtsP
+W9B3B5	0	0	0	1	0	DhaK2 protein
+W9B3Q6	0	0	0	1	0	Hydrogenase accessory protein HypB
+W9B4F8	0	0	0	1	0	Iron/manganese ABC transporter permease subunit SitC
+W9B9P8	0	1	0	0	0	Uncharacterized protein
+W9BBH2	0	0	0	1	0	Lipopolysaccharide export system protein LptC
+W9BBV4	0	0	0	4	0	Phosphoenolpyruvate-protein phosphotransferase
+W9BC02	0	0	0	2	0	6-phospho-beta-glucosidase
+W9BCC7	0	3	0	0	0	Phosphoribosylamine--glycine ligase
+W9BD24	0	0	0	1	0	DNA-binding transcriptional repressor
+W9BDH0	0	1	0	0	0	YjeM protein
+W9BDX6	0	0	0	2	0	Arabinose 5-phosphate isomerase
+W9BE82	0	1	0	0	0	Esterase
+W9BED0	0	3	0	0	0	StbA domain-containing protein
+W9BED6	0	1	0	0	0	Alpha-D-ribose 1-methylphosphonate 5-triphosphate synthase subunit PhnI
+W9BEE3	0	1	0	0	0	DNA-binding response regulator
+W9BEE9	0	3	0	0	0	Fimbrial assembly chaperone
+W9BEI2	0	0	0	2	0	MFS domain-containing protein
+W9BJK5	0	1	0	0	0	UDP-N-acetyl-D-mannosamine dehydrogenase
+W9BJQ1	0	1	0	0	0	L-rhamnose ABC transporter
+W9BJS6	0	2	0	0	0	2-aminoethylphosphonate transport system permease PhnU
+W9BK39	0	1	0	0	0	Alpha-D-ribose 1-methylphosphonate 5-triphosphate synthase subunit PhnG
+W9BMX1	0	0	0	2	0	Acetylornithine/succinyldiaminopimelate aminotransferase
+W9BPZ7	0	0	0	1	0	YpfJ protein
+W9BQC7	0	2	0	0	0	Acyltransferase
+W9BQI0	0	1	0	0	0	CidA-associated membrane protein CidB
+W9BQJ1	0	2	0	0	0	N-acetyltransferase domain-containing protein

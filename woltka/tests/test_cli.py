@@ -18,7 +18,8 @@ import gzip
 
 from click.testing import CliRunner
 
-from woltka.cli import cli, gotu_cmd, classify_cmd, filter_cmd, merge_cmd
+from woltka.cli import (
+    cli, gotu_cmd, classify_cmd, filter_cmd, merge_cmd, collapse_cmd)
 
 
 class CliTests(TestCase):
@@ -183,6 +184,24 @@ class CliTests(TestCase):
                          'Merged profile written.')
         with open(output_fp, 'r') as f:
             self.assertEqual(len(f.read().splitlines()), 205)
+        remove(output_fp)
+
+    def test_collapse_cmd(self):
+        input_fp = join(self.outdir, 'truth.uniref.tsv')
+        map_fp = join(self.fundir, 'go', 'goslim.tsv.xz')
+        output_fp = join(self.tmpdir, 'output.tsv')
+        names_fp = join(self.fundir, 'go', 'name.txt.xz')
+        params = ['--input',  input_fp,
+                  '--map',    map_fp,
+                  '--output', output_fp,
+                  '--names',  names_fp,
+                  '--normalize']
+        res = self.runner.invoke(collapse_cmd, params)
+        self.assertEqual(res.exit_code, 0)
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Collapsed profile written.')
+        with open(output_fp, 'r') as f:
+            self.assertEqual(len(f.read().splitlines()), 74)
         remove(output_fp)
 
 

@@ -18,8 +18,9 @@ import click
 
 from .table import (
     read_table, table_shape, filter_table, write_table, merge_tables,
-    collapse_table)
+    table_add_metacol, collapse_table)
 from .file import readzip, read_map_all
+from .tree import read_names
 
 
 def filter_wf(input_fp:      str,
@@ -127,7 +128,8 @@ def merge_wf(input_fps: list,
 def collapse_wf(input_fp:   str,
                 map_fp:     str,
                 output_fp:  str,
-                normalize: bool = False):
+                normalize: bool = False,
+                names_fp:   str = None):
     """Workflow for collapsing a profile based on many-to-many mapping file.
 
     Raises
@@ -150,10 +152,8 @@ def collapse_wf(input_fp:   str,
         mapping = {}
         for key, vals in read_map_all(f):
             mapping.setdefault(key, []).extend(vals)
-    nsrc = len(mapping.keys())
-    ntgt = len(set().union(*mapping.values()))
-    click.echo(f'Number of source features in mapping: {nsrc}.')
-    click.echo(f'Number of target features in mapping: {ntgt}.')
+    if not mapping:
+        exit(f'No source-target relationship is found in {basename(map_fp)}.')
 
     # collapse profile by mapping
     click.echo('Collapsing profile...', nl=False)
@@ -161,6 +161,12 @@ def collapse_wf(input_fp:   str,
     click.echo(' Done.')
     n = table_shape(table)[0]
     click.echo(f'Number of features after collapsing: {n}.')
+
+    # append feature names (optional)
+    if names_fp:
+        with readzip(names_fp, {}) as f:
+            namedic = read_names(f)
+        table_add_metacol(table, namedic, 'Name')
 
     # write collapsed profile
     write_table(table, output_fp)
