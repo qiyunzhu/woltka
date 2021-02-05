@@ -108,9 +108,6 @@ def intize(num):
 
     Notes
     -----
-    This function is for demo purpose. Use `initize_list` or `initize_dict` to
-    save function-calling overhead in data-intensive operations.
-
     Limited by Python floating point arithmetic, odds are that when ambiguous
     assignment is on, counts will be sums of fractions and they can be rounded
     either up or down when converted to integers, depending how these numbers
@@ -161,6 +158,11 @@ def intize_list(lst):
     See Also
     --------
     intize
+
+    Notes
+    -----
+    Use this function instead of `initize` on large lists to save some
+    function-calling overhead.
     """
     for i, element in enumerate(lst):
         near = round(element * 2) / 2
@@ -183,6 +185,11 @@ def intize_dict(dic, zero=False):
     See Also
     --------
     intize
+
+    Notes
+    -----
+    Use this function instead of `initize` on large dictionaries to save some
+    function-calling overhead.
     """
     todel = []
     add_todel = todel.append

@@ -553,6 +553,12 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
+        # BIOM table
+        table_ = Table(*map(np.array, table))
+        obs = collapse_table(table_, mapping)
+        exp = Table(*map(np.array, exp))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
         # some missing, some extra
         mapping = {'G1': ['H1'], 'G2': ['H2'], 'G3': ['H3'], 'G9': ['H9']}
         obs = collapse_table(table, mapping)

@@ -456,7 +456,7 @@ def table_add_metacol(table, dic, name, missing=''):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        biom_add_metacol(table, dic, name, missing='')
+        biom_add_metacol(table, dic, name, missing=missing)
         return
 
     # add metadata column

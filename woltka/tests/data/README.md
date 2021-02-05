@@ -59,6 +59,15 @@ woltka classify \
   --output bowtie2.free.tsv
 ```
 
+`bowtie2.free.1p.tsv`:
+
+```bash
+woltka tools filter \
+  --input output/bowtie2.free.tsv \
+  --min-percent 1 \
+  --output bowtie2.free.1p.tsv
+```
+
 `blastn.species.tsv`:
 
 ```bash
@@ -146,6 +155,15 @@ woltka classify \
   --output split.process.tsv
 ```
 
+`merged.process.tsv`:
+
+```bash
+woltka tools merge \
+  --input output/burst.process.tsv \
+  --input output/split.process.tsv \
+  --output merged.process.tsv
+```
+
 `diamond.free.tsv`
 
 ```bash
@@ -168,4 +186,46 @@ woltka classify \
   --map-as-rank \
   --rank function \
   --output diamond.func.tsv
+```
+
+`truth.gene.tsv`
+
+```bash
+woltka classify \
+  --input align/truth/b6o \
+  --coords function/nucl/coords.txt.xz \
+  --output truth.gene.tsv
+```
+
+`truth.uniref.tsv`
+
+```bash
+woltka classify \
+  --input align/truth/b6o \
+  --coords function/nucl/coords.txt.xz \
+  --map function/nucl/uniref.map.xz \
+  --names function/uniref.names.xz \
+  --map-as-rank \
+  --rank uniref \
+  --output truth.uniref.tsv
+```
+
+Or:
+
+```bash
+woltka tools collapse \
+  --input output/truth.gene.tsv \
+  --map function/nucl/uniref.map.xz \
+  --names function/uniref.names.xz \
+  --output truth.uniref.tsv
+```
+
+`truth.goslim.tsv`
+
+```bash
+woltka tools collapse \
+  --input output/truth.uniref.tsv \
+  --map function/go/goslim.tsv.xz \
+  --names function/go/name.txt.xz \
+  --output truth.goslim.tsv
 ```
