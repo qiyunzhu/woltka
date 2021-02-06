@@ -14,7 +14,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree, copy
 from tempfile import mkdtemp
 
-from woltka.tools import filter_wf, merge_wf, collapse_wf
+from woltka.tools import filter_wf, merge_wf, collapse_wf, coverage_wf
 
 
 class ToolsTests(TestCase):
@@ -140,6 +140,41 @@ class ToolsTests(TestCase):
         with self.assertRaises(SystemExit) as ctx:
             collapse_wf(input_fp, map_fp, output_fp, normalize=True)
         errmsg = 'No source-target relationship is found in tree.nwk.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+    def test_coverage_wf(self):
+        input_fp = join(self.datdir, 'output', 'truth.metacyc.tsv')
+        map_fp = join(self.datdir, 'function', 'metacyc', 'pathway_mbrs.txt')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+
+        # default behavior
+        coverage_wf(input_fp, map_fp, output_fp)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 316)
+        for line in obs:
+            if line.startswith('ARABCAT-PWY\t'):
+                self.assertListEqual(line.split('\t')[1:], [
+                    '20.0', '80.0', '100.0', '80.0', '100.0'])
+
+        # parameters
+        names_fp = join(self.datdir, 'function', 'metacyc', 'pathway_name.txt')
+        coverage_wf(input_fp, map_fp, output_fp, threshold=80,
+                    names_fp=names_fp)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 86)
+        for line in obs:
+            if line.startswith('ARABCAT-PWY\t'):
+                self.assertListEqual(line.split('\t')[1:], [
+                    '0', '1', '1', '1', '1', 'L-arabinose degradation I'])
+        remove(output_fp)
+
+        # wrong mapping file
+        map_fp = join(self.datdir, 'tree.nwk')
+        with self.assertRaises(SystemExit) as ctx:
+            coverage_wf(input_fp, map_fp, output_fp, count=True)
+        errmsg = 'No group membership is found in tree.nwk.'
         self.assertEqual(str(ctx.exception), errmsg)
 
 

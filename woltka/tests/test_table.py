@@ -18,8 +18,8 @@ from biom import Table, load_table
 
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
-    table_shape, filter_table, merge_tables, round_table, table_add_metacol,
-    collapse_table)
+    table_shape, filter_table, merge_tables, round_table, add_metacol,
+    collapse_table, calc_coverage)
 from woltka.biom import table_to_biom
 
 
@@ -142,7 +142,7 @@ class TableTests(TestCase):
         self.assertEqual(fmt, 'tsv')
 
         # wrong encoding
-        fp = join(self.datdir, 'function', 'uniref.map.xz')
+        fp = join(self.datdir, 'function', 'uniref', 'uniref.map.xz')
         with self.assertRaises(ValueError) as ctx:
             read_table(fp)
         errmsg = 'Input file cannot be parsed as BIOM or TSV format.'
@@ -501,7 +501,7 @@ class TableTests(TestCase):
         ex2 = Table(*map(np.array, exp))
         self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
 
-    def test_table_add_metacol(self):
+    def test_add_metacol(self):
         obs = prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3},
             'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4},
@@ -511,20 +511,20 @@ class TableTests(TestCase):
 
         # regular table
         rankdic = {'G1': 'S', 'G2': 'S', 'G3': 'F', 'G4': 'O', 'G5': 'P'}
-        table_add_metacol(obs, rankdic, 'Rank')
+        add_metacol(obs, rankdic, 'Rank')
         exp = [{'Rank': 'S'}, {'Rank': 'S'}, {'Rank': 'F'}, {'Rank': 'O'},
                {'Rank': 'P'}]
         self.assertListEqual(obs[3], exp)
 
         # BIOM table
-        table_add_metacol(ob2, rankdic, 'Rank')
+        add_metacol(ob2, rankdic, 'Rank')
         self.assertListEqual(list(map(
             dict, ob2.metadata(axis='observation'))), exp)
 
         # unordered, missing value, append
         namedic = {'G1': 'Proteo', 'G3': 'Actino', 'G2': 'Firmic',
                    'G4': 'Bacter'}
-        table_add_metacol(obs, namedic, 'Name', missing='X')
+        add_metacol(obs, namedic, 'Name', missing='X')
         exp = [{'Rank': 'S', 'Name': 'Proteo'},
                {'Rank': 'S', 'Name': 'Firmic'},
                {'Rank': 'F', 'Name': 'Actino'},
@@ -532,7 +532,7 @@ class TableTests(TestCase):
                {'Rank': 'P', 'Name': 'X'}]
         self.assertListEqual(obs[3], exp)
 
-        table_add_metacol(ob2, namedic, 'Name', missing='X')
+        add_metacol(ob2, namedic, 'Name', missing='X')
         self.assertListEqual(list(map(
             dict, ob2.metadata(axis='observation'))), exp)
 
@@ -618,6 +618,55 @@ class TableTests(TestCase):
         for i in (0, 1, 3):
             self.assertListEqual(obs[i], [])
         self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
+
+    def test_calc_coverage(self):
+        table = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4, 'G6': 2},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0, 'G6': 9}})
+        mapping = {'P1': ['G1', 'G2'],
+                   'P2': ['G3'],
+                   'P3': ['G2', 'G4', 'G6'],
+                   'P4': ['G3', 'G5'],
+                   'P5': ['G7', 'G8', 'G9']}
+
+        # default behavior
+        obs = calc_coverage(table, mapping)
+        exp = prep_table({
+            'S1': {'P1': 100.0, 'P2': 100.0, 'P3':  33.333, 'P4': 100.0},
+            'S2': {'P1': 100.0, 'P2':   0.0, 'P3': 100.0,   'P4': 50.0},
+            'S3': {'P1':  50.0, 'P2': 100.0, 'P3': 100.0,   'P4': 50.0}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM table
+        table_ = Table(*map(np.array, table))
+        obs = calc_coverage(table_, mapping)
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
+
+        # threshold and boolean result
+        obs = calc_coverage(table, mapping, th=80)
+        exp = prep_table({
+            'S1': {'P1': 1, 'P2': 1, 'P3': 0, 'P4': 1},
+            'S2': {'P1': 1, 'P2': 0, 'P3': 1, 'P4': 0},
+            'S3': {'P1': 0, 'P2': 1, 'P3': 1, 'P4': 0}})
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
+
+        # numbers instead of percentages
+        obs = calc_coverage(table, mapping, count=True)
+        exp = prep_table({
+            'S1': {'P1': 2, 'P2': 1, 'P3': 1, 'P4': 2},
+            'S2': {'P1': 2, 'P2': 0, 'P3': 3, 'P4': 1},
+            'S3': {'P1': 1, 'P2': 1, 'P3': 3, 'P4': 1}})
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
+
+        # number overrides threshold
+        obs = calc_coverage(table, mapping, th=80, count=True)
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
 
 
 if __name__ == '__main__':

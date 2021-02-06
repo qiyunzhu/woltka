@@ -19,7 +19,8 @@ import gzip
 from click.testing import CliRunner
 
 from woltka.cli import (
-    cli, gotu_cmd, classify_cmd, filter_cmd, merge_cmd, collapse_cmd)
+    cli, gotu_cmd, classify_cmd, filter_cmd, merge_cmd, collapse_cmd,
+    coverage_cmd)
 
 
 class CliTests(TestCase):
@@ -119,7 +120,7 @@ class CliTests(TestCase):
                   '--output', output_fp,
                   '--rank',   'process',
                   '--coords', join(self.fundir, 'coords.txt.xz'),
-                  '--map',    join(self.fundir, 'uniref.map.xz'),
+                  '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
                   '--map',    join(self.fundir, 'go', 'process.tsv.xz'),
                   '--map-as-rank']
         _test_params(params, 'burst.process.tsv')
@@ -129,7 +130,7 @@ class CliTests(TestCase):
                   '--output', output_fp,
                   '--rank',   'process',
                   '--coords', join(self.fundir, 'coords.txt.xz'),
-                  '--map',    join(self.fundir, 'uniref.map.xz'),
+                  '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
                   '--map',    join(self.fundir, 'go', 'process.tsv.xz'),
                   '--map-as-rank',
                   '--stratify', join(self.outdir, 'burst.genus.map')]
@@ -202,6 +203,23 @@ class CliTests(TestCase):
                          'Collapsed profile written.')
         with open(output_fp, 'r') as f:
             self.assertEqual(len(f.read().splitlines()), 74)
+        remove(output_fp)
+
+    def test_coverage_cmd(self):
+        input_fp = join(self.outdir, 'truth.metacyc.tsv')
+        map_fp = join(self.fundir, 'metacyc', 'pathway_mbrs.txt')
+        output_fp = join(self.tmpdir, 'output.tsv')
+        names_fp = join(self.fundir, 'metacyc', 'pathway_name.txt')
+        params = ['--input',  input_fp,
+                  '--map',    map_fp,
+                  '--output', output_fp,
+                  '--names',  names_fp]
+        res = self.runner.invoke(coverage_cmd, params)
+        self.assertEqual(res.exit_code, 0)
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Coverage table written.')
+        with open(output_fp, 'r') as f:
+            self.assertEqual(len(f.read().splitlines()), 316)
         remove(output_fp)
 
 
