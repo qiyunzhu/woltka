@@ -19,7 +19,7 @@ import click
 from .table import (
     read_table, table_shape, filter_table, write_table, merge_tables,
     table_add_metacol, collapse_table)
-from .file import readzip, read_map_all
+from .file import readzip, read_map_many
 from .tree import read_names
 
 
@@ -130,7 +130,7 @@ def collapse_wf(input_fp:   str,
                 output_fp:  str,
                 normalize: bool = False,
                 names_fp:   str = None):
-    """Workflow for collapsing a profile based on many-to-many mapping file.
+    """Workflow for collapsing a profile based on many-to-many mapping.
 
     Raises
     ------
@@ -149,9 +149,7 @@ def collapse_wf(input_fp:   str,
 
     # read mapping file (many-to-many okay)
     with readzip(map_fp, {}) as f:
-        mapping = {}
-        for key, vals in read_map_all(f):
-            mapping.setdefault(key, []).extend(vals)
+        mapping = read_map_many(f)
     if not mapping:
         exit(f'No source-target relationship is found in {basename(map_fp)}.')
 

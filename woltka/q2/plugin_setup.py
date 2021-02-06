@@ -23,7 +23,7 @@ from ._format import (SeqAlnMapFormat, SeqAlnMapDirFmt,
 from ._type import SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates
 
 from woltka import __version__
-from woltka.q2.plugin import gotu, classify, filter_table
+from woltka.q2.plugin import gotu, classify, psfilter, collapse
 
 
 plugin = Plugin(
@@ -151,18 +151,36 @@ plugin.methods.register_function(
 
 
 plugin.methods.register_function(
-    function=filter_table,
+    function=psfilter,
     inputs={'table': FeatureTable[Frequency]},
-    input_descriptions={'table': 'Feature table to be filtered'},
+    input_descriptions={'table': 'Feature table to be filtered.'},
     parameters={'min_count': Int % Range(1, None),
                 'min_percent': Float % Range(0.0, 100)},
     parameter_descriptions={
-        'min_count': 'Per-sample minimum count threshold',
+        'min_count': 'Per-sample minimum count threshold.',
         'min_percent': 'Per-sample minimum count threshold.'},
     outputs=[('filtered_table', FeatureTable[Frequency])],
-    output_descriptions={'filtered_table': 'Filtered feature table'},
+    output_descriptions={'filtered_table': 'Filtered feature table.'},
     name='Per-sample feature filter',
     description=('Filter a feature table by per-sample feature abundance.'),
+    citations=[]
+)
+
+
+plugin.methods.register_function(
+    function=collapse,
+    inputs={'table': FeatureTable[Frequency],
+            'mapping': FeatureData[SimpleMap]},
+    input_descriptions={'table': 'Feature table to be collapsed.',
+                        'mapping': 'Mapping of source features to targets.'},
+    parameters={'normalize': Bool},
+    parameter_descriptions={'normalize': (
+        'Normalize target counts by number of targets per source.')},
+    outputs=[('collapsed_table', FeatureTable[Frequency])],
+    output_descriptions={'collapsed_table': 'Collapsed feature table.'},
+    name='Many-to-many feature mapper',
+    description=('Collapse a feature table based on many-to-many feature '
+                 'mapping.'),
     citations=[]
 )
 

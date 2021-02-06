@@ -1,6 +1,6 @@
 # Output files
 
-The main output file(s) of Woltka are **feature tables**, in which column headers are sample IDs and row headers are feature IDs, and each cell value represents the _count_ of a particular feature in a particular sample. For example:
+The main output file(s) of Woltka are **feature tables** (a.k.a., **profiles**), in which column headers are sample IDs and row headers are feature IDs, and each cell value represents the _count_ of a particular feature in a particular sample. For example:
 
 Feature ID | Sample 1 | Sample 2 | Sample 3 | Sample 4 | Name | Rank
 --- | --- | --- | --- | --- | --- | ---
@@ -15,6 +15,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3 | Sample 4 | Name | Rank
 - [Output filepath](#output-filepath)
 - [File formats](#file-formats)
 - [Output read maps](#output-read-maps)
+- [Table utilities](#table-utilities)
 
 ## Output filepath
 
@@ -132,3 +133,11 @@ woltka classify \
 ```
 
 In `outmap_dir`, there will be three subdirectories: `phylum`, `genus` and `species`, eaching holding three read map files: `S1.txt.xz`, `S2.txt.xz` and `S3.txt.xz`.
+
+## Table utilities
+
+Woltka provides several utilities under the `tools` menu for table manipulation (both BIOM and TSV are supported and automatically recognized). Here are details:
+
+- [**collapse**](collapse.md): Collapse a profile based on a source-to-target feature mapping; supporting many-to-many relationships.
+- **filter**: Filter a profile by per-sample abundance.
+- **merge**: Merge multiple profiles into one profile.

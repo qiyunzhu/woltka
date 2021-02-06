@@ -4,9 +4,9 @@ Test datasets, including reference genome and taxonomy databases, query sequenci
 
 ## Align
 
-*Sequence alignment** results.
+**Sequence alignment** results.
 
-Here "alignment" refers to the operation of aligning short DNA sequences ("reads") against reference **genome** sequences.
+Here "alignment" refers to the operation of aligning short DNA sequences (**reads**) against reference **genome** sequences.
 
 The query sequences are five samples (S01 to S05) of 150 bp paired-end reads simulated using [CAMISIM](https://github.com/CAMI-challenge/CAMISIM/). The ground-truth mapping of reads against original genomes and locations are provided in `truth`.
 

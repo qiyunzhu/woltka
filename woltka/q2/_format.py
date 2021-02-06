@@ -35,7 +35,7 @@ class SimpleMapFormat(model.TextFileFormat):
 
 
 SimpleMapDirFmt = model.SingleFileDirectoryFormat(
-    'SimpleMapDirFmt', 'alignment.map', SimpleMapFormat)
+    'SimpleMapDirFmt', 'mapping.txt', SimpleMapFormat)
 
 
 class NCBINodesFormat(model.TextFileFormat):

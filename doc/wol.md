@@ -74,6 +74,8 @@ woltka classify \
 
 ## Coordinates-based functional classification using MetaCyc
 
+Associate read alignments with ORFs, and move up multiple functional levels (protein, reaction, pathway...) using a cascade of mapping files.
+
 ```bash
 mcdir=annotation/metacyc
 woltka classify \
@@ -89,6 +91,8 @@ woltka classify \
   --rank protein,enzrxn,reaction,pathway,class \
   --output output_dir
 ```
+
+Note: This command won't handle multiple mapping (e.g., one protein involved in three pathways). A capable solution is provided [here](collapse.md#sample-workflow).
 
 ## Stratified taxonomic / functional classification
 

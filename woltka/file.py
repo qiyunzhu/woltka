@@ -424,6 +424,46 @@ def read_map_all(fh, sep='\t'):
             yield key, rest.rstrip().split(sep)
 
 
+def read_map_many(fh, sep='\t'):
+    """Read many-to-many relationships from a mapping file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file.
+
+    Returns
+    -------
+    dict of list
+        Key-value(s) pair.
+
+    Notes
+    -----
+    This is a general solution which applies to the following formats:
+    1 (one-to-one):
+        source1 <tab> target1
+        source2 <tab> target2
+        source3 <tab> target3
+        ...
+    2 (one-to-many):
+        source1 <tab> target1
+        source2 <tab> target1 <tab> target2
+        source3 <tab> target2 <tab> target3 <tab> target4
+        ...
+    3 (many-to-many):
+        source1 <tab> target1
+        source1 <tab> target2
+        source2 <tab> target2
+        source3 <tab> target3
+        source4 <tab> target3
+        ...
+    """
+    res = {}
+    for key, values in read_map_all(fh, sep):
+        res.setdefault(key, []).extend(values)
+    return res
+
+
 def write_readmap(fh, qryque, taxque, namedic=None):
     """Write a read map to a tab-delimited file.
 

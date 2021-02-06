@@ -17,13 +17,15 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - [Overview](#overview)
 - [Installation](#installation)
 - [Example usage](#example-usage)
-- Details
+- Main workflow
   - [Input files](doc/input.md)
   - [Output files](doc/output.md)
   - [Classification systems](doc/hierarchy.md)
   - [Classification methods](doc/classify.md)
   - [Coordinates matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
+- Profile tools
+  - [Collapsing](doc/collapse.md)
 - Tutorials
   - [Working with WoL](doc/wol.md)
   - [gOTU analysis](doc/gotu.md)

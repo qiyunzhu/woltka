@@ -89,7 +89,7 @@ Option | Description
 
 ### Filter
 
-Filter a profile by per-sample abundance.
+Filter a profile by **per-sample** abundance.
 
 Option | Description
 --- | ---
@@ -106,3 +106,15 @@ Option | Description
 --- | ---
 `--input`, `-i` (required) | Path to input profiles or directories containing profiles. Can accept multiple paths.
 `--output`, `-o` (required) | Path to output profile.
+
+### Collapse
+
+Collapse a profile based on feature mapping (supports **many-to-many** mapping).
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input profile.
+`--map`, `-m` (required) | Path to mapping of source features to target features.
+`--output`, `-o` (required) | Path to output profile.
+`--normalize`, `-z` | Count each target feature as 1 / _k_ (_k_ is the number of targets mapped to a source). Otherwise, count as one.
+`--names`, `-n` | Path to mapping of target features to names. The names will be appended to the collapsed profile as a metadata column.
