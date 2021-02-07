@@ -72,27 +72,25 @@ woltka classify \
   --output output.biom
 ```
 
-## Coordinates-based functional classification using MetaCyc
+## Coordinates-based functional classification
 
-Associate read alignments with ORFs, and move up multiple functional levels (protein, reaction, pathway...) using a cascade of mapping files.
+Associate read alignments with ORFs, and move up multiple functional levels (protein, reaction, pathway...) using a cascade of mapping files. The example below uses the MetaCyc system ([see details](metacyc.md)):
 
 ```bash
 mcdir=annotation/metacyc
 woltka classify \
   --input input.sam \
   --coords annotation/coords.txt.xz \
-  --map annotation/uniref.map.xz \
-  --map $mcdir/protein.map --names $mcdir/protein.names \
-  --map $mcdir/protein2enzrxn.map --names $mcdir/enzrxn.names \
-  --map $mcdir/enzrxn2reaction.map --names $mcdir/reaction.names \
-  --map $mcdir/reaction2pathway.map --names $mcdir/pathway.names \
-  --map $mcdir/pathway2class.map --names $mcdir/class.names \
+  --map $mcdir/wol-to-protein.txt.xz --names $mcdir/protein_name.txt \
+  --map $mcdir/protein-to-enzrxn.txt --names $mcdir/enzrxn_name.txt \
+  --map $mcdir/enzrxn-to-reaction.txt --names $mcdir/reaction_name.txt \
+  --map $mcdir/reaction-to-pathway.txt --names $mcdir/pathway_name.txt \
   --map-as-rank \
-  --rank protein,enzrxn,reaction,pathway,class \
+  --rank protein,enzrxn,reaction,pathway \
   --output output_dir
 ```
 
-Note: This command won't handle multiple mapping (e.g., one protein involved in three pathways). A capable solution is provided [here](collapse.md#sample-workflow).
+Note: This command won't handle multiple mapping (e.g., one protein involved in three pathways). A capable solution is provided [here](metacyc.md).
 
 ## Stratified taxonomic / functional classification
 
