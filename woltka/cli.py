@@ -289,7 +289,7 @@ def collapse_cmd(ctx, **kwargs):
     help='Names of feature groups to append to the coverage table.')
 @click.pass_context
 def coverage_cmd(ctx, **kwargs):
-    """Calculate coverage of feature groups in a profile.
+    """Calculate per-sample coverage of feature groups.
     """
     coverage_wf(**kwargs)
 

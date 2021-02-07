@@ -136,7 +136,7 @@ qiime diversity core-metrics-phylogenetic \
 Before moving to the next step (such as the command above), it is recommended to consider **filtering** the feature table by per-sample abundance. For example:
 
 ```bash
-qiime woltka filter \
+qiime woltka psfilter \
   --i-table table.qza \
   --min-percent 0.01 \
   --o-filtered-table filtered.qza

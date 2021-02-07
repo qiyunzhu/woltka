@@ -201,7 +201,7 @@ plugin.methods.register_function(
     outputs=[('coverage_table', FeatureTable[Frequency])],
     output_descriptions={'coverage_table': 'Feature group coverage table.'},
     name='Group coverage calculator',
-    description='Calculate a feature table\'s coverage over feature groups.',
+    description='Calculate per-sample coverage of feature groups.',
     citations=[]
 )
 

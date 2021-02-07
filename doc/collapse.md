@@ -53,16 +53,17 @@ source4 <tab> target3
 ...
 ```
 
-## Normalization
+## Parameters
+
+### Normalization
 
 By default, if one source feature is simultaneously mapped to _k_ targets, each target will be counted once. With the `--normalize` or `-z` flag added to the command, each target will be counted 1 / _k_ times.
 
 Whether to enable normalization depends on the nature and aim of your analysis. For example, one gene is involved in two pathways (which isn't uncommon), should each pathway be counted once, or half time?
 
+### Feature names
 
-## Feature names
-
-Once a profile is collapsed, the metadata of the source features ("Name", "Rank", and "Lineage") will not be discarded. One may choose to supply a target feature name file by `--names` or `-n`, which will instruct the program to append names to the profile as a metadata column ("Name").
+Once a profile is collapsed, the metadata of the source features ("Name", "Rank", and "Lineage") will be discarded. One may choose to supply a target feature name file by `--names` or `-n`, which will instruct the program to append names to the profile as a metadata column ("Name").
 
 
 ## Sample workflow
