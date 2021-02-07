@@ -59,7 +59,7 @@ Woltka considers a read-to-gene match if their **overlapping** region reaches a 
 
 ## Example command
 
-With the coordinates file, one can streamline the read-to-gene matching step into a Woltka protocol. Here is an example for functional profiling (also see [here](collapse.md#sample-workflow)):
+With the coordinates file, one can streamline the read-to-gene matching step into a Woltka protocol. Here is an example for functional profiling:
 
 ```bash
 woltka classify \

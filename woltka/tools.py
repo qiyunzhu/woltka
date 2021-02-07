@@ -18,8 +18,8 @@ import click
 
 from .table import (
     read_table, table_shape, filter_table, write_table, merge_tables,
-    table_add_metacol, collapse_table)
-from .file import readzip, read_map_many
+    add_metacol, collapse_table, calc_coverage)
+from .file import readzip, read_map_many, read_map_all
 from .tree import read_names
 
 
@@ -164,8 +164,46 @@ def collapse_wf(input_fp:   str,
     if names_fp:
         with readzip(names_fp, {}) as f:
             namedic = read_names(f)
-        table_add_metacol(table, namedic, 'Name')
+        add_metacol(table, namedic, 'Name')
 
     # write collapsed profile
     write_table(table, output_fp)
     click.echo('Collapsed profile written.')
+
+
+def coverage_wf(input_fp:   str,
+                map_fp:     str,
+                output_fp:  str,
+                threshold:  int = None,
+                count:     bool = False,
+                names_fp:   str = None):
+    """Calculate coverage of table over feature groups given membership
+    information.
+    """
+    # read input profile
+    table, fmt = read_table(input_fp)
+    n = table_shape(table)[0]
+    click.echo(f'Number of features in profile: {n}.')
+
+    # read mapping file (many-to-many okay)
+    with readzip(map_fp, {}) as f:
+        mapping = dict(read_map_all(f))
+    if not mapping:
+        exit(f'No group membership is found in {basename(map_fp)}.')
+
+    # calculate group coverage
+    click.echo('Calculating coverage...', nl=False)
+    table = calc_coverage(table, mapping, threshold, count)
+    click.echo(' Done.')
+    n = table_shape(table)[0]
+    click.echo(f'Number of feature groups with coverage: {n}.')
+
+    # append feature group names (optional)
+    if names_fp:
+        with readzip(names_fp, {}) as f:
+            namedic = read_names(f)
+        add_metacol(table, namedic, 'Name')
+
+    # write coverage table
+    write_table(table, output_fp)
+    click.echo('Coverage table written.')

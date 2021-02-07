@@ -23,7 +23,7 @@ from ._format import (SeqAlnMapFormat, SeqAlnMapDirFmt,
 from ._type import SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates
 
 from woltka import __version__
-from woltka.q2.plugin import gotu, classify, psfilter, collapse
+from woltka.q2.plugin import gotu, classify, psfilter, collapse, coverage
 
 
 plugin = Plugin(
@@ -181,6 +181,27 @@ plugin.methods.register_function(
     name='Many-to-many feature mapper',
     description=('Collapse a feature table based on many-to-many feature '
                  'mapping.'),
+    citations=[]
+)
+
+
+plugin.methods.register_function(
+    function=coverage,
+    inputs={'table': FeatureTable[Frequency],
+            'mapping': FeatureData[SimpleMap]},
+    input_descriptions={'table': 'Feature table to calculate coverage.',
+                        'mapping': 'Mapping of feature groups to members.'},
+    parameters={'threshold': Int % Range(1, 100),
+                'count': Bool},
+    parameter_descriptions={
+        'threshold': ('Convert coverage to presence (1) / absence (0) data by '
+                      'this percentage threshold.'),
+        'count': ('Record numbers of covered features instead of percentages '
+                  '(overrides threshold).')},
+    outputs=[('coverage_table', FeatureTable[Frequency])],
+    output_descriptions={'coverage_table': 'Feature group coverage table.'},
+    name='Group coverage calculator',
+    description='Calculate per-sample coverage of feature groups.',
     citations=[]
 )
 

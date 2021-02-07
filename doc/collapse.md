@@ -53,43 +53,14 @@ source4 <tab> target3
 ...
 ```
 
-## Normalization
+## Parameters
+
+### Normalization
 
 By default, if one source feature is simultaneously mapped to _k_ targets, each target will be counted once. With the `--normalize` or `-z` flag added to the command, each target will be counted 1 / _k_ times.
 
 Whether to enable normalization depends on the nature and aim of your analysis. For example, one gene is involved in two pathways (which isn't uncommon), should each pathway be counted once, or half time?
 
+### Feature names
 
-## Feature names
-
-Once a profile is collapsed, the metadata of the source features ("Name", "Rank", and "Lineage") will not be discarded. One may choose to supply a target feature name file by `--names` or `-n`, which will instruct the program to append names to the profile as a metadata column ("Name").
-
-
-## Sample workflow
-
-The following example performs functional profiling of shotgun metagenomic data using the [MetaCyc](https://metacyc.org/) database. Compared with the alternative [one-liner solution](wol.md#coordinates-based-functional-classification-using-metacyc), this solution allows one lower unit to be mapped to multiple upper units.
-
-Run main classification workflow once to generate a profile of ORFs:
-
-```bash
-woltka classify -i input.sam --coords annotation/coords.txt.xz -o orf.tsv
-```
-
-Run profile collapsing multiple times and sequentially, each of which generating one additional profile:
-
-```bash
-# ORF to protein
-woltka tools collapse -i orf.tsv -m $mcdir/protein.map -n $mcdir/protein.names -o protein.tsv
-# protein to gene
-woltka tools collapse -i protein.tsv -m $mcdir/protein2gene.map -n $mcdir/gene.names -o gene.tsv
-# protein to enzymatic reaction
-woltka tools collapse -i protein.tsv -m $mcdir/protein2enzrxn.map -n $mcdir/enzrxn.names -o enzrxn.tsv
-# enzymatic reaction to reaction
-woltka tools collapse -i enzrxn.tsv -m $mcdir/enzrxn2reaction.map -n $mcdir/reaction.names -o reaction.tsv
-# reaction to EC number
-woltka tools collapse -i reaction.tsv -m $mcdir/reaction2ec.map -o ec.tsv
-# reaction to pathway
-woltka tools collapse -i reaction.tsv -m $mcdir/reaction2pathway.map -n $mcdir/pathway.names -o pathway.tsv
-# pathway to class
-woltka tools collapse -i pathway.tsv -m $mcdir/pathway2class.map -n $mcdir/class.names -o class.tsv
-```
+Once a profile is collapsed, the metadata of the source features ("Name", "Rank", and "Lineage") will be discarded. One may choose to supply a target feature name file by `--names` or `-n`, which will instruct the program to append names to the profile as a metadata column ("Name").

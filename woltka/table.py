@@ -440,7 +440,7 @@ def round_table(table):
         del(table[3][i])
 
 
-def table_add_metacol(table, dic, name, missing=''):
+def add_metacol(table, dic, name, missing=''):
     """Add a metadata column to a table in place based on a dictionary.
 
     Parameters
@@ -510,3 +510,66 @@ def collapse_table(table, mapping, normalize=False):
     if normalize:
         round_table(res)
     return res
+
+
+def calc_coverage(table, mapping, th=None, count=False):
+    """Calculate coverages of table over feature groups based on group
+    memberships.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Input table (data, features, samples, metadata).
+    mapping : dict of list of str
+        Group-to-members mapping.
+    th : int or float, optional
+        Convert coverages to presence / absence data based on this threshold
+        (range: (0, 100]).
+    count : bool, optional
+        Record number of covered features instead of percentage (overrides
+        `th`).
+
+    Returns
+    -------
+    tuple of (list, list, list, list)
+        Coverage table.
+
+    Notes
+    -----
+    Empty groups will cause ZeroDivision error, but upstream workflow already
+    removes this possibility.
+    """
+    if isinstance(table, Table):
+        table = biom_to_table(table)
+    # data, features, samples, metadata
+    data = [[] for x in table[2]]
+    for row, feature in zip(table[0], table[1]):
+        for i, value in enumerate(row):
+            # check presence
+            if value > 0:
+                data[i].append(feature)
+    data = list(map(set, data))
+    covers, groups = [], []
+    for group, members in mapping.items():
+        members = set(members)
+        total = len(members)
+        row = []
+        for present in data:
+            # count covered features
+            covered = len(present.intersection(members))
+            if count:
+                row.append(covered)
+                continue
+            # calculate coverage
+            cover = 100 * covered / total
+            # determine presence / absence
+            if th:
+                row.append(int(cover >= th))
+                continue
+            # retain percentage
+            row.append(round(cover, 3))
+        # keep group when at least one sample has coverage
+        if any(row):
+            covers.append(row)
+            groups.append(group)
+    return covers, groups, table[2], [{} for x in range(len(groups))]

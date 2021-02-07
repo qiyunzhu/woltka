@@ -17,7 +17,7 @@ Here is an example workflow, based on the commands and [sample data](../woltka/t
 
 ### Step 1: Taxonomic classification
 
-```
+```bash
 woltka classify \
   -i align/bowtie2 \
   --map taxonomy/g2tid.txt \
@@ -33,7 +33,7 @@ The parameter `--outmap mapdir` will instruct Woltka to output read-to-taxon map
 
 ### Step 2: Combined taxonomic/functional classification
 
-```
+```bash
 woltka classify \
   -i align/bowtie2 \
   --coords function/coords.txt.xz \
@@ -69,7 +69,7 @@ With this method, we start with the alignments of reads against reference **gene
 
 The following example is also based on the [sample data](../woltka/tests/data). Here we used the gene alignment results computed by DIAMOND. The gene IDs are Prodigal-annotated ORFs from the reference genomes, in the format of `genome ID <underscore> index` (e.g., `G000123456_20`). With parameter `--trim-sub _`, Woltka converts them to genome IDs, and everything after is straightforward.
 
-```
+```bash
 woltka classify \
   -i align/diamond \
   --trim-sub _ \
@@ -84,7 +84,7 @@ woltka classify \
 
 Then, there is no need to provide the coordinates file during functional classification:
 
-```
+```bash
 woltka classify \
   -i align/diamond \
   --map function/uniref.map.xz \

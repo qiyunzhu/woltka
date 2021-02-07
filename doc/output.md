@@ -134,10 +134,12 @@ woltka classify \
 
 In `outmap_dir`, there will be three subdirectories: `phylum`, `genus` and `species`, eaching holding three read map files: `S1.txt.xz`, `S2.txt.xz` and `S3.txt.xz`.
 
+
 ## Table utilities
 
 Woltka provides several utilities under the `tools` menu for table manipulation (both BIOM and TSV are supported and automatically recognized). Here are details:
 
-- [**collapse**](collapse.md): Collapse a profile based on a source-to-target feature mapping; supporting many-to-many relationships.
-- **filter**: Filter a profile by per-sample abundance.
-- **merge**: Merge multiple profiles into one profile.
+- [**Collapse**](collapse.md): Collapse a profile based on a source-to-target feature mapping; supporting many-to-many relationships.
+- [**Coverage**](coverage.md): Calculate per-sample coverage of feature groups, such as the completeness of metabolic pathways or core gene sets.
+- [**Filter**](filter.md): Filter features by per-sample abundance.
+- [**Merge**](merge.md): Merge multiple profiles into one.

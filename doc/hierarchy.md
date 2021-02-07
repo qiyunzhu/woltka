@@ -220,7 +220,7 @@ With flag `--map-as-rank`, Woltka will extract a **rank** name from the filename
 - `uniref.map` => `uniref`
 - `prot2taxid.txt.gz` => `taxid`
 - `reaction_to_pathway.tsv` => `pathway`
-- `apple-to-orange` = > `orange`
+- `apple-to-orange` => `orange`
 
 
 ## Multiple mapping
