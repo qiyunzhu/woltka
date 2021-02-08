@@ -1,6 +1,6 @@
 # Working with KEGG
 
-**KEGG** (https://www.genome.jp/kegg/)([Kanehisa et al., 2021](https://academic.oup.com/nar/article/49/D1/D545/5943834)) is the classical database of biological functions. It provides a well-organized hierarchical identification system, such as orthologies (K), modules (M), reactions (R), compounds (C), pathways, diseases and more.
+**KEGG** (https://www.genome.jp/kegg/) ([Kanehisa et al., 2021](https://academic.oup.com/nar/article/49/D1/D545/5943834)) is the classical database of biological functions. It provides a well-organized hierarchical identification system, such as orthologies (K), modules (M), reactions (R), compounds (C), pathways, diseases and more.
 
 Whereas the FTP access to KEGG is limited to subscribed users, the mapping of UniRef entries to KEGG orthology (KO) entries is freely available from the [UniProt](https://www.uniprot.org/downloads) data release. From this point on, we provide a Python script: [**kegg_query.py**](https://github.com/qiyunzhu/utils/blob/main/kegg_query.py) to automatically retrieve higher-level classification information of a given KO list or table from the KEGG server. This is made possible using the official [KEGG REST API](https://www.kegg.jp/kegg/rest/), which is freely available to academic users (however restrictions may apply; see official policy [here](https://www.kegg.jp/kegg/rest/)).
 

@@ -1,6 +1,6 @@
 # Working with MetaCyc
 
-**MetaCyc** (https://metacyc.org/) ([Caspi et al 2020](https://academic.oup.com/nar/article/48/D1/D445/5581728)) is a metabolic pathway database that has been widely used in genomic, metagenomic and metabolomic studies. It provides a hierarchical classification system, including genes, proteins, reactions, compounds, pathways and more.
+**MetaCyc** (https://metacyc.org/) ([Caspi et al., 2020](https://academic.oup.com/nar/article/48/D1/D445/5581728)) is a metabolic pathway database that has been widely used in genomic, metagenomic and metabolomic studies. It provides a hierarchical classification system, including genes, proteins, reactions, compounds, pathways and more.
 
 
 ## Contents
@@ -65,7 +65,7 @@ regulation < enzrxn
               type
 ```
 
-All transitions are enabled using Woltka's [collapse](collapse.md) command with individual mapping files. For example: one generate profiles along the following cascade:
+All transitions are enabled using Woltka's [collapse](collapse.md) command with individual mapping files. For example, one can generate profiles along the following cascade:
 
 ```
 protein - enzrxn - reaction - pathway - super pathway - type
@@ -86,7 +86,7 @@ woltka tools collapse -i pathway.biom -m metacyc/pathway-to-super_pathway.txt -n
 woltka tools collapse -i super_pathway.biom -m metacyc/pathway_type.txt -n metacyc/all_class_name.txt -o pathway_type.biom
 ```
 
-The collapse command supports **many-to-many** mapping. For example, if one reaction is found in three pathways, each pathway will be counted **once**. In some instances (e.g., to retain **compositionality** of the profile), one may consider adding the `--normalize` flag, which will instruct the program to count each pathway 1 / 3 times ([see details](collapse.md)).
+The collapse command supports **many-to-many** mapping. For example, if one reaction is found in three pathways, each pathway will be counted **once**. In some instances (e.g., to retain compositionality of the profile), one may consider adding the `--normalize` flag, which will instruct the program to count each pathway 1 / 3 times ([see details](collapse.md)).
 
 
 ## Pathway coverage

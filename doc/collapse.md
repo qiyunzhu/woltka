@@ -9,15 +9,15 @@ woltka tools collapse -i input.biom -m mapping.txt -o output.biom
 With this tool one can achieve the following goals:
 
 1. Translate feature IDs into names or descriptions.
-..* Example: Translate taxonomic IDs to taxon names.
-..* Example: Translate [UniRef](https://www.uniprot.org/help/uniref) IDs to protein names, while **merging** same names.
+   - Example: Translate taxonomic IDs to taxon names.
+   - Example: Translate [UniRef](https://www.uniprot.org/help/uniref) IDs to protein names, while **merging** same names.
 
 2. Group lower features into higher categories.
-..* Example: Convert genera into families.
+   - Example: Convert genera to families.
 
 3. Convert lower features into higher ones, where each lower feature may correspond to **multiple** higher features.
-..* Example: Convert KEGG [orthologs](https://www.genome.jp/kegg/ko.html) to [pathways](https://www.genome.jp/kegg/pathway.html).
-..* Example: Convert [GO](http://geneontology.org/docs/ontology-documentation/) terms to [GO Slim](http://www-legacy.geneontology.org/GO.slims.shtml) terms.
+   - Example: Convert KEGG [orthologs](https://www.genome.jp/kegg/ko.html) to [pathways](https://www.genome.jp/kegg/pathway.html).
+   - Example: Convert [GO](http://geneontology.org/docs/ontology-documentation/) terms to [GO Slim](http://www-legacy.geneontology.org/GO.slims.shtml) terms.
 
 The last usage is an important complement to the main classification workflow, which currently relies on a tree structure and does not support one-to-many mapping. This can be achieved by using the profile collapsing function (although one can only move up one level per run).
 
