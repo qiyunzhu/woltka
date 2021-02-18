@@ -17,18 +17,20 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - [Overview](#overview)
 - [Installation](#installation)
 - [Example usage](#example-usage)
-- Details
+- Main workflow
   - [Input files](doc/input.md)
   - [Output files](doc/output.md)
   - [Classification systems](doc/hierarchy.md)
   - [Classification methods](doc/classify.md)
   - [Coordinates matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
+- Profile tools
+  - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - Tutorials
   - [Working with WoL](doc/wol.md)
   - [gOTU analysis](doc/gotu.md)
 - For users of
-  - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), [SHOGUN](doc/wol.md#sequence-alignment), [GTDB](doc/gtdb.md)
+  - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), [SHOGUN](doc/wol.md#sequence-alignment), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
 - References
   - [Command-line interface](doc/cli.md)
   - [Computational efficiency](doc/perform.md)
@@ -45,6 +47,10 @@ Woltka is a **classifier**. It serves as a middle layer between sequence alignme
 ### What does Woltka do
 
 Woltka processes **alignments** -- the mappings of query sequences against reference sequences (such as microbial genomes or genes), and infers the best placement of the queries in a hierarchical classification system. One query could have simultaneous matches in multiple references. Woltka finds the most suitable classification unit(s) to describe the query accordingly the criteria specified by the researcher. Woltka generates **profiles** (feature tables) -- the frequencies (counts) of classification units which describe the composition of samples.
+
+### What else does Woltka do
+
+Woltka provides several utilities for handling feature tables, including collapsing a table to higher-level features, calculating feature group coverage, filtering features based on per-sample abundance, and  merging tables.
 
 ### What does Woltka not do
 

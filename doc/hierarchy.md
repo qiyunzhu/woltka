@@ -16,6 +16,7 @@ That being said, Woltka still supports ranked hierarchies and one can instruct t
 - [Taxon name dictionary](#taxon-name-dictionary)
 - [How Woltka handles hierarchies](#how-woltka-handles-hierarchies)
 - [Hierarchy file specs](#hierarchy-file-specifications)
+- [Multiple mapping](#multiple-mapping)
 
 
 ## Supported hierarchy files
@@ -219,4 +220,9 @@ With flag `--map-as-rank`, Woltka will extract a **rank** name from the filename
 - `uniref.map` => `uniref`
 - `prot2taxid.txt.gz` => `taxid`
 - `reaction_to_pathway.tsv` => `pathway`
-- `apple-to-orange` = > `orange`
+- `apple-to-orange` => `orange`
+
+
+## Multiple mapping
+
+As explained above, Woltka's main classification workflow relies on a tree-structured hierarchy, i.e., a classification unit can only point to one parent classification unit. However, in some scenarios one may want to perform one-to-many mapping. Examples include functional analyses, where one gene may be involved in multiple pathways. Woltka provides a [profile collapsing](collapse.md) tool to enable this analysis ([see details](collapse.md)).

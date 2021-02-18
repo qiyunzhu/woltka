@@ -13,12 +13,15 @@
 
 from functools import reduce
 from collections import defaultdict
+from operator import add
 from biom import Table, load_table
 
-from .util import allkeys, update_dict
+from .util import allkeys, update_dict, intize_list
 from .tree import lineage_str
 from .file import openzip
-from .biom import table_to_biom, biom_to_table, write_biom, filter_biom
+from .biom import (
+    table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
+    biom_add_metacol, collapse_biom)
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -403,3 +406,170 @@ def merge_tables(tables):
 
     res = prep_table(data)
     return res[0], res[1], res[2], [metadata[x] for x in res[1]]
+
+
+def round_table(table):
+    """Round table data to integers and remove all-zero rows in place.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to round (data, features, samples, metadata).
+
+    See Also
+    --------
+    .util.intize
+        Rationale for this rounding method.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        round_biom(table)
+        return
+
+    # round table data
+    todel = []
+    for i, datum in enumerate(table[0]):
+        intize_list(datum)
+        if not any(datum):
+            todel.append(i)
+
+    # remove empty rows
+    for i in reversed(todel):
+        del(table[0][i])
+        del(table[1][i])
+        del(table[3][i])
+
+
+def add_metacol(table, dic, name, missing=''):
+    """Add a metadata column to a table in place based on a dictionary.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to add metadata column (data, features, samples, metadata).
+    dict : dict
+        Metadata column (feature-to-value mapping).
+    name : str
+        Metadata column name.
+    missing : any type, optional
+        Default value if not found in dictionary.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        biom_add_metacol(table, dic, name, missing=missing)
+        return
+
+    # add metadata column
+    for feature, metadatum in zip(*(table[1], table[3])):
+        metadatum[name] = dic.get(feature, missing)
+
+
+def collapse_table(table, mapping, normalize=False):
+    """Collapse a table by many-to-many mapping.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Table to collapse (data, features, samples, metadata).
+    mapping : dict of list of str
+        Source-to-target(s) mapping.
+    normalize : bool, optional
+        Whether normalize per-target counts by number of targets per source.
+
+    Returns
+    -------
+    biom.Table, or tuple of (list, list, list, list)
+        Collapsed table.
+
+    Notes
+    -----
+    Metadata will not be retained in the collapsed table.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        return collapse_biom(table, mapping, normalize)
+
+    # collapse table
+    samples = table[2]
+    width = len(samples)
+    res = defaultdict(lambda: [0] * width)
+    for datum, feature in zip(*table[:2]):
+        if feature not in mapping:
+            continue
+        targets = mapping[feature]
+        if normalize:
+            k = 1 / len(targets)
+            datum = [x * k for x in datum]
+        for target in targets:
+            res[target] = list(map(add, res[target], datum))
+
+    # reformat table
+    res = list(res.values()), list(res.keys()), samples, [dict() for _ in res]
+
+    # round table
+    if normalize:
+        round_table(res)
+    return res
+
+
+def calc_coverage(table, mapping, th=None, count=False):
+    """Calculate coverages of table over feature groups based on group
+    memberships.
+
+    Parameters
+    ----------
+    table : biom.Table, or tuple of (list, list, list, list)
+        Input table (data, features, samples, metadata).
+    mapping : dict of list of str
+        Group-to-members mapping.
+    th : int or float, optional
+        Convert coverages to presence / absence data based on this threshold
+        (range: (0, 100]).
+    count : bool, optional
+        Record number of covered features instead of percentage (overrides
+        `th`).
+
+    Returns
+    -------
+    tuple of (list, list, list, list)
+        Coverage table.
+
+    Notes
+    -----
+    Empty groups will cause ZeroDivision error, but upstream workflow already
+    removes this possibility.
+    """
+    if isinstance(table, Table):
+        table = biom_to_table(table)
+    # data, features, samples, metadata
+    data = [[] for x in table[2]]
+    for row, feature in zip(table[0], table[1]):
+        for i, value in enumerate(row):
+            # check presence
+            if value > 0:
+                data[i].append(feature)
+    data = list(map(set, data))
+    covers, groups = [], []
+    for group, members in mapping.items():
+        members = set(members)
+        total = len(members)
+        row = []
+        for present in data:
+            # count covered features
+            covered = len(present.intersection(members))
+            if count:
+                row.append(covered)
+                continue
+            # calculate coverage
+            cover = 100 * covered / total
+            # determine presence / absence
+            if th:
+                row.append(int(cover >= th))
+                continue
+            # retain percentage
+            row.append(round(cover, 3))
+        # keep group when at least one sample has coverage
+        if any(row):
+            covers.append(row)
+            groups.append(group)
+    return covers, groups, table[2], [{} for x in range(len(groups))]

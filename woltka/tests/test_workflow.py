@@ -62,7 +62,7 @@ class WorkflowTests(TestCase):
         # complex genus/process stratification workflow
         input_fp = join(self.datdir, 'align', 'burst')
         coords_fp = join(self.datdir, 'function', 'coords.txt.xz')
-        map_fps = [join(self.datdir, 'function', 'uniref.map.xz'),
+        map_fps = [join(self.datdir, 'function', 'uniref', 'uniref.map.xz'),
                    join(self.datdir, 'function', 'go', 'process.tsv.xz')]
         strata_dir = join(self.datdir, 'output', 'burst.genus.map')
         samples, files, demux = parse_samples(input_fp)

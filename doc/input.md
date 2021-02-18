@@ -11,7 +11,6 @@ The input files for Woltka are sequence **alignment** files. The term "alignment
 - [Demultiplexing](#demultiplexing)
 - [Subject trimming](#subject-trimming)
 
-
 ## Input filepath
 
 Parameter `--input` or `-i` is to let Woltka know where to find the input alignment file(s). It can be any of the following three scenarios:

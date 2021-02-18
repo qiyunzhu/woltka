@@ -29,7 +29,7 @@ def _2(ff: BLAST6OutDirFmt) -> str:
 
 @plugin.register_transformer
 def _3(ff: SimpleMapDirFmt) -> str:
-    return join(str(ff.path), 'alignment.map')
+    return join(str(ff.path), 'mapping.txt')
 
 
 @plugin.register_transformer

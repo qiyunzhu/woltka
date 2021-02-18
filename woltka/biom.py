@@ -14,6 +14,7 @@
 import numpy as np
 import biom
 from .__init__ import __name__, __version__
+from .util import intize
 
 
 def table_to_biom(data, observations, samples, metadata=None):
@@ -108,3 +109,94 @@ def filter_biom(table: biom.Table, th: float):
     res.transform(f, axis='sample')
     res.remove_empty(axis='observation')
     return res
+
+
+def round_biom(table: biom.Table):
+    """Round a BIOM table's data to integers and drop empty observations
+    in place.
+
+    Parameters
+    ----------
+    table : biom.Table
+        BIOM table to round.
+
+    Notes
+    -----
+    This function will not drop empty samples.
+    """
+    f = np.vectorize(intize)
+    table.transform(lambda data, id_, md: f(data), axis='observation')
+    table.remove_empty(axis='observation')
+
+
+def biom_add_metacol(table: biom.Table, dic, name, missing=''):
+    """Add a metadata column to a table in place based on a dictionary.
+
+    Parameters
+    ----------
+    table : biom.Table
+        Table to add metadata column.
+    dict : dict
+        Metadata column (feature-to-value mapping).
+    name : str
+        Metadata column name.
+    missing : any type, optional
+        Default value if not found in dictionary.
+    """
+    metadata = {x: {name: dic.get(x, missing)} for x in table.ids(
+        'observation')}
+    table.add_metadata(metadata, axis='observation')
+
+
+def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
+    """Collapse a BIOM table in many-to-many mode.
+
+    Parameters
+    ----------
+    table : biom.Table
+        Table to collapse.
+    mapping : dict of list of str
+        Source-to-target(s) mapping.
+    normalize : bool, optional
+        Whether normalize per-target counts by number of targets per source.
+
+    Returns
+    -------
+    biom.Table
+        Collapsed BIOM table.
+
+    Notes
+    -----
+    Metadata will not be retained in the collapsed table.
+
+    See Also
+    --------
+    .table.collapse_table
+    """
+    # filter table features
+    table = table.filter(lambda data, id_, md: id_ in mapping,
+                         axis='observation', inplace=False)
+
+    # stop if no feature left
+    if table.is_empty():
+        return table
+
+    # add mapping to table metadata
+    table.add_metadata({k: dict(part=v) for k, v in mapping.items()},
+                       axis='observation')
+
+    # determine collapsing method
+    kwargs = dict(norm=False, one_to_many=True, axis='observation',
+                  one_to_many_mode=('divide' if normalize else 'add'))
+
+    # collapse table in many-to-many mode
+    table = table.collapse(lambda id_, md: zip(md['part'], md['part']),
+                           **kwargs)
+
+    # round to integers
+    if normalize:
+        round_biom(table)
+
+    # clean up
+    table.del_metadata(keys=['Path'])
+    return table

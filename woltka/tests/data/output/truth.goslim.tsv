@@ -1,0 +1,84 @@
+#FeatureID	S01	S02	S03	S04	S05	Name
+GO:0003677	24	30	32	16	25	DNA binding
+GO:0006259	11	25	24	2	11	DNA metabolic process
+GO:0003674	184	101	167	66	115	
+GO:0005975	18	13	66	11	16	carbohydrate metabolic process
+GO:0006629	9	10	18	0	7	lipid metabolic process
+GO:0009058	102	57	75	31	58	biosynthetic process
+GO:0016757	7	5	30	0	1	transferase activity, transferring glycosyl groups
+GO:0043167	115	87	107	54	88	ion binding
+GO:0005737	59	55	62	22	47	cytoplasm
+GO:0008168	11	5	0	0	2	methyltransferase activity
+GO:0034641	45	21	44	25	42	cellular nitrogen compound metabolic process
+GO:0042254	5	5	3	0	1	ribosome biogenesis
+GO:0004871	1	6	7	1	14	
+GO:0005575	68	64	138	37	68	
+GO:0005622	6	20	17	13	19	intracellular
+GO:0006464	13	7	5	2	18	cellular protein modification process
+GO:0007165	1	8	11	4	15	signal transduction
+GO:0008150	102	75	115	38	58	
+GO:0016301	11	8	15	4	21	kinase activity
+GO:0004518	3	7	9	1	4	nuclease activity
+GO:0003700	5	3	9	9	9	DNA binding transcription factor activity
+GO:0006810	14	19	73	23	18	transport
+GO:0016887	8	17	25	17	12	ATPase activity
+GO:0022857	8	18	60	23	16	transmembrane transporter activity
+GO:0016491	67	23	34	17	20	oxidoreductase activity
+GO:0051186	24	7	6	3	11	cofactor metabolic process
+GO:0005618	0	0	4	2	0	cell wall
+GO:0005886	26	31	128	37	30	plasma membrane
+GO:0006091	18	12	27	3	11	generation of precursor metabolites and energy
+GO:0016779	5	8	5	6	7	nucleotidyltransferase activity
+GO:0016746	8	8	7	1	5	transferase activity, transferring acyl groups
+GO:0065003	0	4	1	4	0	protein-containing complex assembly
+GO:0009056	12	12	26	9	14	catabolic process
+GO:0016853	18	7	8	3	12	isomerase activity
+GO:0006950	8	14	18	0	8	response to stress
+GO:0016829	21	18	7	6	18	lyase activity
+GO:0051276	5	11	6	0	2	chromosome organization
+GO:0005623	1	5	17	4	6	cell
+GO:0042592	1	1	8	1	1	homeostatic process
+GO:0016874	16	12	5	3	19	ligase activity
+GO:0032196	1	3	3	1	0	transposition
+GO:0008134	0	0	2	5	0	transcription factor binding
+GO:0016791	3	4	3	0	2	phosphatase activity
+GO:0008233	3	12	14	6	3	peptidase activity
+GO:0016798	4	1	6	2	1	hydrolase activity, acting on glycosyl bonds
+GO:0032991	3	10	15	12	9	protein-containing complex
+GO:0040011	0	0	0	0	1	locomotion
+GO:0007049	3	0	4	5	10	cell cycle
+GO:0051301	3	0	4	5	10	cell division
+GO:0006520	27	20	12	9	18	cellular amino acid metabolic process
+GO:0016810	6	1	0	1	2	hydrolase activity, acting on carbon-nitrogen (but not peptide) bonds
+GO:0008135	4	3	3	4	3	translation factor activity, RNA binding
+GO:0034655	5	4	9	0	4	nucleobase-containing compound catabolic process
+GO:0003723	14	20	13	10	7	RNA binding
+GO:0003735	2	6	7	8	0	structural constituent of ribosome
+GO:0005840	2	6	7	8	0	ribosome
+GO:0019843	5	6	7	8	0	rRNA binding
+GO:0006457	2	1	2	0	6	protein folding
+GO:0051082	0	0	2	0	5	unfolded protein binding
+GO:0000902	1	3	6	3	8	cell morphogenesis
+GO:0016765	6	1	1	2	2	transferase activity, transferring alkyl or aryl (other than methyl) groups
+GO:0071554	1	6	8	2	7	cell wall organization or biogenesis
+GO:0003924	1	5	4	4	0	GTPase activity
+GO:0030312	0	0	11	0	0	external encapsulating structure
+GO:0006399	14	14	5	1	8	tRNA metabolic process
+GO:0005576	0	0	3	0	3	extracellular region
+GO:0006790	5	1	2	2	0	sulfur compound metabolic process
+GO:0005829	1	25	37	3	26	cytosol
+GO:0048870	0	2	0	0	0	cell motility
+GO:0004386	0	11	4	0	6	helicase activity
+GO:0005856	0	0	1	1	0	cytoskeleton
+GO:0005694	3	3	1	0	2	chromosome
+GO:0019899	0	7	2	2	3	enzyme binding
+GO:0043226	0	3	0	0	0	organelle
+GO:0051604	5	0	5	0	2	protein maturation
+GO:0008565	0	3	1	0	3	
+GO:0003729	0	0	0	0	5	mRNA binding
+GO:0030234	0	7	3	0	1	enzyme regulator activity
+GO:0022607	0	1	0	0	2	cellular component assembly
+GO:0019748	2	0	0	0	0	secondary metabolic process
+GO:0022618	1	0	0	0	0	ribonucleoprotein complex assembly
+GO:0007059	2	0	0	0	0	chromosome segregation
+GO:0006397	0	0	0	0	1	mRNA processing

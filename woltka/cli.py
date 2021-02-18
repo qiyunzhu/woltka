@@ -15,7 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
-from .tools import filter_wf, merge_wf
+from .tools import filter_wf, merge_wf, collapse_wf, coverage_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -233,6 +233,65 @@ def merge_cmd(ctx, **kwargs):
     """Merge multiple profiles into one profile.
     """
     merge_wf(**kwargs)
+
+
+@tools.command('collapse')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--map', '-m', 'map_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Mapping of source features to target features. (supports '
+          'many-to-many relationships).'))
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--normalize', '-z', is_flag=True,
+    help=('Count each target feature as 1/k (k is the number of targets '
+          'mapped to a source). Otherwise, count as one.'))
+@click.option(
+    '--names', '-n', 'names_fp', type=click.Path(exists=True),
+    help='Names of target features to append to the output profile.')
+@click.pass_context
+def collapse_cmd(ctx, **kwargs):
+    """Collapse a profile based on feature mapping.
+    """
+    collapse_wf(**kwargs)
+
+
+@tools.command('coverage')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--map', '-m', 'map_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Mapping of feature groups to member features.')
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output coverage table.')
+@click.option(
+    '--threshold', '-t', type=click.IntRange(1, 100),
+    help=('Convert coverage to presence (1) / absence (0) data by this '
+          'percentage threshold.'))
+@click.option(
+    '--count', '-c', is_flag=True,
+    help=('Record numbers of covered features instead of percentages '
+          '(overrides threshold).'))
+@click.option(
+    '--names', '-n', 'names_fp', type=click.Path(exists=True),
+    help='Names of feature groups to append to the coverage table.')
+@click.pass_context
+def coverage_cmd(ctx, **kwargs):
+    """Calculate per-sample coverage of feature groups.
+    """
+    coverage_wf(**kwargs)
 
 
 if __name__ == '__main__':

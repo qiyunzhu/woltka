@@ -19,7 +19,7 @@ import bz2
 from woltka.file import (
     openzip, readzip, file2stem, path2stem, stem2rank, read_ids,
     id2file_from_dir, id2file_from_map, read_map_uniq, read_map_1st,
-    read_map_all, write_readmap)
+    read_map_all, read_map_many, write_readmap)
 
 
 class FileTests(TestCase):
@@ -355,6 +355,50 @@ class FileTests(TestCase):
         # single column
         obs = tuple(read_map_all(('Hello.',)))
         self.assertTupleEqual(obs, ())
+
+    def test_read_map_many(self):
+        # one-to-one
+        tsv = ('R1	A',
+               'R2	B',
+               'R3	C')
+        obs = read_map_many(tsv)
+        exp = {'R1': ['A'], 'R2': ['B'], 'R3': ['C']}
+        self.assertDictEqual(obs, exp)
+
+        # many-to-one, with separator
+        tsv = ('R1,A',
+               'R2,B',
+               'R3,B',
+               'R4,C')
+        obs = read_map_many(tsv, sep=',')
+        exp = {'R1': ['A'], 'R2': ['B'], 'R3': ['B'], 'R4': ['C']}
+        self.assertDictEqual(obs, exp)
+
+        # one-to-many
+        tsv = ('R1	A',
+               'R2	A	B',
+               'R3	B	C	D',
+               'R4	A	D')
+        obs = read_map_many(tsv)
+        exp = {'R1': ['A'], 'R2': ['A', 'B'], 'R3': ['B', 'C', 'D'],
+               'R4': ['A', 'D']}
+        self.assertDictEqual(obs, exp)
+
+        # many-to-many
+        tsv = ('R1	A',
+               'R1	B',
+               'R2	B',
+               'R3	A',
+               'R3	C',
+               'R4	C')
+        obs = read_map_many(tsv)
+        exp = {'R1': ['A', 'B'], 'R2': ['B'], 'R3': ['A', 'C'], 'R4': ['C']}
+        self.assertDictEqual(obs, exp)
+
+        # no relationship
+        tsv = ('Hello.')
+        obs = read_map_many(tsv)
+        self.assertDictEqual(obs, {})
 
     def test_write_readmap(self):
         # typical read map

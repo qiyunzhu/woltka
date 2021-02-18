@@ -4,9 +4,9 @@ Test datasets, including reference genome and taxonomy databases, query sequenci
 
 ## Align
 
-*Sequence alignment** results.
+**Sequence alignment** results.
 
-Here "alignment" refers to the operation of aligning short DNA sequences ("reads") against reference **genome** sequences.
+Here "alignment" refers to the operation of aligning short DNA sequences (**reads**) against reference **genome** sequences.
 
 The query sequences are five samples (S01 to S05) of 150 bp paired-end reads simulated using [CAMISIM](https://github.com/CAMI-challenge/CAMISIM/). The ground-truth mapping of reads against original genomes and locations are provided in `truth`.
 
@@ -57,6 +57,15 @@ woltka classify \
   --nodes taxonomy/nodes.dmp \
   --rank free \
   --output bowtie2.free.tsv
+```
+
+`bowtie2.free.1p.tsv`:
+
+```bash
+woltka tools filter \
+  --input output/bowtie2.free.tsv \
+  --min-percent 1 \
+  --output bowtie2.free.1p.tsv
 ```
 
 `blastn.species.tsv`:
@@ -146,6 +155,15 @@ woltka classify \
   --output split.process.tsv
 ```
 
+`merged.process.tsv`:
+
+```bash
+woltka tools merge \
+  --input output/burst.process.tsv \
+  --input output/split.process.tsv \
+  --output merged.process.tsv
+```
+
 `diamond.free.tsv`
 
 ```bash
@@ -168,4 +186,46 @@ woltka classify \
   --map-as-rank \
   --rank function \
   --output diamond.func.tsv
+```
+
+`truth.gene.tsv`
+
+```bash
+woltka classify \
+  --input align/truth/b6o \
+  --coords function/nucl/coords.txt.xz \
+  --output truth.gene.tsv
+```
+
+`truth.uniref.tsv`
+
+```bash
+woltka classify \
+  --input align/truth/b6o \
+  --coords function/nucl/coords.txt.xz \
+  --map function/nucl/uniref.map.xz \
+  --names function/uniref.names.xz \
+  --map-as-rank \
+  --rank uniref \
+  --output truth.uniref.tsv
+```
+
+Or:
+
+```bash
+woltka tools collapse \
+  --input output/truth.gene.tsv \
+  --map function/nucl/uniref.map.xz \
+  --names function/uniref.names.xz \
+  --output truth.uniref.tsv
+```
+
+`truth.goslim.tsv`
+
+```bash
+woltka tools collapse \
+  --input output/truth.uniref.tsv \
+  --map function/go/goslim.tsv.xz \
+  --names function/go/name.txt.xz \
+  --output truth.goslim.tsv
 ```

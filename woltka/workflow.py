@@ -23,7 +23,7 @@ from itertools import compress
 from functools import partial, lru_cache
 import click
 
-from .util import update_dict, allkeys, sum_dict, intize
+from .util import update_dict, allkeys, sum_dict, intize_dict
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
@@ -863,7 +863,7 @@ def round_profiles(data:   list,
                    uniq:   bool = False,
                    major: float = None,
                    above:  bool = False):
-    """Round counts in the profile into integers, and drop zero counts.
+    """Round counts in profiles into integers, and drop zero counts.
 
     Parameters
     ----------
@@ -887,13 +887,13 @@ def round_profiles(data:   list,
             if uniq:
                 continue
             for datum in data[rank].values():
-                intize(datum)
+                intize_dict(datum)
 
         # given rank classification needs rounding when all three criteria
         # are not met
         elif not any((uniq, major, above)):
             for datum in data[rank].values():
-                intize(datum)
+                intize_dict(datum)
 
 
 def write_profiles(data:        dict,

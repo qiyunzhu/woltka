@@ -4,7 +4,6 @@
 
 There is no restriction as far as we are aware of. Tested and working on Linux, macOS and Windows systems.
 
-
 ## Software environment
 
 Woltka is written in **Python 3**. One needs at least Python 3.6 to run the program.

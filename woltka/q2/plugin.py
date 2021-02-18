@@ -25,9 +25,9 @@ from skbio import TreeNode
 
 from woltka.workflow import build_mapper, classify as cwf
 from woltka.align import plain_mapper
-from woltka.file import read_map_1st
-from woltka.table import prep_table
-from woltka.biom import table_to_biom, filter_biom
+from woltka.file import read_map_1st, read_map_many, read_map_all
+from woltka.table import prep_table, calc_coverage
+from woltka.biom import table_to_biom, filter_biom, collapse_biom
 from woltka.tree import read_nodes, read_lineage, read_newick, fill_root
 from woltka.__init__ import __name__, __version__
 
@@ -124,9 +124,9 @@ def classify(alignment:             str,
     return table
 
 
-def filter_table(table:  biom.Table,
-                 min_count:     int = None,
-                 min_percent: float = None) -> biom.Table:
+def psfilter(table:  biom.Table,
+             min_count:     int = None,
+             min_percent: float = None) -> biom.Table:
     """Filter a feature table by per-sample abundance of features.
     """
     # validate parameters
@@ -146,4 +146,30 @@ def filter_table(table:  biom.Table,
     table = filter_biom(table, th)
     table.generated_by = f'{__name__}-{__version__}'
 
+    return table
+
+
+def collapse(table: biom.Table,
+             mapping:      str,
+             normalize:   bool = False) -> biom.Table:
+    """Collapse a feature table based on many-to-many mapping.
+    """
+    with open(mapping, 'r') as fh:
+        mapping = read_map_many(fh)
+    table = collapse_biom(table, mapping, normalize)
+    table.generated_by = f'{__name__}-{__version__}'
+    return table
+
+
+def coverage(table: biom.Table,
+             mapping:      str,
+             threshold:    int = None,
+             count:       bool = False) -> biom.Table:
+    """Calculate a feature table's coverage over feature groups.
+    """
+    with open(mapping, 'r') as fh:
+        mapping = dict(read_map_all(fh))
+    table = calc_coverage(table, mapping, threshold, count)
+    table = table_to_biom(*table)
+    table.generated_by = f'{__name__}-{__version__}'
     return table

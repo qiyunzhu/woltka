@@ -18,7 +18,8 @@ from biom import Table, load_table
 
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
-    table_shape, filter_table, merge_tables)
+    table_shape, filter_table, merge_tables, round_table, add_metacol,
+    collapse_table, calc_coverage)
 from woltka.biom import table_to_biom
 
 
@@ -141,7 +142,7 @@ class TableTests(TestCase):
         self.assertEqual(fmt, 'tsv')
 
         # wrong encoding
-        fp = join(self.datdir, 'function', 'uniref.map.xz')
+        fp = join(self.datdir, 'function', 'uniref', 'uniref.map.xz')
         with self.assertRaises(ValueError) as ctx:
             read_table(fp)
         errmsg = 'Input file cannot be parsed as BIOM or TSV format.'
@@ -478,6 +479,194 @@ class TableTests(TestCase):
             merge_tables([t1, t2, t3])
         errmsg = 'Conflicting metadata found in tables.'
         self.assertEqual(str(ctx.exception), errmsg)
+
+    def test_round_table(self):
+        obs = prep_table({
+            'S1': {'G1': 0.5, 'G2': 0.0, 'G3': 2.3, 'G4': 0.50000000001},
+            'S2': {'G1': 1.5, 'G2': 0.2, 'G3': 1.49999999999, 'G4': 0.2},
+            'S3': {'G1': 2.5, 'G2': 0.3, 'G3': 3.8, 'G4': 0.1}})
+        exp = prep_table({
+            'S1': {'G1': 0, 'G3': 2},
+            'S2': {'G1': 2, 'G3': 2},
+            'S3': {'G1': 2, 'G3': 4}})
+        ob2 = Table(*map(np.array, obs))
+
+        # regular
+        round_table(obs)
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM
+        round_table(ob2)
+        ex2 = Table(*map(np.array, exp))
+        self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
+
+    def test_add_metacol(self):
+        obs = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0}})
+        self.assertListEqual(obs[3], [{}] * 5)
+        ob2 = Table(*map(np.array, obs))
+
+        # regular table
+        rankdic = {'G1': 'S', 'G2': 'S', 'G3': 'F', 'G4': 'O', 'G5': 'P'}
+        add_metacol(obs, rankdic, 'Rank')
+        exp = [{'Rank': 'S'}, {'Rank': 'S'}, {'Rank': 'F'}, {'Rank': 'O'},
+               {'Rank': 'P'}]
+        self.assertListEqual(obs[3], exp)
+
+        # BIOM table
+        add_metacol(ob2, rankdic, 'Rank')
+        self.assertListEqual(list(map(
+            dict, ob2.metadata(axis='observation'))), exp)
+
+        # unordered, missing value, append
+        namedic = {'G1': 'Proteo', 'G3': 'Actino', 'G2': 'Firmic',
+                   'G4': 'Bacter'}
+        add_metacol(obs, namedic, 'Name', missing='X')
+        exp = [{'Rank': 'S', 'Name': 'Proteo'},
+               {'Rank': 'S', 'Name': 'Firmic'},
+               {'Rank': 'F', 'Name': 'Actino'},
+               {'Rank': 'O', 'Name': 'Bacter'},
+               {'Rank': 'P', 'Name': 'X'}]
+        self.assertListEqual(obs[3], exp)
+
+        add_metacol(ob2, namedic, 'Name', missing='X')
+        self.assertListEqual(list(map(
+            dict, ob2.metadata(axis='observation'))), exp)
+
+    def test_collapse_table(self):
+        table = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4, 'G6': 2},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0, 'G6': 9}})
+
+        # one-to-one mapping (e.g., direct translation)
+        mapping = {'G1': ['H1'], 'G2': ['H2'], 'G3': ['H3'],
+                   'G4': ['H4'], 'G5': ['H5'], 'G6': ['H6']}
+        obs = collapse_table(table, mapping)
+        exp = prep_table({
+            'S1': {'H1': 4, 'H2': 5, 'H3': 8, 'H4': 0, 'H5': 3, 'H6': 0},
+            'S2': {'H1': 1, 'H2': 8, 'H3': 0, 'H4': 7, 'H5': 4, 'H6': 2},
+            'S3': {'H1': 0, 'H2': 2, 'H3': 3, 'H4': 5, 'H5': 0, 'H6': 9}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM table
+        table_ = Table(*map(np.array, table))
+        obs = collapse_table(table_, mapping)
+        exp = Table(*map(np.array, exp))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # some missing, some extra
+        mapping = {'G1': ['H1'], 'G2': ['H2'], 'G3': ['H3'], 'G9': ['H9']}
+        obs = collapse_table(table, mapping)
+        exp = prep_table({
+            'S1': {'H1': 4, 'H2': 5, 'H3': 8},
+            'S2': {'H1': 1, 'H2': 8, 'H3': 0},
+            'S3': {'H1': 0, 'H2': 2, 'H3': 3}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # wrong mapping (no match)
+        mapping = {'H1': ['I1'], 'H2': ['I2'], 'H3': ['I3']}
+        obs = collapse_table(table, mapping)
+        for i in (0, 1, 3):
+            self.assertListEqual(obs[i], [])
+        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
+
+        # many-to-one mapping (e.g., taxonomic rank up)
+        mapping = {'G1': ['H1'], 'G2': ['H1'], 'G3': ['H2'],
+                   'G4': ['H2'], 'G5': ['H2'], 'G6': ['H3']}
+        obs = collapse_table(table, mapping)
+        exp = prep_table({
+            'S1': {'H1': 9, 'H2': 11, 'H3': 0},
+            'S2': {'H1': 9, 'H2': 11, 'H3': 2},
+            'S3': {'H1': 2, 'H2':  8, 'H3': 9}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # many-to-many mapping (e.g., genes to pathways)
+        mapping = {'G1': ['H1'],
+                   'G2': ['H1', 'H2'],
+                   'G3': ['H2', 'H3', 'H4'],
+                   'G4': ['H2', 'H5'],
+                   'G5': ['H4'],
+                   'G6': ['H3', 'H5']}
+        obs = collapse_table(table, mapping)
+        exp = prep_table({
+            'S1': {'H1': 9, 'H2': 13, 'H3':  8, 'H4': 11, 'H5':  0},
+            'S2': {'H1': 9, 'H2': 15, 'H3':  2, 'H4':  4, 'H5':  9},
+            'S3': {'H1': 2, 'H2': 10, 'H3': 12, 'H4':  3, 'H5': 14}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # many-to-many mapping, with normalization
+        obs = collapse_table(table, mapping, normalize=True)
+        exp = prep_table({
+            'S1': {'H1': 6, 'H2': 5, 'H3': 3, 'H4': 6, 'H5': 0},
+            'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
+            'S3': {'H1': 1, 'H2': 4, 'H3': 6, 'H4': 1, 'H5': 7}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # nothing left after normalization
+        table = prep_table({'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})
+        mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
+        obs = collapse_table(table, mapping, normalize=True)
+        for i in (0, 1, 3):
+            self.assertListEqual(obs[i], [])
+        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
+
+    def test_calc_coverage(self):
+        table = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
+            'S2': {'G1': 1, 'G2': 8, 'G3': 0, 'G4': 7, 'G5': 4, 'G6': 2},
+            'S3': {'G1': 0, 'G2': 2, 'G3': 3, 'G4': 5, 'G5': 0, 'G6': 9}})
+        mapping = {'P1': ['G1', 'G2'],
+                   'P2': ['G3'],
+                   'P3': ['G2', 'G4', 'G6'],
+                   'P4': ['G3', 'G5'],
+                   'P5': ['G7', 'G8', 'G9']}
+
+        # default behavior
+        obs = calc_coverage(table, mapping)
+        exp = prep_table({
+            'S1': {'P1': 100.0, 'P2': 100.0, 'P3':  33.333, 'P4': 100.0},
+            'S2': {'P1': 100.0, 'P2':   0.0, 'P3': 100.0,   'P4': 50.0},
+            'S3': {'P1':  50.0, 'P2': 100.0, 'P3': 100.0,   'P4': 50.0}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM table
+        table_ = Table(*map(np.array, table))
+        obs = calc_coverage(table_, mapping)
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
+
+        # threshold and boolean result
+        obs = calc_coverage(table, mapping, th=80)
+        exp = prep_table({
+            'S1': {'P1': 1, 'P2': 1, 'P3': 0, 'P4': 1},
+            'S2': {'P1': 1, 'P2': 0, 'P3': 1, 'P4': 0},
+            'S3': {'P1': 0, 'P2': 1, 'P3': 1, 'P4': 0}})
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
+
+        # numbers instead of percentages
+        obs = calc_coverage(table, mapping, count=True)
+        exp = prep_table({
+            'S1': {'P1': 2, 'P2': 1, 'P3': 1, 'P4': 2},
+            'S2': {'P1': 2, 'P2': 0, 'P3': 3, 'P4': 1},
+            'S3': {'P1': 1, 'P2': 1, 'P3': 3, 'P4': 1}})
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
+
+        # number overrides threshold
+        obs = calc_coverage(table, mapping, th=80, count=True)
+        for i in range(2):
+            self.assertListEqual(obs[i], exp[i])
 
 
 if __name__ == '__main__':
