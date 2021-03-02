@@ -22,7 +22,7 @@ from pandas.testing import assert_frame_equal
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
-    round_profiles, write_profiles)
+    read_strata, round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -475,6 +475,18 @@ class WorkflowTests(TestCase):
         assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
                        rankdic=rankdic)
         self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
+
+    def test_read_strata(self):
+        # regular strata file
+        fp = join(self.datdir, 'output', 'burst.genus.map', 'S01.txt.gz')
+        obs = read_strata(fp, zippers={'gzip': False})
+        self.assertEqual(len(obs), 1608)
+
+        # file has no strata
+        with self.assertRaises(ValueError) as ctx:
+            read_strata(join(self.datdir, 'tree.nwk'))
+        self.assertEqual(str(ctx.exception), (
+            'No stratification information is found in file: tree.nwk.'))
 
     def test_round_profiles(self):
         # free-rank: don't round

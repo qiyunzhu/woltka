@@ -97,7 +97,7 @@ class AlignTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             list(plain_mapper(StringIO()))
         self.assertEqual(str(ctx.exception), (
-            'Cannot read alignment file.'))
+            'Alignment file is empty or unreadable.'))
 
         # bad alignment
         with self.assertRaises(ValueError) as ctx:
@@ -129,7 +129,7 @@ class AlignTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             infer_align_format(StringIO())
         self.assertEqual(str(ctx.exception), (
-            'Cannot read alignment file.'))
+            'Alignment file is empty or unreadable.'))
 
         # invalid sam
         line = 'S1	*	*	*	*	*	*	0	0	*	*'

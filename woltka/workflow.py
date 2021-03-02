@@ -265,8 +265,8 @@ def classify(mapper:  object,
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
-                        with readzip(stratmap[sample], zippers) as fhs:
-                            kwargs['strata'] = dict(read_map_uniq(fhs))
+                        kwargs['strata'] = read_strata(
+                            stratmap[sample], zippers)
                         csample = sample
 
                     # call assignment workflow for each rank
@@ -744,6 +744,35 @@ def demultiplex(qryque:  list,
             sub_add(subjects)
 
     return {x: (qryques[x], subques[x]) for x in qryques}
+
+
+def read_strata(strata_fp: str,
+                zippers:  dict = None) -> dict:
+    """Read a stratification file for a sample.
+
+    Parameters
+    ----------
+    strata_fp : str,
+        Path to stratification file.
+    zippers : dict, optional
+        External compression programs.
+
+    Returns
+    -------
+    dict
+        Stratification information.
+
+    Raises
+    ------
+    ValueError
+        No stratification information is found in file.
+    """
+    with readzip(strata_fp, zippers) as fhs:
+        strata = dict(read_map_uniq(fhs))
+    if not strata:
+        raise ValueError('No stratification information is found in file: '
+                         f'{basename(strata_fp)}.')
+    return strata
 
 
 def assign_readmap(qryque:    list,
