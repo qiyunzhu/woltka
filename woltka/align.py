@@ -129,7 +129,7 @@ def infer_align_format(fh):
     Raises
     ------
     ValueError
-        Alignment file cannot be read.
+        Alignment file is empty or unreadable.
     ValueError
         Alignment file format cannot be determined.
 
@@ -149,7 +149,7 @@ def infer_align_format(fh):
 
     # file is empty or not readable
     except StopIteration:
-        raise ValueError('Cannot read alignment file.')
+        raise ValueError('Alignment file is empty or unreadable.')
 
     # SAM file header
     if line.split()[0] in ('@HD', '@PG'):
