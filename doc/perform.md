@@ -40,7 +40,7 @@ Here are the benchmarks of multiple typical Woltka analyses:
 
 Analysis | Runtime | Memory
 --- | ---: | ---:
-gOTU (no classification) | 50:13 | 101.6 MB
+OGU (no classification) | 50:13 | 101.6 MB
 Free-rank taxonomic classification | 1:00:19 | 107.0 MB
 Taxonomic classification at genus | 52:20 | 106.2 MB
 Taxonomic classification at genus, while writing gzipped read maps | 1:05:35 | 106.3 MB

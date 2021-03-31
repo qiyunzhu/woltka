@@ -2,7 +2,6 @@
 
 The command-line interface (CLI) of Woltka provides several commands:
 
-- [**gotu**](#gotu): gOTU table generation.
 - [**classify**](#classify): Complete classification workflow with all parameters.
 - [**tools**](#tools): Utilities for working with alignments, maps and profiles.
 

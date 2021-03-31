@@ -24,7 +24,7 @@ The alignment step has been automated in [Qiita](https://qiita.ucsd.edu/). If yo
 
 [**Note**] You can also run Bowtie2 manually using your choice of parameters, or using other aligners and other databases. Woltka is designed for flexibility.
 
-## gOTU analysis
+## OGU analysis
 
 ```bash
 woltka classify -i input.sam -o output.biom

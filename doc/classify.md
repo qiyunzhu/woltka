@@ -16,7 +16,7 @@ Woltka features the following modes of classification, as controlled by the `--r
 
 ### 1. **No** classification (`--rank none`)
 
-Simply report subject IDs. A classification system is not required in this analysis. This mode has the highest granularity and is useful in e.g. the [gOTU](gotu.md) analysis.
+Simply report subject IDs. A classification system is not required in this analysis. This mode has the highest granularity and is useful in e.g. the [OGU](ogu.md) analysis.
 
 ### 2. **Free-rank** classification (`--rank free`)
 

@@ -19,8 +19,7 @@ import gzip
 from click.testing import CliRunner
 
 from woltka.cli import (
-    cli, gotu_cmd, classify_cmd, filter_cmd, merge_cmd, collapse_cmd,
-    coverage_cmd)
+    cli, classify_cmd, filter_cmd, merge_cmd, collapse_cmd, coverage_cmd)
 
 
 class CliTests(TestCase):
@@ -39,29 +38,6 @@ class CliTests(TestCase):
     def test_cli(self):
         self.assertRaises(SystemExit, cli)
 
-    def test_gotu(self):
-        output_fp = join(self.tmpdir, 'output.tsv')
-        params = ['--input',  join(self.alndir, 'bowtie2'),
-                  '--output', output_fp]
-        res = self.runner.invoke(gotu_cmd, params)
-        self.assertEqual(res.exit_code, 0)
-        self.assertEqual(res.output.splitlines()[-1], 'Task completed.')
-        with open(output_fp, 'r') as f:
-            obs = f.read().splitlines()
-        exp_fp = join(self.outdir, 'bowtie2.gotu.tsv')
-        with open(exp_fp, 'r') as f:
-            exp = f.read().splitlines()
-        self.assertListEqual(obs, exp)
-        obs = [x.split('\t') for x in obs]
-        self.assertEqual(len(obs), 50)
-        self.assertListEqual(obs[0], [
-            '#FeatureID', 'S01', 'S02', 'S03', 'S04', 'S05'])
-        self.assertListEqual(obs[1], [
-            'G000006845', '0', '0', '10', '0', '0'])
-        self.assertListEqual(obs[2], [
-            'G000006925', '0', '6', '42', '0', '2'])
-        remove(output_fp)
-
     def test_classify(self):
         output_fp = join(self.tmpdir, 'output.tsv')
 
@@ -69,6 +45,11 @@ class CliTests(TestCase):
             res = self.runner.invoke(classify_cmd, params + ['--no-exe'])
             self.assertEqual(res.exit_code, 0)
             self.assertTrue(cmp(output_fp, join(self.outdir, exp)))
+
+        # bowtie2, ogu
+        params = ['--input',  join(self.alndir, 'bowtie2'),
+                  '--output', output_fp]
+        _test_params(params, 'bowtie2.ogu.tsv')
 
         # bowtie2, paired-end, free-rank classification
         params = ['--input',  join(self.alndir, 'bowtie2'),

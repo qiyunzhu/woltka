@@ -24,22 +24,11 @@ from pandas import Series
 from skbio import TreeNode
 
 from woltka.workflow import build_mapper, classify as cwf
-from woltka.align import plain_mapper
 from woltka.file import read_map_1st, read_map_many, read_map_all
 from woltka.table import prep_table, calc_coverage
 from woltka.biom import table_to_biom, filter_biom, collapse_biom
 from woltka.tree import read_nodes, read_lineage, read_newick, fill_root
 from woltka.__init__ import __name__, __version__
-
-
-def gotu(alignment: str) -> biom.Table:
-    """Generate a gOTU table based on sequence alignments.
-    """
-    profile = cwf(mapper=plain_mapper, files=[alignment], demux=True,
-                  ranks=['none'], chunk=1000, zippers={})['none']
-    table = table_to_biom(*prep_table(profile))
-    table.generated_by = f'{__name__}-{__version__}'
-    return table
 
 
 def classify(alignment:             str,

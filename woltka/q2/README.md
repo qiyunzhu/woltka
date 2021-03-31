@@ -44,16 +44,12 @@ Multiple small test files can be found under [tests/data](tests/data). To access
 [**Note**] These files are QIIME 2 artifacts (*.qza). They are containers of actual data files. See [below](#data-importing) for how to generate these files.
 
 
-The gOTU workflow:
+Generate an OGU (operational genomic unit) table:
 
 ```bash
-qiime woltka gotu --i-alignment align_sam.qza --o-gotu-table gotu.qza
-```
-
-Which is equivalent to:
-
-```bash
-qiime woltka classify --i-alignment align_sam.qza --o-classified-table profile.qza
+qiime woltka classify \
+  --i-alignment align_sam.qza \
+  --o-classified-table table.qza
 ```
 
 Classify a SAM alignment file at the genus rank using a QIIME 2 taxonomy (lineage strings):
