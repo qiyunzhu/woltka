@@ -42,10 +42,10 @@ In addition, `nucl/` contains the mappings from nucleotide sequence accessions (
 
 Woltka output files generated from the provided alignments and classification systems. The commands for generating those files are:
 
-`bowtie2.gotu.tsv`:
+`bowtie2.ogu.tsv`:
 
 ```bash
-woltka gotu -i align/bowtie2 -o bowtie2.gotu.tsv
+woltka classify -i align/bowtie2 -o bowtie2.ogu.tsv
 ```
 
 `bowtie2.free.tsv`:

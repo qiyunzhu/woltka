@@ -6,7 +6,7 @@
 
 **Woltka** (Web of Life Toolkit App), is a bioinformatics package for shotgun metagenome data analysis. It takes full advantage of, and it not limited by, the [WoL](https://biocore.github.io/wol/) reference phylogeny. It bridges first-pass sequence aligners with advanced analytical platforms (such as QIIME 2). Highlights of this program include:
 
-- gOTU: fine-grain community ecology.
+- OGU: fine-grained community ecology.
 - Tree-based, rank-free classification.
 - Combined taxonomic & functional analysis.
 
@@ -28,7 +28,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - Tutorials
   - [Working with WoL](doc/wol.md)
-  - [gOTU analysis](doc/gotu.md)
+  - [OGU analysis](doc/ogu.md)
 - For users of
   - [QIIME 2](woltka/q2), [Qiita](doc/app.md#qiita), [SHOGUN](doc/wol.md#sequence-alignment), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
 - References
@@ -83,10 +83,10 @@ One can execute the following commands to make sure that Woltka functions correc
 
 (Note: a more complete list of commands at provided [here](woltka/tests/data). Alternatively, you can skip this test dataset check out the [instructions](doc/wol.md) for working with WoL.)
 
-1\. gOTU table generation ([details](doc/gotu.md)):
+1\. OGU table generation ([details](doc/ogu.md)):
 
 ```bash
-woltka gotu -i align/bowtie2 -o table.biom
+woltka classify -i align/bowtie2 -o ogu.biom
 ```
 
 The input path, [`align/bowtie2`](woltka/tests/data/align/bowtie2), is a directory containing five Bowtie2 alignment files (`S01.sam.xz`, `S02.sam.xz`,... `S05.sam.xz`) (SAM format, xzipped), each representing the mapping of shotgun metagenomic sequences per sample against a reference genome database.

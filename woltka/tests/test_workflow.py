@@ -34,7 +34,7 @@ class WorkflowTests(TestCase):
         rmtree(self.tmpdir)
 
     def test_workflow(self):
-        # simplest gotu workflow
+        # simplest ogu workflow
         input_fp = join(self.datdir, 'align', 'bowtie2')
         output_fp = join(self.tmpdir, 'tmp.tsv')
         obs = workflow(input_fp, output_fp)['none']
@@ -42,11 +42,11 @@ class WorkflowTests(TestCase):
         self.assertNotIn('G000007145', obs['S02'])
         self.assertEqual(obs['S03']['G000009345'], 640)
         self.assertTrue(cmp(output_fp, join(
-            self.datdir, 'output', 'bowtie2.gotu.tsv')))
+            self.datdir, 'output', 'bowtie2.ogu.tsv')))
         remove(output_fp)
 
     def test_classify(self):
-        # simplest gotu workflow
+        # simplest ogu workflow
         input_fp = join(self.datdir, 'align', 'bowtie2')
         samples, files, demux = parse_samples(input_fp)
         mapper, chunk = build_mapper()
@@ -433,7 +433,7 @@ class WorkflowTests(TestCase):
             self.assertListEqual(list(map(tuple, obs[s])), list(zip(*exp[s])))
 
     def test_assign_readmap(self):
-        # simple gotu assignment
+        # simple ogu assignment
         qryq = ['R1', 'R2', 'R3']
         subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
         assigners = {}

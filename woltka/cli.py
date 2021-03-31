@@ -31,32 +31,6 @@ def cli():
     pass  # pragma: no cover
 
 
-# `gotu` is a simplified wrapper of `classify`
-
-@cli.command('gotu')
-@click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, file_okay=True, dir_okay=True),
-    help=('Path to a multiplexed alignment file or a directory of per-sample '
-          'alignment files.'))
-@click.option(
-    '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True),
-    help='Path to output gOTU table.')
-@click.option(
-    '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
-    help=('Map of nucleotides to genomes.'))
-@click.option(
-    '--uniq', is_flag=True,
-    help=('Skip if one sequence is aligned to multiple genomes. Otherwise, '
-          'each genome is counted as 1/k (k is the number of genomes).'))
-@click.pass_context
-def gotu_cmd(ctx, **kwargs):
-    """Generate a gOTU table based on sequence alignments.
-    """
-    ctx.invoke(classify_cmd, **kwargs)
-
-
 # `classify` invokes the main classification workflow
 
 @cli.command('classify')

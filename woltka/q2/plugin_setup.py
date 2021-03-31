@@ -23,7 +23,7 @@ from ._format import (SeqAlnMapFormat, SeqAlnMapDirFmt,
 from ._type import SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates
 
 from woltka import __version__
-from woltka.q2.plugin import gotu, classify, psfilter, collapse, coverage
+from woltka.q2.plugin import classify, psfilter, collapse, coverage
 
 
 plugin = Plugin(
@@ -58,22 +58,6 @@ plugin.register_semantic_type_to_format(
     GeneCoordinates, artifact_format=GeneCoordDirFmt)
 
 alnfmts = SeqAlnMap | BLAST6Out | SimpleMap
-
-plugin.methods.register_function(
-    function=gotu,
-    inputs={'alignment': FeatureData[alnfmts]},
-    input_descriptions={'alignment': (
-        'Multiplexed sequence alignment map to be classified. Can accept '
-        'SAM, BLAST6 or simple map format.')},
-    parameters={},
-    parameter_descriptions={},
-    outputs=[('gotu_table', FeatureTable[Frequency])],
-    output_descriptions={'gotu_table': 'Output gOTU table.'},
-    name='gOTU table generation',
-    description=('Generate a gOTU table based on sequence alignments against '
-                 'a reference genome database.'),
-    citations=[]
-)
 
 plugin.methods.register_function(
     function=classify,
