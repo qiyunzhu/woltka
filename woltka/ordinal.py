@@ -115,6 +115,10 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         except (TypeError, IndexError):
             continue
 
+        # skip if length is not available
+        if not length:
+            continue
+
         # when query Id changes and chunk limits has been reached
         if query != this and i >= target:
 
