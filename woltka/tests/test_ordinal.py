@@ -144,6 +144,7 @@ class OrdinalTests(TestCase):
             'r7	n1	95	20	0	0	25	6	79	60	1	1',
             'r8	n1	95	20	0	0	1	20	84	65	1	1',
             'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
             '# end of file')))
         obs = list(ordinal_mapper(aln, coords))[0]
         exp = [('r1', 'g1'),
