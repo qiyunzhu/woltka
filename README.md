@@ -64,7 +64,7 @@ Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime
 Requirement: [Python](https://www.python.org/) 3.6 or above, with Python package [biom-format](http://biom-format.org/).
 
 ```bash
-pip install git+https://github.com/qiyunzhu/woltka.git
+pip install woltka
 ```
 
 After installation, launch the program by executing:
@@ -144,4 +144,4 @@ The development of Woltka is supported by: (to be added).
 
 ### Contact
 
-Please forward any questions to the project leader: Dr. Qiyun Zhu (qiz173@ucsd.edu) or the senior PI: Dr. Rob Knight (robknight@ucsd.edu).
+Please forward any questions to the project leader: Dr. Qiyun Zhu (qiyunzhu@gmail.com) or the senior PI: Dr. Rob Knight (robknight@ucsd.edu).
