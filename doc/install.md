@@ -20,15 +20,21 @@ If you already have a [QIIME 2](https://qiime2.org/) environment, these steps ca
 
 ## Installation
 
-Option 1: Install from GitHub:
+Option 1: Install the latest release using [pip](https://pypi.org/project/pip/):
+
+```bash
+pip install woltka
+```
+
+Option 2: Install the current development from GitHub:
 
 ```bash
 pip install git+https://github.com/qiyunzhu/woltka.git
 ```
 
-Option 2: Install from a local copy:
+Option 3: Install from a local copy:
 
-Download this [repository](https://github.com/qiyunzhu/woltka/archive/master.zip). Unzip and navigate to the package directory. Then execute:
+Download this [repository](https://github.com/qiyunzhu/woltka/archive/master.zip) or any of the previous [releases](https://github.com/qiyunzhu/woltka/releases). Unzip and navigate to the package directory. Then execute:
 
 ```bash
 python setup.py install
@@ -41,7 +47,7 @@ Type `woltka` to check if installation is successful, in which case command-line
 Just add `--upgrade` or `-U` to the pip command:
 
 ```bash
-pip install -U git+https://github.com/qiyunzhu/woltka.git
+pip install -U woltka
 ```
 
 ## Uninstallation

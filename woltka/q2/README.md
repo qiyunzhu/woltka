@@ -22,7 +22,7 @@ Requirement: **QIIME 2 2019.1** or above.
 First, install the standalone Woltka program:
 
 ```bash
-pip install git+https://github.com/qiyunzhu/woltka.git
+pip install woltka
 ```
 
 Second, update QIIME 2 cache and the plugin will be automatically loaded into QIIME 2.
@@ -116,9 +116,9 @@ q2-woltka defines five new semantic types:
 - `GeneCoordinates`: [Gene coordinate mapping format](../../doc/ordinal.md#gene-coordinates).
 
 
-## Resulting profile
+## Output profile
 
-The resulting file (e.g., `table.qza`) is a **BIOM table**. Its semantic type is `FeatureTable[Frequency]`. This table can be directly analyzed using downstream QIIME plugins. For example:
+The resulting file (e.g., `table.qza`) is a **feature table**. Its semantic type is `FeatureTable[Frequency]`. This table can be directly analyzed using downstream QIIME plugins. For example:
 
 ```bash
 qiime diversity core-metrics-phylogenetic \
@@ -127,15 +127,6 @@ qiime diversity core-metrics-phylogenetic \
   --p-sampling-depth 1000 \
   --m-metadata-file metadata.tsv \
   --output-dir .
-```
-
-Before moving to the next step (such as the command above), it is recommended to consider **filtering** the feature table by per-sample abundance. For example:
-
-```bash
-qiime woltka psfilter \
-  --i-table table.qza \
-  --min-percent 0.01 \
-  --o-filtered-table filtered.qza
 ```
 
 
