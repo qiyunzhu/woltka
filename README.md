@@ -61,7 +61,7 @@ Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime
 
 ## Installation
 
-Requirement: [Python](https://www.python.org/) 3.6 or above, with Python package [biom-format](http://biom-format.org/).
+Requirement: [Python](https://www.python.org/) 3.6 or above, with Python package [biom-format](http://biom-format.org/) installed.
 
 ```bash
 pip install woltka
