@@ -116,7 +116,7 @@ q2-woltka defines five new semantic types:
 - `GeneCoordinates`: [Gene coordinate mapping format](../../doc/ordinal.md#gene-coordinates).
 
 
-## Output profile
+## Downstream analyses
 
 The resulting file (e.g., `table.qza`) is a **feature table**. Its semantic type is `FeatureTable[Frequency]`. This table can be directly analyzed using downstream QIIME plugins. For example:
 
@@ -124,7 +124,7 @@ The resulting file (e.g., `table.qza`) is a **feature table**. Its semantic type
 qiime diversity core-metrics-phylogenetic \
   --i-phylogeny tree.qza \
   --i-table table.qza \
-  --p-sampling-depth 1000 \
+  --p-sampling-depth 10000 \
   --m-metadata-file metadata.tsv \
   --output-dir .
 ```

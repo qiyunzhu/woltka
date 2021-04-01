@@ -33,7 +33,7 @@ If necessary, you may convert a BIOM table into tab-delimited file:
 biom convert --to-tsv -i table.biom -o table.tsv
 ```
 
-Note: Both SHOGUN and WoL are available at the [**Qiita**](https://qiita.ucsd.edu/) server. If you are a Qiita user, the alignment file can be automatically generated and downloaded from the Qiita interface. See [details](app.md#qiita).
+Note: [**Qiita**](https://qiita.ucsd.edu/) implements the WoL database and a Woltka workflow, which performs sequence alignment using the same approach as SHOGUN does. If you are a Qiita user, the alignment file can be automatically generated and downloaded from the Qiita interface. See [details](qiita.md).
 
 ## OGU analysis using QIIME 2
 
