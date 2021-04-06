@@ -115,5 +115,5 @@ woltka classify -i input_dir --lineage lineage.txt -r genus -o genus.biom -u map
 Second, perform functional classification. This command is identical to the first command in this document, except for the addition of `--stratify` or `-t` parameter pointing to the genus maps, which will be incorporated into the functional classes ([see details](stratify.md)).
 
 ```bash
-woltka classify -i input_dir -c coords.txt.xz -m wol-to-protein.txt.xz --map-as-rank -r protein -t map_dir -o protein.biom
+woltka classify -i input_dir -c coords.txt.xz -m wol-to-protein.txt.xz --map-as-rank -r protein -t map_dir/genus/ -o protein.biom
 ```
