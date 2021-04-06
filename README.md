@@ -35,7 +35,8 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Command-line interface](doc/cli.md)
   - [Computational efficiency](doc/perform.md)
 - [FAQs](#doc/faq.md)
-- [Notes](#notes)
+- [Citation](#citation)
+- [Contact](#contact)
 
 
 ## Overview
@@ -130,18 +131,16 @@ Similarly, the output files are two functional profiles: `uniref.biom` and `proc
 
 One can also combine taxonomic and functional profilings in a **stratification** analysis. See [details](doc/stratify.md).
 
-## Notes
 
-### Citation
+## Citation
 
-Woltka is currently under development. Please directly cite this GitHub repository:
+The first manuscript describing Woltka has be preprinted at:
 
-- https://github.com/qiyunzhu/woltka
+- Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald D, Haiminen N. [OGUs enable effective, phylogeny-aware analysis of even shallow metagenome community structures.](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) _bioRxiv_. 2021. DOI: doi: https://doi.org/10.1101/2021.04.04.438427.
 
-### Grants
+Note: This manuscript focuses on the [OGU analysis](doc/ogu.md). Although it does not discuss other functions of Woltka, it is so far the only citable article if you use Woltka in your studies.
 
-The development of Woltka is supported by: (to be added).
 
-### Contact
+## Contact
 
 Please forward any questions to the project leader: Dr. Qiyun Zhu (qiyunzhu@gmail.com) or the senior PI: Dr. Rob Knight (robknight@ucsd.edu).
