@@ -26,12 +26,12 @@ The following command utilizes Woltka's [ordinal classification](ordinal.md) fun
 
 ```bash
 woltka classify \
-  --input input_dir \
+  --input  input_dir \
   --coords coords.txt.xz \
-  --map wol-to-protein.txt.xz \
-  --names protein_name.txt \
+  --map    metacyc/protein.map.xz \
+  --names  metacyc/protein_name.txt \
   --map-as-rank \
-  --rank protein \
+  --rank   protein \
   --output protein.biom
 ```
 
@@ -42,7 +42,7 @@ Alternatively, one can split this command into two:
 
 ```bash
 woltka classify -i input_dir -c coords.txt.xz -o orf.biom
-woltka tools collapse -i orf.biom -m wol-to-protein.txt.xz -n protein_name.txt -o protein.biom
+woltka tools collapse -i orf.biom -m metacyc/protein.map.xz -n metacyc/protein_name.txt -o protein.biom
 ```
 
 
@@ -115,5 +115,5 @@ woltka classify -i input_dir --lineage lineage.txt -r genus -o genus.biom -u map
 Second, perform functional classification. This command is identical to the first command in this document, except for the addition of `--stratify` or `-t` parameter pointing to the genus maps, which will be incorporated into the functional classes ([see details](stratify.md)).
 
 ```bash
-woltka classify -i input_dir -c coords.txt.xz -m wol-to-protein.txt.xz --map-as-rank -r protein -t map_dir -o protein.biom
+woltka classify -i input_dir -c coords.txt.xz -m metacyc/protein.map.xz --map-as-rank -r protein -t map_dir -o protein.biom
 ```
