@@ -4,17 +4,21 @@
 
 - [**wolsop.sh**](wolsop.sh) (click to download)
 
-## Overview
+Meanwhile, a basic WoL/Woltka workflow is available from our web-based microbiome study platform: **Qiita** (https://qiita.ucsd.edu/) (see [details](qiita.md)).
 
-The "Web of Life" (WoL) project is a series efforts to reconstruct an accurate reference phylogeny for microbial genomes, and to build resources that can (and are already) benefiting microbiome researchers.
+## The WoL resource
 
-Phase I of the project was already completed ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)). We have released a reference [tree](https://biocore.github.io/wol/data/trees/astral/branch_length/cons/collapsed/astral.cons.nid.e5p50.nwk), built on 10,575 bacterial and archaeal genomes, based on 381 marker genes.
+The "Web of Life" (WoL) aims to reconstruct an accurate reference phylogeny for microbial genomes, and to build resources that can benefit microbiome researchers. In phase I ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)), we built a reference [tree](https://biocore.github.io/wol/data/trees/tree.nwk) of 10,575 bacterial and archaeal genomes using 381 marker genes. The project is detailed at our website: https://biocore.github.io/wol/, including data and [metadata](https://biocore.github.io/wol/data/genomes/metadata.tsv.bz2), code, protocols, a gallery and a visualizer.
 
-The project is detailed at our website: https://biocore.github.io/wol/, including data and [metadata](https://biocore.github.io/wol/data/genomes/metadata.tsv.bz2), code, protocols, a gallery and a visualizer. Large data files are hosted at our Globus endpoint: [WebOfLife](https://app.globus.org/file-manager/collections/31acbeb8-c62f-11ea-bef9-0e716405a293) (see [instruction](https://biocore.github.io/wol/download#download-via-globus)).
+Large data files are hosted at our Globus endpoint: [WebOfLife](https://app.globus.org/file-manager/collections/31acbeb8-c62f-11ea-bef9-0e716405a293) (see [instruction](https://biocore.github.io/wol/download#download-via-globus)). This public resource provides everything one needs to start microbiome data analysis using WoL, including raw sequence data, metadata, tree and taxonomy, and pre-built databases that are ready to be plugged into your bioinformatics protocols. Currently, we provide databases for QIIME 2, SHOGUN, Bowtie2, Centrifuge, Kraken2 / Bracken, BLASTn and BLASTp, Minimap2, and DIAMOND. Even if your favorate tool is not on this list, we provide detailed tutorials on how to [build your own database](https://biocore.github.io/wol/protocols/genome_database) and many other related [protocols](https://biocore.github.io/wol/protocols/).
 
-This public resource provides everything one needs to start microbiome data analysis using WoL, including raw sequence data, metadata, tree and taxonomy, and pre-built databases that are ready to be plugged into your bioinformatics protocols. Currently, we provide databases for QIIME 2, SHOGUN, Bowtie2, Centrifuge, Kraken2 / Bracken, BLASTn and BLASTp, Minimap2, and DIAMOND. Even if your favorate tool is not on this list, we provide detailed tutorials on how to [build your own database](https://biocore.github.io/wol/protocols/genome_database) and many other related [protocols](https://biocore.github.io/wol/protocols/). Meanwhile, WoL is also hosted at our web-based microbiome study platform: **Qiita** (https://qiita.ucsd.edu/) (see [details](qiita.md)).
+The following tutorial assumes that you have downloaded the WoL data release directory from our Globus server. The paths mentioned below are relative to this directory. Specifically, the following directories and files are relevant:
 
-The following tutorial assume that you have downloaded the entire WoL directory from our Globus server. The paths mentioned below are relative to this directory.
+- `databases/shogun/`
+- `databases/bowtie2/`
+- `genes/coords.txt.xz`
+- `taxonomy/`
+- `annotations/`
 
 
 ## Sequence alignment
@@ -40,15 +44,13 @@ shogun align -d databases/shogun -a bowtie2 -t 16 -p 0.95 -i input.fa -o .
 ```
 -  The parameter `-p 0.95` represents a sequence identity threshold of 95%, which is the recommended value for shotgun metagenomic data.
 
-This command is equivalent to (in case you prefer to run Bowtie2 directly):
+This command is equivalent to (in case you prefer to directly run Bowtie2 without SHOGUN):
 
 ```bash
 bowtie2 -x databases/bowtie2/WoLr1 -p 16 -f input.fa -S output.sam -k 16 --np 1 --mp "1,1" --rdg "0,1" --rfg "0,1" --score-min "L,0,-0.05" --very-sensitive --no-head --no-unal
 ```
 
 This step will generate a [SAM](https://en.wikipedia.org/wiki/SAM_(file_format)) format alignment file.
-
-The sequence alignment process has been automated in [Qiita](https://qiita.ucsd.edu/). If you use Qiita, the SAM file is ready for download. See [details](qiita.md).
 
 **Note**: You can also run Bowtie2 manually using your choice of parameters, or using other aligners and corresponding databases. Woltka is designed for flexibility.
 
