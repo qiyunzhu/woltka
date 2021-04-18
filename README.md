@@ -134,7 +134,7 @@ One can also combine taxonomic and functional profilings in a **stratification**
 
 ## Citation
 
-The first manuscript describing Woltka has be preprinted at:
+The first manuscript describing Woltka has been preprinted at:
 
 - Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald D, Haiminen N, et al. [OGUs enable effective, phylogeny-aware analysis of even shallow metagenome community structures.](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) _bioRxiv_. 2021. doi: https://doi.org/10.1101/2021.04.04.438427.
 

@@ -8,12 +8,12 @@ Whereas the FTP access to KEGG is limited to subscribed users, the mapping of Un
 
 ```bash
 woltka classify \
-  --input input_dir \
+  --input  input_dir \
   --coords coords.txt.xz \
-  --map wol-to-uniref.map.xz \
-  --map uniref-to-ko.map.xz \
+  --map    uniref/uniref.map.xz \
+  --map    kegg/ko.map.xz \
   --map-as-rank \
-  --rank ko \
+  --rank   ko \
   --output ko.tsv
 ```
 
@@ -38,9 +38,9 @@ Once a reaction profile is generated, several mapping files help to find more in
 **Step 4**: You may want to explore the completeness of individual reactions, modules and pathways. This can be achieved using Woltka's [**coverage**](coverage.md) command. For example:
 
 ```bash
-woltka tools coverage -i ko.tsv -m kegg/ko-to-reaction.txt -o reaction.cov.tsv
+woltka tools coverage -i reaction.tsv -m kegg/module-to-reaction.txt -o module.cov.tsv
 ```
 
-Differently from the last command, the **coverage** command generates a table, where cell values indicate the percentage of KOs required by each reaction found in each sample.
+Differently from the last command, the **coverage** command generates a table, where cell values indicate the percentage of reactions required by each module found in each sample.
 
 **Step 5**: You may also consider **stratifying** the functional profile by taxonomy. [See details](stratify.md).

@@ -38,6 +38,7 @@ L-glutamine degradation I | 100.0 | 100.0 | 50.0 | 0.0
 Sucrose biosynthesis I | 20.0 | 20.0 | 20.0 | 20.0
 ... |
 
+**Note**: The "coverage" computed by Woltka is distinct from those by HUMAnN2 (whether the pathway is present) and HUMAnN3 (how likely the pathway is present).
 
 ## Parameters
 
