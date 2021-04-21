@@ -89,9 +89,9 @@ mv none.$fmt ogu.$fmt
 
 woltka classify \
   --input  $input \
-  --coords $db/genes/coords.txt.xz \
-  --map    $db/annotations/uniref/uniref.map.xz \
-  --names  $db/annotations/uniref/uniref.name.xz \
+  --coords $db/proteins/coords.txt.xz \
+  --map    $db/function/uniref/uniref.map.xz \
+  --names  $db/function/uniref/uniref.name.xz \
   --map-as-rank \
   --rank   none,uniref \
   $filext \
@@ -107,7 +107,7 @@ mv none.$fmt orf.$fmt
 
 if [ "$go" == yes ]; then
 
-  go=$db/annotations/go
+  go=$db/function/go
 
   mkdir -p go
   cd go
@@ -131,7 +131,7 @@ fi
 
 if [ "$metacyc" == yes ]; then
 
-  mc=$db/annotations/metacyc
+  mc=$db/function/metacyc
 
   mkdir -p metacyc
   cd metacyc
@@ -214,7 +214,7 @@ if [ -d "$kegg" ]; then
 
   # entrance
   # UniRef to KO
-  woltka tools collapse -m $db/annotations/kegg/ko.map.xz -n $db/annotations/kegg/ko.name \
+  woltka tools collapse -m $db/function/kegg/ko.map.xz -n $db/function/kegg/ko.name \
     -i ../uniref.$fmt -o ko.$fmt
 
   # main cascade
