@@ -16,9 +16,9 @@ The following tutorial assumes that you have downloaded the WoL data release dir
 
 - `databases/shogun/`
 - `databases/bowtie2/`
-- `genes/coords.txt.xz`
+- `proteins/coords.txt.xz`
 - `taxonomy/`
-- `annotations/`
+- `function/`
 
 
 ## Sequence alignment
@@ -125,7 +125,7 @@ Woltka implements an efficient algorithm which assigns query sequences to open r
 ```bash
 woltka classify \
   --input  input.sam \
-  --coords genes/coords.txt.xz \
+  --coords proteins/coords.txt.xz \
   --output gene.biom
 ```
 
@@ -145,11 +145,11 @@ Combine gene profiling and one or multiple higher-level functional profilings in
 ```bash
 woltka classify \
   --input  input.sam \
-  --coords genes/coords.txt.xz \
-  --map    annotations/uniref/uniref.map.xz \
-  --names  annotations/uniref/uniref.name.xz \
-  --map    annotations/kegg/ko.map.xz \
-  --names  annotations/kegg/ko.name \
+  --coords proteins/coords.txt.xz \
+  --map    function/uniref/uniref.map.xz \
+  --names  function/uniref/uniref.name.xz \
+  --map    function/kegg/ko.map.xz \
+  --names  function/kegg/ko.name \
   --map-as-rank \
   --rank   uniref,ko \
   --to-tsv \
@@ -171,7 +171,7 @@ The following commands generate profiles describing the metabolic capacities of 
 Make an abbreviation:
 
 ```bash
-mcdir=annotations/metacyc
+mcdir=function/metacyc
 ```
 
 Collapse ORFs into MetaCyc proteins.
@@ -235,9 +235,9 @@ Second, run **functional** annotation, with the read-to-genus maps incorporated:
 ```bash
 woltka classify \
   --input    input.sam \
-  --coords   genes/coords.txt.xz \
-  --map      annotations/uniref/uniref.map.xz \
-  --map      annotations/kegg/ko.map.xz \
+  --coords   proteins/coords.txt.xz \
+  --map      function/uniref/uniref.map.xz \
+  --map      function/kegg/ko.map.xz \
   --map-as-rank \
   --rank     ko \
   --stratify mapdir \
