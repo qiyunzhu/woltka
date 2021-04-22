@@ -11,7 +11,7 @@
 # Version: 0.0.1-dev
 # Email: qiyunzhu@gmail.com
 
-# Last updated: 2021-04-17
+# Last updated: 2021-04-22
 
 # Usage: Customize the "Parameters" section, then run this script.
 
@@ -21,12 +21,15 @@
 ##############
 
 # WoL data release directory
-#   available for download from the WoL Globus endpoint
-#   see WoL doc for instruction
+#   available for download at: ftp://ftp.microbio.me/pub/wol-20April2021
+#   see WoL doc for details
 db=
 
 # input alignment file or directory
-#   see Woltka doc for instruction
+#   can be a directory of multiple files, or a multiplexed file, or a mapping
+#   of sample IDs to files; supports SAM, BLAST and plain mappings, supports
+#   regular, gz, bz2 and xz files
+#   see Woltka doc for details
 input=
 
 # input file extension (optional)
