@@ -8,17 +8,21 @@ Meanwhile, a basic WoL/Woltka workflow is available from our web-based microbiom
 
 ## The WoL resource
 
-The "Web of Life" (WoL) aims to reconstruct an accurate reference phylogeny for microbial genomes, and to build resources that can benefit microbiome researchers. In phase I ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)), we built a reference [tree](https://biocore.github.io/wol/data/trees/tree.nwk) of 10,575 bacterial and archaeal genomes using 381 marker genes. The project is detailed at our website: https://biocore.github.io/wol/, including data and [metadata](https://biocore.github.io/wol/data/genomes/metadata.tsv.bz2), code, protocols, a gallery and a visualizer.
+The "Web of Life" (WoL) aims to reconstruct an accurate reference phylogeny for microbial genomes, and to build resources that can benefit microbiome researchers. In phase I ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)), we built a reference [tree](https://biocore.github.io/wol/data/trees/tree.nwk) of 10,575 bacterial and archaeal genomes using 381 marker genes. The basic WoL data release, which contains all necessary files for performing microbiome data analysis, is available for download at the following FTP site:
 
-Large data files are hosted at our Globus endpoint: [WebOfLife](https://app.globus.org/file-manager/collections/31acbeb8-c62f-11ea-bef9-0e716405a293) (see [instruction](https://biocore.github.io/wol/download#download-via-globus)). This public resource provides everything one needs to start microbiome data analysis using WoL, including raw sequence data, metadata, tree and taxonomy, and pre-built databases that are ready to be plugged into your bioinformatics protocols. Currently, we provide databases for QIIME 2, SHOGUN, Bowtie2, Centrifuge, Kraken2 / Bracken, BLASTn and BLASTp, Minimap2, and DIAMOND. Even if your favorate tool is not on this list, we provide detailed tutorials on how to [build your own database](https://biocore.github.io/wol/protocols/genome_database) and many other related [protocols](https://biocore.github.io/wol/protocols/).
+- [ftp://ftp.microbio.me/pub/wol-20April2021](ftp://ftp.microbio.me/pub/wol-20April2021)
 
-The following tutorial assumes that you have downloaded the WoL data release directory from our Globus server. The paths mentioned below are relative to this directory. Specifically, the following directories and files are relevant:
+Meanwhile, the full WoL data release, which also contains raw and processed sequence data, metadata, alternative trees, and pre-built databases for multiple metagenomics tools, are available from our Globus endpoint: [WebOfLife](https://app.globus.org/file-manager/collections/31acbeb8-c62f-11ea-bef9-0e716405a293) (see [instruction](https://biocore.github.io/wol/download#download-via-globus)). The project is detailed at our website: https://biocore.github.io/wol/, including documentation, code, protocols, a gallery and a visualizer.
+
+The following tutorial assumes that you have downloaded the basic or full WoL data release directory. The paths mentioned below are relative to this directory. Specifically, the following directories and files are relevant:
 
 - `databases/shogun/`
 - `databases/bowtie2/`
 - `proteins/coords.txt.xz`
 - `taxonomy/`
 - `function/`
+
+Note: If you downloaded the [basic](ftp://ftp.microbio.me/pub/wol-20April2021) release, you will need to build a Bowtie2 index under `databases/bowtie2` following the instruction provided in the `README` file, and you will need to skip the SHOGUN protocol and use the Bowtie2 protocol (see below).
 
 
 ## Sequence alignment

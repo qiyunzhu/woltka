@@ -13,7 +13,7 @@
 
 ## Mapping files
 
-We mapped all ORFs from the [WoL](wol.md) reference genome database to the reference protein sequences in MetaCyc release 23.0. We provide this mapping file, as well as Woltka-compatible mapping and annotation files representing the higher levels in the MetaCyc classification system corresponding to the mapped WoL ORFs. These files are publicly available under the `annotation/metacyc/` directory of the [WoL data release](https://app.globus.org/file-manager/collections/31acbeb8-c62f-11ea-bef9-0e716405a293) ([see details](wol.md)).
+We mapped all ORFs from the [WoL](wol.md) reference genome database to the reference protein sequences in MetaCyc release 23.0. We provide this mapping file, as well as Woltka-compatible mapping and annotation files representing the higher levels in the MetaCyc classification system corresponding to the mapped WoL ORFs. These files are publicly available under the `function/metacyc/` directory of the WoL data release ([see details](wol.md)).
 
 We also included a UniRef-to-MetaCyc mapping file, extracted from the [UniProt](https://www.uniprot.org/downloads) data release and subsetted to WoL. It contains less entries though.
 
