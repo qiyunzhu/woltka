@@ -4,7 +4,7 @@ Woltka features a highly flexible hierarchical classification system. It is repr
 
 The term "**rank**" (or "level") is still relevant, but it is merely a property of a feature, and does not bear information of hierarchy. For example, above a _genus_-level unit it does not have to be a _family_-level one, but could directly go to _order_, or have a _tribe_ which isn't common for the rest of the tree, or one or more nodes which do NOT have the rank assignment.
 
-In another word, Woltka classification is **rank-free**. This design enables finer-grain resolution of feature relationships, in addition to flexibility. It is therefore suitable for complex systems, such as phylogenetic trees.
+In another word, Woltka classification is **rank-independent**. This design enables finer-grain resolution of feature relationships, in addition to flexibility. It is therefore suitable for complex systems, such as phylogenetic trees.
 
 That being said, Woltka still supports ranked hierarchies and one can instruct the program to target one or more specific ranks.
 

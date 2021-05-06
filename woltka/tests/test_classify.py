@@ -59,6 +59,10 @@ class ClassifyTests(TestCase):
         obs = assign_free({'G1'}, **kwargs, subok=True)
         self.assertEqual(obs, 'G1')
 
+        # assign one sub to nothing
+        obs = assign_free({'Gx'}, **kwargs)
+        self.assertIsNone(obs)
+
     def test_assign_rank(self):
         tree = {'G1': 'T1', 'G2': 'T1', 'G3': 'T2',
                 'T1': 'T0', 'T2': 'T0', 'T0': 'T0'}

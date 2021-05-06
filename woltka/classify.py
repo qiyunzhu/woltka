@@ -65,7 +65,7 @@ def assign_free(subs, tree, root=None, subok=False):
     """
     try:
         sub, = subs
-        return sub if subok else tree[sub]
+        return sub if subok else (tree[sub] if sub in tree else None)
     except ValueError:
         lca = find_lca(subs, tree)
         return None if lca == root else lca

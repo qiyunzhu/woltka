@@ -79,7 +79,7 @@ if [ "$taxtree" == taxdump ]; then
 else
   woltka classify \
     --input   $input \
-    --lineage $db/taxonomy/lineage.txt \
+    --lineage $db/taxonomy/lineages.txt \
     --rank    none,free,$taxranks \
     $filext \
     $altfmt \
