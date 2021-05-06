@@ -40,6 +40,10 @@ The difference from free-rank classification (2) is that, it discards all units 
 
 Multiple ranks can be specified simultaneously, delimited by comma (e.g., `--rank none,free,phylum,genus,species`), in which case Woltka will generate one [profile](output.md) for each rank. This is significantly faster than running Woltka multiple times on individual ranks.
 
+### Default rank
+
+One can omit the `--rank` parameter. In such case, Woltka automatically performs free-rank classification (2) (same as `--rank free`) if there is a classification system, or no classification (1) (same as `--rank none`) if there isn't.
+
 
 ## Ambiguous assignment
 
