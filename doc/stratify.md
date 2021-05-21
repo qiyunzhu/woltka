@@ -20,7 +20,7 @@ Here is an example workflow, based on the commands and [sample data](../woltka/t
 ```bash
 woltka classify \
   -i align/bowtie2 \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
   --rank phylum \
@@ -36,8 +36,8 @@ The parameter `--outmap mapdir` will instruct Woltka to output read-to-taxon map
 ```bash
 woltka classify \
   -i align/bowtie2 \
-  --coords function/coords.txt.xz \
-  --map function/uniref.map.xz \
+  --coords function/proteins/coords.txt.xz \
+  --map function/uniref/uniref.map.xz \
   --map function/go/process.tsv.xz \
   --map-as-rank \
   --rank process \
