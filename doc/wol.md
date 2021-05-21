@@ -56,7 +56,7 @@ bowtie2 -x databases/bowtie2/WoLr1 -p 16 -f input.fa -S output.sam -k 16 --np 1 
 
 This step will generate a [SAM](https://en.wikipedia.org/wiki/SAM_(file_format)) format alignment file.
 
-**Note**: You can also run Bowtie2 manually using your choice of parameters, or using other aligners and corresponding databases. Woltka is designed for flexibility.  For instance, you can run Bowtie2 to handle paired ends reads as follows
+**Note**: You can also run Bowtie2 manually using your choice of parameters, or using other aligners and corresponding databases. Woltka is designed for flexibility.  For instance, you can run Bowtie2 to handle paired-ends reads as follows
 
 ```bash
 bowtie2 -x databases/bowtie2/WoLr1 -p 16 -1 forward.fastq -2 reverse.fastq -S output.sam -k 16 --np 1 --mp "1,1" --rdg "0,1" --rfg "0,1" --score-min "L,0,-0.05" --very-sensitive --no-head --no-unal
