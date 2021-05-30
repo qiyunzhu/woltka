@@ -121,6 +121,9 @@ def workflow(input_fp:     str,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
 
+    # round values and drop zeros
+    round_profiles(data, uniq, major, above)
+
     # write output profiles
     write_profiles(
         data, output_fp, output_fmt, samples, tree, rankdic, namedic,
@@ -278,9 +281,6 @@ def classify(mapper:  object,
                 if istep:
                     click.echo('.' * istep, nl=False)
                     nstep += istep
-
-        # round values and drop zeros
-        round_profiles(data, uniq, major, above)
 
         click.echo(' Done.')
         click.echo(f'  Number of sequences classified: {nqry}.')
