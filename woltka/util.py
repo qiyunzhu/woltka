@@ -93,6 +93,42 @@ def sum_dict(dic, other):
         dic[key] = dic.get(key, 0) + value
 
 
+def scale_factor(s):
+    """Convert scale factor string to number.
+
+    Parameters
+    ----------
+    s : str
+        Scale factor string.
+
+    Returns
+    -------
+    int or float
+        Scale factor number.
+
+    Raises
+    ------
+    ValueError
+        Invalid scale factor.
+    """
+    s = s.strip().lower()
+    if s.endswith('k'):
+        factor = 1000
+        s = s[:-1]
+    elif s.endswith('m'):
+        factor = 1000000
+        s = s[:-1]
+    else:
+        factor = 1
+    try:
+        return int(s) * factor
+    except ValueError:
+        try:
+            return float(s) * factor
+        except ValueError:
+            raise ValueError('Invalid scale factor.')
+
+
 def scale_dict(dic, factor):
     """Multiple each value of a dictionary by a scaling factor.
 

@@ -23,7 +23,8 @@ from itertools import compress
 from functools import partial, lru_cache
 import click
 
-from .util import update_dict, allkeys, sum_dict, round_dict
+from .util import (
+    update_dict, allkeys, sum_dict, scale_factor, scale_dict, round_dict)
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
@@ -66,6 +67,7 @@ def workflow(input_fp:     str,
              strata_dir:   str = None,
              # normalization
              decimal:      int = None,
+             scale:        str = None,
              # output
              output_fmt:   str = None,
              unassigned:  bool = False,
@@ -122,6 +124,9 @@ def workflow(input_fp:     str,
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
+
+    # scale values
+    scale_profiles(data, scale)
 
     # round values and drop zeros
     round_profiles(data, uniq, major, above, decimal)
@@ -890,12 +895,32 @@ def assign_readmap(qryque:    list,
         data[rank][sample] = counts
 
 
-def round_profiles(data:   list,
+def scale_profiles(data: dict,
+                   scale: str = None):
+    """Scale cell values in profiles by a factor.
+
+    Parameters
+    ----------
+    data : dict
+        Profile data.
+    scale : str, optional
+        Scale factor.
+    """
+    if not scale:
+        return
+    scale = scale_factor(scale)
+    for rank in data:
+        for datum in data[rank].values():
+            scale_dict(datum, scale)
+
+
+def round_profiles(data:   dict,
                    uniq:   bool = False,
                    major: float = None,
                    above:  bool = False,
-                   decimal: int = None):
-    """Round counts in profiles into integers, and drop zero counts.
+                   decimal: int = None,
+                   scale:   int = None):
+    """Round cell values in profiles into integers, and drop zero values.
 
     Parameters
     ----------
@@ -909,6 +934,8 @@ def round_profiles(data:   list,
         Assignment above given rank.
     decimal : int, optional
         Digits after the decimal point.
+    scale : int, optional
+        Scale factor.
     """
     for rank in data:
 

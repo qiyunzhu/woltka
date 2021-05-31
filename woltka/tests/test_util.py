@@ -14,9 +14,9 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.util import (
-    add_dict, update_dict, sum_dict, scale_dict, intize, intize_list,
-    intize_dict, round_dict, delnone, allkeys, count_list, last_value,
-    feature_count)
+    add_dict, update_dict, sum_dict, scale_factor, scale_dict, intize,
+    intize_list, intize_dict, round_dict, delnone, allkeys, count_list,
+    last_value, feature_count)
 
 
 class UtilTests(TestCase):
@@ -63,6 +63,17 @@ class UtilTests(TestCase):
         d3 = {'e': 5, 'b': 3}
         sum_dict(d0, d3)
         self.assertDictEqual(d0, {'a': 2, 'b': 5, 'c': 3, 'd': 4, 'e': 5})
+
+    def test_scale_factor(self):
+        self.assertEqual(scale_factor('100'), 100)
+        self.assertEqual(scale_factor('0.05'), 0.05)
+        self.assertEqual(scale_factor('1k'), 1000)
+        self.assertEqual(scale_factor('2M'), 2000000)
+        self.assertEqual(scale_factor('1e9'), 1.0e+9)
+        with self.assertRaises(ValueError) as ctx:
+            scale_factor('not_a_number')
+        self.assertEqual(str(ctx.exception), (
+            'Invalid scale factor.'))
 
     def test_scale_dict(self):
         d = {'a': 1.0, 'b': 1.5, 'c': 2.4}

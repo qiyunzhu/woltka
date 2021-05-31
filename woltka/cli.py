@@ -124,7 +124,10 @@ def cli():
 # normalization
 @click.option(
     '--decimal', type=click.IntRange(0, 10),
-    help='Digits after the decimal point.')
+    help='Round cell values to this number of digits after the decimal point.')
+@click.option(
+    '--scale', type=click.STRING,
+    help='Scale cell values by this factor. Accepts "k", "M" suffixes.')
 # output files
 @click.option(
     '--to-biom/--to-tsv', 'output_fmt', default=None,

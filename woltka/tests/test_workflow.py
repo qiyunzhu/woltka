@@ -22,7 +22,7 @@ from pandas.testing import assert_frame_equal
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
-    read_strata, round_profiles, write_profiles)
+    read_strata, scale_profiles, round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -487,6 +487,27 @@ class WorkflowTests(TestCase):
             read_strata(join(self.datdir, 'tree.nwk'))
         self.assertEqual(str(ctx.exception), (
             'No stratification information is found in file: tree.nwk.'))
+
+    def test_scale_profiles(self):
+        # scale up by 100
+        obs = {'free': {'S1': {'G1': 1, 'G2': 2},
+                        'S2': {'G1': 3, 'G3': 2}}}
+        scale_profiles(obs, '100')
+        exp = {'free': {'S1': {'G1': 100, 'G2': 200},
+                        'S2': {'G1': 300, 'G3': 200}}}
+        self.assertEqual(obs, exp)
+
+        # scale up by 2,500
+        obs = {'none': {'S1': {'G1': 1.3, 'G2': 2.2},
+                        'S2': {'G1': 3.0, 'G3': 2.1}}}
+        scale_profiles(obs, '2.5k')
+        exp = {'none': {'S1': {'G1': 3250.0, 'G2': 5500.0},
+                        'S2': {'G1': 7500.0, 'G3': 5250.0}}}
+        self.assertEqual(obs, exp)
+
+        # no scaling
+        scale_profiles(obs, None)
+        self.assertEqual(obs, exp)
 
     def test_round_profiles(self):
         # free-rank: don't round
