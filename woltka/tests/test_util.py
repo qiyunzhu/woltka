@@ -14,8 +14,9 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.util import (
-    add_dict, update_dict, sum_dict, intize, intize_list, intize_dict,
-    delnone, allkeys, count_list, last_value, feature_count)
+    add_dict, update_dict, sum_dict, scale_dict, intize, intize_list,
+    intize_dict, round_dict, delnone, allkeys, count_list, last_value,
+    feature_count)
 
 
 class UtilTests(TestCase):
@@ -63,6 +64,15 @@ class UtilTests(TestCase):
         sum_dict(d0, d3)
         self.assertDictEqual(d0, {'a': 2, 'b': 5, 'c': 3, 'd': 4, 'e': 5})
 
+    def test_scale_dict(self):
+        d = {'a': 1.0, 'b': 1.5, 'c': 2.4}
+        scale_dict(d, 2)
+        exp = {'a': 2.0, 'b': 3.0, 'c': 4.8}
+        self.assertDictEqual(d, exp)
+        scale_dict(d, 100)
+        exp = {'a': 200, 'b': 300, 'c': 480}
+        self.assertDictEqual(d, exp)
+
     def test_intize(self):
         self.assertEqual(intize(1), 1)
         self.assertEqual(intize(1.0), 1)
@@ -103,6 +113,25 @@ class UtilTests(TestCase):
         dic = {'a': 2.5, 'b': 3.5, 'c': 1.49999999999, 'd': 1.50000000001}
         intize_dict(dic)
         exp = {'a': 2, 'b': 4, 'c': 2, 'd': 2}
+        self.assertDictEqual(dic, exp)
+
+    def test_round_dict(self):
+        dic = {'a': 1.0, 'b': 2.2, 'c': 3.6}
+        round_dict(dic)
+        exp = {'a': 1, 'b': 2, 'c': 4}
+        self.assertDictEqual(dic, exp)
+        dic = {'a': 1.05, 'b': 2.24, 'c': 3.68, 'd': 0.02}
+        round_dict(dic, 1)
+        exp = {'a': 1.1, 'b': 2.2, 'c': 3.7}
+        self.assertDictEqual(dic, exp)
+        dic = {'a': 2.225, 'b': 3.505, 'c': 1.7449999999999,
+               'd': 4.2350000000001}
+        round_dict(dic, 2)
+        exp = {'a': 2.23, 'b': 3.5, 'c': 1.75, 'd': 4.24}
+        self.assertDictEqual(dic, exp)
+        dic = {'a': -0.24, 'b': 3.71, 'c': 0.02}
+        round_dict(dic, digits=1, zero=True)
+        exp = {'a': -0.2, 'b': 3.7, 'c': 0.0}
         self.assertDictEqual(dic, exp)
 
     def test_delnone(self):

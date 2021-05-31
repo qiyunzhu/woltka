@@ -93,6 +93,20 @@ def sum_dict(dic, other):
         dic[key] = dic.get(key, 0) + value
 
 
+def scale_dict(dic, factor):
+    """Multiple each value of a dictionary by a scaling factor.
+
+    Parameters
+    ----------
+    dic : dict
+        Dictionary to be updated.
+    factor : int or float
+        Scaling factor.
+    """
+    for key in dic:
+        dic[key] *= factor
+
+
 def intize(num):
     """Round a floating point number to an integer.
 
@@ -199,6 +213,48 @@ def intize_dict(dic, zero=False):
             intval = round(near)
         else:
             intval = round(value)
+
+        # keep or skip zero values
+        if intval or zero:
+            dic[key] = intval
+        else:
+            add_todel(key)
+    for key in todel:
+        del dic[key]
+
+
+def round_dict(dic, digits=None, zero=False):
+    """Convert dictionary values to integers in place.
+
+    Parameters
+    ----------
+    dic : dict
+        Input dictionary.
+    digits : int, optional
+        Digits after the decimal point.
+    zero : bool, optional
+        Whether keep zero values.
+
+    See Also
+    --------
+    intize_dict
+
+    Notes
+    -----
+    Variant of `intize_dict`, allowing rounding to custom decimal precision.
+    """
+    todel = []
+    add_todel = todel.append
+
+    # determine error threshold
+    error = 1e-7 / 10 ** digits if digits else 1e-7
+
+    for key, value in dic.items():
+        near = round(value * 2, digits) / 2
+        if abs(value - near) <= error:
+            intval = round(near, digits)
+        else:
+            intval = round(value, digits)
 
         # keep or skip zero values
         if intval or zero:

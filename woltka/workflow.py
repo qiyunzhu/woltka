@@ -23,7 +23,7 @@ from itertools import compress
 from functools import partial, lru_cache
 import click
 
-from .util import update_dict, allkeys, sum_dict, intize_dict
+from .util import update_dict, allkeys, sum_dict, round_dict
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
@@ -64,6 +64,8 @@ def workflow(input_fp:     str,
              overlap:      int = 80,
              # stratification
              strata_dir:   str = None,
+             # normalization
+             decimal:      int = None,
              # output
              output_fmt:   str = None,
              unassigned:  bool = False,
@@ -122,7 +124,7 @@ def workflow(input_fp:     str,
         uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
 
     # round values and drop zeros
-    round_profiles(data, uniq, major, above)
+    round_profiles(data, uniq, major, above, decimal)
 
     # write output profiles
     write_profiles(
@@ -891,7 +893,8 @@ def assign_readmap(qryque:    list,
 def round_profiles(data:   list,
                    uniq:   bool = False,
                    major: float = None,
-                   above:  bool = False):
+                   above:  bool = False,
+                   decimal: int = None):
     """Round counts in profiles into integers, and drop zero counts.
 
     Parameters
@@ -904,6 +907,8 @@ def round_profiles(data:   list,
         Majority-rule assignment threshold.
     above : bool, optional
         Assignment above given rank.
+    decimal : int, optional
+        Digits after the decimal point.
     """
     for rank in data:
 
@@ -916,13 +921,13 @@ def round_profiles(data:   list,
             if uniq:
                 continue
             for datum in data[rank].values():
-                intize_dict(datum)
+                round_dict(datum, decimal)
 
         # given rank classification needs rounding when all three criteria
         # are not met
         elif not any((uniq, major, above)):
             for datum in data[rank].values():
-                intize_dict(datum)
+                round_dict(datum, decimal)
 
 
 def write_profiles(data:        dict,

@@ -121,6 +121,10 @@ def cli():
     '--stratify', '-t', 'strata_dir',
     type=click.Path(exists=True, file_okay=True, dir_okay=True),
     help='Directory of read-to-feature maps for stratification.')
+# normalization
+@click.option(
+    '--decimal', type=click.IntRange(0, 10),
+    help='Digits after the decimal point.')
 # output files
 @click.option(
     '--to-biom/--to-tsv', 'output_fmt', default=None,
