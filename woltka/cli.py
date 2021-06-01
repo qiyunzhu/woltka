@@ -127,7 +127,11 @@ def cli():
     help='Round cell values to this number of digits after the decimal point.')
 @click.option(
     '--scale', type=click.STRING,
-    help='Scale cell values by this factor. Accepts "k", "M" suffixes.')
+    help='Scale counts by this factor. Accepts "k", "M" suffixes.')
+@click.option(
+    '--sizes', type=click.Path(exists=True),
+    help=('Divide counts by subject sizes. Can provide a mapping file, or '
+          'type "." to calculate from gene coordinates.'))
 # output files
 @click.option(
     '--to-biom/--to-tsv', 'output_fmt', default=None,

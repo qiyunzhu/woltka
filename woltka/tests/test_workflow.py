@@ -20,7 +20,7 @@ from biom import load_table
 from pandas.testing import assert_frame_equal
 
 from woltka.workflow import (
-    workflow, classify, parse_samples, parse_strata, build_mapper,
+    workflow, classify, parse_samples, parse_strata, build_mapper, parse_sizes,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
     read_strata, scale_profiles, round_profiles, write_profiles)
 
@@ -248,6 +248,37 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
         self.assertEqual(obs[0].keywords['th'], 0.75)
         self.assertEqual(obs[1], 50000)
+        remove(fp)
+
+    def test_parse_sizes(self):
+        mapper = build_mapper()[0]
+
+        # sizes off
+        self.assertIsNone(parse_sizes(None, mapper))
+
+        # sizes on but no coords
+        with self.assertRaises(ValueError) as ctx:
+            self.assertIsNone(parse_sizes('.', mapper))
+        self.assertEqual(str(ctx.exception), (
+            'Gene coordinates file is not provided.'))
+
+        # size mapping file
+        fp = join(self.tmpdir, 'sizes.txt')
+        with open(fp, 'w') as f:
+            f.write('G1\t100\nG2\t200\nG3\t240\n')
+        obs = parse_sizes(fp, mapper)
+        exp = {'G1': 100, 'G2': 200, 'G3': 240}
+        self.assertDictEqual(obs, exp)
+        remove(fp)
+
+        # sizes from coords
+        fp = join(self.tmpdir, 'coords.txt')
+        with open(fp, 'w') as f:
+            f.write('>G1\n1\t10\t20\n2\t35\t50\n')
+        mapper = build_mapper(fp)[0]
+        obs = parse_sizes('.', mapper)
+        exp = {'1': 11, '2': 16}
+        self.assertDictEqual(obs, exp)
         remove(fp)
 
     def test_prepare_ranks(self):

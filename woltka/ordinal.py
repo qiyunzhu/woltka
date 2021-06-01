@@ -34,7 +34,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     th : float
         Minimum threshold of overlap length : alignment length for a match.
     prefix : bool
-        Prefix gene IDs with Nucleotide IDs.
+        Prefix gene IDs with nucleotide IDs.
 
     See Also
     --------
@@ -288,7 +288,7 @@ def whether_prefix(coords):
     """
     genes = {}
     for nucl, queue in coords.items():
-        for coord, is_start, is_gene, gid in queue:
+        for _, is_start, _, gid in queue:
             if gid not in genes:
                 genes[gid] = is_start
             elif genes[gid] == is_start:
@@ -423,3 +423,30 @@ def match_read_gene_pfx(queue, lens, th, pfx):
                     if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
                         yield idx, f'{pfx}_{gid}'
                 del(reads[idx])
+
+
+def calc_gene_lens(coords, prefix=False):
+    """Calculate gene lengths by start and end coordinates.
+
+    Parameters
+    ----------
+    coords : dict
+        Gene coordinates table.
+    prefix : bool
+        Prefix gene IDs with nucleotide IDs.
+
+    Returns
+    -------
+    dict of dict
+        Mapping of genes to lengths.
+    """
+    res = {}
+    for nucl, queue in coords.items():
+        for loc, is_start, _, gid in queue:
+            if prefix:
+                gid = f'{nucl}_{gid}'
+            if is_start:
+                res[gid] = 1 - loc
+            else:
+                res[gid] += loc
+    return res

@@ -34,7 +34,8 @@ from .classify import (
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
-from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
+from .ordinal import (
+    ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
 from .table import prep_table, write_table
 
 
@@ -68,6 +69,7 @@ def workflow(input_fp:     str,
              # normalization
              decimal:      int = None,
              scale:        str = None,
+             sizes:        str = None,
              # output
              output_fmt:   str = None,
              unassigned:  bool = False,
@@ -116,6 +118,9 @@ def workflow(input_fp:     str,
     # build mapping module
     mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
 
+    # parse length map
+    sizes = parse_sizes(sizes, mapper, zippers)
+
     # target classification ranks
     ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree, rankdic)
 
@@ -123,7 +128,8 @@ def workflow(input_fp:     str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
-        uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
+        uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
+        zippers)
 
     # scale values
     scale_profiles(data, scale)
@@ -157,6 +163,7 @@ def classify(mapper:  object,
              major:      int = None,
              above:     bool = False,
              subok:     bool = False,
+             sizes:     dict = None,
              unasgd:    bool = False,
              stratmap:  dict = None,
              chunk:      int = None,
@@ -211,6 +218,8 @@ def classify(mapper:  object,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
+    sizes : dict, optional
+        Subject size dictionary.
     unasgd : bool, optional
         Report unassigned sequences.
     stratmap : dict, optional
@@ -482,6 +491,53 @@ def build_mapper(coords_fp: str = None,
     else:
         chunk = chunk or 1000
         return plain_mapper, chunk
+
+
+def parse_sizes(sizes:       str,
+                mapper: callable,
+                zippers:    dict = None) -> dict or None:
+    """Generate a feature to length mapping.
+
+    Parameters
+    ----------
+    sizes : str
+        Path to feature size mapping file.
+    mapper : callable
+        Read/gene overlapping percentage threshold.
+    zippers : dict, optional
+        External compression programs.
+
+    Returns
+    -------
+    dict or None
+        Feature to length mapping.
+
+    Raises
+    ------
+    ValueError
+        Sizes is set as "." but gene coordinates file is not provided.
+    """
+    if not sizes:
+        return
+
+    # calculate gene lengths by coordinates
+    if sizes == '.':
+        click.echo('Calculating gene lengths from coordinates...', nl=False)
+        try:
+            sizemap = calc_gene_lens(
+                mapper.keywords['coords'], mapper.keywords['prefix'])
+        except AttributeError:
+            raise ValueError('Gene coordinates file is not provided.')
+        click.echo(' Done.')
+
+    # read sizes from file
+    else:
+        click.echo(f'Reading subject sizes file: {basename(sizes)}...',
+                   nl=False)
+        with readzip(sizes, zippers) as f:
+            sizemap = {k: float(v) for k, v in read_map_1st(f)}
+        click.echo(' Done.')
+    return sizemap
 
 
 def prepare_ranks(ranks:      str = None,

@@ -22,7 +22,7 @@ from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
     match_read_gene, match_read_gene_pfx, ordinal_mapper, ordinal_parser,
-    read_gene_coords, whether_prefix)
+    read_gene_coords, whether_prefix, calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -298,6 +298,37 @@ class OrdinalTests(TestCase):
             (638, True, True,  'NP_369258.2'),
             (912, False, True, 'NP_369258.2')]}
         self.assertFalse(whether_prefix(coords))
+
+    def test_calc_gene_lens(self):
+        coords = {'NC_123456': [
+            (5,   True, True, '1'), (384, False, True, '1'),
+            (410, True, True, '2'), (933, False, True, '2')],
+                  'NC_789012': [
+            (75,  True, True, '2'), (529, False, True, '2'),
+            (638, True, True, '1'), (912, False, True, '1')]}
+        obs = calc_gene_lens(coords, whether_prefix(coords))
+        exp = {'NC_123456_1': 380,
+               'NC_123456_2': 524,
+               'NC_789012_2': 455,
+               'NC_789012_1': 275}
+        self.assertDictEqual(obs, exp)
+
+        coords = {'NC_123456': [
+            (5,   True, True,  'NP_135792.1'),
+            (384, False, True, 'NP_135792.1'),
+            (410, True, True,  'NP_246801.2'),
+            (933, False, True, 'NP_246801.2')],
+                  'NC_789012': [
+            (75,  True, True,  'NP_258147.1'),
+            (529, False, True, 'NP_258147.1'),
+            (638, True, True,  'NP_369258.2'),
+            (912, False, True, 'NP_369258.2')]}
+        obs = calc_gene_lens(coords, whether_prefix(coords))
+        exp = {'NP_135792.1': 380,
+               'NP_246801.2': 524,
+               'NP_258147.1': 455,
+               'NP_369258.2': 275}
+        self.assertDictEqual(obs, exp)
 
 
 if __name__ == '__main__':
