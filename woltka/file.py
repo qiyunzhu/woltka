@@ -484,6 +484,8 @@ def write_readmap(fh, qryque, taxque, namedic=None):
     def sortkey(x): return -x[1], x[0]
     is_name = bool(namedic)
     for query, taxa in zip(qryque, taxque):
+        if not taxa:
+            continue
         row = [query]
         if isinstance(taxa, list):
             for taxon, count in sorted(count_list(filter(None, taxa)).items(),
