@@ -13,13 +13,9 @@ hierarchical classification system.
 """
 
 from operator import itemgetter
-from collections import defaultdict
 
 from .util import count_list
 from .tree import find_rank, find_lca
-
-
-fromkeys = dict.fromkeys
 
 
 def assign_none(subs, uniq=False):
@@ -35,13 +31,13 @@ def assign_none(subs, uniq=False):
     Returns
     -------
     str or dict
-        Unique assignment or assignment-to-count map.
+        Unique subject or list of subjects.
     """
     try:
         sub, = subs
         return sub
     except ValueError:
-        return None if uniq else fromkeys(subs, 1)
+        return None if uniq else list(subs)
 
 
 def assign_free(subs, tree, root=None, subok=False):
@@ -60,8 +56,8 @@ def assign_free(subs, tree, root=None, subok=False):
 
     Returns
     -------
-    str or dict
-        Unique assignment or assignment-to-count map.
+    str or None
+        Unique assignment.
     """
     try:
         sub, = subs
@@ -96,8 +92,8 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
 
     Returns
     -------
-    str or dict
-        Unique assignment or assignment-to-count map.
+    str or list or None
+        Unique assignment or list of assignments.
 
     TODO
     ----
@@ -117,66 +113,147 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
     elif uniq:
         return None
     else:
-        return count_list(filter(None, taxa))
+        return taxa
 
 
-def count(taxque):
+def count_taxa(subque, taxque):
     """Count occurrences of taxa in a map.
 
     Parameters
     ----------
-    taxque : iterable of str or dict
+    subque : iterable of frozenset
+        Subject(s) queue to manipulate.
+    taxque : iterable of str or list
         Taxon(a) assigned to each query.
 
     Returns
     -------
-    defaultdict of str: int
-        Taxon-to-count map.
+    dict of dict of int
+        Map of taxon to subject to count.
+
+    See Also
+    --------
+    count_taxa_strat
+
+    Notes
+    -----
+    Subjects (frozenset) and taxa (list) are precise matches. This is ensured
+    by the iteration stability of Python sets / frozensets. See:
+
+    .. _Source:
+        https://stackoverflow.com/questions/15479928/why-is-the-order-in-
+        dictionaries-and-sets-arbitrary
     """
-    res = defaultdict(int)
-    for taxa in taxque:
+    res = {}
+    for subs, taxa in zip(subque, taxque):
+        if not taxa:
+            continue
+
+        # taxa is a string (all subjects assigned to same taxon)
         try:
-            # unique match (scalar)
-            res[taxa] += 1
+            res_ = res.setdefault(taxa, {})
+
+            # only one subject (to save compute)
+            try:
+                sub, = subs
+                res_[sub] = res_.get(sub, 0) + 1
+
+            # multiple subjects
+            except ValueError:
+                k = 1 / len(subs)
+                for sub in subs:
+                    res_[sub] = res_.get(sub, 0) + k
+
+        # taxa is a list (each subject corresponds to one taxon)
         except TypeError:
-            # multiple matches (dict of subject : count), to be normalized by
-            # total match count
-            k = 1 / sum(taxa.values())
-            for taxon, n in taxa.items():
-                res[taxon] += n * k
+            k = 1 / len(list(filter(None, taxa)))
+            for taxon, sub in zip(taxa, subs):
+                if not taxon:
+                    continue
+                res_ = res.setdefault(taxon, {})
+                res_[sub] = res_.get(sub, 0) + k
     return res
 
 
-def count_strata(qryque, taxque, strata):
+def count_taxa_strat(qryque, subque, taxque, strata):
     """Stratify taxa in a map and count occurrences.
 
     Parameters
     ----------
     qryque : iterable of str
         Query sequences.
-    taxque : iterable of str or dict
+    subque : iterable of frozenset
+        Subject(s) queue to manipulate.
+    taxque : iterable of str or list
         Taxon(a) assigned to each query.
-    strata : dict, optional
-        Query-to-feature map for stratification.
+    strata : dict
+        Query-to-stratum map for stratification.
 
     Returns
     -------
-    defaultdict of (str, str): int
-        Stratified (feature, taxon)-to-count map.
+    dict of dict of int
+        Map of (stratum, taxon) to subject to count.
+
+    See Also
+    --------
+    count_taxa
     """
-    res = defaultdict(int)
-    for query, taxa in zip(qryque, taxque):
-        if query in strata:
-            feature = strata[query]
-            if isinstance(taxa, dict):
-                k = 1 / sum(taxa.values())
-                for taxon, n in taxa.items():
-                    taxon = (feature, taxon)
-                    res[taxon] += n * k
-            else:
-                taxon = (feature, taxa)
-                res[taxon] += 1
+    res = {}
+    for query, subs, taxa in zip(qryque, subque, taxque):
+        if not taxa or query not in strata:
+            continue
+        stratum = strata[query]
+        try:
+            res_ = res.setdefault((stratum, taxa), {})
+            try:
+                sub, = subs
+                res_[sub] = res_.get(sub, 0) + 1
+            except ValueError:
+                k = 1 / len(subs)
+                for sub in subs:
+                    res_[sub] = res_.get(sub, 0) + k
+        except TypeError:
+            k = 1 / len(list(filter(None, taxa)))
+            for taxon, sub in zip(taxa, subs):
+                if not taxon:
+                    continue
+                res_ = res.setdefault((stratum, taxon), {})
+                res_[sub] = res_.get(sub, 0) + k
     return res
+
+
+def total_taxa(counts, sizes=None):
+    """Sum up subject counts per taxon.
+
+    Parameters
+    ----------
+    counts : dict of dict
+        Counts per subject per taxon
+    sizes : dict, optional
+        Subject size dictionary.
+
+    Raises
+    ------
+    ValueError
+        Subject not found in size dictionary.
+
+    Notes
+    -----
+    This function sums the subject counts per taxon into the total count of the
+    taxon. If a size dictionary is provided, the count of each subject will be
+    divided by its size.
+    """
+    if not sizes:
+        for taxon, subs in counts.items():
+            counts[taxon] = sum(subs.values())
+    else:
+        for taxon, subs in counts.items():
+            try:
+                counts[taxon] = sum(
+                    count / sizes[sub] for sub, count in subs.items())
+            except KeyError:
+                raise ValueError(
+                    'One or more subjects are not found in the size map.')
 
 
 def majority(taxa, th=0.8):

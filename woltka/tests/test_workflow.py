@@ -541,44 +541,17 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs, exp)
 
     def test_round_profiles(self):
-        # free-rank: don't round
-        obs = {'free': {'S1': {'G1': 1, 'G2': 2},
-                        'S2': {'G1': 3, 'G3': 2}}}
-        round_profiles(obs)
-        exp = {'free': {'S1': {'G1': 1, 'G2': 2},
-                        'S2': {'G1': 3, 'G3': 2}}}
-        self.assertEqual(obs, exp)
-
-        # none-rank: round
-        obs = {'none': {'S1': {'G1': 1.3, 'G2': 2.2},
-                        'S2': {'G1': 3.0, 'G3': 2.1}}}
+        obs = {'none': {'S1': {'G1': 1.38, 'G2': 2.25},
+                        'S2': {'G1': 3.05, 'G3': 2.16}}}
         round_profiles(obs)
         exp = {'none': {'S1': {'G1': 1, 'G2': 2},
                         'S2': {'G1': 3, 'G3': 2}}}
-        self.assertEqual(obs, exp)
-
-        # none-rank and unique: don't round
-        obs = {'none': {'S1': {'G1': 1.5, 'G2': 0},
-                        'S2': {'G1': 3.0, 'G3': 2}}}
-        round_profiles(obs, uniq=True)
-        exp = {'none': {'S1': {'G1': 1.5, 'G2': 0},
-                        'S2': {'G1': 3.0, 'G3': 2}}}
         self.assertDictEqual(obs, exp)
-
-        # given-rank: round
-        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
-                         'S2': {'G1': 3.0, 'G3': 2}}}
-        round_profiles(obs)
-        exp = {'class': {'S1': {'G1': 2},
-                         'S2': {'G1': 3, 'G3': 2}}}
-        self.assertDictEqual(obs, exp)
-
-        # given-rank: don't round
-        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
-                         'S2': {'G1': 3.0, 'G3': 2}}}
-        round_profiles(obs, uniq=False, major=0, above=True)
-        exp = {'class': {'S1': {'G1': 1.5, 'G2': 0},
-                         'S2': {'G1': 3.0, 'G3': 2}}}
+        obs = {'none': {'S1': {'G1': 1.38, 'G2': 2.25},
+                        'S2': {'G1': 3.05, 'G3': 2.16, 'G4': 0.04}}}
+        round_profiles(obs, 1)
+        exp = {'none': {'S1': {'G1': 1.4, 'G2': 2.2},
+                        'S2': {'G1': 3.0, 'G3': 2.2}}}
         self.assertDictEqual(obs, exp)
 
     def test_write_profiles(self):
