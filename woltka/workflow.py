@@ -20,7 +20,6 @@ from os import makedirs
 from os.path import join, basename, isfile, isdir
 from collections import deque, defaultdict
 from functools import partial, lru_cache
-from operator import itemgetter
 from typing import Tuple
 import click
 
@@ -537,9 +536,11 @@ def parse_sizes(sizes:       str,
         click.echo(f'Reading subject sizes file: {basename(sizes)}...',
                    nl=False)
         with readzip(sizes, zippers) as f:
-            sizemap = {k: 1 / float(v) for k, v in read_map_1st(f)}
+            sizemap = {k: float(v) for k, v in read_map_1st(f)}
         click.echo(' Done.')
-    return sizemap
+
+    # convert to reciprocal
+    return {k: 1 / v for k, v in sizemap.items()}
 
 
 def prepare_ranks(ranks:      str = None,
@@ -909,6 +910,11 @@ def assign_readmap(qryque:    list,
         Report unassigned sequences.
     strata : dict, optional
         Read-to-feature map for stratification.
+
+    Raises
+    ------
+    ValueError
+        One or more subjects are not found in the size map.
     """
     # determine assigner and initiate (if not already)
     if rank is None or rank == 'none' or tree is None:
@@ -943,10 +949,13 @@ def assign_readmap(qryque:    list,
             write_readmap(fh, qryque, taxque, namedic)
 
     # determine counter and count taxon assignments
-    counts = ((counter(taxque) if not sizes else
-               counter_size(subque, taxque, sizes)) if not strata else
-              (counter_strat(qryque, taxque, strata) if not sizes else
-               counter_strat(qryque, subque, taxque, strata, sizes)))
+    try:
+        counts = ((counter(taxque) if not sizes else
+                   counter_size(subque, taxque, sizes)) if not strata else
+                  (counter_strat(qryque, taxque, strata) if not sizes else
+                   counter_size_strat(qryque, subque, taxque, strata, sizes)))
+    except KeyError:
+        raise ValueError('One or more subjects are not found in the size map.')
 
     # combine old and new counts
     sum_dict(data[rank].setdefault(sample, {}), counts)

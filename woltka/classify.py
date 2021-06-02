@@ -19,6 +19,16 @@ from .util import count_list
 from .tree import find_rank, find_lca
 
 
+"""
+Assigner: assign a query sequence to one or more taxa based on its subjects and
+a classification system, if applicable.
+
+- assign_none
+- assign_free
+- assign_rank
+"""
+
+
 def assign_none(subs, uniq=False):
     """Assign query to subjects without using a classification system.
 
@@ -154,6 +164,7 @@ def counter(taxque):
 
         # taxa is list: multiple matches, to be divided by match count
         except TypeError:
+            taxa = list(filter(None, taxa))
             k = 1 / len(taxa)
             for taxon in taxa:
                 res[taxon] += k
@@ -178,6 +189,11 @@ def counter_size(subque, taxque, sizes):
     dict of float
         Map of taxon to normalized count.
 
+    Raises
+    ------
+    KeyError
+        Subject not found in size dictionary.
+
     See Also
     --------
     counter
@@ -191,19 +207,18 @@ def counter_size(subque, taxque, sizes):
         https://stackoverflow.com/questions/15479928/why-is-the-order-in-
         dictionaries-and-sets-arbitrary
     """
-    get_size = sizes.get
     res = defaultdict(int)
     for subs, taxa in zip(subque, taxque):
         if not taxa:
             continue
         try:
-            res[taxa] += sum(map(get_size, subs)) / len(subs)
+            res[taxa] += sum(sizes[x] for x in subs) / len(subs)
         except TypeError:
             k = 1 / len(list(filter(None, taxa)))
             for taxon, sub in zip(taxa, subs):
                 if not taxon:
                     continue
-                res[taxon] += get_size(sub) * k
+                res[taxon] += sizes[sub] * k
     return res
 
 
@@ -236,9 +251,10 @@ def counter_strat(qryque, taxque, strata):
         try:
             res[(stratum, taxa)] += 1
         except TypeError:
+            taxa = list(filter(None, taxa))
             k = 1 / len(taxa)
             for taxon in taxa:
-                res[(stratum, taxa)] += k
+                res[(stratum, taxon)] += k
     return res
 
 
@@ -264,25 +280,29 @@ def counter_size_strat(qryque, subque, taxque, sizes, strata):
     dict of float
         Map of (stratum, taxon) to normalized count.
 
+    Raises
+    ------
+    KeyError
+        Subject not found in size dictionary.
+
     See Also
     --------
     counter_size
     counter_strat
     """
-    get_size = sizes.get
     res = defaultdict(int)
     for query, subs, taxa in zip(qryque, subque, taxque):
         if not taxa or query not in strata:
             continue
         stratum = strata[query]
         try:
-            res[(stratum, taxa)] += sum(map(get_size, subs)) / len(subs)
+            res[(stratum, taxa)] += sum(sizes[x] for x in subs) / len(subs)
         except TypeError:
             k = 1 / len(list(filter(None, taxa)))
             for taxon, sub in zip(taxa, subs):
                 if not taxon:
                     continue
-                res[(stratum, taxon)] += get_size(sub) * k
+                res[(stratum, taxon)] += sizes[sub] * k
     return res
 
 

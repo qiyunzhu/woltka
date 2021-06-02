@@ -14,8 +14,8 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.classify import (
-    assign_none, assign_free, assign_rank, count_taxa, count_taxa_strat,
-    total_taxa, majority)
+    assign_none, assign_free, assign_rank, counter, counter_size,
+    counter_strat, counter_size_strat, majority)
 
 
 class ClassifyTests(TestCase):
@@ -105,7 +105,14 @@ class ClassifyTests(TestCase):
                           rankdic=rankdic, root=None, above=True)
         self.assertEqual(obs, None)
 
-    def test_count_taxa(self):
+    def test_counter(self):
+        taxque = ['Ecoli', ['Cdiff', 'Strep'], ['Strep', 'Ecoli', 'Cdiff',
+                  'Ecoli', None], 'Ecoli', None]
+        obs = counter(taxque)
+        exp = {'Ecoli': 2.5, 'Cdiff': 0.75, 'Strep': 0.75}
+        self.assertDictEqual(dict(obs), exp)
+
+    def test_counter_size(self):
         # G1, G4, G6: Ecoli
         # G2, G5: Cdiff
         # G3: Strep
@@ -120,13 +127,47 @@ class ClassifyTests(TestCase):
                   ['Strep', 'Ecoli', 'Cdiff', 'Ecoli', None],
                   'Ecoli',
                   None]
-        obs = count_taxa(subque, taxque)
-        exp = {'Ecoli': {'G1': 1,   'G4': 0.75, 'G6': 0.75},
-               'Cdiff': {'G2': 0.5, 'G5': 0.25},
-               'Strep': {'G3': 0.75}}
-        self.assertDictEqual(obs, exp)
+        sizes = {'G1': 5, 'G2': 5, 'G3': 6, 'G4': 9, 'G5': 2, 'G6': 4}
+        obs = counter_size(subque, taxque, sizes)
+        exp = {'Ecoli': 14.75,
+               'Cdiff': 3.0,
+               'Strep': 4.5}
+        self.assertDictEqual(dict(obs), exp)
+        del(sizes['G3'])
+        with self.assertRaises(KeyError):
+            counter_size(subque, taxque, sizes)
 
-    def test_count_taxa_strat(self):
+    def test_counter_strat(self):
+        strata = {'seq1': 'Ecoli',
+                  'seq2': 'Ecoli',
+                  'seq3': 'Cdiff',
+                  'seq4': 'Strep',
+                  'seq5': 'Strep',
+                  'seq6': 'Ecoli'}
+        qryque = ['seq1',
+                  'seq2',
+                  'seq3',
+                  'seq4',
+                  'seq5',
+                  'seq6',
+                  'seq9']
+        taxque = ['ligase',
+                  ['polymerase', 'nuclease'],
+                  ['nuclease', 'ligase', None],
+                  'ligase',
+                  None,
+                  'nuclease',
+                  ['polymerase', 'ligase']]
+        obs = counter_strat(qryque, taxque, strata)
+        exp = {('Ecoli', 'ligase'):     1,
+               ('Ecoli', 'polymerase'): 0.5,
+               ('Ecoli', 'nuclease'):   1.5,
+               ('Cdiff', 'nuclease'):   0.5,
+               ('Cdiff', 'ligase'):     0.5,
+               ('Strep', 'ligase'):     1}
+        self.assertDictEqual(dict(obs), exp)
+
+    def test_counter_size_strat(self):
         strata = {'seq1': 'Ecoli',
                   'seq2': 'Ecoli',
                   'seq3': 'Cdiff',
@@ -154,39 +195,18 @@ class ClassifyTests(TestCase):
                   None,
                   'nuclease',
                   ['polymerase', 'ligase']]
-        obs = count_taxa_strat(qryque, subque, taxque, strata)
-        exp = {('Ecoli', 'ligase'):     {'G1': 1},
-               ('Ecoli', 'polymerase'): {'G2': 0.5},
-               ('Ecoli', 'nuclease'):   {'G3': 1.5},
-               ('Cdiff', 'nuclease'):   {'G3': 0.5},
-               ('Cdiff', 'ligase'):     {'G4': 0.5},
-               ('Strep', 'ligase'):     {'G4': 0.5, 'G6': 0.5}}
-        self.assertDictEqual(obs, exp)
-
-    def test_total_taxa(self):
-        # without sizes
-        counts = {'Ecoli': {'G1': 12, 'G2':  9, 'G3': 5},
-                  'Cdiff': {'G4': 8,  'G5': 15}}
-        obs = counts.copy()
-        total_taxa(obs)
-        exp = {'Ecoli': 26, 'Cdiff': 23}
-        self.assertDictEqual(obs, exp)
-
-        # with sizes
-        sizes = {'G1': 100, 'G2': 80, 'G3': 75, 'G4': 120, 'G5': 50}
-        obs = counts.copy()
-        total_taxa(obs, sizes)
-        exp = {'Ecoli': 0.29916667, 'Cdiff': 0.36666667}
-        for taxon in exp:
-            self.assertAlmostEqual(obs[taxon], exp[taxon])
-
-        # subject not found
-        del(sizes['G5'])
-        obs = counts.copy()
-        with self.assertRaises(ValueError) as ctx:
-            total_taxa(counts, sizes)
-        self.assertEqual(str(ctx.exception), (
-            'One or more subjects are not found in the size map.'))
+        sizes = {'G1': 5, 'G2': 5, 'G3': 6, 'G4': 9, 'G5': 2, 'G6': 4}
+        obs = counter_size_strat(qryque, subque, taxque, sizes, strata)
+        exp = {('Ecoli', 'ligase'):     5,
+               ('Ecoli', 'polymerase'): 2.5,
+               ('Ecoli', 'nuclease'):   9,
+               ('Cdiff', 'nuclease'):   3,
+               ('Cdiff', 'ligase'):     4.5,
+               ('Strep', 'ligase'):     6.5}
+        self.assertDictEqual(dict(obs), exp)
+        del(sizes['G3'])
+        with self.assertRaises(KeyError):
+            counter_size(subque, taxque, sizes)
 
     def test_majority(self):
         obs = majority([1, 1, 1, 2, 2], th=0.6)
