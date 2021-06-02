@@ -20,6 +20,7 @@ from os import makedirs
 from os.path import join, basename, isfile, isdir
 from collections import deque, defaultdict
 from functools import partial, lru_cache
+from typing import Tuple
 import click
 
 from .util import (
@@ -308,7 +309,7 @@ def classify(mapper:  object,
 def parse_samples(fp:        str,
                   ext:       str = None,
                   samples:   str = None,
-                  demux:    bool = None) -> tuple[list, list or dict, bool]:
+                  demux:    bool = None) -> Tuple[list, list or dict, bool]:
     """Determine sample IDs, aligment files, and multiplex status.
 
     Parameters
@@ -446,7 +447,7 @@ def parse_strata(fp:       str = None,
 def build_mapper(coords_fp: str = None,
                  overlap:   int = None,
                  chunk:     int = None,
-                 zippers:  dict = None) -> tuple[callable, int]:
+                 zippers:  dict = None) -> Tuple[callable, int]:
     """Build mapper function (plain or ordinal).
 
     Parameters
@@ -543,7 +544,7 @@ def parse_sizes(sizes:       str,
 def prepare_ranks(ranks:      str = None,
                   outmap_dir: str = None,
                   tree:      dict = None,
-                  rankdic:   dict = None) -> tuple[list, dict or None]:
+                  rankdic:   dict = None) -> Tuple[list, dict or None]:
     """Prepare classification ranks and directories of read-to-feature maps.
 
     Parameters
@@ -609,7 +610,7 @@ def build_hierarchy(names_fps:   list = [],
                     columns_fps: list = [],
                     map_fps:     list = [],
                     map_as_rank: bool = False,
-                    zippers:     dict = None) -> tuple[dict, dict, dict, str]:
+                    zippers:     dict = None) -> Tuple[dict, dict, dict, str]:
     """Construct hierarchical classification system.
 
     Parameters
