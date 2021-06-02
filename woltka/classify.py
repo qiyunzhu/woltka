@@ -31,7 +31,7 @@ def assign_none(subs, uniq=False):
 
     Returns
     -------
-    str or dict
+    str or list or None
         Unique subject or list of subjects.
     """
     try:
@@ -117,26 +117,70 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
         return taxa
 
 
-def count_taxa(subque, taxque, sizes=None):
-    """Count occurrences of taxa in a map.
+"""
+Counter: convert a read-to-taxa map into a taxon-to-count map.
+
+Four counter functions are implemented to tackle alternative parameter settings
+(normalization by subject size and stratification by query) while maintaining
+performance.
+
+- counter
+- counter_size
+- counter_strat
+- counter_size_strat
+"""
+
+
+def counter(taxque):
+    """Count occurrences of taxa in a read-to-taxa map.
+
+    Parameters
+    ----------
+    taxque : iterable of str or list
+
+    Returns
+    -------
+    dict of int
+        Map of taxon to count.
+    """
+    res = defaultdict(int)
+    for taxa in taxque:
+        if not taxa:
+            continue
+
+        # taxa is string: unique match
+        try:
+            res[taxa] += 1
+
+        # taxa is list: multiple matches, to be divided by match count
+        except TypeError:
+            k = 1 / len(taxa)
+            for taxon in taxa:
+                res[taxon] += k
+    return res
+
+
+def counter_size(subque, taxque, sizes):
+    """Count occurrences of taxa in a read map while normalizing by subject
+    size.
 
     Parameters
     ----------
     subque : iterable of frozenset
-        Subject(s) queue to manipulate.
+        Subject(s) mapped to each query.
     taxque : iterable of str or list
         Taxon(a) assigned to each query.
-    sizes : dict, optional
+    sizes : dict
         Subject size dictionary.
 
     Returns
     -------
-    dict of dict of int
-        Map of taxon to subject to count.
+    dict of float
+        Map of taxon to normalized count.
 
     See Also
     --------
-    count_taxa_strat
+    counter
 
     Notes
     -----
@@ -147,65 +191,98 @@ def count_taxa(subque, taxque, sizes=None):
         https://stackoverflow.com/questions/15479928/why-is-the-order-in-
         dictionaries-and-sets-arbitrary
     """
-    is_size, get_size = (True, sizes.get) if sizes else (False, None)
+    get_size = sizes.get
     res = defaultdict(int)
     for subs, taxa in zip(subque, taxque):
         if not taxa:
             continue
-        # there's only one taxon (a string)
-        # !!!!!!!!!!!!! warning
         try:
-            res[taxa] += sum(map(get_size, subs)) / len(subs) if is_size else 1
-        # taxa is a list (each subject corresponds to one taxon)
+            res[taxa] += sum(map(get_size, subs)) / len(subs)
         except TypeError:
             k = 1 / len(list(filter(None, taxa)))
             for taxon, sub in zip(taxa, subs):
                 if not taxon:
                     continue
-                res[taxon] += get_size(sub) * k if is_size else k
+                res[taxon] += get_size(sub) * k
     return res
 
 
-def count_taxa_strat(qryque, subque, taxque, strata, sizes=None):
-    """Stratify taxa in a map and count occurrences.
+def counter_strat(qryque, taxque, strata):
+    """Stratify taxa in a read map and count occurrences.
+
+    Parameters
+    ----------
+    qryque : iterable of str
+        Query sequences.
+    taxque : iterable of str or list
+        Taxon(a) assigned to each query.
+    strata : dict
+        Query-to-stratum map.
+
+    Returns
+    -------
+    dict of int
+        Map of (stratum, taxon) to count.
+
+    See Also
+    --------
+    counter
+    """
+    res = defaultdict(int)
+    for query, taxa in zip(qryque, taxque):
+        if not taxa or query not in strata:
+            continue
+        stratum = strata[query]
+        try:
+            res[(stratum, taxa)] += 1
+        except TypeError:
+            k = 1 / len(taxa)
+            for taxon in taxa:
+                res[(stratum, taxa)] += k
+    return res
+
+
+def counter_size_strat(qryque, subque, taxque, sizes, strata):
+    """Stratify taxa in a read map and count occurrences while normalizing by
+    subject size.
 
     Parameters
     ----------
     qryque : iterable of str
         Query sequences.
     subque : iterable of frozenset
-        Subject(s) queue to manipulate.
+        Subject(s) mapped to each query.
     taxque : iterable of str or list
         Taxon(a) assigned to each query.
-    strata : dict
-        Query-to-stratum map for stratification.
     sizes : dict, optional
         Subject size dictionary.
+    strata : dict
+        Query-to-stratum map.
 
     Returns
     -------
-    dict of dict of int
-        Map of (stratum, taxon) to subject to count.
+    dict of float
+        Map of (stratum, taxon) to normalized count.
 
     See Also
     --------
-    count_taxa
+    counter_size
+    counter_strat
     """
-    is_size, get_size = (True, sizes.get) if sizes else (False, None)
+    get_size = sizes.get
     res = defaultdict(int)
     for query, subs, taxa in zip(qryque, subque, taxque):
         if not taxa or query not in strata:
             continue
         stratum = strata[query]
         try:
-            res[(stratum, taxa)] += sum(map(get_size, subs)) / len(
-                subs) if is_size else 1
+            res[(stratum, taxa)] += sum(map(get_size, subs)) / len(subs)
         except TypeError:
             k = 1 / len(list(filter(None, taxa)))
             for taxon, sub in zip(taxa, subs):
                 if not taxon:
                     continue
-                res[(stratum, taxon)] += get_size(sub) * k if is_size else k
+                res[(stratum, taxon)] += get_size(sub) * k
     return res
 
 

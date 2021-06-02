@@ -30,7 +30,8 @@ from .file import (
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
 from .align import plain_mapper
 from .classify import (
-    assign_none, assign_free, assign_rank, count_taxa, count_taxa_strat)
+    assign_none, assign_free, assign_rank, counter, counter_size,
+    counter_strat, counter_size_strat)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
@@ -938,9 +939,11 @@ def assign_readmap(qryque:    list,
         with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
             write_readmap(fh, qryque, taxque, namedic)
 
-    # count taxon assignments
-    counts = (count_taxa(subque, taxque, sizes) if not strata else
-              count_taxa_strat(qryque, subque, taxque, strata, sizes))
+    # determine counter and count taxon assignments
+    counts = ((counter(taxque) if not sizes else
+               counter_size(subque, taxque, sizes)) if not strata else
+              (counter_strat(qryque, taxque, strata) if not sizes else
+               counter_strat(qryque, subque, taxque, strata, sizes)))
 
     # combine old and new counts
     sum_dict(data[rank].setdefault(sample, {}), counts)
