@@ -449,4 +449,4 @@ def calc_gene_lens(coords, prefix=False):
                 res[gid] = 1 - loc
             else:
                 res[gid] += loc
-    return res
+    return {k: 1 / v for k, v in res.items()}

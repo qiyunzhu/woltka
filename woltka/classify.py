@@ -13,6 +13,7 @@ hierarchical classification system.
 """
 
 from operator import itemgetter
+from collections import defaultdict
 
 from .util import count_list
 from .tree import find_rank, find_lca
@@ -116,7 +117,7 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
         return taxa
 
 
-def count_taxa(subque, taxque):
+def count_taxa(subque, taxque, sizes=None):
     """Count occurrences of taxa in a map.
 
     Parameters
@@ -125,6 +126,8 @@ def count_taxa(subque, taxque):
         Subject(s) queue to manipulate.
     taxque : iterable of str or list
         Taxon(a) assigned to each query.
+    sizes : dict, optional
+        Subject size dictionary.
 
     Returns
     -------
@@ -144,38 +147,26 @@ def count_taxa(subque, taxque):
         https://stackoverflow.com/questions/15479928/why-is-the-order-in-
         dictionaries-and-sets-arbitrary
     """
-    res = {}
+    is_size, get_size = (True, sizes.get) if sizes else (False, None)
+    res = defaultdict(int)
     for subs, taxa in zip(subque, taxque):
         if not taxa:
             continue
-
-        # taxa is a string (all subjects assigned to same taxon)
+        # there's only one taxon (a string)
+        # !!!!!!!!!!!!! warning
         try:
-            res_ = res.setdefault(taxa, {})
-
-            # only one subject (to save compute)
-            try:
-                sub, = subs
-                res_[sub] = res_.get(sub, 0) + 1
-
-            # multiple subjects
-            except ValueError:
-                k = 1 / len(subs)
-                for sub in subs:
-                    res_[sub] = res_.get(sub, 0) + k
-
+            res[taxa] += sum(map(get_size, subs)) / len(subs) if is_size else 1
         # taxa is a list (each subject corresponds to one taxon)
         except TypeError:
             k = 1 / len(list(filter(None, taxa)))
             for taxon, sub in zip(taxa, subs):
                 if not taxon:
                     continue
-                res_ = res.setdefault(taxon, {})
-                res_[sub] = res_.get(sub, 0) + k
+                res[taxon] += get_size(sub) * k if is_size else k
     return res
 
 
-def count_taxa_strat(qryque, subque, taxque, strata):
+def count_taxa_strat(qryque, subque, taxque, strata, sizes=None):
     """Stratify taxa in a map and count occurrences.
 
     Parameters
@@ -188,6 +179,8 @@ def count_taxa_strat(qryque, subque, taxque, strata):
         Taxon(a) assigned to each query.
     strata : dict
         Query-to-stratum map for stratification.
+    sizes : dict, optional
+        Subject size dictionary.
 
     Returns
     -------
@@ -198,62 +191,22 @@ def count_taxa_strat(qryque, subque, taxque, strata):
     --------
     count_taxa
     """
-    res = {}
+    is_size, get_size = (True, sizes.get) if sizes else (False, None)
+    res = defaultdict(int)
     for query, subs, taxa in zip(qryque, subque, taxque):
         if not taxa or query not in strata:
             continue
         stratum = strata[query]
         try:
-            res_ = res.setdefault((stratum, taxa), {})
-            try:
-                sub, = subs
-                res_[sub] = res_.get(sub, 0) + 1
-            except ValueError:
-                k = 1 / len(subs)
-                for sub in subs:
-                    res_[sub] = res_.get(sub, 0) + k
+            res[(stratum, taxa)] += sum(map(get_size, subs)) / len(
+                subs) if is_size else 1
         except TypeError:
             k = 1 / len(list(filter(None, taxa)))
             for taxon, sub in zip(taxa, subs):
                 if not taxon:
                     continue
-                res_ = res.setdefault((stratum, taxon), {})
-                res_[sub] = res_.get(sub, 0) + k
+                res[(stratum, taxon)] += get_size(sub) * k if is_size else k
     return res
-
-
-def total_taxa(counts, sizes=None):
-    """Sum up subject counts per taxon.
-
-    Parameters
-    ----------
-    counts : dict of dict
-        Counts per subject per taxon
-    sizes : dict, optional
-        Subject size dictionary.
-
-    Raises
-    ------
-    ValueError
-        Subject not found in size dictionary.
-
-    Notes
-    -----
-    This function sums the subject counts per taxon into the total count of the
-    taxon. If a size dictionary is provided, the count of each subject will be
-    divided by its size.
-    """
-    if not sizes:
-        for taxon, subs in counts.items():
-            counts[taxon] = sum(subs.values())
-    else:
-        for taxon, subs in counts.items():
-            try:
-                counts[taxon] = sum(
-                    count / sizes[sub] for sub, count in subs.items())
-            except KeyError:
-                raise ValueError(
-                    'One or more subjects are not found in the size map.')
 
 
 def majority(taxa, th=0.8):

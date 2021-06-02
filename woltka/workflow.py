@@ -30,8 +30,7 @@ from .file import (
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
 from .align import plain_mapper
 from .classify import (
-    assign_none, assign_free, assign_rank, count_taxa, count_taxa_strat,
-    total_taxa)
+    assign_none, assign_free, assign_rank, count_taxa, count_taxa_strat)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
@@ -536,7 +535,7 @@ def parse_sizes(sizes:       str,
         click.echo(f'Reading subject sizes file: {basename(sizes)}...',
                    nl=False)
         with readzip(sizes, zippers) as f:
-            sizemap = {k: float(v) for k, v in read_map_1st(f)}
+            sizemap = {k: 1 / float(v) for k, v in read_map_1st(f)}
         click.echo(' Done.')
     return sizemap
 
@@ -939,12 +938,9 @@ def assign_readmap(qryque:    list,
         with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
             write_readmap(fh, qryque, taxque, namedic)
 
-    # count subject - taxon assignments
-    counts = (count_taxa_strat(qryque, subque, taxque, strata) if strata else
-              count_taxa(subque, taxque))
-
-    # sum up subject counts per taxon
-    total_taxa(counts, sizes)
+    # count taxon assignments
+    counts = (count_taxa(subque, taxque, sizes) if not strata else
+              count_taxa_strat(qryque, subque, taxque, strata, sizes))
 
     # combine old and new counts
     sum_dict(data[rank].setdefault(sample, {}), counts)
