@@ -34,7 +34,7 @@ def assign_none(subs, uniq=False):
 
     Parameters
     ----------
-    subs : set of str
+    subs : tuple of str
         Subjects.
     uniq : bool, optional
         Assignment must be unique.
@@ -56,7 +56,7 @@ def assign_free(subs, tree, root=None, subok=False):
 
     Parameters
     ----------
-    subs : set of str
+    subs : tuple of str
         Subjects.
     tree : dict
         Hierarchical classification system.
@@ -84,7 +84,7 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
 
     Parameters
     ----------
-    subs : set of str
+    subs : tuple of str
         Subjects.
     rank : str
         Target rank.
@@ -177,7 +177,7 @@ def counter_size(subque, taxque, sizes):
 
     Parameters
     ----------
-    subque : iterable of frozenset
+    subque : iterable of tuple
         Subject(s) mapped to each query.
     taxque : iterable of str or list
         Taxon(a) assigned to each query.
@@ -197,15 +197,6 @@ def counter_size(subque, taxque, sizes):
     See Also
     --------
     counter
-
-    Notes
-    -----
-    Subjects (frozenset) and taxa (list) are precise matches. This is ensured
-    by the iteration stability of Python sets / frozensets. See:
-
-    .. _Source:
-        https://stackoverflow.com/questions/15479928/why-is-the-order-in-
-        dictionaries-and-sets-arbitrary
     """
     res = defaultdict(int)
     for subs, taxa in zip(subque, taxque):
@@ -266,7 +257,7 @@ def counter_size_strat(qryque, subque, taxque, sizes, strata):
     ----------
     qryque : iterable of str
         Query sequences.
-    subque : iterable of frozenset
+    subque : iterable of tuple
         Subject(s) mapped to each query.
     taxque : iterable of str or list
         Taxon(a) assigned to each query.

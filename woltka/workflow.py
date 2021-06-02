@@ -239,9 +239,8 @@ def classify(mapper:  object,
 
     Notes
     -----
-    Subject(s) of each query are converted into a frozenset. This is because
-    frozenset is hashable, a property necessary for subsequent assignment
-    result caching.
+    Subject(s) of each query are sorted and converted into a tuple, which is
+    hashable, a property necessary for subsequent assignment result caching.
     """
     data = {x: {} for x in ranks}
 
@@ -272,9 +271,9 @@ def classify(mapper:  object,
             for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
                 nqry += len(qryque)
 
-                # (optional) strip indices and freeze sets
-                subque = deque(strip_suffix(subque, trimsub) if trimsub else
-                               map(frozenset, subque))
+                # (optional) strip indices and generate tuples
+                subque = deque(map(tuple, map(sorted, strip_suffix(
+                    subque, trimsub) if trimsub else subque)))
 
                 # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
@@ -731,7 +730,7 @@ def strip_suffix(subque: list,
 
     Returns
     -------
-    generator of frozenset
+    generator of set
         Processed subject(s) queue.
 
     Notes
@@ -740,8 +739,7 @@ def strip_suffix(subque: list,
     and trim from it to the right end. If not found, the whole subject Id will
     be retained.
     """
-    return map(frozenset, map(partial(
-        map, lambda x: x.rsplit(sep, 1)[0]), subque))
+    return map(partial(map, lambda x: x.rsplit(sep, 1)[0]), subque)
 
 
 def demultiplex(qryque:  list,
@@ -868,7 +866,7 @@ def assign_readmap(qryque:    list,
     ----------
     qryque : iterable of str
         Query queue to assign.
-    subque : iterable of frozenset
+    subque : iterable of tuple
         Subject(s) queue for assignment.
     data : dict
         Master data structure.

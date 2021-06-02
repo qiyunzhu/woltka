@@ -45,47 +45,47 @@ class AlignTests(TestCase):
             'R5	G5')))
         obs = plain_mapper(aln)
         exp = ((['R1', 'R2', 'R3', 'R4', 'R5'],
-                [['G1'], ['G1', 'G2'], ['G1', 'G3'], ['G4'], ['G5']]),)
+                [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}, {'G5'}]),)
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 1
         aln.seek(0)
         obs = plain_mapper(aln, n=1)
-        exp = ((['R1'], [['G1']]),
-               (['R2'], [['G1', 'G2']]),
-               (['R3'], [['G1', 'G3']]),
-               (['R4'], [['G4']]),
-               (['R5'], [['G5']]))
+        exp = ((['R1'], [{'G1'}]),
+               (['R2'], [{'G1', 'G2'}]),
+               (['R3'], [{'G1', 'G3'}]),
+               (['R4'], [{'G4'}]),
+               (['R5'], [{'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 2
         aln.seek(0)
         obs = plain_mapper(aln, n=2)
-        exp = ((['R1', 'R2'], [['G1'], ['G1', 'G2']]),
-               (['R3'], [['G1', 'G3']]),
-               (['R4', 'R5'], [['G4'], ['G5']]))
+        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
+               (['R3'], [{'G1', 'G3'}]),
+               (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 3
         aln.seek(0)
         obs = plain_mapper(aln, n=3)
-        exp = ((['R1', 'R2'], [['G1'], ['G1', 'G2']]),
-               (['R3', 'R4'], [['G1', 'G3'], ['G4']]),
-               (['R5'], [['G5']]))
+        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
+               (['R3', 'R4'], [{'G1', 'G3'}, {'G4'}]),
+               (['R5'], [{'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 4
         aln.seek(0)
         obs = plain_mapper(aln, n=4)
-        exp = ((['R1', 'R2', 'R3'], [['G1'], ['G1', 'G2'], ['G1', 'G3']]),
-               (['R4', 'R5'], [['G4'], ['G5']]))
+        exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
+               (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 5
         aln.seek(0)
         obs = plain_mapper(aln, n=5)
-        exp = ((['R1', 'R2', 'R3'], [['G1'], ['G1', 'G2'], ['G1', 'G3']]),
-               (['R4', 'R5'], [['G4'], ['G5']]))
+        exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
+               (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # format is given
