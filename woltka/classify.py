@@ -121,8 +121,8 @@ def assign_rank(subs, rank, tree, rankdic, root=None, major=None, above=False,
 Counter: convert a read-to-taxa map into a taxon-to-count map.
 
 Four counter functions are implemented to tackle alternative parameter settings
-(normalization by subject size and stratification by query) while maintaining
-performance.
+(normalization by subject size and stratification by query), while maintaining
+performance by saving conditional statements.
 
 - counter
 - counter_size

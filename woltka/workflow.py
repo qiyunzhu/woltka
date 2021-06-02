@@ -20,6 +20,7 @@ from os import makedirs
 from os.path import join, basename, isfile, isdir
 from collections import deque, defaultdict
 from functools import partial, lru_cache
+from operator import itemgetter
 from typing import Tuple
 import click
 
@@ -931,10 +932,12 @@ def assign_readmap(qryque:    list,
     taxque = map(assigner, subque)
 
     # report or drop unassigned
-    taxque = [x or 'Unassigned' for x in taxque] if unasgd else list(taxque)
+    if unasgd:
+        taxque = (x or 'Unassigned' for x in taxque)
 
     # write classification map
     if rank2dir is not None:
+        taxque = list(taxque)
         outfp = join(rank2dir[rank], f'{sample}.txt')
         with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
             write_readmap(fh, qryque, taxque, namedic)
