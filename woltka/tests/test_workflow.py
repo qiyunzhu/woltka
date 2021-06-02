@@ -265,19 +265,19 @@ class WorkflowTests(TestCase):
         # size mapping file
         fp = join(self.tmpdir, 'sizes.txt')
         with open(fp, 'w') as f:
-            f.write('G1\t100\nG2\t200\nG3\t240\n')
+            f.write('G1\t100\nG2\t200\nG3\t250\n')
         obs = parse_sizes(fp, mapper)
-        exp = {'G1': 100, 'G2': 200, 'G3': 240}
+        exp = {'G1': 0.01, 'G2': 0.005, 'G3': 0.004}
         self.assertDictEqual(obs, exp)
         remove(fp)
 
         # sizes from coords
         fp = join(self.tmpdir, 'coords.txt')
         with open(fp, 'w') as f:
-            f.write('>G1\n1\t10\t20\n2\t35\t50\n')
+            f.write('>G1\n1\t11\t20\n2\t35\t50\n')
         mapper = build_mapper(fp)[0]
         obs = parse_sizes('.', mapper)
-        exp = {'1': 11, '2': 16}
+        exp = {'1': 0.1, '2': 0.0625}
         self.assertDictEqual(obs, exp)
         remove(fp)
 
@@ -466,7 +466,7 @@ class WorkflowTests(TestCase):
     def test_assign_readmap(self):
         # simple ogu assignment
         qryq = ['R1', 'R2', 'R3']
-        subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
+        subq = [('G1',), ('G1', 'G2'), ('G2', 'G3')]
         assigners = {}
         data = {'none': {}}
         assign_readmap(qryq, subq, data, 'none', 'S1', assigners)
@@ -506,6 +506,21 @@ class WorkflowTests(TestCase):
         assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
                        rankdic=rankdic)
         self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
+
+        # normalize by size
+        sizes = {'G1': 0.3, 'G2': 0.5, 'G3': 1.0}
+        data = {'ko': {}}
+        assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
+                       rankdic=rankdic, sizes=sizes)
+        self.assertDictEqual(data['ko']['S1'], {'T1': 0.95, 'T2': 0.5})
+
+        # missing size
+        del(sizes['G3'])
+        with self.assertRaises(ValueError) as ctx:
+            assign_readmap(qryq, subq, {'ko': {}}, 'ko', 'S1', assigners,
+                           tree=tree, rankdic=rankdic, sizes=sizes)
+        self.assertEqual(str(ctx.exception), (
+            'One or more subjects are not found in the size map.'))
 
     def test_read_strata(self):
         # regular strata file

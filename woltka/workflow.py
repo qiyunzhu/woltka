@@ -739,7 +739,8 @@ def strip_suffix(subque: list,
     and trim from it to the right end. If not found, the whole subject Id will
     be retained.
     """
-    return map(partial(map, lambda x: x.rsplit(sep, 1)[0]), subque)
+    return map(set, map(partial(
+        map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
 
 def demultiplex(qryque:  list,

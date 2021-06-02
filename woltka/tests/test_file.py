@@ -405,7 +405,8 @@ class FileTests(TestCase):
         rmap = {'R1': 'G1',
                 'R2': 'G2',
                 'R3': ['G2', 'G1', 'G2'],
-                'R4': ['G3', 'G3', 'G3']}
+                'R4': ['G3', 'G3', 'G3'],
+                'R5': None}
         fp = join(self.tmpdir, 'readmap.tsv')
         with open(fp, 'w') as f:
             write_readmap(f, rmap.keys(), rmap.values())
