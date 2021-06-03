@@ -173,6 +173,9 @@ def merge_wf(input_fps: list,
         exit('Please provide two or more profiles.')
     click.echo(f'Done. Number of profiles read: {len(tables)}.')
 
+    # estimate maximum decimal precision
+    digits = max(map(table_max_f, tables))
+
     # merge profiles
     click.echo('Merging profiles...', nl=False)
     table = merge_tables(tables)
@@ -180,6 +183,9 @@ def merge_wf(input_fps: list,
     n, m = table_shape(table)
     click.echo(f'Number of samples after merging: {m}.')
     click.echo(f'Number of features after merging: {n}.')
+
+    # round table values
+    round_table(table, digits or None)
 
     # write merged profile
     write_table(table, output_fp)
@@ -208,6 +214,9 @@ def collapse_wf(input_fp:   str,
     n = table_shape(table)[0]
     click.echo(f'Number of features before collapsing: {n}.')
 
+    # maximum decimal precision
+    digits = table_max_f(table)
+
     # read mapping file (many-to-many okay)
     with readzip(map_fp, {}) as f:
         mapping = read_map_many(f)
@@ -226,6 +235,9 @@ def collapse_wf(input_fp:   str,
         with readzip(names_fp, {}) as f:
             namedic = read_names(f)
         add_metacol(table, namedic, 'Name')
+
+    # round table values
+    round_table(table, digits or None)
 
     # write collapsed profile
     write_table(table, output_fp)

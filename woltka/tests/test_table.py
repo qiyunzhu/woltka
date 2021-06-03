@@ -716,19 +716,13 @@ class TableTests(TestCase):
         # many-to-many mapping, with normalization
         obs = collapse_table(table, mapping, normalize=True)
         exp = prep_table({
-            'S1': {'H1': 6, 'H2': 5, 'H3': 3, 'H4': 6, 'H5': 0},
-            'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
-            'S3': {'H1': 1, 'H2': 4, 'H3': 6, 'H4': 1, 'H5': 7}})
+            'S1': {'H1': 6.5, 'H2': 5.166666666666666,
+                   'H3': 2.6666666666666665, 'H4': 5.666666666666666,
+                   'H5': 0.0},
+            'S2': {'H1': 5.0, 'H2': 7.5, 'H3': 1.0, 'H4': 4.0, 'H5': 4.5},
+            'S3': {'H1': 1.0, 'H2': 4.5, 'H3': 5.5, 'H4': 1.0, 'H5': 7.0}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
-
-        # nothing left after normalization
-        table = prep_table({'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})
-        mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
-        obs = collapse_table(table, mapping, normalize=True)
-        for i in (0, 1, 3):
-            self.assertListEqual(obs[i], [])
-        self.assertListEqual(obs[2], ['S1', 'S2', 'S3'])
 
     def test_calc_coverage(self):
         table = prep_table({

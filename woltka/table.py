@@ -236,7 +236,9 @@ def read_tsv(fh):
         row = line.rstrip('\r\n').split('\t')
         feature = row[0]
         features.append(feature)
-        data.append(list(map(int, row[1:width])))
+        data.append([int(x) if x.isdigit() else float(x)
+                     for x in row[1:width]])
+        # data.append(list(map(int, row[1:width])))
         metadata.append(dict(zip(metacols, row[width:])))
 
     return data, features, samples, metadata
@@ -598,12 +600,7 @@ def collapse_table(table, mapping, normalize=False):
             res[target] = list(map(add, res[target], datum))
 
     # reformat table
-    res = list(res.values()), list(res.keys()), samples, [dict() for _ in res]
-
-    # round table
-    if normalize:
-        round_table(res)
-    return res
+    return list(res.values()), list(res.keys()), samples, [dict() for _ in res]
 
 
 def calc_coverage(table, mapping, th=None, count=False):
