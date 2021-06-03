@@ -151,6 +151,11 @@ def intize(num):
     num : float
         Number to round.
 
+    Returns
+    -------
+    int
+        Rounded number.
+
     See Also
     --------
     initize_list
@@ -202,7 +207,7 @@ def intize_list(lst):
 
     Parameters
     ----------
-    list : list
+    lst : list
         Input list.
 
     See Also
@@ -259,8 +264,63 @@ def intize_dict(dic, zero=False):
         del dic[key]
 
 
+def rounder(num, digits=None):
+    """Round a floating point number to given number of digits after the
+    decimal point.
+
+    Parameters
+    ----------
+    num : float
+        Number to round.
+    digits : int, optional
+        Digits after the decimal point.
+
+    Returns
+    -------
+    int or float
+        Rounded number.
+
+    See Also
+    --------
+    initize
+
+    Notes
+    -----
+    Variant of `intize`, allowing rounding to custom decimal precision.
+    """
+    near = round(num * 2, digits) / 2
+    if abs(num - near) <= (1e-7 / 10 ** digits if digits else 1e-7):
+        return round(near, digits)
+    else:
+        return round(num, digits)
+
+
+def round_list(lst, digits=None):
+    """Round list elements in place.
+
+    Parameters
+    ----------
+    lst : list
+        Input list.
+    digits : int, optional
+        Digits after the decimal point.
+
+    See Also
+    --------
+    rounder
+    intize_list
+    """
+    error = 1e-7 / 10 ** digits if digits else 1e-7
+    for i, element in enumerate(lst):
+        near = round(element * 2, digits) / 2
+        if abs(element - near) <= error:
+            lst[i] = round(near, digits)
+        else:
+            lst[i] = round(element, digits)
+
+
 def round_dict(dic, digits=None, zero=False):
-    """Convert dictionary values to integers in place.
+    """Round dictionary values in place.
 
     Parameters
     ----------
@@ -273,26 +333,18 @@ def round_dict(dic, digits=None, zero=False):
 
     See Also
     --------
+    rounder
     intize_dict
-
-    Notes
-    -----
-    Variant of `intize_dict`, allowing rounding to custom decimal precision.
     """
     todel = []
     add_todel = todel.append
-
-    # determine error threshold
     error = 1e-7 / 10 ** digits if digits else 1e-7
-
     for key, value in dic.items():
         near = round(value * 2, digits) / 2
         if abs(value - near) <= error:
             intval = round(near, digits)
         else:
             intval = round(value, digits)
-
-        # keep or skip zero values
         if intval or zero:
             dic[key] = intval
         else:

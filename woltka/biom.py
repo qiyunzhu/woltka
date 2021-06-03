@@ -11,10 +11,11 @@
 """Functions for operating BIOM tables.
 """
 
+from functools import partial
 import numpy as np
 import biom
 from .__init__ import __name__, __version__
-from .util import intize
+from .util import rounder
 
 
 def table_to_biom(data, observations, samples, metadata=None):
@@ -84,6 +85,50 @@ def write_biom(table: biom.Table, fp: str):
         table.to_hdf5(f, f'{__name__}-{__version__}')
 
 
+def biom_max_f(table: biom.Table):
+    """Get the maximum number of digits after the decimal place in a table.
+
+    Parameters
+    ----------
+    table : biom.Table
+        BIOM table to examine.
+
+    Returns
+    -------
+    int
+        Maximum decimal precision.
+    """
+    return max([0] + [str(x)[::-1].find('.') for x in
+               table.matrix_data.todense().ravel().tolist()[0]])
+
+
+def divide_biom(table: biom.Table, sizes: dict):
+    """Divide table values by feature sizes in place.
+
+    Parameters
+    ----------
+    table : biom.Table
+        BIOM table to divide.
+    sizes : dict
+        Feature size dictionary.
+    """
+    table.transform(lambda data, id_, md: data / sizes[id_],
+                    axis='observation', inplace=True)
+
+
+def scale_biom(table: biom.Table, scale: float):
+    """Multiply table values by a constant factor in place.
+
+    Parameters
+    ----------
+    table : biom.Table
+        BIOM table to multiply.
+    scale : float
+        Scale factor.
+    """
+    table.transform(lambda data, id_, md: data * scale, inplace=True)
+
+
 def filter_biom(table: biom.Table, th: float):
     """Filter a BIOM table by per-sample count or percentage threshold.
 
@@ -111,20 +156,21 @@ def filter_biom(table: biom.Table, th: float):
     return res
 
 
-def round_biom(table: biom.Table):
-    """Round a BIOM table's data to integers and drop empty observations
-    in place.
+def round_biom(table: biom.Table, digits=None):
+    """Round a BIOM table's data and drop empty observations in place.
 
     Parameters
     ----------
     table : biom.Table
         BIOM table to round.
+    digits : int, optional
+        Digits after the decimal point.
 
     Notes
     -----
     This function will not drop empty samples.
     """
-    f = np.vectorize(intize)
+    f = np.vectorize(partial(rounder, digits=digits))
     table.transform(lambda data, id_, md: f(data), axis='observation')
     table.remove_empty(axis='observation')
 

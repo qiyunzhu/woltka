@@ -18,8 +18,9 @@ from biom import Table, load_table
 
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
-    table_shape, filter_table, merge_tables, round_table, add_metacol,
-    collapse_table, calc_coverage)
+    table_shape, table_max_f, frac_table, round_table, divide_table,
+    scale_table, filter_table, merge_tables, add_metacol, collapse_table,
+    calc_coverage)
 from woltka.biom import table_to_biom
 
 
@@ -377,6 +378,137 @@ class TableTests(TestCase):
         table = Table(*map(np.array, table))
         self.assertTupleEqual(table_shape(table), (5, 3))
 
+    def test_table_max_f(self):
+        table = prep_table({
+            'S1': {'G1': 1, 'G2': 2, 'G3': 20},
+            'S2': {'G1': 3, 'G2': 0, 'G3':  9}})
+        self.assertEqual(table_max_f(table), 0)
+        table = prep_table({
+            'S1': {'G1': 1, 'G2': 1.5, 'G3': 4},
+            'S2': {'G1': 6, 'G2': 0,   'G3': 8}})
+        self.assertEqual(table_max_f(table), 1)
+        table = prep_table({
+            'S1': {'G1': 0.05, 'G2': 1.5, 'G3': 3.45},
+            'S2': {'G1': 1.1, 'G2': 2.2, 'G3': 0.0},
+            'S3': {'G1': 2.67, 'G2': 1.40, 'G3': 12.03}})
+        self.assertEqual(table_max_f(table), 2)
+        table = prep_table({
+            'S1': {'G1': 0, 'G2': 1, 'G3': 200},
+            'S2': {'G1': 1.5, 'G2': 2.475, 'G3': 8.12782},
+            'S3': {'G1': 1e-5, 'G2': 33.905, 'G3': 3.1415926}})
+        self.assertEqual(table_max_f(table), 7)
+        table = Table(*map(np.array, table))
+        self.assertEqual(table_max_f(table), 7)
+
+    def test_frac_table(self):
+        table = prep_table({
+            'S1': {'G1': 4, 'G2': 5, 'G3': 1},
+            'S2': {'G1': 2, 'G2': 0, 'G3': 8},
+            'S3': {'G1': 9, 'G2': 5, 'G3': 6}})
+        exp = prep_table({
+            'S1': {'G1': 0.4,  'G2': 0.5,  'G3': 0.1},
+            'S2': {'G1': 0.2,  'G2': 0.0,  'G3': 0.8},
+            'S3': {'G1': 0.45, 'G2': 0.25, 'G3': 0.3}})
+
+        # regular
+        obs = frac_table(table)
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM
+        obs = frac_table(Table(*map(np.array, table)))
+        exp = Table(*map(np.array, exp))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # zero column
+        table = prep_table({
+            'S1': {'G1': 0, 'G2': 2},
+            'S2': {'G1': 0, 'G2': 0}})
+        exp = prep_table({
+            'S1': {'G1': 0, 'G2': 1},
+            'S2': {'G1': 0, 'G2': 0}})
+        obs = frac_table(table)
+        self.assertListEqual(obs[0], exp[0])
+
+    def test_divide_table(self):
+        obs = prep_table({
+            'S1': {'G1': 20, 'G2': 36, 'G3': 4},
+            'S2': {'G1': 15, 'G2': 24, 'G3': 8},
+            'S3': {'G1': 10, 'G2': 18, 'G3': 0}})
+        ob2 = Table(*map(np.array, obs))
+        sizes = {'G1': 5, 'G2': 6, 'G3': 2}
+        exp = prep_table({
+            'S1': {'G1': 4, 'G2': 6, 'G3': 2},
+            'S2': {'G1': 3, 'G2': 4, 'G3': 4},
+            'S3': {'G1': 2, 'G2': 3, 'G3': 0}})
+        ex2 = Table(*map(np.array, obs))
+
+        # regular
+        divide_table(obs, sizes)
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM
+        divide_table(ob2, sizes)
+        ex2 = Table(*map(np.array, exp))
+        self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
+
+        # missing size
+        del(sizes['G3'])
+        with self.assertRaises(KeyError):
+            divide_table(obs, sizes)
+
+    def test_scale_table(self):
+        obs = prep_table({
+            'S1': {'G1': 4, 'G2': 7, 'G3': 0},
+            'S2': {'G1': 2, 'G2': 3, 'G3': 1}})
+        ob2 = Table(*map(np.array, obs))
+        exp = prep_table({
+            'S1': {'G1': 12, 'G2': 21, 'G3': 0},
+            'S2': {'G1':  6, 'G2':  9, 'G3': 3}})
+        ex2 = Table(*map(np.array, exp))
+
+        # regular
+        scale_table(obs, 3)
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM
+        scale_table(ob2, 3)
+        self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
+
+    def test_round_table(self):
+        obs = prep_table({
+            'S1': {'G1': 0.5, 'G2': 0.0, 'G3': 2.3, 'G4': 0.50000000001},
+            'S2': {'G1': 1.5, 'G2': 0.2, 'G3': 1.49999999999, 'G4': 0.2},
+            'S3': {'G1': 2.5, 'G2': 0.3, 'G3': 3.8, 'G4': 0.1}})
+        exp = prep_table({
+            'S1': {'G1': 0, 'G3': 2},
+            'S2': {'G1': 2, 'G3': 2},
+            'S3': {'G1': 2, 'G3': 4}})
+        ob2 = Table(*map(np.array, obs))
+
+        # regular
+        round_table(obs)
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM
+        round_table(ob2)
+        ex2 = Table(*map(np.array, exp))
+        self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
+
+        # 2 digits
+        obs = prep_table({
+            'S1': {'G1': 0.225, 'G2': 0.0,   'G3': 2.375},
+            'S2': {'G1': 1.547, 'G2': 0.173, 'G3': 1.499}})
+        round_table(obs, 2)
+        exp = prep_table({
+            'S1': {'G1': 0.23, 'G2': 0.0,  'G3': 2.38},
+            'S2': {'G1': 1.55, 'G2': 0.17, 'G3': 1.5}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
     def test_filter_table(self):
         table = prep_table({'S1': {'G1': 4, 'G2': 5, 'G3': 8},
                             'S2': {'G1': 2, 'G4': 3, 'G5': 7},
@@ -479,27 +611,6 @@ class TableTests(TestCase):
             merge_tables([t1, t2, t3])
         errmsg = 'Conflicting metadata found in tables.'
         self.assertEqual(str(ctx.exception), errmsg)
-
-    def test_round_table(self):
-        obs = prep_table({
-            'S1': {'G1': 0.5, 'G2': 0.0, 'G3': 2.3, 'G4': 0.50000000001},
-            'S2': {'G1': 1.5, 'G2': 0.2, 'G3': 1.49999999999, 'G4': 0.2},
-            'S3': {'G1': 2.5, 'G2': 0.3, 'G3': 3.8, 'G4': 0.1}})
-        exp = prep_table({
-            'S1': {'G1': 0, 'G3': 2},
-            'S2': {'G1': 2, 'G3': 2},
-            'S3': {'G1': 2, 'G3': 4}})
-        ob2 = Table(*map(np.array, obs))
-
-        # regular
-        round_table(obs)
-        for i in range(4):
-            self.assertListEqual(obs[i], exp[i])
-
-        # BIOM
-        round_table(ob2)
-        ex2 = Table(*map(np.array, exp))
-        self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
 
     def test_add_metacol(self):
         obs = prep_table({

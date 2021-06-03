@@ -16,12 +16,12 @@ from collections import defaultdict
 from operator import add
 from biom import Table, load_table
 
-from .util import allkeys, update_dict, intize_list
+from .util import allkeys, update_dict, round_list
 from .tree import lineage_str
 from .file import openzip
 from .biom import (
-    table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
-    biom_add_metacol, collapse_biom)
+    table_to_biom, biom_to_table, write_biom, biom_max_f, divide_biom,
+    scale_biom, filter_biom, round_biom, biom_add_metacol, collapse_biom)
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -332,21 +332,147 @@ def table_shape(table):
     return len(table[1]), len(table[2])
 
 
+def table_max_f(table):
+    """Get the maximum number of digits after the decimal place in a table.
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to examine.
+
+    Returns
+    -------
+    int
+        Maximum decimal precision.
+
+    Notes
+    -----
+    Not a robust solution. Cannot handle scientific notions
+    """
+    if isinstance(table, Table):
+        return biom_max_f(table)
+    max_f = 0
+    for datum in table[0]:
+        max_f = max(max_f, max(str(x)[::-1].find('.') for x in datum))
+    return max_f
+
+
+def frac_table(table):
+    """Fraction table data (divide by sum of each column).
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to fraction.
+
+    Returns
+    -------
+    biom.Table or tuple
+        Fractioned table.
+    """
+    # call to BIOM method
+    if isinstance(table, Table):
+        return table.norm(axis='sample', inplace=False)
+
+    # fractioning function to apply to each column
+    def f(datum):
+        total = sum(datum)
+        return [x / total for x in datum] if total else datum
+
+    # transpose data array, apply function to each column (now row), then
+    # transpose back
+    res = ([], [], table[2], [])
+    for i, datum in enumerate(zip(*(f(x) for x in zip(*table[0])))):
+        res[0].append(list(datum))
+        res[1].append(table[1][i])
+        res[3].append(table[3][i])
+
+    return res
+
+
+def divide_table(table, sizes):
+    """Divide table values by feature sizes in place.
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to divide.
+    sizes : dict
+        Feature size dictionary.
+    """
+    if isinstance(table, Table):
+        divide_biom(table, sizes)
+        return
+    for i, (datum, feature) in enumerate(zip(*table[:2])):
+        table[0][i] = [x / sizes[feature] for x in datum]
+
+
+def scale_table(table, scale):
+    """Multiply table values by a constant factor in place.
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to multiply.
+    scale : float
+        Scale factor.
+    """
+    if isinstance(table, Table):
+        scale_biom(table, scale)
+        return
+    for i, datum in enumerate(table[0]):
+        table[0][i] = [x * scale for x in datum]
+
+
+def round_table(table, digits=None):
+    """Round table data and remove all-zero rows in place.
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to round.
+    digits : int, optional
+        Digits after the decimal point.
+
+    See Also
+    --------
+    .util.intize
+        Rationale for this rounding method.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        round_biom(table, digits)
+        return
+
+    # round table data
+    todel = []
+    for i, datum in enumerate(table[0]):
+        round_list(datum, digits)
+        if not any(datum):
+            todel.append(i)
+
+    # remove empty rows
+    for i in reversed(todel):
+        del(table[0][i])
+        del(table[1][i])
+        del(table[3][i])
+
+
 def filter_table(table, th):
     """Filter a table by per-sample count or percentage threshold.
 
     Parameters
     ----------
-    table : biom.Table, or tuple of (list, list, list, list)
-        Table to filter (data, features, samples, metadata).
+    table : biom.Table or tuple
+        Table to filter.
     th : float
         Per-sample minimum abundance threshold. If >= 1, this value is an
         absolute count; if < 1, it is a fraction of sum of counts.
 
     Returns
     -------
-    biom.Table, or tuple of (list, list, list, list)
-        Filtered table (data, features, samples, metadata).
+    biom.Table or tuple
+        Filtered table.
     """
     # redirect to BIOM module
     if isinstance(table, Table):
@@ -375,12 +501,12 @@ def merge_tables(tables):
 
     Parameters
     ----------
-    tables : list
+    tables : list of biom.Table or tuple
         Table to merge.
 
     Returns
     -------
-    biom.Table, or tuple of (list, list, list, list)
+    biom.Table or tuple
         Merged table.
     """
     # merge BIOM tables using built-in method
@@ -408,45 +534,13 @@ def merge_tables(tables):
     return res[0], res[1], res[2], [metadata[x] for x in res[1]]
 
 
-def round_table(table):
-    """Round table data to integers and remove all-zero rows in place.
-
-    Parameters
-    ----------
-    table : biom.Table, or tuple of (list, list, list, list)
-        Table to round (data, features, samples, metadata).
-
-    See Also
-    --------
-    .util.intize
-        Rationale for this rounding method.
-    """
-    # redirect to BIOM module
-    if isinstance(table, Table):
-        round_biom(table)
-        return
-
-    # round table data
-    todel = []
-    for i, datum in enumerate(table[0]):
-        intize_list(datum)
-        if not any(datum):
-            todel.append(i)
-
-    # remove empty rows
-    for i in reversed(todel):
-        del(table[0][i])
-        del(table[1][i])
-        del(table[3][i])
-
-
 def add_metacol(table, dic, name, missing=''):
     """Add a metadata column to a table in place based on a dictionary.
 
     Parameters
     ----------
-    table : biom.Table, or tuple of (list, list, list, list)
-        Table to add metadata column (data, features, samples, metadata).
+    table : biom.Table or tuple
+        Table to add metadata column.
     dict : dict
         Metadata column (feature-to-value mapping).
     name : str
@@ -469,8 +563,8 @@ def collapse_table(table, mapping, normalize=False):
 
     Parameters
     ----------
-    table : biom.Table, or tuple of (list, list, list, list)
-        Table to collapse (data, features, samples, metadata).
+    table : biom.Table or tuple
+        Table to collapse.
     mapping : dict of list of str
         Source-to-target(s) mapping.
     normalize : bool, optional
@@ -478,7 +572,7 @@ def collapse_table(table, mapping, normalize=False):
 
     Returns
     -------
-    biom.Table, or tuple of (list, list, list, list)
+    biom.Table or tuple
         Collapsed table.
 
     Notes
@@ -518,8 +612,8 @@ def calc_coverage(table, mapping, th=None, count=False):
 
     Parameters
     ----------
-    table : biom.Table, or tuple of (list, list, list, list)
-        Input table (data, features, samples, metadata).
+    table : biom.Table or tuple
+        Input table.
     mapping : dict of list of str
         Group-to-members mapping.
     th : int or float, optional
@@ -531,7 +625,7 @@ def calc_coverage(table, mapping, th=None, count=False):
 
     Returns
     -------
-    tuple of (list, list, list, list)
+    tuple
         Coverage table.
 
     Notes

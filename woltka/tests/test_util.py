@@ -15,8 +15,8 @@ from tempfile import mkdtemp
 
 from woltka.util import (
     add_dict, update_dict, sum_dict, scale_factor, scale_dict, intize,
-    intize_list, intize_dict, round_dict, delnone, allkeys, count_list,
-    last_value, feature_count)
+    intize_list, intize_dict, rounder, round_list, round_dict, delnone,
+    allkeys, count_list, last_value, feature_count)
 
 
 class UtilTests(TestCase):
@@ -125,6 +125,30 @@ class UtilTests(TestCase):
         intize_dict(dic)
         exp = {'a': 2, 'b': 4, 'c': 2, 'd': 2}
         self.assertDictEqual(dic, exp)
+
+    def test_rounder(self):
+        self.assertEqual(rounder(1.0), 1)
+        self.assertEqual(rounder(1.49), 1)
+        self.assertEqual(rounder(1.49999999999), 2)
+        self.assertEqual(rounder(1.5), 2)
+        self.assertEqual(rounder(0.02, 1), 0.0)
+        self.assertEqual(rounder(1.05, 1), 1.1)
+        self.assertEqual(rounder(1.049, 1), 1.0)
+        self.assertEqual(rounder(1.745, 2), 1.75)
+        self.assertEqual(rounder(4.235, 2), 4.24)
+        self.assertEqual(rounder(4.2350000000001, 2), 4.24)
+        self.assertEqual(rounder(1.74499999, 2), 1.74)
+        self.assertEqual(rounder(1.7449999999999, 2), 1.75)
+
+    def test_round_list(self):
+        lst = [0.1, 1.2, 2.4, 3.8, 4.5, 5.5]
+        round_list(lst)
+        exp = [0, 1, 2, 4, 4, 6]
+        self.assertListEqual(lst, exp)
+        lst = [1.71828, 3.14159, 2.00005, 3.874999, 4.500001]
+        round_list(lst, 2)
+        exp = [1.72, 3.14, 2.0, 3.87, 4.5]
+        self.assertListEqual(lst, exp)
 
     def test_round_dict(self):
         dic = {'a': 1.0, 'b': 2.2, 'c': 3.6}

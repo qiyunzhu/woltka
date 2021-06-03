@@ -15,7 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
-from .tools import filter_wf, merge_wf, collapse_wf, coverage_wf
+from .tools import normalize_wf, filter_wf, merge_wf, collapse_wf, coverage_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -182,6 +182,34 @@ def tools():
     """Utilities for working with alignments, maps and profiles.
     """
     pass  # pragma: no cover
+
+
+@tools.command('normalize')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--sizes', '-z', 'sizes_fp',
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Path to mapping of feature sizes, by which values will be divided. '
+          'If omitted, will divide values by sum per sample.'))
+@click.option(
+    '--scale', '-s', type=click.STRING,
+    help='Scale values by this factor. Accepts "k", "M" suffixes.')
+@click.option(
+    '--digits', '-d', type=click.IntRange(0, 10),
+    help=('Round values to this number of digits after the decimal point. If '
+          'omitted, will keep decimal precision of input profile.'))
+@click.pass_context
+def normalize_cmd(ctx, **kwargs):
+    """Normalize a profile to fractions or by feature sizes.
+    """
+    normalize_wf(**kwargs)
 
 
 @tools.command('filter')

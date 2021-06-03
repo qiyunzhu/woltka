@@ -19,7 +19,8 @@ import gzip
 from click.testing import CliRunner
 
 from woltka.cli import (
-    cli, classify_cmd, filter_cmd, merge_cmd, collapse_cmd, coverage_cmd)
+    cli, classify_cmd, normalize_cmd, filter_cmd, merge_cmd, collapse_cmd,
+    coverage_cmd)
 
 
 class CliTests(TestCase):
@@ -179,10 +180,28 @@ class CliTests(TestCase):
 
         remove(output_fp)
 
+    def test_classify_cmd(self):
+        input_fp = join(self.datdir, 'output', 'bowtie2.ogu.tsv')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        sizes_fp = join(self.datdir, 'taxonomy', 'length.map')
+        params = ['--input',  input_fp,
+                  '--output', output_fp,
+                  '--sizes',  sizes_fp,
+                  '--scale',  '1M']
+        res = self.runner.invoke(normalize_cmd, params)
+        self.assertEqual(res.exit_code, 0)
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Normalized profile written.')
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertIn('G000007325\t0\t12\t0\t0\t104', obs)
+        self.assertIn('G000215745\t0\t0\t0\t358\t0', obs)
+        remove(output_fp)
+
     def test_filter_cmd(self):
         input_fp = join(self.outdir, 'bowtie2.free.tsv')
         output_fp = join(self.tmpdir, 'output.tsv')
-        params = ['--input', input_fp,
+        params = ['--input',  input_fp,
                   '--output', output_fp,
                   '--min-percent', 1]
         res = self.runner.invoke(filter_cmd, params)
