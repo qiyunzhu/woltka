@@ -127,6 +127,9 @@ def cli():
     help=('Divide counts by subject sizes. Can provide a mapping file, or '
           'type "." to calculate from gene coordinates.'))
 @click.option(
+    '--frac', is_flag=True,
+    help='Divide counts by total count of each sample (i.e., fractions).')
+@click.option(
     '--scale', type=click.STRING,
     help='Scale counts by this factor. Accepts "k", "M" suffixes.')
 @click.option(

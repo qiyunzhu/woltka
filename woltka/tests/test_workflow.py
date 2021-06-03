@@ -22,7 +22,7 @@ from pandas.testing import assert_frame_equal
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper, parse_sizes,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
-    read_strata, scale_profiles, round_profiles, write_profiles)
+    read_strata, frac_profiles, scale_profiles, round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -533,6 +533,18 @@ class WorkflowTests(TestCase):
             read_strata(join(self.datdir, 'tree.nwk'))
         self.assertEqual(str(ctx.exception), (
             'No stratification information is found in file: tree.nwk.'))
+
+    def test_frac_profiles(self):
+        obs = {'none': {'S1': {'G1': 6,  'G2': 4},
+                        'S2': {'G1': 15, 'G3': 5},
+                        'S3': {}}}
+        frac_profiles(obs)
+        self.assertDictEqual(obs, obs)
+        frac_profiles(obs, True)
+        exp = {'none': {'S1': {'G1': 0.6,  'G2': 0.4},
+                        'S2': {'G1': 0.75, 'G3': 0.25},
+                        'S3': {}}}
+        self.assertDictEqual(obs, exp)
 
     def test_scale_profiles(self):
         # scale up by 100

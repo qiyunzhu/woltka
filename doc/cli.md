@@ -68,6 +68,7 @@ Option | Description
 Option | Description
 --- | ---
 `--sizes`, `-z` | Divide counts by subject sizes. Can provide a subject-to-size mapping file, or type "." to calculate from gene coordinates (which is provided by `--coords`).
+`--frac` | Divide counts by total count of each sample (i.e., fractions).
 `--scale` | Scale counts by this factor. Accepts "k", "M" suffixes.
 `--digits` | Round counts to this number of digits after the decimal point.
 

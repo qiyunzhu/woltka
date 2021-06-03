@@ -88,6 +88,19 @@ class CliTests(TestCase):
             self.assertEqual(obs, exp)
             remove(outmap_fp)
 
+        # blastn, family-level classification, report relative abundance (%)
+        params = ['--input',  join(self.alndir, 'blastn', 'mux.b6o.xz'),
+                  '--output', output_fp,
+                  '--names',  join(self.taxdir, 'names.dmp'),
+                  '--nodes',  join(self.taxdir, 'nodes.dmp'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
+                  '--rank',   'family',
+                  '--name-as-id',
+                  '--frac',
+                  '--scale',  '100',
+                  '--digits', 2]
+        _test_params(params, 'blastn.family.percent.tsv')
+
         # bt2sho, order-level, genome size-normalized classification
         # unit: reads per million bases (of genome)
         params = ['--input',  join(self.alndir, 'bt2sho'),

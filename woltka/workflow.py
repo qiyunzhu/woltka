@@ -69,6 +69,7 @@ def workflow(input_fp:     str,
              strata_dir:   str = None,
              # normalization
              sizes:        str = None,
+             frac:        bool = False,
              scale:        str = None,
              digits:       int = None,
              # output
@@ -131,6 +132,9 @@ def workflow(input_fp:     str,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
         zippers)
+
+    # convert counts to fractions
+    frac_profiles(data, frac)
 
     # scale values
     scale_profiles(data, scale)
@@ -958,6 +962,32 @@ def assign_readmap(qryque:    list,
 
     # combine old and new counts
     sum_dict(data[rank].setdefault(sample, {}), counts)
+
+
+def frac_profiles(data: dict,
+                  frac: bool = False):
+    """Convert cell values to fractions (i.e., divide by sum of each sample).
+
+    Parameters
+    ----------
+    data : dict
+        Profile data.
+    frac : bool, optional
+        Whether convert counts to fractions.
+
+    Notes
+    -----
+    Samples with only zeros will be skipped.
+    """
+    if not frac:
+        return
+    for profile in data.values():
+        for sample in profile.values():
+            total = sum(sample.values())
+            if not total:
+                continue
+            for feature in sample:
+                sample[feature] /= total
 
 
 def scale_profiles(data: dict,
