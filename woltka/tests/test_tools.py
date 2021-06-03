@@ -138,6 +138,23 @@ class ToolsTests(TestCase):
         errmsg = 'Cannot parse test3.tsv as a profile.'
         self.assertEqual(str(ctx.exception), errmsg)
 
+        # keep original decimal precision
+        input_fp1 = join(self.tmpdir, '1st.tsv')
+        with open(input_fp1, 'w') as f:
+            f.write('#FeatureID\tS01\nG01\t1.1')
+        input_fp2 = join(self.tmpdir, '2nd.tsv')
+        with open(input_fp2, 'w') as f:
+            f.write('#FeatureID\tS01\nG01\t2.2')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        merge_wf([input_fp1, input_fp2], output_fp)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS01', 'G01\t3.3']
+        self.assertListEqual(obs, exp)
+        remove(output_fp)
+        remove(input_fp1)
+        remove(input_fp2)
+
     def test_collapse_wf(self):
         input_fp = join(self.datdir, 'output', 'truth.gene.tsv')
         map_fp = join(self.datdir, 'function', 'nucl', 'uniref.map.xz')
