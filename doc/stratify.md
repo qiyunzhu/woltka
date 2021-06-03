@@ -20,7 +20,7 @@ Here is an example workflow, based on the commands and [sample data](../woltka/t
 ```bash
 woltka classify \
   -i align/bowtie2 \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
   --rank phylum \
@@ -73,7 +73,7 @@ The following example is also based on the [sample data](../woltka/tests/data). 
 woltka classify \
   -i align/diamond \
   --trim-sub _ \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
   --rank genus \

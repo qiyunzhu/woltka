@@ -55,14 +55,14 @@ class CliTests(TestCase):
         params = ['--input',  join(self.alndir, 'bowtie2'),
                   '--output', output_fp,
                   '--nodes',  join(self.taxdir, 'nodes.dmp'),
-                  '--map',    join(self.taxdir, 'g2tid.txt'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
                   '--rank',   'free']
         _test_params(params, 'bowtie2.free.tsv')
 
         # blastn, multiplexed, lineage-based, species-level classification
         params = ['--input',   join(self.alndir, 'blastn', 'mux.b6o.xz'),
                   '--output',  output_fp,
-                  '--lineage', join(self.taxdir, 'lineage.txt'),
+                  '--lineage', join(self.taxdir, 'lineages.txt'),
                   '--rank',    'species']
         _test_params(params, 'blastn.species.tsv')
 
@@ -72,7 +72,7 @@ class CliTests(TestCase):
                   '--outmap', self.tmpdir,
                   '--names',  join(self.taxdir, 'names.dmp'),
                   '--nodes',  join(self.taxdir, 'nodes.dmp'),
-                  '--map',    join(self.taxdir, 'g2tid.txt'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
                   '--rank',   'genus',
                   '--name-as-id']
         _test_params(params, 'burst.genus.tsv')
@@ -87,6 +87,19 @@ class CliTests(TestCase):
                 exp = f.read()
             self.assertEqual(obs, exp)
             remove(outmap_fp)
+
+        # bt2sho, order-level, genome size-normalized classification
+        # unit: reads per million bases (of genome)
+        params = ['--input',  join(self.alndir, 'bt2sho'),
+                  '--output', output_fp,
+                  '--names',  join(self.taxdir, 'names.dmp'),
+                  '--nodes',  join(self.taxdir, 'nodes.dmp'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
+                  '--rank',   'order',
+                  '--sizes',  join(self.taxdir, 'length.map'),
+                  '--scale',  '1M',
+                  '--digits', 3]
+        _test_params(params, 'bt2sho.order.cpm.tsv')
 
         # bt2sho phylogeny-based classification
         params = ['--input',  join(self.alndir, 'bt2sho'),
@@ -116,6 +129,20 @@ class CliTests(TestCase):
                   '--map-as-rank',
                   '--stratify', join(self.outdir, 'burst.genus.map')]
         _test_params(params, 'burst.genus.process.tsv')
+
+        # bt2sho, classification by GO component, normalization by gene length
+        # unit: reads per kilobase (RPK)
+        params = ['--input',  join(self.alndir, 'bt2sho'),
+                  '--output', output_fp,
+                  '--rank',   'component',
+                  '--coords', join(self.fundir, 'coords.txt.xz'),
+                  '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
+                  '--map',    join(self.fundir, 'go', 'component.tsv.xz'),
+                  '--map-as-rank',
+                  '--sizes',  '.',
+                  '--scale',  '1k',
+                  '--digits', 3]
+        _test_params(params, 'bt2sho.component.rpk.tsv')
 
         # simple map (from burst) against genes, classification at genus level
         params = ['--input',    join(self.alndir, 'burst', 'split'),

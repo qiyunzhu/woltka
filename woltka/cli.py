@@ -123,15 +123,15 @@ def cli():
     help='Directory of read-to-feature maps for stratification.')
 # normalization
 @click.option(
-    '--decimal', type=click.IntRange(0, 10),
-    help='Round cell values to this number of digits after the decimal point.')
+    '--sizes', '-z', type=click.Path(exists=True),
+    help=('Divide counts by subject sizes. Can provide a mapping file, or '
+          'type "." to calculate from gene coordinates.'))
 @click.option(
     '--scale', type=click.STRING,
     help='Scale counts by this factor. Accepts "k", "M" suffixes.')
 @click.option(
-    '--sizes', type=click.Path(exists=True),
-    help=('Divide counts by subject sizes. Can provide a mapping file, or '
-          'type "." to calculate from gene coordinates.'))
+    '--digits', type=click.IntRange(0, 10),
+    help='Round counts to this number of digits after the decimal point.')
 # output files
 @click.option(
     '--to-biom/--to-tsv', 'output_fmt', default=None,

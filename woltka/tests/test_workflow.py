@@ -358,7 +358,7 @@ class WorkflowTests(TestCase):
         remove(fp)
 
         # lineage
-        fp = join(self.tmpdir, 'lineage.txt')
+        fp = join(self.tmpdir, 'lineages.txt')
         with open(fp, 'w') as f:
             f.write('a\te;d\nb\te\nc\te;d\n')
         obs = build_hierarchy(lineage_fps=[fp])

@@ -68,9 +68,9 @@ def workflow(input_fp:     str,
              # stratification
              strata_dir:   str = None,
              # normalization
-             decimal:      int = None,
-             scale:        str = None,
              sizes:        str = None,
+             scale:        str = None,
+             digits:       int = None,
              # output
              output_fmt:   str = None,
              unassigned:  bool = False,
@@ -136,7 +136,7 @@ def workflow(input_fp:     str,
     scale_profiles(data, scale)
 
     # round values and drop zeros
-    round_profiles(data, decimal)
+    round_profiles(data, digits)
 
     # write output profiles
     write_profiles(
@@ -979,20 +979,20 @@ def scale_profiles(data: dict,
             scale_dict(datum, scale)
 
 
-def round_profiles(data:   dict,
-                   decimal: int = None):
+def round_profiles(data:  dict,
+                   digits: int = None):
     """Round cell values in profiles into integers, and drop zero values.
 
     Parameters
     ----------
     data : dict
         Profile data.
-    decimal : int, optional
+    digits : int, optional
         Digits after the decimal point.
     """
     for rank in data:
         for datum in data[rank].values():
-            round_dict(datum, decimal)
+            round_dict(datum, digits)
 
 
 def write_profiles(data:        dict,

@@ -107,7 +107,7 @@ Alternatively, one may use lineage strings extracted from NCBI (will lose some r
 ```bash
 woltka classify \
   --input   input.sam \
-  --lineage taxonomy/lineage.txt \
+  --lineage taxonomy/lineages.txt \
   --output  free.biom
 ```
 
@@ -121,7 +121,7 @@ One may specific one or multiple classification ranks in the command, and Woltka
 ```bash
 woltka classify \
   --input   input.sam \
-  --lineage taxonomy/lineage.txt \
+  --lineage taxonomy/lineages.txt \
   --rank    phylum,genus,species \
   --output  .
 ```

@@ -18,9 +18,9 @@ In addition, `burst/split` is the mapping against **genes** annotated from the r
 
 **Reference taxonomy** of the 107 bacterial genomes. The taxonomy is provided in multiple formats:
 
-- `g2tid.txt`: Genome ID to NCBI taxonomy ID mapping file.
+- `taxid.map`: Genome ID to NCBI taxonomy ID mapping file.
 - `taxdump`: NCBI taxdump-style database files (`nodes.dmp` and `names.dmp`).
-- `lineage.txt`: Greengenes-style lineage strings.
+- `lineages.txt`: Greengenes-style lineage strings.
 - `rank_names.tsv` and `rank_tids.tsv`: Taxon name and TaxID at each of the seven standard taxonomic ranks for each genome.
 
 In addition, `nucl/` contains the mappings from nucleotide sequence accessions (instead of their host genomes) to taxonomy.
@@ -53,7 +53,7 @@ woltka classify -i align/bowtie2 -o bowtie2.ogu.tsv
 ```bash
 woltka classify \
   --input align/bowtie2 \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --rank free \
   --output bowtie2.free.tsv
@@ -73,7 +73,7 @@ woltka tools filter \
 ```bash
 woltka classify \
   --input align/blastn/mux.b6o.xz \
-  --lineage taxonomy/lineage.txt \
+  --lineage taxonomy/lineages.txt \
   --rank species \
   --output blastn.species.tsv
 ```
@@ -85,7 +85,7 @@ woltka classify \
 ```bash
 woltka classify \
   --input align/burst \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
   --rank genus \
@@ -110,13 +110,28 @@ woltka classify \
   --output bt2sho.phylo.tsv
 ```
 
+`bt2sho.order.cpm.tsv`
+
+```bash
+woltka classify \
+  --input align/bt2sho \
+  --map taxonomy/taxid.map \
+  --nodes taxonomy/nodes.dmp \
+  --names taxonomy/names.dmp \
+  --rank order \
+  --sizes taxonomy/length.map \
+  --scale 1M \
+  --digits 3 \
+  --output bt2sho.order.cpm.tsv
+```
+
 `burst.process.tsv`:
 
 ```bash
 woltka classify \
   --input align/burst \
   --coords function/coords.txt.xz \
-  --map function/uniref.map.xz \
+  --map function/uniref/uniref.map.xz \
   --map function/go/process.tsv.xz \
   --map-as-rank \
   --rank process \
@@ -170,22 +185,38 @@ woltka tools merge \
 woltka classify \
   --input align/diamond \
   --trim-sub _ \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --rank free \
   --output diamond.free.tsv
 ```
 
-`diamond.func.tsv`
+`diamond.function.tsv`
 
 ```bash
 woltka classify \
   --input align/diamond \
-  --map function/uniref.map.xz \
+  --map function/uniref/uniref.map.xz \
   --map function/go/function.tsv.xz \
   --map-as-rank \
   --rank function \
-  --output diamond.func.tsv
+  --output diamond.function.tsv
+```
+
+`bt2sho.component.rpk.tsv`
+
+```bash
+woltka classify \
+  --input align/bt2sho \
+  --coords function/coords.txt.xz \
+  --map function/uniref/uniref.map.xz \
+  --map function/go/component.tsv.xz \
+  --map-as-rank \
+  --rank component \
+  --sizes . \
+  --scale 1k \
+  --digits 3 \
+  --output bt2sho.component.rpk.tsv
 ```
 
 `truth.gene.tsv`
@@ -204,7 +235,7 @@ woltka classify \
   --input align/truth/b6o \
   --coords function/nucl/coords.txt.xz \
   --map function/nucl/uniref.map.xz \
-  --names function/uniref.names.xz \
+  --names function/uniref/uniref.names.xz \
   --map-as-rank \
   --rank uniref \
   --output truth.uniref.tsv
@@ -216,7 +247,7 @@ Or:
 woltka tools collapse \
   --input output/truth.gene.tsv \
   --map function/nucl/uniref.map.xz \
-  --names function/uniref.names.xz \
+  --names function/uniref/uniref.names.xz \
   --output truth.uniref.tsv
 ```
 

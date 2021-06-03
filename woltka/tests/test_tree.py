@@ -377,7 +377,7 @@ class TreeTests(TestCase):
         self.assertDictEqual(rankdic_obs, rankdic_exp)
 
         # real lineage file
-        fp = join(self.datdir, 'taxonomy', 'lineage.txt')
+        fp = join(self.datdir, 'taxonomy', 'lineages.txt')
         with open(fp, 'r') as f:
             tree, rankdic = read_lineage(f)
         self.assertEqual(len(tree), 426)
