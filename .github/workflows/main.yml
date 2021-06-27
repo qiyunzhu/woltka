@@ -35,7 +35,12 @@ jobs:
       - name: Run unit tests
         run: coverage run -m unittest
 
-      - name: Coveralls GitHub Action
-        uses: coverallsapp/github-action@v1.1.2
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Coveralls
+        run: coveralls
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # - name: Coveralls GitHub Action
+      #   uses: coverallsapp/github-action@v1.1.2
+      #   with:
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
