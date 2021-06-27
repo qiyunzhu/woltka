@@ -220,8 +220,7 @@ So on so forth. See [here](metacyc.md) for a graph of all available collapsing d
 
 `classify` only supports a tree structure, in which one child unit has exactly one parent unit. This is typical in taxonomic classification. If multiple parents are present, all but the first parent will be discarded. In contrast, `collapse` supports **one-to-multiple** mappings, therefore it is more suitable when this is the norm instead of exception, especially in functional classification (where one gene can be involved in multiple metabolic pathways).
 
-`classify` always ensures the **compositionality** of the feature table, in which the frequencies match the numbers of aligned sequences. `collapse` however does not by default. In a one-to-multiple mapping, all parents will be counted once. But one can add `--normalize` to the `collapse` command to normalize the counts by the number of parents so that the compositionality is retained.
-
+`classify` always ensures the **compositionality** of the feature table, in which the frequencies match the numbers of aligned sequences. `collapse` however does not by default. In a one-to-multiple mapping, all parents will be counted once. But one can add `--frac` to the `collapse` command to normalize the counts by the number of parents so that the compositionality is retained.
 
 ## Stratified taxonomic / functional classification
 

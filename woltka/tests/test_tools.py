@@ -189,7 +189,7 @@ class ToolsTests(TestCase):
         # wrong mapping file
         map_fp = join(self.datdir, 'tree.nwk')
         with self.assertRaises(SystemExit) as ctx:
-            collapse_wf(input_fp, map_fp, output_fp, normalize=True)
+            collapse_wf(input_fp, map_fp, output_fp, frac=True)
         errmsg = 'No source-target relationship is found in tree.nwk.'
         self.assertEqual(str(ctx.exception), errmsg)
 

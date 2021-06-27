@@ -266,7 +266,7 @@ def merge_cmd(ctx, **kwargs):
     type=click.Path(writable=True, dir_okay=False),
     help='Path to output profile.')
 @click.option(
-    '--normalize', '-z', is_flag=True,
+    '--frac', '-f', is_flag=True,
     help=('Count each target feature as 1/k (k is the number of targets '
           'mapped to a source). Otherwise, count as one.'))
 @click.option(
