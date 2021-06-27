@@ -19,21 +19,24 @@ output (via `click`) and file input/output, except for raising errors.
 from os import makedirs
 from os.path import join, basename, isfile, isdir
 from collections import deque, defaultdict
-from itertools import compress
 from functools import partial, lru_cache
+from typing import Tuple
 import click
 
-from .util import update_dict, allkeys, sum_dict, intize_dict
+from .util import (
+    update_dict, allkeys, sum_dict, scale_factor, scale_dict, round_dict)
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
 from .align import plain_mapper
 from .classify import (
-    assign_none, assign_free, assign_rank, count, count_strata)
+    assign_none, assign_free, assign_rank, counter, counter_size,
+    counter_strat, counter_size_strat)
 from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
-from .ordinal import ordinal_mapper, read_gene_coords, whether_prefix
+from .ordinal import (
+    ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
 from .table import prep_table, write_table
 
 
@@ -64,6 +67,11 @@ def workflow(input_fp:     str,
              overlap:      int = 80,
              # stratification
              strata_dir:   str = None,
+             # normalization
+             sizes:        str = None,
+             frac:        bool = False,
+             scale:        str = None,
+             digits:       int = None,
              # output
              output_fmt:   str = None,
              unassigned:  bool = False,
@@ -112,6 +120,9 @@ def workflow(input_fp:     str,
     # build mapping module
     mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
 
+    # parse length map
+    sizes = parse_sizes(sizes, mapper, zippers)
+
     # target classification ranks
     ranks, rank2dir = prepare_ranks(ranks, outmap_dir, tree, rankdic)
 
@@ -119,7 +130,17 @@ def workflow(input_fp:     str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
-        uniq, major, above, subok, unassigned, stratmap, chunk, cache, zippers)
+        uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
+        zippers)
+
+    # convert counts to fractions
+    frac_profiles(data, frac)
+
+    # scale values
+    scale_profiles(data, scale)
+
+    # round values and drop zeros
+    round_profiles(data, digits)
 
     # write output profiles
     write_profiles(
@@ -147,6 +168,7 @@ def classify(mapper:  object,
              major:      int = None,
              above:     bool = False,
              subok:     bool = False,
+             sizes:     dict = None,
              unasgd:    bool = False,
              stratmap:  dict = None,
              chunk:      int = None,
@@ -201,6 +223,8 @@ def classify(mapper:  object,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
+    sizes : dict, optional
+        Subject size dictionary.
     unasgd : bool, optional
         Report unassigned sequences.
     stratmap : dict, optional
@@ -219,9 +243,8 @@ def classify(mapper:  object,
 
     Notes
     -----
-    Subject(s) of each query are converted into a frozenset. This is because
-    frozenset is hashable, a property necessary for subsequent assignment
-    result caching.
+    Subject(s) of each query are sorted and converted into a tuple, which is
+    hashable, a property necessary for subsequent assignment result caching.
     """
     data = {x: {} for x in ranks}
 
@@ -232,8 +255,8 @@ def classify(mapper:  object,
     kwargs = {'assigners': assigners, 'cache': cache, 'tree': tree, 'rankdic':
               rankdic, 'namedic': namedic, 'root':  root, 'uniq': uniq,
               'major': major and major / 100, 'above': above, 'subok': subok,
-              'unasgd': unasgd, 'rank2dir': rank2dir, 'outzip': outzip if
-              outzip != 'none' else None}
+              'sizes': sizes, 'unasgd': unasgd, 'rank2dir': rank2dir,
+              'outzip': outzip if outzip != 'none' else None}
 
     # current sample Id
     csample = False
@@ -252,9 +275,9 @@ def classify(mapper:  object,
             for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
                 nqry += len(qryque)
 
-                # (optional) strip indices and freeze sets
-                subque = deque(strip_suffix(subque, trimsub) if trimsub else
-                               map(frozenset, subque))
+                # (optional) strip indices and generate tuples
+                subque = deque(map(tuple, map(sorted, strip_suffix(
+                    subque, trimsub) if trimsub else subque)))
 
                 # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
@@ -279,9 +302,6 @@ def classify(mapper:  object,
                     click.echo('.' * istep, nl=False)
                     nstep += istep
 
-        # round values and drop zeros
-        round_profiles(data, uniq, major, above)
-
         click.echo(' Done.')
         click.echo(f'  Number of sequences classified: {nqry}.')
 
@@ -292,7 +312,7 @@ def classify(mapper:  object,
 def parse_samples(fp:        str,
                   ext:       str = None,
                   samples:   str = None,
-                  demux:    bool = None) -> (list, list or dict, bool):
+                  demux:    bool = None) -> Tuple[list, list or dict, bool]:
     """Determine sample IDs, aligment files, and multiplex status.
 
     Parameters
@@ -430,7 +450,7 @@ def parse_strata(fp:       str = None,
 def build_mapper(coords_fp: str = None,
                  overlap:   int = None,
                  chunk:     int = None,
-                 zippers:  dict = None) -> (callable, int):
+                 zippers:  dict = None) -> Tuple[callable, int]:
     """Build mapper function (plain or ordinal).
 
     Parameters
@@ -477,10 +497,59 @@ def build_mapper(coords_fp: str = None,
         return plain_mapper, chunk
 
 
+def parse_sizes(sizes:       str,
+                mapper: callable,
+                zippers:    dict = None) -> dict or None:
+    """Generate a feature to length mapping.
+
+    Parameters
+    ----------
+    sizes : str
+        Path to feature size mapping file.
+    mapper : callable
+        Read/gene overlapping percentage threshold.
+    zippers : dict, optional
+        External compression programs.
+
+    Returns
+    -------
+    dict or None
+        Feature to length mapping.
+
+    Raises
+    ------
+    ValueError
+        Sizes is set as "." but gene coordinates file is not provided.
+    """
+    if not sizes:
+        return
+
+    # calculate gene lengths by coordinates
+    if sizes == '.':
+        click.echo('Calculating gene lengths from coordinates...', nl=False)
+        try:
+            sizemap = calc_gene_lens(
+                mapper.keywords['coords'], mapper.keywords['prefix'])
+        except AttributeError:
+            raise ValueError('Gene coordinates file is not provided.')
+        click.echo(' Done.')
+
+    # read sizes from file
+    else:
+        click.echo(f'Reading subject sizes file: {basename(sizes)}...',
+                   nl=False)
+        with readzip(sizes, zippers) as f:
+            sizemap = {k: float(v) for k, v in read_map_1st(f)}
+        click.echo(' Done.')
+
+    # convert to reciprocal
+    return {k: 1 / v for k, v in sizemap.items()}
+
+
 def prepare_ranks(ranks:      str = None,
                   outmap_dir: str = None,
                   tree:      dict = None,
-                  rankdic:   dict = None) -> (list, dict or None):
+                  rankdic:   dict = None) -> Tuple[list, dict or None]:
     """Prepare classification ranks and directories of read-to-feature maps.
 
     Parameters
@@ -546,7 +615,7 @@ def build_hierarchy(names_fps:   list = [],
                     columns_fps: list = [],
                     map_fps:     list = [],
                     map_as_rank: bool = False,
-                    zippers:     dict = None) -> (dict, dict, dict, str):
+                    zippers:     dict = None) -> Tuple[dict, dict, dict, str]:
     """Construct hierarchical classification system.
 
     Parameters
@@ -665,7 +734,7 @@ def strip_suffix(subque: list,
 
     Returns
     -------
-    generator of frozenset
+    generator of set
         Processed subject(s) queue.
 
     Notes
@@ -674,7 +743,7 @@ def strip_suffix(subque: list,
     and trim from it to the right end. If not found, the whole subject Id will
     be retained.
     """
-    return map(frozenset, map(partial(
+    return map(set, map(partial(
         map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
 
@@ -792,6 +861,7 @@ def assign_readmap(qryque:    list,
                    major:    float = None,
                    above:     bool = False,
                    subok:     bool = False,
+                   sizes:     dict = None,
                    unasgd:    bool = False,
                    strata:    dict = None):
     """Assign query sequences in a query-to-subjects map to classification
@@ -801,7 +871,7 @@ def assign_readmap(qryque:    list,
     ----------
     qryque : iterable of str
         Query queue to assign.
-    subque : iterable of frozenset
+    subque : iterable of tuple
         Subject(s) queue for assignment.
     data : dict
         Master data structure.
@@ -837,10 +907,17 @@ def assign_readmap(qryque:    list,
     subok : bool, optional
         In free-rank classification, allow assigning sequences to their direct
         subjects instead of higher classification units, if applicable.
+    sizes : dict, optional
+        Subject size dictionary, with which counts will be divided by sizes.
     unasgd : bool, optional
         Report unassigned sequences.
     strata : dict, optional
         Read-to-feature map for stratification.
+
+    Raises
+    ------
+    ValueError
+        One or more subjects are not found in the size map.
     """
     # determine assigner and initiate (if not already)
     if rank is None or rank == 'none' or tree is None:
@@ -861,68 +938,91 @@ def assign_readmap(qryque:    list,
         assigner = assigners[rank]
 
     # call assigner on suject(s) per query
-    resque = map(assigner, subque)
+    taxque = map(assigner, subque)
 
     # report or drop unassigned
     if unasgd:
-        resque = [x or 'Unassigned' for x in resque]
-    else:
-        resque = list(resque)
-        keep = list(map(None.__ne__, resque))
-        qryque, resque = list(compress(qryque, keep)), list(compress(
-            resque, keep))
+        taxque = (x or 'Unassigned' for x in taxque)
 
     # write classification map
     if rank2dir is not None:
+        taxque = list(taxque)
         outfp = join(rank2dir[rank], f'{sample}.txt')
         with openzip(f'{outfp}.{outzip}' if outzip else outfp, 'at') as fh:
-            write_readmap(fh, qryque, resque, namedic)
+            write_readmap(fh, qryque, taxque, namedic)
 
-    # count taxa
-    counts = count_strata(qryque, resque, strata) if strata else count(resque)
+    # determine counter and count taxon assignments
+    try:
+        counts = ((counter(taxque) if not sizes else
+                   counter_size(subque, taxque, sizes)) if not strata else
+                  (counter_strat(qryque, taxque, strata) if not sizes else
+                   counter_size_strat(qryque, subque, taxque, strata, sizes)))
+    except KeyError:
+        raise ValueError('One or more subjects are not found in the size map.')
 
     # combine old and new counts
-    if sample in data[rank]:
-        sum_dict(data[rank][sample], counts)
-    else:
-        data[rank][sample] = counts
+    sum_dict(data[rank].setdefault(sample, {}), counts)
 
 
-def round_profiles(data:   list,
-                   uniq:   bool = False,
-                   major: float = None,
-                   above:  bool = False):
-    """Round counts in profiles into integers, and drop zero counts.
+def frac_profiles(data: dict,
+                  frac: bool = False):
+    """Convert cell values to fractions (i.e., divide by sum of each sample).
 
     Parameters
     ----------
     data : dict
         Profile data.
-    uniq : bool, optional
-        Assignment is unique.
-    major : int, optional
-        Majority-rule assignment threshold.
-    above : bool, optional
-        Assignment above given rank.
+    frac : bool, optional
+        Whether convert counts to fractions.
+
+    Notes
+    -----
+    Samples with only zeros will be skipped.
+    """
+    if not frac:
+        return
+    for profile in data.values():
+        for sample in profile.values():
+            total = sum(sample.values())
+            if not total:
+                continue
+            for feature in sample:
+                sample[feature] /= total
+
+
+def scale_profiles(data: dict,
+                   scale: str = None):
+    """Scale cell values in profiles by a factor.
+
+    Parameters
+    ----------
+    data : dict
+        Profile data.
+    scale : str, optional
+        Scale factor.
+    """
+    if not scale:
+        return
+    scale = scale_factor(scale)
+    for rank in data:
+        for datum in data[rank].values():
+            scale_dict(datum, scale)
+
+
+def round_profiles(data:  dict,
+                   digits: int = None):
+    """Round cell values in profiles into integers, and drop zero values.
+
+    Parameters
+    ----------
+    data : dict
+        Profile data.
+    digits : int, optional
+        Digits after the decimal point.
     """
     for rank in data:
-
-        # free-rank classification is always unique
-        if rank == 'free':
-            continue
-
-        # non-unique no-rank classification needs to be rounded
-        elif rank == 'none':
-            if uniq:
-                continue
-            for datum in data[rank].values():
-                intize_dict(datum)
-
-        # given rank classification needs rounding when all three criteria
-        # are not met
-        elif not any((uniq, major, above)):
-            for datum in data[rank].values():
-                intize_dict(datum)
+        for datum in data[rank].values():
+            round_dict(datum, digits)
 
 
 def write_profiles(data:        dict,

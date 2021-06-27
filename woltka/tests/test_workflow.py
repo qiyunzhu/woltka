@@ -20,9 +20,9 @@ from biom import load_table
 from pandas.testing import assert_frame_equal
 
 from woltka.workflow import (
-    workflow, classify, parse_samples, parse_strata, build_mapper,
+    workflow, classify, parse_samples, parse_strata, build_mapper, parse_sizes,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
-    read_strata, round_profiles, write_profiles)
+    read_strata, frac_profiles, scale_profiles, round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -250,6 +250,37 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs[1], 50000)
         remove(fp)
 
+    def test_parse_sizes(self):
+        mapper = build_mapper()[0]
+
+        # sizes off
+        self.assertIsNone(parse_sizes(None, mapper))
+
+        # sizes on but no coords
+        with self.assertRaises(ValueError) as ctx:
+            self.assertIsNone(parse_sizes('.', mapper))
+        self.assertEqual(str(ctx.exception), (
+            'Gene coordinates file is not provided.'))
+
+        # size mapping file
+        fp = join(self.tmpdir, 'sizes.txt')
+        with open(fp, 'w') as f:
+            f.write('G1\t100\nG2\t200\nG3\t250\n')
+        obs = parse_sizes(fp, mapper)
+        exp = {'G1': 0.01, 'G2': 0.005, 'G3': 0.004}
+        self.assertDictEqual(obs, exp)
+        remove(fp)
+
+        # sizes from coords
+        fp = join(self.tmpdir, 'coords.txt')
+        with open(fp, 'w') as f:
+            f.write('>G1\n1\t11\t20\n2\t35\t50\n')
+        mapper = build_mapper(fp)[0]
+        obs = parse_sizes('.', mapper)
+        exp = {'1': 0.1, '2': 0.0625}
+        self.assertDictEqual(obs, exp)
+        remove(fp)
+
     def test_prepare_ranks(self):
         # no rank
         obs = prepare_ranks()
@@ -327,7 +358,7 @@ class WorkflowTests(TestCase):
         remove(fp)
 
         # lineage
-        fp = join(self.tmpdir, 'lineage.txt')
+        fp = join(self.tmpdir, 'lineages.txt')
         with open(fp, 'w') as f:
             f.write('a\te;d\nb\te\nc\te;d\n')
         obs = build_hierarchy(lineage_fps=[fp])
@@ -435,7 +466,7 @@ class WorkflowTests(TestCase):
     def test_assign_readmap(self):
         # simple ogu assignment
         qryq = ['R1', 'R2', 'R3']
-        subq = [frozenset(x) for x in [{'G1'}, {'G1', 'G2'}, {'G2', 'G3'}]]
+        subq = [('G1',), ('G1', 'G2'), ('G2', 'G3')]
         assigners = {}
         data = {'none': {}}
         assign_readmap(qryq, subq, data, 'none', 'S1', assigners)
@@ -476,6 +507,21 @@ class WorkflowTests(TestCase):
                        rankdic=rankdic)
         self.assertDictEqual(data['ko']['S1'], {'T1': 2.5, 'T2': 0.5})
 
+        # normalize by size
+        sizes = {'G1': 0.3, 'G2': 0.5, 'G3': 1.0}
+        data = {'ko': {}}
+        assign_readmap(qryq, subq, data, 'ko', 'S1', assigners, tree=tree,
+                       rankdic=rankdic, sizes=sizes)
+        self.assertDictEqual(data['ko']['S1'], {'T1': 0.95, 'T2': 0.5})
+
+        # missing size
+        del(sizes['G3'])
+        with self.assertRaises(ValueError) as ctx:
+            assign_readmap(qryq, subq, {'ko': {}}, 'ko', 'S1', assigners,
+                           tree=tree, rankdic=rankdic, sizes=sizes)
+        self.assertEqual(str(ctx.exception), (
+            'One or more subjects are not found in the size map.'))
+
     def test_read_strata(self):
         # regular strata file
         fp = join(self.datdir, 'output', 'burst.genus.map', 'S01.txt.gz')
@@ -488,45 +534,51 @@ class WorkflowTests(TestCase):
         self.assertEqual(str(ctx.exception), (
             'No stratification information is found in file: tree.nwk.'))
 
-    def test_round_profiles(self):
-        # free-rank: don't round
+    def test_frac_profiles(self):
+        obs = {'none': {'S1': {'G1': 6,  'G2': 4},
+                        'S2': {'G1': 15, 'G3': 5},
+                        'S3': {}}}
+        frac_profiles(obs)
+        self.assertDictEqual(obs, obs)
+        frac_profiles(obs, True)
+        exp = {'none': {'S1': {'G1': 0.6,  'G2': 0.4},
+                        'S2': {'G1': 0.75, 'G3': 0.25},
+                        'S3': {}}}
+        self.assertDictEqual(obs, exp)
+
+    def test_scale_profiles(self):
+        # scale up by 100
         obs = {'free': {'S1': {'G1': 1, 'G2': 2},
                         'S2': {'G1': 3, 'G3': 2}}}
-        round_profiles(obs)
-        exp = {'free': {'S1': {'G1': 1, 'G2': 2},
-                        'S2': {'G1': 3, 'G3': 2}}}
+        scale_profiles(obs, '100')
+        exp = {'free': {'S1': {'G1': 100, 'G2': 200},
+                        'S2': {'G1': 300, 'G3': 200}}}
         self.assertEqual(obs, exp)
 
-        # none-rank: round
+        # scale up by 2,500
         obs = {'none': {'S1': {'G1': 1.3, 'G2': 2.2},
                         'S2': {'G1': 3.0, 'G3': 2.1}}}
+        scale_profiles(obs, '2.5k')
+        exp = {'none': {'S1': {'G1': 3250.0, 'G2': 5500.0},
+                        'S2': {'G1': 7500.0, 'G3': 5250.0}}}
+        self.assertEqual(obs, exp)
+
+        # no scaling
+        scale_profiles(obs, None)
+        self.assertEqual(obs, exp)
+
+    def test_round_profiles(self):
+        obs = {'none': {'S1': {'G1': 1.38, 'G2': 2.25},
+                        'S2': {'G1': 3.05, 'G3': 2.16}}}
         round_profiles(obs)
         exp = {'none': {'S1': {'G1': 1, 'G2': 2},
                         'S2': {'G1': 3, 'G3': 2}}}
-        self.assertEqual(obs, exp)
-
-        # none-rank and unique: don't round
-        obs = {'none': {'S1': {'G1': 1.5, 'G2': 0},
-                        'S2': {'G1': 3.0, 'G3': 2}}}
-        round_profiles(obs, uniq=True)
-        exp = {'none': {'S1': {'G1': 1.5, 'G2': 0},
-                        'S2': {'G1': 3.0, 'G3': 2}}}
         self.assertDictEqual(obs, exp)
-
-        # given-rank: round
-        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
-                         'S2': {'G1': 3.0, 'G3': 2}}}
-        round_profiles(obs)
-        exp = {'class': {'S1': {'G1': 2},
-                         'S2': {'G1': 3, 'G3': 2}}}
-        self.assertDictEqual(obs, exp)
-
-        # given-rank: don't round
-        obs = {'class': {'S1': {'G1': 1.5, 'G2': 0},
-                         'S2': {'G1': 3.0, 'G3': 2}}}
-        round_profiles(obs, uniq=False, major=0, above=True)
-        exp = {'class': {'S1': {'G1': 1.5, 'G2': 0},
-                         'S2': {'G1': 3.0, 'G3': 2}}}
+        obs = {'none': {'S1': {'G1': 1.38, 'G2': 2.25},
+                        'S2': {'G1': 3.05, 'G3': 2.16, 'G4': 0.04}}}
+        round_profiles(obs, 1)
+        exp = {'none': {'S1': {'G1': 1.4, 'G2': 2.2},
+                        'S2': {'G1': 3.0, 'G3': 2.2}}}
         self.assertDictEqual(obs, exp)
 
     def test_write_profiles(self):

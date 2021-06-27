@@ -79,7 +79,7 @@ def plain_mapper(fh, fmt=None, n=1000):
 
         # add subject to subject set of the same query Id
         if query == this:
-            subque[-1].append(subject)
+            subque[-1].add(subject)
 
         # when query Id changes,
         else:
@@ -102,7 +102,7 @@ def plain_mapper(fh, fmt=None, n=1000):
 
             # create new query and subject set pair
             qry_append(query)
-            sub_append([subject])
+            sub_append({subject})
 
             # update current query Id
             this = query

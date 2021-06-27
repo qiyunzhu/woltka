@@ -21,8 +21,8 @@ from biom import load_table, Table
 from pandas.testing import assert_frame_equal
 
 from woltka.biom import (
-    table_to_biom, biom_to_table, write_biom, filter_biom, round_biom,
-    biom_add_metacol, collapse_biom)
+    table_to_biom, biom_to_table, write_biom, biom_max_f, divide_biom,
+    scale_biom, filter_biom, round_biom, biom_add_metacol, collapse_biom)
 from woltka.table import prep_table
 
 
@@ -95,6 +95,39 @@ class BiomTests(TestCase):
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
         remove(fp)
 
+    def test_biom_max_f(self):
+        table = Table(*map(np.array, prep_table({
+            'S1': {'G1': 0, 'G2': 1, 'G3': 200},
+            'S2': {'G1': 1.5, 'G2': 2.475, 'G3': 8.12782},
+            'S3': {'G1': 1e-5, 'G2': 33.905, 'G3': 3.1415926}})))
+        self.assertEqual(biom_max_f(table), 7)
+
+    def test_divide_biom(self):
+        obs = Table(*map(np.array, prep_table({
+            'S1': {'G1': 20, 'G2': 36, 'G3': 4},
+            'S2': {'G1': 15, 'G2': 24, 'G3': 8},
+            'S3': {'G1': 10, 'G2': 18, 'G3': 0}})))
+        sizes = {'G1': 5, 'G2': 6, 'G3': 2}
+        divide_biom(obs, sizes)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 6, 'G3': 2},
+            'S2': {'G1': 3, 'G2': 4, 'G3': 4},
+            'S3': {'G1': 2, 'G2': 3, 'G3': 0}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        del(sizes['G3'])
+        with self.assertRaises(KeyError):
+            divide_biom(obs, sizes)
+
+    def test_scale_biom(self):
+        obs = Table(*map(np.array, prep_table({
+            'S1': {'G1': 4, 'G2': 7, 'G3': 0},
+            'S2': {'G1': 2, 'G2': 3, 'G3': 1}})))
+        scale_biom(obs, 3)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 12, 'G2': 21, 'G3': 0},
+            'S2': {'G1':  6, 'G2':  9, 'G3': 3}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
     def test_filter_biom(self):
         table = Table(*map(np.array, prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8},
@@ -149,6 +182,14 @@ class BiomTests(TestCase):
             'S1': {'G1': 0, 'G3': 2},
             'S2': {'G1': 2, 'G3': 2},
             'S3': {'G1': 2, 'G3': 4}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        obs = Table(*map(np.array, prep_table({
+            'S1': {'G1': 0.225, 'G2': 0.0,   'G3': 2.375},
+            'S2': {'G1': 1.547, 'G2': 0.173, 'G3': 1.499}})))
+        round_biom(obs, 2)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 0.23, 'G2': 0.0,  'G3': 2.38},
+            'S2': {'G1': 1.55, 'G2': 0.17, 'G3': 1.5}})))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
     def test_biom_add_metacol(self):

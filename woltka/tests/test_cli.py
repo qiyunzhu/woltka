@@ -19,7 +19,8 @@ import gzip
 from click.testing import CliRunner
 
 from woltka.cli import (
-    cli, classify_cmd, filter_cmd, merge_cmd, collapse_cmd, coverage_cmd)
+    cli, classify_cmd, normalize_cmd, filter_cmd, merge_cmd, collapse_cmd,
+    coverage_cmd)
 
 
 class CliTests(TestCase):
@@ -55,14 +56,14 @@ class CliTests(TestCase):
         params = ['--input',  join(self.alndir, 'bowtie2'),
                   '--output', output_fp,
                   '--nodes',  join(self.taxdir, 'nodes.dmp'),
-                  '--map',    join(self.taxdir, 'g2tid.txt'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
                   '--rank',   'free']
         _test_params(params, 'bowtie2.free.tsv')
 
         # blastn, multiplexed, lineage-based, species-level classification
         params = ['--input',   join(self.alndir, 'blastn', 'mux.b6o.xz'),
                   '--output',  output_fp,
-                  '--lineage', join(self.taxdir, 'lineage.txt'),
+                  '--lineage', join(self.taxdir, 'lineages.txt'),
                   '--rank',    'species']
         _test_params(params, 'blastn.species.tsv')
 
@@ -72,7 +73,7 @@ class CliTests(TestCase):
                   '--outmap', self.tmpdir,
                   '--names',  join(self.taxdir, 'names.dmp'),
                   '--nodes',  join(self.taxdir, 'nodes.dmp'),
-                  '--map',    join(self.taxdir, 'g2tid.txt'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
                   '--rank',   'genus',
                   '--name-as-id']
         _test_params(params, 'burst.genus.tsv')
@@ -87,6 +88,32 @@ class CliTests(TestCase):
                 exp = f.read()
             self.assertEqual(obs, exp)
             remove(outmap_fp)
+
+        # blastn, family-level classification, report relative abundance (%)
+        params = ['--input',  join(self.alndir, 'blastn', 'mux.b6o.xz'),
+                  '--output', output_fp,
+                  '--names',  join(self.taxdir, 'names.dmp'),
+                  '--nodes',  join(self.taxdir, 'nodes.dmp'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
+                  '--rank',   'family',
+                  '--name-as-id',
+                  '--frac',
+                  '--scale',  '100',
+                  '--digits', 2]
+        _test_params(params, 'blastn.family.percent.tsv')
+
+        # bt2sho, order-level, genome size-normalized classification
+        # unit: reads per million bases (of genome)
+        params = ['--input',  join(self.alndir, 'bt2sho'),
+                  '--output', output_fp,
+                  '--names',  join(self.taxdir, 'names.dmp'),
+                  '--nodes',  join(self.taxdir, 'nodes.dmp'),
+                  '--map',    join(self.taxdir, 'taxid.map'),
+                  '--rank',   'order',
+                  '--sizes',  join(self.taxdir, 'length.map'),
+                  '--scale',  '1M',
+                  '--digits', 3]
+        _test_params(params, 'bt2sho.order.cpm.tsv')
 
         # bt2sho phylogeny-based classification
         params = ['--input',  join(self.alndir, 'bt2sho'),
@@ -117,6 +144,20 @@ class CliTests(TestCase):
                   '--stratify', join(self.outdir, 'burst.genus.map')]
         _test_params(params, 'burst.genus.process.tsv')
 
+        # bt2sho, classification by GO component, normalization by gene length
+        # unit: reads per kilobase (RPK)
+        params = ['--input',  join(self.alndir, 'bt2sho'),
+                  '--output', output_fp,
+                  '--rank',   'component',
+                  '--coords', join(self.fundir, 'coords.txt.xz'),
+                  '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
+                  '--map',    join(self.fundir, 'go', 'component.tsv.xz'),
+                  '--map-as-rank',
+                  '--sizes',  '.',
+                  '--scale',  '1k',
+                  '--digits', 3]
+        _test_params(params, 'bt2sho.component.rpk.tsv')
+
         # simple map (from burst) against genes, classification at genus level
         params = ['--input',    join(self.alndir, 'burst', 'split'),
                   '--trim-sub', '_',
@@ -139,10 +180,28 @@ class CliTests(TestCase):
 
         remove(output_fp)
 
+    def test_classify_cmd(self):
+        input_fp = join(self.datdir, 'output', 'bowtie2.ogu.tsv')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        sizes_fp = join(self.datdir, 'taxonomy', 'length.map')
+        params = ['--input',  input_fp,
+                  '--output', output_fp,
+                  '--sizes',  sizes_fp,
+                  '--scale',  '1M']
+        res = self.runner.invoke(normalize_cmd, params)
+        self.assertEqual(res.exit_code, 0)
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Normalized profile written.')
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertIn('G000007325\t0\t12\t0\t0\t104', obs)
+        self.assertIn('G000215745\t0\t0\t0\t358\t0', obs)
+        remove(output_fp)
+
     def test_filter_cmd(self):
         input_fp = join(self.outdir, 'bowtie2.free.tsv')
         output_fp = join(self.tmpdir, 'output.tsv')
-        params = ['--input', input_fp,
+        params = ['--input',  input_fp,
                   '--output', output_fp,
                   '--min-percent', 1]
         res = self.runner.invoke(filter_cmd, params)

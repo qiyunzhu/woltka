@@ -17,10 +17,71 @@ from os.path import isdir, join, basename
 import click
 
 from .table import (
-    read_table, table_shape, filter_table, write_table, merge_tables,
+    read_table, table_shape, table_max_f, frac_table, divide_table,
+    scale_table, round_table, write_table, filter_table, merge_tables,
     add_metacol, collapse_table, calc_coverage)
-from .file import readzip, read_map_many, read_map_all
+from .file import readzip, read_map_1st, read_map_many, read_map_all
+from .util import scale_factor
 from .tree import read_names
+
+
+def normalize_wf(input_fp:  str,
+                 output_fp: str,
+                 sizes_fp:  str = None,
+                 scale:     str = None,
+                 digits:    int = None):
+    """Workflow for normalizing a profile.
+
+    Raises
+    ------
+    SystemExit
+        Scale factor is not valid.
+    SystemExit
+        Feature not found in size map.
+    """
+    # read input profile
+    table, fmt = read_table(input_fp)
+
+    # estimate maximum decimal precision
+    if digits is None:
+        digits = table_max_f(table)
+
+    # normalize to fractions
+    if not sizes_fp:
+        click.echo('Normalizing profile to fractions...', nl=False)
+        table = frac_table(table)
+        click.echo(' Done.')
+
+    # filter profile by threshold
+    else:
+        click.echo(f'Reading feature sizes from file: {basename(sizes_fp)}...',
+                   nl=False)
+        with readzip(sizes_fp, {}) as f:
+            sizes = {k: float(v) for k, v in read_map_1st(f)}
+        click.echo(' Done.')
+        click.echo('Normalizing profile by feature size...', nl=False)
+        try:
+            divide_table(table, sizes)
+        except KeyError:
+            exit('One or more features are not found in the size map.')
+        click.echo(' Done.')
+
+    # scale table values
+    if scale:
+        try:
+            scale = scale_factor(scale)
+        except ValueError:
+            exit(f'"{scale}" is not a valid scale factor.')
+        click.echo(f'Scaling profile by {scale} times...', nl=False)
+        scale_table(table, scale)
+        click.echo(' Done.')
+
+    # round table values
+    round_table(table, digits or None)
+
+    # write normalized profile
+    write_table(table, output_fp)
+    click.echo('Normalized profile written.')
 
 
 def filter_wf(input_fp:      str,
@@ -112,6 +173,9 @@ def merge_wf(input_fps: list,
         exit('Please provide two or more profiles.')
     click.echo(f'Done. Number of profiles read: {len(tables)}.')
 
+    # estimate maximum decimal precision
+    digits = max(map(table_max_f, tables))
+
     # merge profiles
     click.echo('Merging profiles...', nl=False)
     table = merge_tables(tables)
@@ -119,6 +183,9 @@ def merge_wf(input_fps: list,
     n, m = table_shape(table)
     click.echo(f'Number of samples after merging: {m}.')
     click.echo(f'Number of features after merging: {n}.')
+
+    # round table values
+    round_table(table, digits or None)
 
     # write merged profile
     write_table(table, output_fp)
@@ -147,6 +214,9 @@ def collapse_wf(input_fp:   str,
     n = table_shape(table)[0]
     click.echo(f'Number of features before collapsing: {n}.')
 
+    # maximum decimal precision
+    digits = table_max_f(table)
+
     # read mapping file (many-to-many okay)
     with readzip(map_fp, {}) as f:
         mapping = read_map_many(f)
@@ -165,6 +235,9 @@ def collapse_wf(input_fp:   str,
         with readzip(names_fp, {}) as f:
             namedic = read_names(f)
         add_metacol(table, namedic, 'Name')
+
+    # round table values
+    round_table(table, digits or None)
 
     # write collapsed profile
     write_table(table, output_fp)

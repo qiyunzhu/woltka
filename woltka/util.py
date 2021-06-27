@@ -93,6 +93,56 @@ def sum_dict(dic, other):
         dic[key] = dic.get(key, 0) + value
 
 
+def scale_factor(s):
+    """Convert scale factor string to number.
+
+    Parameters
+    ----------
+    s : str
+        Scale factor string.
+
+    Returns
+    -------
+    int or float
+        Scale factor number.
+
+    Raises
+    ------
+    ValueError
+        Invalid scale factor.
+    """
+    s = s.strip().lower()
+    if s.endswith('k'):
+        factor = 1000
+        s = s[:-1]
+    elif s.endswith('m'):
+        factor = 1000000
+        s = s[:-1]
+    else:
+        factor = 1
+    try:
+        return int(s) * factor
+    except ValueError:
+        try:
+            return float(s) * factor
+        except ValueError:
+            raise ValueError('Invalid scale factor.')
+
+
+def scale_dict(dic, factor):
+    """Multiple each value of a dictionary by a scaling factor.
+
+    Parameters
+    ----------
+    dic : dict
+        Dictionary to be updated.
+    factor : int or float
+        Scaling factor.
+    """
+    for key in dic:
+        dic[key] *= factor
+
+
 def intize(num):
     """Round a floating point number to an integer.
 
@@ -100,6 +150,11 @@ def intize(num):
     ----------
     num : float
         Number to round.
+
+    Returns
+    -------
+    int
+        Rounded number.
 
     See Also
     --------
@@ -152,7 +207,7 @@ def intize_list(lst):
 
     Parameters
     ----------
-    list : list
+    lst : list
         Input list.
 
     See Also
@@ -201,6 +256,95 @@ def intize_dict(dic, zero=False):
             intval = round(value)
 
         # keep or skip zero values
+        if intval or zero:
+            dic[key] = intval
+        else:
+            add_todel(key)
+    for key in todel:
+        del dic[key]
+
+
+def rounder(num, digits=None):
+    """Round a floating point number to given number of digits after the
+    decimal point.
+
+    Parameters
+    ----------
+    num : float
+        Number to round.
+    digits : int, optional
+        Digits after the decimal point.
+
+    Returns
+    -------
+    int or float
+        Rounded number.
+
+    See Also
+    --------
+    initize
+
+    Notes
+    -----
+    Variant of `intize`, allowing rounding to custom decimal precision.
+    """
+    near = round(num * 2, digits) / 2
+    if abs(num - near) <= (1e-7 / 10 ** digits if digits else 1e-7):
+        return round(near, digits)
+    else:
+        return round(num, digits)
+
+
+def round_list(lst, digits=None):
+    """Round list elements in place.
+
+    Parameters
+    ----------
+    lst : list
+        Input list.
+    digits : int, optional
+        Digits after the decimal point.
+
+    See Also
+    --------
+    rounder
+    intize_list
+    """
+    error = 1e-7 / 10 ** digits if digits else 1e-7
+    for i, element in enumerate(lst):
+        near = round(element * 2, digits) / 2
+        if abs(element - near) <= error:
+            lst[i] = round(near, digits)
+        else:
+            lst[i] = round(element, digits)
+
+
+def round_dict(dic, digits=None, zero=False):
+    """Round dictionary values in place.
+
+    Parameters
+    ----------
+    dic : dict
+        Input dictionary.
+    digits : int, optional
+        Digits after the decimal point.
+    zero : bool, optional
+        Whether keep zero values.
+
+    See Also
+    --------
+    rounder
+    intize_dict
+    """
+    todel = []
+    add_todel = todel.append
+    error = 1e-7 / 10 ** digits if digits else 1e-7
+    for key, value in dic.items():
+        near = round(value * 2, digits) / 2
+        if abs(value - near) <= error:
+            intval = round(near, digits)
+        else:
+            intval = round(value, digits)
         if intval or zero:
             dic[key] = intval
         else:

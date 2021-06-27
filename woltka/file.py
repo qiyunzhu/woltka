@@ -19,6 +19,8 @@ import gzip
 import bz2
 import lzma
 
+from .util import count_list
+
 
 zipfmts = {'.gz':   'gzip', '.gzip':   'gzip',
            '.bz2': 'bzip2', '.bzip2': 'bzip2',
@@ -480,14 +482,18 @@ def write_readmap(fh, qryque, taxque, namedic=None):
     """
     # sort subjects by count (high-to-low) then by alphabet
     def sortkey(x): return -x[1], x[0]
+    is_name = bool(namedic)
     for query, taxa in zip(qryque, taxque):
+        if not taxa:
+            continue
         row = [query]
-        if isinstance(taxa, dict):
-            for taxon, count in sorted(taxa.items(), key=sortkey):
-                if namedic and taxon in namedic:
+        if isinstance(taxa, list):
+            for taxon, count in sorted(count_list(filter(None, taxa)).items(),
+                                       key=sortkey):
+                if is_name and taxon in namedic:
                     taxon = namedic[taxon]
                 row.append(taxon + ':' + str(count))
-        elif namedic and taxa in namedic:
+        elif is_name and taxa in namedic:
             row.append(namedic[taxa])
         else:
             row.append(taxa)

@@ -162,7 +162,7 @@ Organic compounds; Lipids; Steroids; Bile acids; Glycinated bile acids
 
 Woltka reads a mapping of `subject <tab> lineage` and constructs hierarchies.
 
-In taxonomic classification, a common practice is to add a single-letter prefix to each taxon, representing its taxonomic rank. For example (see [taxonomy/lineage.txt](../woltka/tests/data/taxonomy/lineage.txt)):
+In taxonomic classification, a common practice is to add a single-letter prefix to each taxon, representing its taxonomic rank. For example (see [taxonomy/lineages.txt](../woltka/tests/data/taxonomy/lineages.txt)):
 
 ```
 Seq1 <tab> k__Bacteria; p__Firmicutes; c__Bacilli
@@ -204,7 +204,7 @@ Woltka will construct classification hierarchies from this table, and will repor
 
 ### 5. Simple map (`--map` or `-m`)
 
-The simplest form of mapping of `taxon <tab> parent`. For example ([taxonomy/g2tid.txt](../woltka/tests/data/taxonomy/g2tid.txt)):
+The simplest form of mapping of `taxon <tab> parent`. For example ([taxonomy/taxid.map](../woltka/tests/data/taxonomy/taxid.map)):
 
 ```
 G000006745 <tab> 243277

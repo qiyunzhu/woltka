@@ -14,7 +14,8 @@ from os.path import join, dirname, realpath
 from shutil import rmtree, copy
 from tempfile import mkdtemp
 
-from woltka.tools import filter_wf, merge_wf, collapse_wf, coverage_wf
+from woltka.tools import (
+    normalize_wf, filter_wf, merge_wf, collapse_wf, coverage_wf)
 
 
 class ToolsTests(TestCase):
@@ -24,6 +25,39 @@ class ToolsTests(TestCase):
 
     def tearDown(self):
         rmtree(self.tmpdir)
+
+    def test_normalize_wf(self):
+        input_fp = join(self.datdir, 'output', 'bowtie2.ogu.tsv')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+
+        # relative abundance
+        normalize_wf(input_fp, output_fp, digits=3)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertIn('G000007325\t0.0\t0.013\t0.0\t0.0\t0.113', obs)
+        self.assertIn('G000215745\t0.0\t0.0\t0.0\t0.944\t0.0', obs)
+
+        # by genome size (cpm)
+        sizes_fp = join(self.datdir, 'taxonomy', 'length.map')
+        normalize_wf(input_fp, output_fp, sizes_fp, scale='1M')
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertIn('G000007325\t0\t12\t0\t0\t104', obs)
+        self.assertIn('G000215745\t0\t0\t0\t358\t0', obs)
+
+        # bad scale param
+        with self.assertRaises(SystemExit) as ctx:
+            normalize_wf(input_fp, output_fp, scale='Hi!')
+        errmsg = '"Hi!" is not a valid scale factor.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+        # missing sizes
+        sizes_fp = join(self.datdir, 'function', 'coords.txt.xz')
+        with self.assertRaises(SystemExit) as ctx:
+            normalize_wf(input_fp, output_fp, sizes_fp)
+        errmsg = 'One or more features are not found in the size map.'
+        self.assertEqual(str(ctx.exception), errmsg)
+        remove(output_fp)
 
     def test_filter_wf(self):
         input_fp = join(self.datdir, 'output', 'blastn.species.tsv')
@@ -103,6 +137,23 @@ class ToolsTests(TestCase):
             merge_wf([input_fp], output_fp)
         errmsg = 'Cannot parse test3.tsv as a profile.'
         self.assertEqual(str(ctx.exception), errmsg)
+
+        # keep original decimal precision
+        input_fp1 = join(self.tmpdir, '1st.tsv')
+        with open(input_fp1, 'w') as f:
+            f.write('#FeatureID\tS01\nG01\t1.1')
+        input_fp2 = join(self.tmpdir, '2nd.tsv')
+        with open(input_fp2, 'w') as f:
+            f.write('#FeatureID\tS01\nG01\t2.2')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        merge_wf([input_fp1, input_fp2], output_fp)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['#FeatureID\tS01', 'G01\t3.3']
+        self.assertListEqual(obs, exp)
+        remove(output_fp)
+        remove(input_fp1)
+        remove(input_fp2)
 
     def test_collapse_wf(self):
         input_fp = join(self.datdir, 'output', 'truth.gene.tsv')

@@ -137,9 +137,10 @@ In `outmap_dir`, there will be three subdirectories: `phylum`, `genus` and `spec
 
 ## Table utilities
 
-Woltka provides several utilities under the `tools` menu for table manipulation (both BIOM and TSV are supported and automatically recognized). Here are details:
+Woltka provides several utilities under the `tools` menu for table manipulation (both BIOM and TSV are supported and automatically recognized). They are:
 
 - [**Collapse**](collapse.md): Collapse a profile based on a source-to-target feature mapping; supporting many-to-many relationships.
 - [**Coverage**](coverage.md): Calculate per-sample coverage of feature groups, such as the completeness of metabolic pathways or core gene sets.
+- [**Normalize**](normalize.md): Normalize a profile based on feature sizes or into relative abundances.
 - [**Filter**](filter.md): Filter features by per-sample abundance.
 - [**Merge**](merge.md): Merge multiple profiles into one.

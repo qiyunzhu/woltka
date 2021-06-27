@@ -109,7 +109,7 @@ Woltka allows overlaying two or more classification schemes on the same profile 
 First, perform taxonomic classification at the desired rank (e.g., genus) and generate read-to-genus maps (using parameter `--outmap` or `-u`).
 
 ```bash
-woltka classify -i input_dir --lineage lineage.txt -r genus -o genus.biom -u map_dir
+woltka classify -i input_dir --lineage lineages.txt -r genus -o genus.biom -u map_dir
 ```
 
 Second, perform functional classification. This command is identical to the first command in this document, except for the addition of `--stratify` or `-t` parameter pointing to the genus maps, which will be incorporated into the functional classes ([see details](stratify.md)).

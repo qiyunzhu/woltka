@@ -25,7 +25,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Coordinates matching](doc/ordinal.md)
   - [Stratification](doc/stratify.md)
 - Profile tools
-  - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
+  - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Normalize](normalize.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - Tutorials
   - [Working with WoL](doc/wol.md)
   - [OGU analysis](doc/ogu.md)
@@ -99,14 +99,14 @@ The output file, `table.biom`, is a feature table in BIOM format, which can then
 ```bash
 woltka classify \
   -i align/bowtie2 \
-  --map taxonomy/g2tid.txt \
+  --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
   --rank phylum,genus,species \
   -o output_dir
 ```
 
-The mapping file (`g2tid.txt`) translates genome IDs to taxonomic IDs, which then allows Woltka to classify query sequences based on the NCBI taxonomy (`nodes.dmp` and `names.dmp`).
+The mapping file (`taxid.map`) translates genome IDs to taxonomic IDs, which then allows Woltka to classify query sequences based on the NCBI taxonomy (`nodes.dmp` and `names.dmp`).
 
 The output directory (`output_dir`) will contain three feature tables: `phylum.biom`, `genus.biom` and `species.biom`, each representing a taxonomic profile at one of the three ranks.
 
