@@ -236,7 +236,7 @@ class CliTests(TestCase):
                   '--map',    map_fp,
                   '--output', output_fp,
                   '--names',  names_fp,
-                  '--normalize']
+                  '--divide']
         res = self.runner.invoke(collapse_cmd, params)
         self.assertEqual(res.exit_code, 0)
         self.assertEqual(res.output.splitlines()[-1],

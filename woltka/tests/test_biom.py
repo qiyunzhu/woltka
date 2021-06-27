@@ -272,7 +272,7 @@ class BiomTests(TestCase):
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
         # many-to-many mapping, with normalization
-        obs = collapse_biom(table.copy(), mapping, normalize=True)
+        obs = collapse_biom(table.copy(), mapping, divide=True)
         exp = Table(*map(np.array, prep_table({
             'S1': {'H1': 6, 'H2': 5, 'H3': 3, 'H4': 6, 'H5': 0},
             'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
@@ -283,7 +283,7 @@ class BiomTests(TestCase):
         table = Table(*map(np.array, prep_table({
             'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})))
         mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
-        obs = collapse_biom(table.copy(), mapping, normalize=True)
+        obs = collapse_biom(table.copy(), mapping, divide=True)
         self.assertTrue(obs.is_empty())
         self.assertListEqual(list(obs.ids('sample')), ['S1', 'S2', 'S3'])
         self.assertListEqual(list(obs.ids('observation')), [])

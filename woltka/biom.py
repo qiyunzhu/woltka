@@ -194,8 +194,7 @@ def biom_add_metacol(table: biom.Table, dic, name, missing=''):
     table.add_metadata(metadata, axis='observation')
 
 
-def collapse_biom(table: biom.Table, mapping: dict, normalize=False,
-                  field=None):
+def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
     """Collapse a BIOM table in many-to-many mode.
 
     Parameters
@@ -204,8 +203,8 @@ def collapse_biom(table: biom.Table, mapping: dict, normalize=False,
         Table to collapse.
     mapping : dict of list of str
         Source-to-target(s) mapping.
-    normalize : bool, optional
-        Whether normalize per-target counts by number of targets per source.
+    divide : bool, optional
+        Whether divide per-target counts by number of targets per source.
     field : int, optional
         Index of field to be collapsed in a stratified table.
 
@@ -261,13 +260,13 @@ def collapse_biom(table: biom.Table, mapping: dict, normalize=False,
 
     # determine collapsing method
     kwargs = dict(norm=False, one_to_many=True, axis='observation',
-                  one_to_many_mode=('divide' if normalize else 'add'))
+                  one_to_many_mode=('divide' if divide else 'add'))
 
     # collapse table in many-to-many mode
     table = table.collapse(lambda _, md: zip(md['part'], md['part']), **kwargs)
 
     # round to integers
-    if normalize:
+    if divide:
         round_biom(table)
 
     # clean up

@@ -714,7 +714,7 @@ class TableTests(TestCase):
             self.assertListEqual(obs[i], exp[i])
 
         # many-to-many mapping, with normalization
-        obs = collapse_table(table, mapping, normalize=True)
+        obs = collapse_table(table, mapping, divide=True)
         exp = prep_table({
             'S1': {'H1': 6.5, 'H2': 5.166666666666666,
                    'H3': 2.6666666666666665, 'H4': 5.666666666666666,

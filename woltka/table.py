@@ -560,7 +560,7 @@ def add_metacol(table, dic, name, missing=''):
         metadatum[name] = dic.get(feature, missing)
 
 
-def collapse_table(table, mapping, normalize=False, field=None):
+def collapse_table(table, mapping, divide=False, field=None):
     """Collapse a table by many-to-many mapping.
 
     Parameters
@@ -569,8 +569,8 @@ def collapse_table(table, mapping, normalize=False, field=None):
         Table to collapse.
     mapping : dict of list of str
         Source-to-target(s) mapping.
-    normalize : bool, optional
-        Whether normalize per-target counts by number of targets per source.
+    divide : bool, optional
+        Whether divide per-target counts by number of targets per source.
     field : int, optional
         Index of field to be collapsed in a stratified table.
 
@@ -590,7 +590,7 @@ def collapse_table(table, mapping, normalize=False, field=None):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return collapse_biom(table, mapping, normalize, field)
+        return collapse_biom(table, mapping, divide, field)
 
     # collapse table
     samples = table[2]
@@ -607,7 +607,7 @@ def collapse_table(table, mapping, normalize=False, field=None):
         if feature not in mapping:
             continue
         targets = mapping[feature]
-        if normalize:
+        if divide:
             k = 1 / len(targets)
             datum = [x * k for x in datum]
         for target in targets:

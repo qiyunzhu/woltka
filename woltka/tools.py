@@ -192,12 +192,12 @@ def merge_wf(input_fps: list,
     click.echo('Merged profile written.')
 
 
-def collapse_wf(input_fp:   str,
-                map_fp:     str,
-                output_fp:  str,
-                normalize: bool = False,
-                field:      int = None,
-                names_fp:   str = None):
+def collapse_wf(input_fp:  str,
+                map_fp:    str,
+                output_fp: str,
+                divide:   bool = False,
+                field:     int = None,
+                names_fp:  str = None):
     """Workflow for collapsing a profile based on many-to-many mapping.
 
     Raises
@@ -230,7 +230,7 @@ def collapse_wf(input_fp:   str,
 
     # collapse profile by mapping
     click.echo('Collapsing profile...', nl=False)
-    table = collapse_table(table, mapping, normalize, field)
+    table = collapse_table(table, mapping, divide, field)
     click.echo(' Done.')
     n = table_shape(table)[0]
     click.echo(f'Number of features after collapsing: {n}.')
