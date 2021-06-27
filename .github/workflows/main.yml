@@ -22,7 +22,7 @@ jobs:
         run: echo $CONDA/bin >> $GITHUB_PATH
 
       - name: Install dependencies
-        run: conda env update --file ci/conda_requirements.txt  --name base
+        run: conda env update -c conda-forge --file ci/conda_requirements.txt --name base
 
       - name: Install CI packages
         run: conda install -c conda-forge flake8 coveralls
