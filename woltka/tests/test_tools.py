@@ -193,6 +193,20 @@ class ToolsTests(TestCase):
         errmsg = 'No source-target relationship is found in tree.nwk.'
         self.assertEqual(str(ctx.exception), errmsg)
 
+        # stratified profile
+        input_fp = join(self.datdir, 'output', 'burst.genus.process.tsv')
+        map_fp = join(self.datdir, 'function', 'go', 'go2slim.map.xz')
+        collapse_wf(input_fp, map_fp, output_fp, field=2)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 279)
+        for line in obs:
+            if line.startswith('Klebsiella|GO:0008150'):
+                self.assertEqual(line[22:], '2\t47\t0\t87\t0')
+            if line.startswith('Streptococcus|GO:0008150'):
+                self.assertEqual(line[25:], '0\t2\t9\t3\t0')
+        remove(output_fp)
+
     def test_coverage_wf(self):
         input_fp = join(self.datdir, 'output', 'truth.metacyc.tsv')
         map_fp = join(self.datdir, 'function', 'metacyc', 'pathway_mbrs.txt')

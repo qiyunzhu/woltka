@@ -127,6 +127,7 @@ Option | Description
 `--map`, `-m` (required) | Path to mapping of source features to target features.
 `--output`, `-o` (required) | Path to output profile.
 `--normalize`, `-z` | Count each target feature as 1 / _k_ (_k_ is the number of targets mapped to a source). Otherwise, count as one.
+`--field`, `-f` | Index of field to be collapsed in a stratified profile. For example, use `-f 2` to collapse "gene" in "microbe\|gene".
 `--names`, `-n` | Path to mapping of target features to names. The names will be appended to the collapsed profile as a metadata column.
 
 

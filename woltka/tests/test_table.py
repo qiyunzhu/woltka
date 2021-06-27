@@ -724,6 +724,26 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
+        # stratified table
+        table = prep_table({
+            'S1': {'A|K1': 4, 'A|K2': 5, 'B|K2': 8, 'C|K3': 3, 'C|K4': 0},
+            'S2': {'A|K1': 1, 'A|K2': 8, 'B|K2': 0, 'C|K3': 4, 'C|K4': 2}})
+        mapping = {'K1': ['H1'], 'K2': ['H2', 'H3'], 'K3': ['H3']}
+        obs = collapse_table(table, mapping, field=1)
+        exp = prep_table({
+            'S1': {'A|H1': 4, 'A|H2': 5, 'A|H3': 5, 'B|H2': 8, 'B|H3': 8,
+                   'C|H3': 3},
+            'S2': {'A|H1': 1, 'A|H2': 8, 'A|H3': 8, 'B|H2': 0, 'B|H3': 0,
+                   'C|H3': 4}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # invalid field
+        with self.assertRaises(ValueError) as ctx:
+            collapse_table(table, mapping, field=2)
+        errmsg = 'Feature "A|K1" has less than 3 fields.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
     def test_calc_coverage(self):
         table = prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},

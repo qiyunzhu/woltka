@@ -270,6 +270,9 @@ def merge_cmd(ctx, **kwargs):
     help=('Count each target feature as 1/k (k is the number of targets '
           'mapped to a source). Otherwise, count as one.'))
 @click.option(
+    '--field', '-f', type=click.INT,
+    help='Index of field to be collapsed in a stratified profile.')
+@click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of target features to append to the output profile.')
 @click.pass_context

@@ -560,7 +560,7 @@ def add_metacol(table, dic, name, missing=''):
         metadatum[name] = dic.get(feature, missing)
 
 
-def collapse_table(table, mapping, normalize=False):
+def collapse_table(table, mapping, normalize=False, field=None):
     """Collapse a table by many-to-many mapping.
 
     Parameters
@@ -571,11 +571,18 @@ def collapse_table(table, mapping, normalize=False):
         Source-to-target(s) mapping.
     normalize : bool, optional
         Whether normalize per-target counts by number of targets per source.
+    field : int, optional
+        Index of field to be collapsed in a stratified table.
 
     Returns
     -------
     biom.Table or tuple
         Collapsed table.
+
+    Raises
+    ------
+    ValueError
+        Field index is not present in a feature ID.
 
     Notes
     -----
@@ -583,13 +590,20 @@ def collapse_table(table, mapping, normalize=False):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return collapse_biom(table, mapping, normalize)
+        return collapse_biom(table, mapping, normalize, field)
 
     # collapse table
     samples = table[2]
     width = len(samples)
     res = defaultdict(lambda: [0] * width)
     for datum, feature in zip(*table[:2]):
+        if field:
+            fields = feature.split('|')
+            try:
+                feature = fields[field]
+            except IndexError:
+                raise ValueError(
+                    f'Feature "{feature}" has less than {field + 1} fields.')
         if feature not in mapping:
             continue
         targets = mapping[feature]
@@ -597,6 +611,9 @@ def collapse_table(table, mapping, normalize=False):
             k = 1 / len(targets)
             datum = [x * k for x in datum]
         for target in targets:
+            if field:
+                fields[field] = target
+                target = '|'.join(fields)
             res[target] = list(map(add, res[target], datum))
 
     # reformat table
