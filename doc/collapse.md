@@ -57,7 +57,7 @@ source4 <tab> target3
 
 ### Normalization
 
-By default, if one source feature is simultaneously mapped to _k_ targets, each target will be counted once. With the `--normalize` or `-z` flag added to the command, each target will be counted 1 / _k_ times.
+By default, if one source feature is simultaneously mapped to _k_ targets, each target will be counted once. With the `--frac` or `-f` flag added to the command, each target will be counted 1 / _k_ times.
 
 Whether to enable normalization depends on the nature and aim of your analysis. For example, one gene is involved in two pathways (which isn't uncommon), should each pathway be counted once, or half time?
 
