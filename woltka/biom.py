@@ -194,7 +194,7 @@ def biom_add_metacol(table: biom.Table, dic, name, missing=''):
     table.add_metadata(metadata, axis='observation')
 
 
-def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
+def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
     """Collapse a BIOM table in many-to-many mode.
 
     Parameters
@@ -203,13 +203,20 @@ def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
         Table to collapse.
     mapping : dict of list of str
         Source-to-target(s) mapping.
-    normalize : bool, optional
-        Whether normalize per-target counts by number of targets per source.
+    divide : bool, optional
+        Whether divide per-target counts by number of targets per source.
+    field : int, optional
+        Index of field to be collapsed in a stratified table.
 
     Returns
     -------
     biom.Table
         Collapsed BIOM table.
+
+    Raises
+    ------
+    ValueError
+        Field index is not present in a feature ID.
 
     Notes
     -----
@@ -219,8 +226,29 @@ def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
     --------
     .table.collapse_table
     """
+    # generate metadata
+    metadata = {}
+    for id_ in table.ids('observation'):
+        feature = id_
+        if field:
+            fields = feature.split('|')
+            try:
+                feature = fields[field]
+            except IndexError:
+                raise ValueError(
+                    f'Feature "{feature}" has less than {field + 1} fields.')
+        if feature not in mapping:
+            continue
+        targets = []
+        for target in mapping[feature]:
+            if field:
+                fields[field] = target
+                target = '|'.join(fields)
+            targets.append(target)
+        metadata[id_] = dict(part=targets)
+
     # filter table features
-    table = table.filter(lambda data, id_, md: id_ in mapping,
+    table = table.filter(lambda data, id_, md: id_ in metadata,
                          axis='observation', inplace=False)
 
     # stop if no feature left
@@ -228,19 +256,17 @@ def collapse_biom(table: biom.Table, mapping: dict, normalize=False):
         return table
 
     # add mapping to table metadata
-    table.add_metadata({k: dict(part=v) for k, v in mapping.items()},
-                       axis='observation')
+    table.add_metadata(metadata, axis='observation')
 
     # determine collapsing method
     kwargs = dict(norm=False, one_to_many=True, axis='observation',
-                  one_to_many_mode=('divide' if normalize else 'add'))
+                  one_to_many_mode=('divide' if divide else 'add'))
 
     # collapse table in many-to-many mode
-    table = table.collapse(lambda id_, md: zip(md['part'], md['part']),
-                           **kwargs)
+    table = table.collapse(lambda _, md: zip(md['part'], md['part']), **kwargs)
 
     # round to integers
-    if normalize:
+    if divide:
         round_biom(table)
 
     # clean up

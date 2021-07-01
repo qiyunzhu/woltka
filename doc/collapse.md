@@ -61,6 +61,10 @@ By default, if one source feature is simultaneously mapped to _k_ targets, each 
 
 Whether to enable normalization depends on the nature and aim of your analysis. For example, one gene is involved in two pathways (which isn't uncommon), should each pathway be counted once, or half time?
 
+### Stratification
+
+Woltka supports collapsing a [stratified](stratify.md) profile using one field in the feature IDs. This can be done using the `--field` or `-f` parameter followed by the field index (starting from 1). For example, if the feature IDs are in the format of "Species|Gene", one may collapse genes into pathways while keeping species by adding `-f 2`.
+
 ### Feature names
 
 Once a profile is collapsed, the metadata of the source features ("Name", "Rank", and "Lineage") will be discarded. One may choose to supply a target feature name file by `--names` or `-n`, which will instruct the program to append names to the profile as a metadata column ("Name").

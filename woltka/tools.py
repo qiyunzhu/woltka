@@ -195,7 +195,8 @@ def merge_wf(input_fps: list,
 def collapse_wf(input_fp:  str,
                 map_fp:    str,
                 output_fp: str,
-                frac:     bool = False,
+                divide:   bool = False,
+                field:     int = None,
                 names_fp:  str = None):
     """Workflow for collapsing a profile based on many-to-many mapping.
 
@@ -223,9 +224,13 @@ def collapse_wf(input_fp:  str,
     if not mapping:
         exit(f'No source-target relationship is found in {basename(map_fp)}.')
 
+    # convert field index
+    if field:
+        field -= 1
+
     # collapse profile by mapping
     click.echo('Collapsing profile...', nl=False)
-    table = collapse_table(table, mapping, frac)
+    table = collapse_table(table, mapping, divide, field)
     click.echo(' Done.')
     n = table_shape(table)[0]
     click.echo(f'Number of features after collapsing: {n}.')

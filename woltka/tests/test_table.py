@@ -714,7 +714,7 @@ class TableTests(TestCase):
             self.assertListEqual(obs[i], exp[i])
 
         # many-to-many mapping, with normalization
-        obs = collapse_table(table, mapping, normalize=True)
+        obs = collapse_table(table, mapping, divide=True)
         exp = prep_table({
             'S1': {'H1': 6.5, 'H2': 5.166666666666666,
                    'H3': 2.6666666666666665, 'H4': 5.666666666666666,
@@ -723,6 +723,26 @@ class TableTests(TestCase):
             'S3': {'H1': 1.0, 'H2': 4.5, 'H3': 5.5, 'H4': 1.0, 'H5': 7.0}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
+
+        # stratified table
+        table = prep_table({
+            'S1': {'A|K1': 4, 'A|K2': 5, 'B|K2': 8, 'C|K3': 3, 'C|K4': 0},
+            'S2': {'A|K1': 1, 'A|K2': 8, 'B|K2': 0, 'C|K3': 4, 'C|K4': 2}})
+        mapping = {'K1': ['H1'], 'K2': ['H2', 'H3'], 'K3': ['H3']}
+        obs = collapse_table(table, mapping, field=1)
+        exp = prep_table({
+            'S1': {'A|H1': 4, 'A|H2': 5, 'A|H3': 5, 'B|H2': 8, 'B|H3': 8,
+                   'C|H3': 3},
+            'S2': {'A|H1': 1, 'A|H2': 8, 'A|H3': 8, 'B|H2': 0, 'B|H3': 0,
+                   'C|H3': 4}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # invalid field
+        with self.assertRaises(ValueError) as ctx:
+            collapse_table(table, mapping, field=2)
+        errmsg = 'Feature "A|K1" has less than 3 fields.'
+        self.assertEqual(str(ctx.exception), errmsg)
 
     def test_calc_coverage(self):
         table = prep_table({

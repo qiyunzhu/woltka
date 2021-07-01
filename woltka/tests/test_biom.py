@@ -272,7 +272,7 @@ class BiomTests(TestCase):
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
 
         # many-to-many mapping, with normalization
-        obs = collapse_biom(table.copy(), mapping, normalize=True)
+        obs = collapse_biom(table.copy(), mapping, divide=True)
         exp = Table(*map(np.array, prep_table({
             'S1': {'H1': 6, 'H2': 5, 'H3': 3, 'H4': 6, 'H5': 0},
             'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
@@ -283,10 +283,29 @@ class BiomTests(TestCase):
         table = Table(*map(np.array, prep_table({
             'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})))
         mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
-        obs = collapse_biom(table.copy(), mapping, normalize=True)
+        obs = collapse_biom(table.copy(), mapping, divide=True)
         self.assertTrue(obs.is_empty())
         self.assertListEqual(list(obs.ids('sample')), ['S1', 'S2', 'S3'])
         self.assertListEqual(list(obs.ids('observation')), [])
+
+        # stratified table
+        table = Table(*map(np.array, prep_table({
+            'S1': {'A|K1': 4, 'A|K2': 5, 'B|K2': 8, 'C|K3': 3, 'C|K4': 0},
+            'S2': {'A|K1': 1, 'A|K2': 8, 'B|K2': 0, 'C|K3': 4, 'C|K4': 2}})))
+        mapping = {'K1': ['H1'], 'K2': ['H2', 'H3'], 'K3': ['H3']}
+        obs = collapse_biom(table.copy(), mapping, field=1)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'A|H1': 4, 'A|H2': 5, 'A|H3': 5, 'B|H2': 8, 'B|H3': 8,
+                   'C|H3': 3},
+            'S2': {'A|H1': 1, 'A|H2': 8, 'A|H3': 8, 'B|H2': 0, 'B|H3': 0,
+                   'C|H3': 4}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # invalid field
+        with self.assertRaises(ValueError) as ctx:
+            collapse_biom(table, mapping, field=2)
+        errmsg = 'Feature "A|K1" has less than 3 fields.'
+        self.assertEqual(str(ctx.exception), errmsg)
 
 
 if __name__ == '__main__':
