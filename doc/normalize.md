@@ -1,4 +1,4 @@
-# Data normalization
+# Profile normalization
 
 By default, the cell values in a feature table (profile) are **counts** (**frequencies**) of each feature in each sample. This behavior maximizes the flexibility of downstream analyses. Meanwhile, Woltka provides multiple functions for normalizing cell values to alternative units and scales:
 
