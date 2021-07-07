@@ -99,6 +99,8 @@ Option | Description
 
 Filter a profile by **per-sample** abundance.
 
+* See [Per-sample filtering](filter.md) for details.
+
 Option | Description
 --- | ---
 `--input`, `-i` (required) | Path to input alignment file or directory of alignment files.
@@ -110,10 +112,26 @@ Option | Description
 
 Merge multiple profiles into one profile.
 
+* See [Merging profiles](merge.md) for details.
+
 Option | Description
 --- | ---
 `--input`, `-i` (required) | Path to input profiles or directories containing profiles. Can accept multiple paths.
 `--output`, `-o` (required) | Path to output profile.
+
+### Normalize
+
+Normalize a profile to fractions or by feature sizes.
+
+* See [Profile normalization](normalize.md) for details.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input profile.
+`--output`, `-o` (required) | Path to output profile.
+`--sizes`, `-z` | Path to mapping of feature sizes, by which values will be divided. If omitted, will divide values by sum per sample.
+`--scale`, `-s` | Scale values by this factor. Accepts "k", "M" suffixes.
+`--digits`, `-d` | Round values to this number of digits after the decimal point. If omitted, will keep decimal precision of input profile.
 
 ### Collapse
 
