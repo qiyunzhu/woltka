@@ -133,7 +133,6 @@ woltka classify \
   --coords function/coords.txt.xz \
   --map function/uniref/uniref.map.xz \
   --map function/go/process.tsv.xz \
-  --map-as-rank \
   --rank process \
   --output burst.process.tsv
 ```
@@ -165,7 +164,6 @@ woltka classify \
   --input align/burst/split \
   --map function/nucl/uniref.map.xz \
   --map function/go/process.tsv.xz \
-  --map-as-rank \
   --rank process \
   --output split.process.tsv
 ```
@@ -198,7 +196,6 @@ woltka classify \
   --input align/diamond \
   --map function/uniref/uniref.map.xz \
   --map function/go/function.tsv.xz \
-  --map-as-rank \
   --rank function \
   --output diamond.function.tsv
 ```
@@ -211,7 +208,6 @@ woltka classify \
   --coords function/coords.txt.xz \
   --map function/uniref/uniref.map.xz \
   --map function/go/component.tsv.xz \
-  --map-as-rank \
   --rank component \
   --sizes . \
   --scale 1k \
@@ -236,7 +232,6 @@ woltka classify \
   --coords function/nucl/coords.txt.xz \
   --map function/nucl/uniref.map.xz \
   --names function/uniref/uniref.names.xz \
-  --map-as-rank \
   --rank uniref \
   --output truth.uniref.tsv
 ```

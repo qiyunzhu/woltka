@@ -67,7 +67,7 @@ class WorkflowTests(TestCase):
         strata_dir = join(self.datdir, 'output', 'burst.genus.map')
         samples, files, demux = parse_samples(input_fp)
         tree, rankdic, namedic, root = build_hierarchy(
-            map_fps=map_fps, map_as_rank=True)
+            map_fps=map_fps, map_rank=True)
         mapper, chunk = build_mapper(coords_fp=coords_fp, overlap=80)
         stratmap = parse_strata(strata_dir, samples)
         obs = classify(
@@ -400,12 +400,30 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(obs[0], {
             'a': 'Bac', 'b': 'Arc', 'c': 'Bac', 'Bac': '1', 'Arc': '1',
             '1': '1'})
+        # map rank turned on
+        self.assertDictEqual(obs[1], {'Bac': 'map', 'Arc': 'map'})
         self.assertEqual(obs[3], '1')
 
-        # map as rank
-        obs = build_hierarchy(map_fps=[fp], map_as_rank=True)
-        self.assertDictEqual(obs[1], {'Bac': 'map', 'Arc': 'map'})
+        # map rank off
+        obs = build_hierarchy(map_fps=[fp], map_rank=False)
+        self.assertDictEqual(obs[1], {})
         remove(fp)
+
+        # newick tree plus simple map
+        fp1 = join(self.tmpdir, 'tree.nwk')
+        with open(fp1, 'w') as f:
+            f.write('((a,c)d,b)e;')
+        fp2 = join(self.tmpdir, 'map.txt')
+        with open(fp2, 'w') as f:
+            f.write('G1\ta\nG2\tb\nG3\tc\n')
+        obs = build_hierarchy(newick_fps=[fp1], map_fps=[fp2])
+        self.assertDictEqual(obs[0], {
+            'G1': 'a', 'G2': 'b', 'G3': 'c',
+            'a': 'd', 'b': 'e', 'c': 'd', 'd': 'e', 'e': 'e'})
+        self.assertDictEqual(obs[1], {})  # map rank turned off
+        self.assertEqual(obs[3], 'e')
+        remove(fp1)
+        remove(fp2)
 
     def test_strip_suffix(self):
         subs = [{'G1_1', 'G1_2', 'G2_3', 'G3'},
