@@ -86,7 +86,7 @@ woltka tools collapse -i pathway.biom -m metacyc/pathway-to-super_pathway.txt -n
 woltka tools collapse -i super_pathway.biom -m metacyc/pathway_type.txt -n metacyc/all_class_name.txt -o pathway_type.biom
 ```
 
-The collapse command supports **many-to-many** mapping. For example, if one reaction is found in three pathways, each pathway will be counted **once**. In some instances (e.g., to retain compositionality of the profile), one may consider adding the `--frac` flag, which will instruct the program to count each pathway 1 / 3 times ([see details](collapse.md)).
+The collapse command supports **many-to-many** mapping. For example, if one reaction is found in three pathways, each pathway will be counted **once**. In some instances (e.g., to retain compositionality of the profile), one may consider adding the `--divide` flag, which will instruct the program to count each pathway 1 / 3 times ([see details](collapse.md)).
 
 
 ## Pathway coverage

@@ -6,6 +6,17 @@ The **profile collapsing** function is a lightweight and flexible addition to th
 woltka tools collapse -i input.biom -m mapping.txt -o output.biom
 ```
 
+
+## Contents
+
+- [Use cases](#use-cases)
+- [Mapping file format](#mapping-file-format)
+- [Parameters](#parameters)
+- [Considerations](#considerations)
+
+
+## Use cases
+
 With this tool one can achieve the following goals:
 
 1. Translate feature IDs into names or descriptions.
@@ -55,11 +66,11 @@ source4 <tab> target3
 
 ## Parameters
 
-### Normalization
+### Division
 
-By default, if one source feature is simultaneously mapped to _k_ targets, each target will be counted once. With the `--frac` or `-f` flag added to the command, each target will be counted 1 / _k_ times.
+By default, if one source feature is simultaneously mapped to _k_ targets, each target will be counted once. With the `--divide` or `-d` flag added to the command, each target will be counted 1 / _k_ times.
 
-Whether to enable normalization depends on the nature and aim of your analysis. For example, one gene is involved in two pathways (which isn't uncommon), should each pathway be counted once, or half time?
+Whether to enable division depends on the nature and aim of the analysis. For example, one gene is involved in two metabolic pathways (which isn't uncommon), should each pathway be counted once, or half time?
 
 ### Stratification
 
@@ -68,3 +79,17 @@ Woltka supports collapsing a [stratified](stratify.md) profile using one field i
 ### Feature names
 
 Once a profile is collapsed, the metadata of the source features ("Name", "Rank", and "Lineage") will be discarded. One may choose to supply a target feature name file by `--names` or `-n`, which will instruct the program to append names to the profile as a metadata column ("Name").
+
+
+## Considerations
+
+It is important to highlight that one-to-many mapping may change some of the
+underlying statistical assumptions of downstream analyses.
+
+In the default mode, because one source may be collapsed into multiple targets, the total feature count per sample may be inflated, and the relative abundance of each feature may no longer correspond to that of the sequences assigned to it. In another word, this breaks the [compositionality](https://en.wikipedia.org/wiki/Compositional_data) of the data.
+
+How significantly this may impact an analysis depends on the relative frequency of multiple mappings found in the data, the biological relevance of the affected features, and the statistical nature of the analysis.
+
+For example, in the `reaction-to-ec.txt` file under [MetaCyc](metacyc.md), 80 out of 3618 (2.2%) reactions have more than one corresponding EC number. Whether such a translation may be considered as unique (and whether the resulting table is still compositional) is a call of the user.
+
+A solution to this is to turn on the [division](#division) flag (`-d`). This guarantees that the sum of feature counts remains the same after collapsing. But one should consider the biological implication before making a decision (see [above](#division)).
