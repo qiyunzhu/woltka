@@ -39,7 +39,6 @@ woltka classify \
   --coords function/coords.txt.xz \
   --map function/uniref.map.xz \
   --map function/go/process.tsv.xz \
-  --map-as-rank \
   --rank process \
   --stratify mapdir \
   -o taxfunc.biom
@@ -89,7 +88,6 @@ woltka classify \
   -i align/diamond \
   --map function/uniref.map.xz \
   --map function/go/process.tsv.xz \
-  --map-as-rank \
   --rank process \
   --stratify mapdir \
   -o taxfunc.biom

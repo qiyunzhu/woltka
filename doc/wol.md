@@ -163,7 +163,6 @@ woltka classify \
   --names  function/uniref/uniref.name.xz \
   --map    function/kegg/ko.map.xz \
   --names  function/kegg/ko.name \
-  --map-as-rank \
   --rank   uniref,ko \
   --to-tsv \
   --output .
@@ -250,7 +249,6 @@ woltka classify \
   --coords   proteins/coords.txt.xz \
   --map      function/uniref/uniref.map.xz \
   --map      function/kegg/ko.map.xz \
-  --map-as-rank \
   --rank     ko \
   --stratify mapdir \
   --output   ko_by_genus.biom

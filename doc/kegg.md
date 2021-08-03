@@ -12,7 +12,6 @@ woltka classify \
   --coords coords.txt.xz \
   --map    uniref/uniref.map.xz \
   --map    kegg/ko.map.xz \
-  --map-as-rank \
   --rank   ko \
   --output ko.tsv
 ```
