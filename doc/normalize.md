@@ -101,7 +101,6 @@ woltka classify \
   --coords coords.txt.xz \
   --map    metacyc/protein.map.xz \
   --names  metacyc/protein_name.txt \
-  --map-as-rank \
   --rank   protein \
   --size   . \
   --scale  1k \

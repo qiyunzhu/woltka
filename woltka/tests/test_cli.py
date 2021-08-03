@@ -129,8 +129,7 @@ class CliTests(TestCase):
                   '--rank',   'process',
                   '--coords', join(self.fundir, 'coords.txt.xz'),
                   '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
-                  '--map',    join(self.fundir, 'go', 'process.tsv.xz'),
-                  '--map-as-rank']
+                  '--map',    join(self.fundir, 'go', 'process.tsv.xz')]
         _test_params(params, 'burst.process.tsv')
 
         # burst, stratified genus/process classification
@@ -140,7 +139,6 @@ class CliTests(TestCase):
                   '--coords', join(self.fundir, 'coords.txt.xz'),
                   '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
                   '--map',    join(self.fundir, 'go', 'process.tsv.xz'),
-                  '--map-as-rank',
                   '--stratify', join(self.outdir, 'burst.genus.map')]
         _test_params(params, 'burst.genus.process.tsv')
 
@@ -152,7 +150,6 @@ class CliTests(TestCase):
                   '--coords', join(self.fundir, 'coords.txt.xz'),
                   '--map',    join(self.fundir, 'uniref', 'uniref.map.xz'),
                   '--map',    join(self.fundir, 'go', 'component.tsv.xz'),
-                  '--map-as-rank',
                   '--sizes',  '.',
                   '--scale',  '1k',
                   '--digits', 3]
@@ -174,8 +171,7 @@ class CliTests(TestCase):
                   '--output', output_fp,
                   '--rank',   'process',
                   '--map',    join(self.fundir, 'nucl', 'uniref.map.xz'),
-                  '--map',    join(self.fundir, 'go', 'process.tsv.xz'),
-                  '--map-as-rank']
+                  '--map',    join(self.fundir, 'go', 'process.tsv.xz')]
         _test_params(params, 'split.process.tsv')
 
         remove(output_fp)

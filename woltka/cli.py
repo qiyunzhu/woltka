@@ -79,7 +79,7 @@ def cli():
     '--map', '-m', 'map_fps', type=click.Path(exists=True), multiple=True,
     help='Mapping of lower classification units to higher ones.')
 @click.option(
-    '--map-as-rank', is_flag=True,
+    '--map-as-rank/--map-no-rank', 'map_rank', default=None,
     help='Extract rank name from map filename.')
 @click.option(
     '--names', '-n', 'names_fps', type=click.Path(exists=True), multiple=True,

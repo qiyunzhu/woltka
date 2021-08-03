@@ -95,7 +95,6 @@ woltka classify \
   --coords $db/proteins/coords.txt.xz \
   --map    $db/function/uniref/uniref.map.xz \
   --names  $db/function/uniref/uniref.name.xz \
-  --map-as-rank \
   --rank   none,uniref \
   $filext \
   $altfmt \

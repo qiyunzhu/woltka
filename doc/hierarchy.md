@@ -37,7 +37,9 @@ Wolkta supports various types and formats of classification systems, as listed b
 
 5. `--map` or `-m`: Simple map of lower taxon \<tab\> higher taxon.
 
-   Flag `--map-as-rank` is to instruct the program to treat the map filename as rank. For example, with this flag, taxa in the 2nd column of `uniref.map.gz` will be given the rank "uniref".
+   Flag `--map-as-rank` or `--map-no-rank` is to instruct the program to treat the map filename as rank (or not). For example, the second column of `uniref.map.gz` will be given the rank "uniref".
+
+   If this flag is omitted, the program will automatically switch it on when only simple map(s) but no other hierarchy files are provided.
 
 Compressed files are supported and automatically recognized. For example, reading the gzipped Greengenes taxonomy file is as simple as:
 
@@ -221,6 +223,31 @@ With flag `--map-as-rank`, Woltka will extract a **rank** name from the filename
 - `prot2taxid.txt.gz` => `taxid`
 - `reaction_to_pathway.tsv` => `pathway`
 - `apple-to-orange` => `orange`
+
+If the user provides only simple map(s), this flag will be automatically turned on. For example:
+
+```bash
+woltka classify \
+  -i indir \
+  --map taxon2species.map \
+  --map species2genus.map \
+  --rank species,genus \
+  -o outdir
+```
+
+But the following won't work without this flag, because there are other hierarchy files (`nodes.dmp`):
+
+```bash
+woltka classify \
+  -i indir \
+  --map taxid.map \
+  --nodes taxdump/nodes.dmp \
+  --names taxdump/names.dmp \
+  --rank taxid,genus \
+  -o outdir
+```
+
+One can force it off by flag `--map-no-rank` even when there are only mapping files.
 
 
 ## Multiple mapping

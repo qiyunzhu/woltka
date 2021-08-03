@@ -54,7 +54,7 @@ def workflow(input_fp:     str,
              lineage_fps: list = [],
              columns_fps: list = [],
              map_fps:     list = [],
-             map_as_rank: bool = False,
+             map_rank:    bool = False,
              names_fps:   list = [],
              # assignment
              ranks:        str = None,
@@ -115,7 +115,7 @@ def workflow(input_fp:     str,
     # build classification system
     tree, rankdic, namedic, root = build_hierarchy(
         names_fps, nodes_fps, newick_fps, lineage_fps, columns_fps, map_fps,
-        map_as_rank, zippers)
+        map_rank, zippers)
 
     # build mapping module
     mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
@@ -614,7 +614,7 @@ def build_hierarchy(names_fps:   list = [],
                     lineage_fps: list = [],
                     columns_fps: list = [],
                     map_fps:     list = [],
-                    map_as_rank: bool = False,
+                    map_rank:    bool = None,
                     zippers:     dict = None) -> Tuple[dict, dict, dict, str]:
     """Construct hierarchical classification system.
 
@@ -632,7 +632,7 @@ def build_hierarchy(names_fps:   list = [],
         Rank-per-column file.
     map_fps : list of str, optional
         Mapping file(s).
-    map_as_rank : bool, optional
+    map_rank : bool, optional
         Treat mapping filename stem as rank.
     zippers : dict, optional
         External compression programs.
@@ -698,6 +698,13 @@ def build_hierarchy(names_fps:   list = [],
             update_dict(rankdic, rankdic_)
         click.echo(' Done.')
 
+    # whether to extract rank from filename
+    if map_rank is None:
+        map_rank = bool(map_fps) and not any([
+            nodes_fps, newick_fps, lineage_fps, columns_fps])
+    if map_rank:
+        click.echo('  Will extract rank name from map filename.')
+
     # plain mapping files
     for fp in map_fps:
         click.echo(f'  Parsing simple map file: {basename(fp)}...', nl=False)
@@ -706,7 +713,7 @@ def build_hierarchy(names_fps:   list = [],
         update_dict(tree, map_)
 
         # filename stem as rank
-        if map_as_rank:
+        if map_rank:
             rank = stem2rank(path2stem(fp))
             update_dict(rankdic, {k: rank for k in set(map_.values())})
         click.echo(' Done.')
