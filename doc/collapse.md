@@ -32,6 +32,8 @@ With this tool one can achieve the following goals:
 
 The last usage is an important complement to the main classification workflow, which currently relies on a tree structure and does not support one-to-many mapping. This can be achieved by using the profile collapsing function (although one can only move up one level per run).
 
+See [considerations](#considerations) below for a discussion of the potential change of statistical properties of data.
+
 
 ## Mapping file format
 
@@ -86,7 +88,7 @@ Once a profile is collapsed, the metadata of the source features ("Name", "Rank"
 It is important to highlight that one-to-many mapping may change some of the
 underlying statistical assumptions of downstream analyses.
 
-In the default mode, because one source may be collapsed into multiple targets, the total feature count per sample may be inflated, and the relative abundance of each feature may no longer correspond to that of the sequences assigned to it. In another word, this breaks the [compositionality](https://en.wikipedia.org/wiki/Compositional_data) of the data.
+In the default mode, because one source may be collapsed into multiple targets, the total feature count per sample may be inflated, and the relative abundance of each feature may no longer correspond to that of the sequences assigned to it. In other words, this breaks the [compositionality](https://en.wikipedia.org/wiki/Compositional_data) of the data.
 
 How significantly this may impact an analysis depends on the relative frequency of multiple mappings found in the data, the biological relevance of the affected features, and the statistical nature of the analysis.
 
