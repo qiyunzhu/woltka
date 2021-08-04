@@ -186,7 +186,7 @@ Make an abbreviation:
 mcdir=function/metacyc
 ```
 
-Collapse ORFs into MetaCyc proteins.
+Collapse ORFs into MetaCyc proteins:
 
 ```bash
 woltka tools collapse -i gene.biom -m $mc/protein.map.xz -n $mc/protein_name.txt -o protein.biom
@@ -215,11 +215,28 @@ So on so forth. See [here](metacyc.md) for a graph of all available collapsing d
 
 ### Comparison
 
-**Important**: The differences between method 1 (`classify`) and method 2 (`collapse`) are:
+**Important**: The differences between [method 1](#method-1) (`classify`) and [method 2](#method-2) (`collapse`) are:
 
 `classify` only supports a tree structure, in which one child unit has exactly one parent unit. This is typical in taxonomic classification. If multiple parents are present, all but the first parent will be discarded. In contrast, `collapse` supports **one-to-multiple** mappings, therefore it is more suitable when this is the norm instead of exception, especially in functional classification (where one gene can be involved in multiple metabolic pathways).
 
-`classify` always ensures the **compositionality** of the feature table, in which the frequencies match the numbers of aligned sequences. `collapse` however does not by default. In a one-to-multiple mapping, all parents will be counted once. But one can add `--frac` to the `collapse` command to normalize the counts by the number of parents so that the compositionality is retained.
+`classify` always ensures the [**compositionality**](https://en.wikipedia.org/wiki/Compositional_data) of the feature table, in which the frequencies match the numbers of aligned sequences. `collapse` however does not by default: In a one-to-multiple mapping, all parents will be counted once. But one can add `-d` to the `collapse` command to divide the counts by the number of parents so that the compositionality is retained. See [here](collapse.md#considerations) for a detailed discussion.
+
+However, if the mappings are **unique** (one-to-one), the two methods produce mutually identical results (minor differences may arise during number rounding), and the concern of compositionality is no longer relevant.
+
+Here is a list of currently released primary and secondary mappings and their uniqueness:
+
+Source | Target | Unique
+--- | --- | ---
+WoL protein | UniRef | Yes
+WoL protein | MetaCyc protein | Yes
+UniRef | KEGG ontology (KO) | No
+UniRef | Gene Ontology (GO) | No
+UniRef | OrthoDB | Yes
+UniRef | EggNOG | No
+UniRef | RefSeq | No
+
+Meanwhile, all name files (such as `gene_name.txt` under MetaCyc) are unique.
+
 
 ## Stratified taxonomic / functional classification
 
@@ -255,3 +272,11 @@ woltka classify \
 ```
 
 In the output table, features will be like `Escherichia|K00133`, `Salmonella|K00604`, etc. See [here](stratify.md) for mode details about stratification.
+
+With a stratified taxonomic/functional profile, one may still perform further [collapsing](#method-2) using one of the two systems. For example:
+
+```bash
+woltka tools collapse -f 2 -i ko_by_genus.biom -m $ke/ko-to-go.txt -o go_by_genus.biom
+```
+
+The parameter `-f 2` instructs the program to collapse by the second field of each feature (e.g., `K00133` of `Escherichia|K00133`). See [here](collapse.md#stratification) for details.
