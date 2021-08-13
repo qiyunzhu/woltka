@@ -44,7 +44,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     ------
     deque of str
         Query queue.
-    deque of set of str
+    deque of dict of str -> tuple
         Subject(s) queue.
 
     Notes
@@ -73,17 +73,33 @@ def plain_mapper(fh, fmt=None, n=1000):
 
         # parse current alignment line
         try:
-            query, subject = parser(line)[:2]
+            # Parsers generate different fields dependent on file type
+            # All parser results fit into the union, but some will
+            # return fewer fields or leave certain fields as None.
+            # (query, subject, score, length, start, end)
+            parsed = parser(line)
+            if len(parsed) >= 2:
+                query, subject = parsed[:2]
+            else:
+                continue
+
+            if len(parsed) >= 6:
+                start, end = parsed[4:6]
+            else:
+                start, end = None, None
         except (TypeError, IndexError):
             continue
 
-        # add subject to subject set of the same query Id
+        # add subject to subject set of the same query Id,
+        # keeping track of read indices
         if query == this:
-            subque[-1].add(subject)
+            if subject in subque[-1]:
+                subque[-1][subject].append((start, end))
+            else:
+                subque[-1][subject] = [(start, end)]
 
         # when query Id changes,
         else:
-
             # line number has reached target
             if i >= target:
 
@@ -100,9 +116,9 @@ def plain_mapper(fh, fmt=None, n=1000):
                 # next target line number
                 target = i + n
 
-            # create new query and subject set pair
+            # create new query and subject map pair
             qry_append(query)
-            sub_append({subject})
+            sub_append({subject: [(start, end)]})
 
             # update current query Id
             this = query

@@ -152,27 +152,32 @@ class OrdinalTests(TestCase):
                ('r6', 'g2'),
                ('r8', 'g3')]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+        self.assertListEqual([set(o.keys()) for o in list(obs[1])],
+                             [{x[1]} for x in exp])
 
         # specify format
         aln.seek(0)
         obs = list(ordinal_mapper(aln, coords, fmt='b6o'))[0]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+        self.assertListEqual([set(o.keys()) for o in list(obs[1])],
+                             [{x[1]} for x in exp])
 
         # specify chunk size
         aln.seek(0)
         obs = list(ordinal_mapper(aln, coords, n=5))
         self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:2]])
-        self.assertListEqual(list(obs[0][1]), [{x[1]} for x in exp[:2]])
+        self.assertListEqual([set(o.keys()) for o in list(obs[0][1])],
+                             [{x[1]} for x in exp[:2]])
         self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[2:]])
-        self.assertListEqual(list(obs[1][1]), [{x[1]} for x in exp[2:]])
+        self.assertListEqual([set(o.keys()) for o in list(obs[1][1])],
+                             [{x[1]} for x in exp[2:]])
 
         # add prefix
         aln.seek(0)
         obs = list(ordinal_mapper(aln, coords, prefix=True))[0]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{f'n1_{x[1]}'} for x in exp])
+        self.assertListEqual([set(o.keys()) for o in list(obs[1])],
+                             [{f'n1_{x[1]}'} for x in exp])
 
         # specify threshold
         aln.seek(0)
@@ -186,7 +191,8 @@ class OrdinalTests(TestCase):
                ('r8', 'g3'),
                ('r9', 'g3')]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+        self.assertListEqual([set(o.keys()) for o in list(obs[1])],
+                             [{x[1]} for x in exp])
 
     def test_ordinal_parser(self):
 

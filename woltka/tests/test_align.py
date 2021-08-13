@@ -32,7 +32,9 @@ class AlignTests(TestCase):
     def test_plain_mapper(self):
 
         def _res2lst(res):
-            return tuple(tuple(list(x) for x in y) for y in res)
+            return tuple((list(y[0]), list([set(x.keys())
+                                            for x in y[1]]))
+                         for y in res)
 
         # simple case
         aln = StringIO('\n'.join((
@@ -56,6 +58,7 @@ class AlignTests(TestCase):
                (['R3'], [{'G1', 'G3'}]),
                (['R4'], [{'G4'}]),
                (['R5'], [{'G5'}]))
+
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 2

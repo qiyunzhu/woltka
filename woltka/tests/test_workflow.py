@@ -7,9 +7,9 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-
+from collections import defaultdict
 from unittest import TestCase, main
-from os import remove
+from os import remove, makedirs
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -19,6 +19,7 @@ import pandas as pd
 from biom import load_table
 from pandas.testing import assert_frame_equal
 
+from woltka.cover import SortedRangeList
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper, parse_sizes,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
@@ -43,6 +44,32 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs['S03']['G000009345'], 640)
         self.assertTrue(cmp(output_fp, join(
             self.datdir, 'output', 'bowtie2.ogu.tsv')))
+        remove(output_fp)
+
+    def test_coverage(self):
+        # simplest ogu workflow
+        input_fp = join(self.datdir, 'align', 'bowtie2')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        cov = defaultdict(SortedRangeList)
+        workflow(input_fp, output_fp, coverage_map=cov)['none']
+        active_sample = None
+        out_file = None
+
+        makedirs("coverage", exist_ok=True)
+        for key in cov:
+            sample, otu = key
+            if sample != active_sample:
+                active_sample = sample
+                if out_file is not None:
+                    out_file.close()
+                out_file = open("coverage/" + sample + ".tsv", "w")
+                out_file.write("subject\tstart\tend\n")
+            srl = cov[key]
+            for r in srl.ranges:
+                out_file.write(str(otu) + "\t" + str(r[0]) + "\t" + str(r[1]) + "\n")
+        if out_file is not None:
+            out_file.close()
+
         remove(output_fp)
 
     def test_classify(self):

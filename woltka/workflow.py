@@ -83,7 +83,8 @@ def workflow(input_fp:     str,
              # performance
              chunk:        int = None,
              cache:        int = 1024,
-             no_exe:      bool = False) -> dict:
+             no_exe:      bool = False,
+             coverage_map: defaultdict = None) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -131,7 +132,7 @@ def workflow(input_fp:     str,
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
-        zippers)
+        zippers, coverage_map)
 
     # convert counts to fractions
     frac_profiles(data, frac)
@@ -173,7 +174,8 @@ def classify(mapper:  object,
              stratmap:  dict = None,
              chunk:      int = None,
              cache:      int = 1024,
-             zippers:   dict = None) -> dict:
+             zippers:   dict = None,
+             coverage_map: defaultdict = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -235,6 +237,8 @@ def classify(mapper:  object,
         LRU cache size for classification results at each rank.
     zippers : dict, optional
         External compression programs.
+    coverage_map : defaultdict<SortedRangeList>, optional
+        Write coverage of OTUs to this dictionary
 
     Returns
     -------
@@ -246,6 +250,7 @@ def classify(mapper:  object,
     Subject(s) of each query are sorted and converted into a tuple, which is
     hashable, a property necessary for subsequent assignment result caching.
     """
+
     data = {x: {} for x in ranks}
 
     # assigners for each rank
@@ -275,17 +280,47 @@ def classify(mapper:  object,
             for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
                 nqry += len(qryque)
 
-                # (optional) strip indices and generate tuples
-                subque = deque(map(tuple, map(sorted, strip_suffix(
-                    subque, trimsub) if trimsub else subque)))
-
                 # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
                     files[fp] if files else None: (qryque, subque)}
 
+                # (optional) calculate coverage
+                if coverage_map is not None:
+                    for sample, rmap in rmaps.items():
+                        for subject_dict in rmap[1]:
+                            for subject in subject_dict:
+                                for read_start, read_end \
+                                        in subject_dict[subject]:
+                                    if read_start is None or read_end is None:
+                                        continue
+                                    # TODO: Coverage with/without suffix?
+                                    subject_stripped = subject
+                                    if trimsub:
+                                        subject_stripped = \
+                                            subject.rsplit(trimsub, 1)[0]
+                                    coverage_map[sample, subject_stripped]\
+                                        .add_range(read_start, read_end)
+
+                # Discard read start/end
+                for sample in rmaps:
+                    # (optional) strip indices and generate tuples
+                    if not trimsub:
+                        rmaps[sample] = (
+                            rmaps[sample][0],
+                            deque(tuple(sorted(x.keys()))
+                                  for x in rmaps[sample][1])
+                        )
+                    else:
+                        rmaps[sample] = (
+                            rmaps[sample][0],
+                            deque(
+                                tuple(sorted([y.rsplit(trimsub, 1)[0]
+                                              for y in x.keys()]))
+                                for x in rmaps[sample][1])
+                        )
+
                 # assign reads at each rank
                 for sample, rmap in rmaps.items():
-
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
                         kwargs['strata'] = read_strata(
@@ -304,6 +339,11 @@ def classify(mapper:  object,
 
         click.echo(' Done.')
         click.echo(f'  Number of sequences classified: {nqry}.')
+
+    if coverage_map is not None:
+        click.echo("Calculating per sample coverage")
+        for key in coverage_map:
+            coverage_map[key].compress()
 
     click.echo('Classification completed.')
     return data
@@ -944,7 +984,7 @@ def assign_readmap(qryque:    list,
                 major=major, above=above, uniq=uniq))
         assigner = assigners[rank]
 
-    # call assigner on suject(s) per query
+    # call assigner on subject(s) per query
     taxque = map(assigner, subque)
 
     # report or drop unassigned
