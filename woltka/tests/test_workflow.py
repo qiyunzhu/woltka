@@ -66,7 +66,7 @@ class WorkflowTests(TestCase):
                 out_file.write("subject\tstart\tend\n")
             srl = cov[key]
             for r in srl.ranges:
-                out_file.write(str(otu) + "\t" + str(r[0]) + "\t" + str(r[1]) + "\n")
+                print(f'{otu}\t{r[0]}\t{r[1]}', file=out_file)
         if out_file is not None:
             out_file.close()
 
