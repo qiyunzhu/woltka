@@ -93,10 +93,7 @@ def plain_mapper(fh, fmt=None, n=1000):
         # add subject to subject set of the same query Id,
         # keeping track of read indices
         if query == this:
-            if subject in subque[-1]:
-                subque[-1][subject].append((start, end))
-            else:
-                subque[-1][subject] = [(start, end)]
+            subque[-1].setdefault(subject, []).append((start, end))
 
         # when query Id changes,
         else:

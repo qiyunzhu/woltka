@@ -38,6 +38,7 @@ from .tree import (
 from .ordinal import (
     ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
 from .table import prep_table, write_table
+from .cover import SortedRangeList
 
 
 def workflow(input_fp:     str,
@@ -80,11 +81,11 @@ def workflow(input_fp:     str,
              add_lineage: bool = False,
              outmap_dir:   str = None,
              outmap_zip:   str = 'gz',
+             outcov_dir:   str = None,
              # performance
              chunk:        int = None,
              cache:        int = 1024,
-             no_exe:      bool = False,
-             coverage_map: defaultdict = None) -> dict:
+             no_exe:      bool = False) -> dict:
     """Main classification workflow which accepts command-line arguments.
 
     Returns
@@ -132,7 +133,7 @@ def workflow(input_fp:     str,
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
-        zippers, coverage_map)
+        zippers, outcov_dir)
 
     # convert counts to fractions
     frac_profiles(data, frac)
@@ -175,7 +176,7 @@ def classify(mapper:  object,
              chunk:      int = None,
              cache:      int = 1024,
              zippers:   dict = None,
-             coverage_map: defaultdict = None) -> dict:
+             outcov_dir: str = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -237,8 +238,8 @@ def classify(mapper:  object,
         LRU cache size for classification results at each rank.
     zippers : dict, optional
         External compression programs.
-    coverage_map : defaultdict<SortedRangeList>, optional
-        Write coverage of OTUs to this dictionary
+    outcov_dir : str, optional
+        Write Subject coverage maps to directory.
 
     Returns
     -------
@@ -263,6 +264,9 @@ def classify(mapper:  object,
               'sizes': sizes, 'unasgd': unasgd, 'rank2dir': rank2dir,
               'outzip': outzip if outzip != 'none' else None}
 
+    # coverage map
+    covers = defaultdict(SortedRangeList) if outcov_dir else None
+
     # current sample Id
     csample = False
 
@@ -284,24 +288,17 @@ def classify(mapper:  object,
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
                     files[fp] if files else None: (qryque, subque)}
 
-                # (optional) calculate coverage
-                if coverage_map is not None:
+                # (optional) calculate subject coverage
+                if covers is not None:
                     for sample, rmap in rmaps.items():
-                        for subject_dict in rmap[1]:
-                            for subject in subject_dict:
-                                for read_start, read_end \
-                                        in subject_dict[subject]:
-                                    if read_start is None or read_end is None:
+                        for subjects in rmap[1]:
+                            for subject, ranges in subjects.items():
+                                for start, end in ranges:
+                                    if start is None or end is None:
                                         continue
-                                    # TODO: Coverage with/without suffix?
-                                    subject_stripped = subject
-                                    if trimsub:
-                                        subject_stripped = \
-                                            subject.rsplit(trimsub, 1)[0]
-                                    coverage_map[sample, subject_stripped]\
-                                        .add_range(read_start, read_end)
+                                    covers[sample, subject].add_range(start, end)
 
-                # Discard read start/end
+                # discard read start / end
                 for sample in rmaps:
                     # (optional) strip indices and generate tuples
                     if not trimsub:
@@ -340,10 +337,22 @@ def classify(mapper:  object,
         click.echo(' Done.')
         click.echo(f'  Number of sequences classified: {nqry}.')
 
-    if coverage_map is not None:
-        click.echo("Calculating per sample coverage")
-        for key in coverage_map:
-            coverage_map[key].compress()
+    # write coverage maps
+    if outcov_dir:
+        click.echo('Calculating per sample coverage...', nl=False)
+        covmap = {}
+        for (sample, sub), cover in covers.items():
+            cover.compress()
+            covmap.setdefault(sample, {}).setdefault(sub, []).extend(
+                cover.ranges)
+            # TODO: needs a mechanism to merge ranges of different chunks
+        makedirs(outcov_dir, exist_ok=True)
+        for sample in sorted(covmap):
+            with open(join(outcov_dir, f'{sample}.cov'), 'w') as f:
+                for sub, ranges in sorted(covmap[sample].items()):
+                    for start, end in sorted(ranges):
+                        print(sub, start, end, sep='\t', file=f)
+        click.echo(' Done.')
 
     click.echo('Classification completed.')
     return data
@@ -790,6 +799,8 @@ def strip_suffix(subque: list,
     and trim from it to the right end. If not found, the whole subject Id will
     be retained.
     """
+    # for sub, ranges in subque:
+    #     yield sub.rsplit(sep, 1)[0], ranges
     return map(set, map(partial(
         map, lambda x: x.rsplit(sep, 1)[0]), subque))
 

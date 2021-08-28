@@ -50,27 +50,16 @@ class WorkflowTests(TestCase):
         # simplest ogu workflow
         input_fp = join(self.datdir, 'align', 'bowtie2')
         output_fp = join(self.tmpdir, 'tmp.tsv')
-        cov = defaultdict(SortedRangeList)
-        workflow(input_fp, output_fp, coverage_map=cov)['none']
-        active_sample = None
-        out_file = None
-
-        makedirs("coverage", exist_ok=True)
-        for key in cov:
-            sample, otu = key
-            if sample != active_sample:
-                active_sample = sample
-                if out_file is not None:
-                    out_file.close()
-                out_file = open("coverage/" + sample + ".tsv", "w")
-                out_file.write("subject\tstart\tend\n")
-            srl = cov[key]
-            for r in srl.ranges:
-                print(f'{otu}\t{r[0]}\t{r[1]}', file=out_file)
-        if out_file is not None:
-            out_file.close()
-
+        outcov_dir = join(self.tmpdir, 'outcov')
+        makedirs(outcov_dir)
+        workflow(input_fp, output_fp, outcov_dir=outcov_dir)['none']
+        with open(join(outcov_dir, 'S04.cov'), 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 1078)
+        self.assertEqual(obs[10], 'G000007265\t2092666\t2092815')
+        self.assertEqual(obs[200], 'G000215745\t768758\t769038')
         remove(output_fp)
+        rmtree(outcov_dir)
 
     def test_classify(self):
         # simplest ogu workflow
