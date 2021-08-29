@@ -7,7 +7,6 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-from collections import defaultdict
 from unittest import TestCase, main
 from os import remove, makedirs
 from os.path import join, dirname, realpath
