@@ -72,23 +72,12 @@ def plain_mapper(fh, fmt=None, n=1000):
     for i, line in enumerate(chain(iter(head), fh)):
 
         # parse current alignment line
+        parsed = parser(line)
         try:
-            # Parsers generate different fields dependent on file type
-            # All parser results fit into the union, but some will
-            # return fewer fields or leave certain fields as None.
-            # (query, subject, score, length, start, end)
-            parsed = parser(line)
-            if len(parsed) >= 2:
-                query, subject = parsed[:2]
-            else:
-                continue
-
-            if len(parsed) >= 6:
-                start, end = parsed[4:6]
-            else:
-                start, end = None, None
+            query, subject = parsed[:2]
         except (TypeError, IndexError):
             continue
+        start, end = parsed[4:6] if len(parsed) >= 6 else (None, None)
 
         # add subject to subject set of the same query Id,
         # keeping track of read indices

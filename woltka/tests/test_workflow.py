@@ -19,7 +19,6 @@ import pandas as pd
 from biom import load_table
 from pandas.testing import assert_frame_equal
 
-from woltka.cover import SortedRangeList
 from woltka.workflow import (
     workflow, classify, parse_samples, parse_strata, build_mapper, parse_sizes,
     prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,

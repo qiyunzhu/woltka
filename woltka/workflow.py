@@ -294,9 +294,9 @@ def classify(mapper:  object,
                         for subjects in rmap[1]:
                             for subject, ranges in subjects.items():
                                 for start, end in ranges:
-                                    if start is None or end is None:
-                                        continue
-                                    covers[sample, subject].add_range(start, end)
+                                    if start and end:
+                                        covers[sample, subject].add_range(
+                                            start, end)
 
                 # discard read start / end
                 for sample in rmaps:
