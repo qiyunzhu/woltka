@@ -39,8 +39,7 @@ from .ordinal import (
     ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
 from .table import prep_table, write_table
 from .coverage import (
-    SortedRangeList, parse_ranges, remove_ranges, calc_coverage,
-    write_coverage)
+    parse_ranges, merge_ranges, calc_coverage, write_coverage)
 
 
 def workflow(input_fp:     str,
@@ -267,8 +266,8 @@ def classify(mapper:  object,
               'sizes': sizes, 'unasgd': unasgd, 'rank2dir': rank2dir,
               'outzip': outzip if outzip != 'none' else None}
 
-    # coverage map
-    covers = defaultdict(SortedRangeList) if outcov_dir else None
+    # (optional) subject coverage data
+    covers = {} if outcov_dir else None
 
     # current sample Id
     csample = False
@@ -293,7 +292,7 @@ def classify(mapper:  object,
 
                 # (optional) calculate subject coverage
                 if outcov_dir:
-                    parse_ranges(covers, rmaps)
+                    parse_ranges(rmaps, covers)
 
                 # assign reads at each rank
                 for sample, (qryque, subque) in rmaps.items():

@@ -109,7 +109,7 @@ def plain_mapper(fh, fmt=None, n=1000):
 
 
 def range_mapper(fh, fmt=None, n=1000):
-    """Read an alignment file yield maps of query to subject(s) and their
+    """Read an alignment file and yield maps of query to subject(s) and their
     ranges.
 
     Parameters
@@ -125,7 +125,7 @@ def range_mapper(fh, fmt=None, n=1000):
     ------
     deque of str
         Query queue.
-    deque of dict of str to tuple
+    deque of dict of str to (int, int)
         Subject-to-ranges queue.
 
     Notes
@@ -150,24 +150,23 @@ def range_mapper(fh, fmt=None, n=1000):
         except (TypeError, IndexError):
             continue
 
-        # zero or none are not valid coordinates
-        if not start or not end:
-            continue
+        # range must be positive integers
+        if start and end:
 
-        if query == this:
-            subque[-1].setdefault(subject, []).append((start, end))
-        else:
-            if i >= target:
-                yield qryque, subque
-                qryque, subque = deque(), deque()
-                qry_append, sub_append = qryque.append, subque.append
-                target = i + n
-            qry_append(query)
+            if query == this:
+                subque[-1].setdefault(subject, []).append((start, end))
+            else:
+                if i >= target:
+                    yield qryque, subque
+                    qryque, subque = deque(), deque()
+                    qry_append, sub_append = qryque.append, subque.append
+                    target = i + n
+                qry_append(query)
 
-            # return subject Id and range
-            sub_append({subject: [(start, end)]})
+                # return subject Id and range
+                sub_append({subject: [(start, end)]})
 
-            this = query
+                this = query
     yield qryque, subque
 
 
