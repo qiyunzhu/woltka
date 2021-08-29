@@ -160,7 +160,7 @@ def cli():
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
     help='Compress read-to-feature maps using this algorithm.')
 @click.option(
-    '--outcov', 'outcov_dir',type=click.Path(dir_okay=True),
+    '--outcov', 'outcov_dir', type=click.Path(dir_okay=True),
     help='Write subject coverage maps to this directory.')
 # performance
 @click.option(
