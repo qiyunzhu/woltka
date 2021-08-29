@@ -28,7 +28,7 @@ from .util import (
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
-from .align import plain_mapper
+from .align import plain_mapper, range_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, counter, counter_size,
     counter_strat, counter_size_strat)
@@ -38,7 +38,9 @@ from .tree import (
 from .ordinal import (
     ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
 from .table import prep_table, write_table
-from .cover import SortedRangeList
+from .coverage import (
+    SortedRangeList, parse_ranges, remove_ranges, calc_coverage,
+    write_coverage)
 
 
 def workflow(input_fp:     str,
@@ -120,7 +122,8 @@ def workflow(input_fp:     str,
         map_rank, zippers)
 
     # build mapping module
-    mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
+    mapper, chunk = build_mapper(
+        coords_fp, outcov_dir, overlap, chunk, zippers)
 
     # parse length map
     sizes = parse_sizes(sizes, mapper, zippers)
@@ -289,35 +292,16 @@ def classify(mapper:  object,
                     files[fp] if files else None: (qryque, subque)}
 
                 # (optional) calculate subject coverage
-                if covers is not None:
-                    for sample, rmap in rmaps.items():
-                        for subjects in rmap[1]:
-                            for subject, ranges in subjects.items():
-                                for start, end in ranges:
-                                    if start and end:
-                                        covers[sample, subject].add_range(
-                                            start, end)
-
-                # discard read start / end
-                for sample in rmaps:
-                    # (optional) strip indices and generate tuples
-                    if not trimsub:
-                        rmaps[sample] = (
-                            rmaps[sample][0],
-                            deque(tuple(sorted(x.keys()))
-                                  for x in rmaps[sample][1])
-                        )
-                    else:
-                        rmaps[sample] = (
-                            rmaps[sample][0],
-                            deque(
-                                tuple(sorted([y.rsplit(trimsub, 1)[0]
-                                              for y in x.keys()]))
-                                for x in rmaps[sample][1])
-                        )
+                if outcov_dir:
+                    parse_ranges(covers, rmaps)
 
                 # assign reads at each rank
-                for sample, rmap in rmaps.items():
+                for sample, (qryque, subque) in rmaps.items():
+
+                    # (optional) strip suffixes from subject Ids
+                    subque = deque(map(tuple, map(sorted, strip_suffix(
+                        subque, trimsub) if trimsub else subque)))
+
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
                         kwargs['strata'] = read_strata(
@@ -326,7 +310,8 @@ def classify(mapper:  object,
 
                     # call assignment workflow for each rank
                     for rank in ranks:
-                        assign_readmap(*rmap, data, rank, sample, **kwargs)
+                        assign_readmap(
+                            qryque, subque, data, rank, sample, **kwargs)
 
                 # show progress
                 istep = nqry // 1000000 - nstep
@@ -340,18 +325,7 @@ def classify(mapper:  object,
     # write coverage maps
     if outcov_dir:
         click.echo('Calculating per sample coverage...', nl=False)
-        covmap = {}
-        for (sample, sub), cover in covers.items():
-            cover.compress()
-            covmap.setdefault(sample, {}).setdefault(sub, []).extend(
-                cover.ranges)
-            # TODO: needs a mechanism to merge ranges of different chunks
-        makedirs(outcov_dir, exist_ok=True)
-        for sample in sorted(covmap):
-            with open(join(outcov_dir, f'{sample}.cov'), 'w') as f:
-                for sub, ranges in sorted(covmap[sample].items()):
-                    for start, end in sorted(ranges):
-                        print(sub, start, end, sep='\t', file=f)
+        write_coverage(calc_coverage(covers), outcov_dir)
         click.echo(' Done.')
 
     click.echo('Classification completed.')
@@ -496,16 +470,19 @@ def parse_strata(fp:       str = None,
     return {k: join(fp, v) for k, v in map_.items()}
 
 
-def build_mapper(coords_fp: str = None,
-                 overlap:   int = None,
-                 chunk:     int = None,
-                 zippers:  dict = None) -> Tuple[callable, int]:
+def build_mapper(coords_fp:  str = None,
+                 outcov_dir: str = None,
+                 overlap:    int = None,
+                 chunk:      int = None,
+                 zippers:   dict = None) -> Tuple[callable, int]:
     """Build mapper function (plain or ordinal).
 
     Parameters
     ----------
     coords_fp : str, optional
         Path to gene coordinates file.
+    outcov_dir : str, optional
+        Path to output subject coverage directory.
     overlap : int, optional
         Read/gene overlapping percentage threshold.
     chunk : int, optional
@@ -543,7 +520,7 @@ def build_mapper(coords_fp: str = None,
                        th=overlap and overlap / 100), chunk
     else:
         chunk = chunk or 1000
-        return plain_mapper, chunk
+        return range_mapper if outcov_dir else plain_mapper, chunk
 
 
 def parse_sizes(sizes:       str,
@@ -799,8 +776,6 @@ def strip_suffix(subque: list,
     and trim from it to the right end. If not found, the whole subject Id will
     be retained.
     """
-    # for sub, ranges in subque:
-    #     yield sub.rsplit(sep, 1)[0], ranges
     return map(set, map(partial(
         map, lambda x: x.rsplit(sep, 1)[0]), subque))
 
