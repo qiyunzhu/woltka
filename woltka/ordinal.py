@@ -36,7 +36,6 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     prefix : bool
         Prefix gene IDs with nucleotide IDs.
 
-
     See Also
     --------
     align.plain_mapper
@@ -81,9 +80,10 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             Subject(s) queue.
         """
         # master read-to-gene(s) map
-        res = defaultdict(dict)
+        res = defaultdict(set)
 
         for nucl, loci in locmap.items():
+
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
             # Python's built-in timsort algorithm is efficient at this
@@ -96,9 +96,9 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
 
             # map reads to genes using the core algorithm
             for read, gene in match_func(queue, lenmap[nucl], th, nucl):
+
                 # merge read-gene pairs to the master map
-                # TODO: support coverage map for ordinal reads
-                res[rids[read]][gene] = []
+                res[rids[read]].add(gene)
 
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
