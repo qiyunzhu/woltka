@@ -47,11 +47,9 @@ def merge_ranges(ranges):
     res = []
     res_extend = res.extend
     cstart, cend = None, None
-
-    it = iter(ranges)
-    for start, end in sorted((x, next(it)) for x in it):
+    for start, end in sorted(zip(*[iter(ranges)] * 2)):
         if cend is None:
-            # case 1: no active range, start active range.
+            # case 1: no active range, start active range
             cstart, cend = start, end
         elif cend >= start - 1:
             # case 2: active range continues through this range
@@ -153,6 +151,5 @@ def write_coverage(covers, outdir):
     for sample, cover in sorted(covers.items()):
         with open(join(outdir, f'{sample}.cov'), 'w') as fh:
             for subject, ranges in sorted(cover.items()):
-                it = iter(ranges)
-                for start, end in sorted((x, next(it)) for x in it):
+                for start, end in sorted(zip(*[iter(ranges)] * 2)):
                     print(subject, start, end, sep='\t', file=fh)
