@@ -45,9 +45,11 @@ def merge_ranges(ranges):
     [(1, 4), (6, 9)]
     """
     res = []
-    res_append = res.append
+    res_extend = res.extend
     cstart, cend = None, None
-    for start, end in sorted(ranges):
+
+    it = iter(ranges)
+    for start, end in sorted((x, next(it)) for x in it):
         if cend is None:
             # case 1: no active range, start active range.
             cstart, cend = start, end
@@ -58,14 +60,14 @@ def merge_ranges(ranges):
         else:
             # case 3: active range ends before this range begins
             # write new range out, then start new active range
-            res_append((cstart, cend))
+            res_extend((cstart, cend))
             cstart, cend = start, end
     if cend is not None:
-        res_append((cstart, cend))
+        res_extend((cstart, cend))
     return res
 
 
-def parse_ranges(rmaps, covers, chunk=10000):
+def parse_ranges(rmaps, covers, chunk=5000):
     """Extract range information from read maps.
 
     Parameters
@@ -151,5 +153,6 @@ def write_coverage(covers, outdir):
     for sample, cover in sorted(covers.items()):
         with open(join(outdir, f'{sample}.cov'), 'w') as fh:
             for subject, ranges in sorted(cover.items()):
-                for start, end in sorted(ranges):
+                it = iter(ranges)
+                for start, end in sorted((x, next(it)) for x in it):
                     print(subject, start, end, sep='\t', file=fh)

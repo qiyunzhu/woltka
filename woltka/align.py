@@ -154,7 +154,7 @@ def range_mapper(fh, fmt=None, n=1000):
         if start and end:
 
             if query == this:
-                subque[-1].setdefault(subject, []).append((start, end))
+                subque[-1].setdefault(subject, []).extend((start, end))
             else:
                 if i >= target:
                     yield qryque, subque
@@ -164,7 +164,7 @@ def range_mapper(fh, fmt=None, n=1000):
                 qry_append(query)
 
                 # return subject Id and range
-                sub_append({subject: [(start, end)]})
+                sub_append({subject: [start, end]})
 
                 this = query
     yield qryque, subque
