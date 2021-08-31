@@ -13,6 +13,10 @@
 
 The "coverage" refers to the ranges of a subject sequence (e.g., genome) that
 are covered by at least one query sequence (e.g., short sequencing read).
+
+The functions `merge_ranges` and `parse_ranges` were modified based on the
+`SortedRangeList` class implemented by Daniel Hakim (@dhakim87) in the Zebra
+Filter program (https://github.com/ucsd-cmi/zebra_filter).
 """
 
 from os import makedirs
