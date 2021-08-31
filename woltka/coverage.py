@@ -93,13 +93,14 @@ def parse_ranges(rmaps, covers, chunk=10000):
     for sample, (_, subque) in rmaps.items():
         for subjects in subque:
             for subject, ranges in subjects.items():
-                cover = add_cover((sample, subject), [0])
+                cover = add_cover((sample, subject), [0, []])
                 count = cover[0] + len(ranges)
                 if count >= chunk:
-                    cover[:] = [0] + merge_ranges(cover[1:] + ranges)
+                    cover[0] = 0
+                    cover[1] = merge_ranges(cover[1] + ranges)
                 else:
                     cover[0] = count
-                    cover.extend(ranges)
+                    cover[1].extend(ranges)
 
 
 def calc_coverage(covers):
@@ -127,8 +128,8 @@ def calc_coverage(covers):
     """
     res = {}
     add_sample = res.setdefault
-    for (sample, subject), ranges in covers.items():
-        add_sample(sample, {})[subject] = merge_ranges(ranges[1:])
+    for (sample, subject), (_, ranges) in covers.items():
+        add_sample(sample, {})[subject] = merge_ranges(ranges)
     return res
 
 
