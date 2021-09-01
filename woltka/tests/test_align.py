@@ -16,9 +16,9 @@ from io import StringIO
 
 from woltka.file import openzip
 from woltka.align import (
-    plain_mapper, infer_align_format, assign_parser, parse_map_line,
-    parse_b6o_line, parse_sam_line, cigar_to_lens, parse_kraken,
-    parse_centrifuge)
+    plain_mapper, range_mapper, infer_align_format, assign_parser,
+    parse_map_line, parse_b6o_line, parse_sam_line, cigar_to_lens,
+    parse_kraken, parse_centrifuge)
 
 
 class AlignTests(TestCase):
@@ -32,9 +32,7 @@ class AlignTests(TestCase):
     def test_plain_mapper(self):
 
         def _res2lst(res):
-            return tuple((list(y[0]), list([set(x.keys())
-                                            for x in y[1]]))
-                         for y in res)
+            return tuple(tuple(list(x) for x in y) for y in res)
 
         # simple case
         aln = StringIO('\n'.join((
@@ -58,7 +56,6 @@ class AlignTests(TestCase):
                (['R3'], [{'G1', 'G3'}]),
                (['R4'], [{'G4'}]),
                (['R5'], [{'G5'}]))
-
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 2
@@ -107,6 +104,29 @@ class AlignTests(TestCase):
             list(plain_mapper(StringIO('Hi there!')))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
+
+    def test_range_mapper(self):
+
+        def _res2lst(res):
+            return tuple(tuple(list(x) for x in y) for y in res)
+
+        aln = StringIO('\n'.join((
+            'R1	G1	95	20	0	0	1	20	10	29	1	1',
+            'R2	G1	95	20	0	0	1	20	16	35	1	1',
+            'R3	G2	95	20	0	0	1	20	39	21	1	1',
+            'R4	G2	95	20	0	0	20	1	41	22	1	1',
+            'R5	G3	95	20	0	0	20	1	30	49	1	1',
+            'R5	G3	95	20	0	0	20	1	50	69	1	1',
+            'Rx	Gx	95	20	0	0	1	20	0	0	1	1',
+            '# this is not an alignment')))
+        obs = _res2lst(range_mapper(aln))[0]
+        exp = [('R1', {'G1': [(10, 29)]}),
+               ('R2', {'G1': [(16, 35)]}),
+               ('R3', {'G2': [(21, 39)]}),
+               ('R4', {'G2': [(22, 41)]}),
+               ('R5', {'G3': [(30, 49), (50, 69)]})]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
 
     def test_infer_align_format(self):
         # simple cases

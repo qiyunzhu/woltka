@@ -30,7 +30,6 @@ from functools import lru_cache
 
 def plain_mapper(fh, fmt=None, n=1000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
-
     Parameters
     ----------
     fh : file handle
@@ -39,14 +38,12 @@ def plain_mapper(fh, fmt=None, n=1000):
         Alignment file format.
     n : int, optional
         Number of lines per chunk.
-
     Yields
     ------
     deque of str
         Query queue.
-    deque of dict of str -> tuple
+    deque of set of str
         Subject(s) queue.
-
     Notes
     -----
     The design of this function aims to couple with the extremely large size of
@@ -72,20 +69,18 @@ def plain_mapper(fh, fmt=None, n=1000):
     for i, line in enumerate(chain(iter(head), fh)):
 
         # parse current alignment line
-        parsed = parser(line)
         try:
-            query, subject = parsed[:2]
+            query, subject = parser(line)[:2]
         except (TypeError, IndexError):
             continue
-        start, end = parsed[4:6] if len(parsed) >= 6 else (None, None)
 
-        # add subject to subject set of the same query Id,
-        # keeping track of read indices
+        # add subject to subject set of the same query Id
         if query == this:
-            subque[-1].setdefault(subject, []).append((start, end))
+            subque[-1].add(subject)
 
         # when query Id changes,
         else:
+
             # line number has reached target
             if i >= target:
 
@@ -102,14 +97,76 @@ def plain_mapper(fh, fmt=None, n=1000):
                 # next target line number
                 target = i + n
 
-            # create new query and subject map pair
+            # create new query and subject set pair
             qry_append(query)
-            sub_append({subject: [(start, end)]})
+            sub_append({subject})
 
             # update current query Id
             this = query
 
     # final flush
+    yield qryque, subque
+
+
+def range_mapper(fh, fmt=None, n=1000):
+    """Read an alignment file and yield maps of query to subject(s) and their
+    ranges.
+
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    fmt : str, optional
+        Alignment file format.
+    n : int, optional
+        Number of lines per chunk.
+
+    Yields
+    ------
+    deque of str
+        Query queue.
+    deque of dict of str to (int, int)
+        Subject-to-ranges queue.
+
+    Notes
+    -----
+    Same as `plain_mapper`, except that it also returns subject ranges.
+
+    See Also
+    --------
+    plain_mapper
+    """
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
+    parser = assign_parser(fmt)
+    qryque, subque = deque(), deque()
+    qry_append, sub_append = qryque.append, subque.append
+    this = None
+    target = n
+    for i, line in enumerate(chain(iter(head), fh)):
+
+        # retain subject range
+        try:
+            query, subject, _, _, start, end = parser(line)[:6]
+        except (TypeError, IndexError):
+            continue
+
+        # range must be positive integers
+        if start and end:
+
+            if query == this:
+                subque[-1].setdefault(subject, []).append((start, end))
+            else:
+                if i >= target:
+                    yield qryque, subque
+                    qryque, subque = deque(), deque()
+                    qry_append, sub_append = qryque.append, subque.append
+                    target = i + n
+                qry_append(query)
+
+                # return subject Id and range
+                sub_append({subject: [(start, end)]})
+
+                this = query
     yield qryque, subque
 
 
