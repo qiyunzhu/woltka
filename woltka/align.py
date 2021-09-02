@@ -125,12 +125,15 @@ def range_mapper(fh, fmt=None, n=1000):
     ------
     deque of str
         Query queue.
-    deque of dict of str to (int, int)
+    deque of dict of str to list of int
         Subject-to-ranges queue.
 
     Notes
     -----
     Same as `plain_mapper`, except that it also returns subject ranges.
+
+    Ranges are stored as a one-dimensional, interleaved list of start1, end1,
+    start2, end2, start3, end3...
 
     See Also
     --------

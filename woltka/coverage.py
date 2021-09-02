@@ -21,7 +21,6 @@ Filter program (https://github.com/ucsd-cmi/zebra_filter).
 
 from os import makedirs
 from os.path import join
-from collections import deque
 
 
 def merge_ranges(ranges):
@@ -29,20 +28,20 @@ def merge_ranges(ranges):
 
     Parameters
     ----------
-    ranges : list of (int, int)
-        Ranges (start, end) to merge.
+    ranges : list of int
+        Ranges to merge.
 
     Returns
     -------
-    list of (int, int)
+    list of int
         Merged ranges.
-    
+
     Notes
     -----
     Ranges that have overlaps will be merged into one. For example:
 
-    >>> merge_ranges([(1, 3), (2, 4), (6, 8), (7, 9)])
-    [(1, 4), (6, 9)]
+    >>> merge_ranges([1, 3, 2, 4, 6, 8, 7, 9])
+    [1, 4, 6, 9]
     """
     res = []
     res_extend = res.extend
@@ -65,7 +64,7 @@ def merge_ranges(ranges):
     return res
 
 
-def parse_ranges(rmaps, covers, chunk=5000):
+def parse_ranges(rmaps, covers, chunk=20000):
     """Extract range information from read maps.
 
     Parameters
@@ -117,7 +116,7 @@ def calc_coverage(covers):
 
     Returns
     -------
-    dict of dict of (int, int)
+    dict of dict of list of int
         Subject coverage data.
 
     Notes
