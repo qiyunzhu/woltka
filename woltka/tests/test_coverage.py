@@ -15,7 +15,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 
 from woltka.coverage import (
-    merge_ranges, parse_ranges, calc_coverage, write_coverage)
+    merge_ranges, parse_ranges, calc_coverage, write_coverage, trim_digits)
 
 
 class CoverageTests(TestCase):
@@ -107,25 +107,32 @@ class CoverageTests(TestCase):
                'S2': {'G2': [26, 100, 151, 200],
                       'G3': [1, 50, 76, 125],
                       'G4': [26, 75, 101, 150]},
-               'S3': {'G1': [1, 200],
+               'S3': {'G1': [1, 200, 250, 250],
                       'G2': [1, 100]}}
         outdir = join(self.tmpdir, 'outdir')
         makedirs(outdir)
         write_coverage(cov, outdir)
         with open(join(outdir, 'S1.cov'), 'r') as f:
             obs = f.read().splitlines()
-        exp = ['G1\t1\t100', 'G1\t251\t300', 'G2\t101\t150']
+        exp = ['G1\t1-100,251-300', 'G2\t101-50']
         self.assertListEqual(obs, exp)
         with open(join(outdir, 'S2.cov'), 'r') as f:
             obs = f.read().splitlines()
-        exp = ['G2\t26\t100', 'G2\t151\t200', 'G3\t1\t50',
-               'G3\t76\t125', 'G4\t26\t75', 'G4\t101\t150']
+        exp = ['G2\t26-100,51-200', 'G3\t1-50,76-125', 'G4\t26-75,101-50']
         self.assertListEqual(obs, exp)
         with open(join(outdir, 'S3.cov'), 'r') as f:
             obs = f.read().splitlines()
-        exp = ['G1\t1\t200', 'G2\t1\t100']
+        exp = ['G1\t1-200,50', 'G2\t1-100']
         self.assertListEqual(obs, exp)
         rmtree(outdir)
+
+    def test_trim_digits(self):
+        self.assertEqual(trim_digits('0', '5'), '5')
+        self.assertEqual(trim_digits('0', '15'), '15')
+        self.assertEqual(trim_digits('10', '15'), '5')
+        self.assertEqual(trim_digits('15', '25'), '25')
+        self.assertEqual(trim_digits('20', '105'), '105')
+        self.assertIsNone(trim_digits('35', '35'))
 
 
 if __name__ == '__main__':

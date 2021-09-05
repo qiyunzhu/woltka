@@ -21,6 +21,7 @@ Filter program (https://github.com/ucsd-cmi/zebra_filter).
 
 from os import makedirs
 from os.path import join
+from itertools import cycle
 
 
 def merge_ranges(ranges):
@@ -145,10 +146,56 @@ def write_coverage(covers, outdir):
         Coverage data structure.
     outdir : str
         Directory of output files.
+
+    Notes
+    -----
+    The sorted ranges are stored in the following format to minimize disk space
+    consumption:
+
+    Subject <tab> 1-120,45-80,95-235,50,70-360,5-90,5-420,...
+
+    For each coordinate (start or end), the digits to the left of the last
+    coordinate which the current coordinate does not have will be appended. For
+    example, the ranges above actually mean:
+
+    Subject <tab> 1-120,145-180,195-235,250-250,270-360,365-390,395-420,...
+
+    This function assumes that the input range coordinates are monotonic, which
+    is already enforced by `calc_coverage`.
+
+    See Also
+    --------
+    calc_coverage
+    trim_digits
     """
     makedirs(outdir, exist_ok=True)
     for sample, cover in sorted(covers.items()):
         with open(join(outdir, f'{sample}.cov'), 'w') as fh:
             for subject, ranges in sorted(cover.items()):
-                for start, end in sorted(zip(*[iter(ranges)] * 2)):
-                    print(subject, start, end, sep='\t', file=fh)
+                line, last = '', '0'
+                for this, sep in zip(map(str, ranges), cycle(',-')):
+                    if this != last:
+                        line += sep + trim_digits(last, this)
+                        last = this
+                print(subject, line[1:], sep='\t', file=fh) 
+
+
+def trim_digits(last, this):
+    """Trim digits from the left of this number according to the last number.
+
+    Parameters
+    ----------
+    last : str
+        Last number.
+    this : str
+        This number.
+
+    Notes
+    -----
+    The two input strings must represent two integers in ascending order.
+    """
+    if len(last) < len(this):
+        return this
+    for i, (ldig, tdig) in enumerate(zip(last, this)):
+        if ldig != tdig:
+            return this[i:]
