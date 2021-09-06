@@ -340,6 +340,8 @@ def match_read_gene(queue, lens, th, pfx=None):
     # cache method references
     reads_items = reads.items
     genes_items = genes.items
+    reads_pop = reads.pop
+    genes_pop = genes.pop
 
     # walk through flattened queue of reads and genes
     for loc, is_start, is_gene, idx in queue:
@@ -352,25 +354,25 @@ def match_read_gene(queue, lens, th, pfx=None):
             # when a gene ends,
             else:
 
+                # remove it from current genes
+                gloc = genes_pop(idx)
+
                 # check current reads
                 for rid, rloc in reads_items():
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                    if loc - max(gloc, rloc) + 1 >= lens[rid] * th:
                         yield rid, idx
-
-                # remove it from current genes
-                del(genes[idx])
 
         # the same for reads
         else:
             if is_start:
                 reads[idx] = loc
             else:
+                rloc = reads_pop(idx)
                 for gid, gloc in genes_items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                    if loc - max(rloc, gloc) + 1 >= lens[idx] * th:
                         yield idx, gid
-                del(reads[idx])
 
 
 def match_read_gene_pfx(queue, lens, th, pfx):
@@ -406,23 +408,24 @@ def match_read_gene_pfx(queue, lens, th, pfx):
     """
     genes, reads = {}, {}
     reads_items, genes_items = reads.items, genes.items
+    reads_pop, genes_pop = reads.pop, genes.pop
     for loc, is_start, is_gene, idx in queue:
         if is_gene:
             if is_start:
                 genes[idx] = loc
             else:
+                gloc = genes_pop(idx)
                 for rid, rloc in reads_items():
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                    if loc - max(gloc, rloc) + 1 >= lens[rid] * th:
                         yield rid, f'{pfx}_{idx}'
-                del(genes[idx])
         else:
             if is_start:
                 reads[idx] = loc
             else:
+                rloc = reads_pop(idx)
                 for gid, gloc in genes_items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                    if loc - max(rloc, gloc) + 1 >= lens[idx] * th:
                         yield idx, f'{pfx}_{gid}'
-                del(reads[idx])
 
 
 def calc_gene_lens(coords, prefix=False):
