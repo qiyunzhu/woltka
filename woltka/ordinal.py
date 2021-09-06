@@ -63,11 +63,10 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     rids = []
     rid_append = rids.append
 
-    # cached map of read to alignment length
-    lenmap = defaultdict(dict)
-
     # cached map of read to coordinates
     locmap = defaultdict(list)
+
+    sortkey = itemgetter(0)
 
     def flush():
         """Match reads in current chunk with genes from all nucleotides.
@@ -88,14 +87,15 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # question is to merge an unsorted list into a sorted one
             # Python's built-in timsort algorithm is efficient at this
             try:
-                queue = sorted(coords[nucl] + loci)
+                queue = sorted(chain(coords[nucl], zip(*[iter(loci)] * 4)),
+                               key=sortkey)
 
             # it's possible that no gene was annotated on the nucleotide
             except KeyError:
                 continue
 
             # map reads to genes using the core algorithm
-            for read, gene in match_func(queue, lenmap[nucl], th, nucl):
+            for read, gene in match_func(queue, th, nucl):
 
                 # merge read-gene pairs to the master map
                 res[rids[read]].add(gene)
@@ -128,7 +128,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # re-initiate read Ids, length map and location map
             rids = []
             rid_append = rids.append
-            lenmap, locmap = defaultdict(dict), defaultdict(list)
+            locmap = defaultdict(list)
 
             # next target line number
             target = i + n
@@ -136,10 +136,9 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         # append read Id, alignment length and location
         idx = len(rids)
         rid_append(query)
-        lenmap[subject][idx] = length
         locmap[subject].extend((
-            (start, True, False, idx),
-            (end,  False, False, idx)))
+            start, length, False, idx,
+            end,  False, False, idx))
 
         this = query
 
@@ -253,14 +252,14 @@ def read_gene_coords(fh, sort=False):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
             idx = x[0]
-            queue_extend(((start, True, True, idx),
-                          (end,  False, True, idx)))
+            queue_extend((start, True, True, idx,
+                          end,  False, True, idx))
 
     # sort gene coordinates per nucleotide
     if sort:
         sortkey = itemgetter(0)
         for nucl, queue in res.items():
-            res[nucl] = sorted(queue, key=sortkey)
+            res[nucl] = sorted(zip(*[iter(queue)] * 4), key=sortkey)
     return res
 
 
@@ -296,7 +295,7 @@ def whether_prefix(coords):
     return False
 
 
-def match_read_gene(queue, lens, th, pfx=None):
+def match_read_gene(queue, th, pfx=None):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
@@ -304,8 +303,6 @@ def match_read_gene(queue, lens, th, pfx=None):
     queue : list of tuple
         Sorted list of elements.
         (loc, is_start, is_gene, id)
-    lens : dict
-        Read-to-alignment length map.
     th : float
         Threshold for read/gene overlapping fraction.
     pfx : str, optional
@@ -353,10 +350,10 @@ def match_read_gene(queue, lens, th, pfx=None):
             else:
 
                 # check current reads
-                for rid, rloc in reads_items():
+                for rid, (rloc, rlen) in reads_items():
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                    if loc - max(genes[idx], rloc) >= rlen:
                         yield rid, idx
 
                 # remove it from current genes
@@ -365,15 +362,16 @@ def match_read_gene(queue, lens, th, pfx=None):
         # the same for reads
         else:
             if is_start:
-                reads[idx] = loc
+                reads[idx] = loc, is_start * th - 1
             else:
+                rloc, rlen = reads[idx]
                 for gid, gloc in genes_items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                    if loc - max(rloc, gloc) >= rlen:
                         yield idx, gid
                 del(reads[idx])
 
 
-def match_read_gene_pfx(queue, lens, th, pfx):
+def match_read_gene_pfx(queue, th, pfx):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
@@ -381,8 +379,6 @@ def match_read_gene_pfx(queue, lens, th, pfx):
     queue : list of tuple
         Sorted list of elements.
         (loc, is_start, is_gene, id)
-    lens : dict
-        Read-to-alignment length map.
     th : float
         Threshold for read/gene overlapping fraction.
     pfx : str
@@ -411,16 +407,17 @@ def match_read_gene_pfx(queue, lens, th, pfx):
             if is_start:
                 genes[idx] = loc
             else:
-                for rid, rloc in reads_items():
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                for rid, (rloc, rlen) in reads_items():
+                    if loc - max(genes[idx], rloc) >= rlen:
                         yield rid, f'{pfx}_{idx}'
                 del(genes[idx])
         else:
             if is_start:
-                reads[idx] = loc
+                reads[idx] = loc, is_start * th - 1
             else:
+                rloc, rlen = reads[idx]
                 for gid, gloc in genes_items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                    if loc - max(rloc, gloc) >= rlen:
                         yield idx, f'{pfx}_{gid}'
                 del(reads[idx])
 
