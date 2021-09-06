@@ -22,7 +22,7 @@ from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
     match_read_gene, match_read_gene_pfx, ordinal_mapper, ordinal_parser,
-    read_gene_coords, whether_prefix, calc_gene_lens)
+    read_gene_coords, calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -78,29 +78,32 @@ class OrdinalTests(TestCase):
                  ('r8', 65, 84),
                  ('r9', 82, 95)]  # shorter
 
-        # length map
-        lens = {'r{}'.format(i): 20 for i in range(1, 10)}
-
         # flatten lists
+        # read length is uniformly 20, default threshold is 80%, so
+        # length is 20 * 0.8 - 1 = 15
         genes = [x for id_, start, end in genes for x in
                  ((start, True, True, id_),
                   (end,  False, True, id_))]
         reads = [x for id_, start, end in reads for x in
-                 ((start, True, False, id_),
+                 ((start,   15, False, id_),
                   (end,  False, False, id_))]
 
         queue = sorted(genes + reads)
 
-        # default (threshold = 80%)
-        obs = list(match_read_gene(queue, lens, th=0.8))
+        # default
+        obs = list(match_read_gene(queue))
         exp = [('r1', 'g1'),
                ('r5', 'g2'),
                ('r6', 'g2'),
                ('r8', 'g3')]
         self.assertListEqual(obs, exp)
 
-        # threashold = 50%
-        obs = list(match_read_gene(queue, lens, th=0.5))
+        # threashold = 50%, so length is 20 * 0.5 - 1 = 9
+        for i in range(len(queue)):
+            point = queue[i]
+            if point[1] and not point[2]:
+                queue[i] = (point[0], 9, point[2], point[3])
+        obs = list(match_read_gene(queue))
         exp = [('r1', 'g1'),
                ('r2', 'g1'),
                ('r3', 'g1'),
@@ -114,20 +117,19 @@ class OrdinalTests(TestCase):
     def test_match_read_gene_pfx(self):
         # same as above but adds a prefix to genes
         queue = [(1,  True,  True,  'g1'),
-                 (11, True,  False, 'r1'),
+                 (11,    7,  False, 'r1'),
                  (20, False, False, 'r1'),
-                 (26, True,  False, 'r2'),
+                 (26,    7,  False, 'r2'),
                  (35, False, False, 'r2'),
                  (50, False, True,  'g1')]
-        lens = {'r1': 10, 'r2': 10}
-        obs = list(match_read_gene_pfx(queue, lens, th=0.8, pfx='test'))
+        obs = list(match_read_gene_pfx(queue, pfx='test'))
         exp = [('r1', 'test_g1'),
                ('r2', 'test_g1')]
         self.assertListEqual(obs, exp)
 
     def test_ordinal_mapper(self):
         # uses the same example as above, with some noises
-        coords = read_gene_coords((
+        coords, _ = read_gene_coords((
             '>n1',
             'g1	5	29',
             'g2	33	61',
@@ -227,6 +229,19 @@ class OrdinalTests(TestCase):
 
     def test_read_gene_coords(self):
         # simple case
+        tbl = ('>n1',
+               'g1	5	29',
+               'g2	33	61',
+               'g3	65	94')
+        obs, isdup = read_gene_coords(tbl)
+        self.assertFalse(isdup)
+        exp = {'n1': [
+            (5,  True, True, 'g1'), (29, False, True, 'g1'),
+            (33, True, True, 'g2'), (61, False, True, 'g2'),
+            (65, True, True, 'g3'), (94, False, True, 'g3')]}
+        self.assertDictEqual(obs, exp)
+
+        # NCBI accession
         tbl = ('## GCF_000123456\n',
                '# NC_123456\n',
                '1	5	384\n',
@@ -234,7 +249,8 @@ class OrdinalTests(TestCase):
                '# NC_789012\n',
                '1	912	638\n',
                '2	529	75\n')
-        obs = read_gene_coords(tbl, sort=True)
+        obs, isdup = read_gene_coords(tbl, sort=True)
+        self.assertTrue(isdup)
         exp = {'NC_123456': [
             (5,   True, True, '1'), (384, False, True, '1'),
             (410, True, True, '2'), (933, False, True, '2')],
@@ -244,7 +260,7 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(obs, exp)
 
         # don't sort
-        obs = read_gene_coords(tbl, sort=False)['NC_789012']
+        obs = read_gene_coords(tbl, sort=False)[0]['NC_789012']
         exp = [(638, True, True, '1'), (912, False, True, '1'),
                (75,  True, True, '2'), (529, False, True, '2')]
         self.assertListEqual(obs, exp)
@@ -267,7 +283,8 @@ class OrdinalTests(TestCase):
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
         with openzip(fp) as f:
-            obs = read_gene_coords(f, sort=True)
+            obs, isdup = read_gene_coords(f, sort=True)
+        self.assertTrue(isdup)
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
@@ -276,29 +293,6 @@ class OrdinalTests(TestCase):
         self.assertTupleEqual(obs_[2], (816,  True,  True, '2'))
         self.assertTupleEqual(obs_[3], (2177, False, True, '2'))
 
-    def test_whether_prefix(self):
-        # gene Ids are indices
-        coords = {'NC_123456': [
-            (5,   True, True, '1'), (384, False, True, '1'),
-            (410, True, True, '2'), (933, False, True, '2')],
-                  'NC_789012': [
-            (75,  True, True, '2'), (529, False, True, '2'),
-            (638, True, True, '1'), (912, False, True, '1')]}
-        self.assertTrue(whether_prefix(coords))
-
-        # gene Ids are unique accessions
-        coords = {'NC_123456': [
-            (5,   True, True,  'NP_135792.1'),
-            (384, False, True, 'NP_135792.1'),
-            (410, True, True,  'NP_246801.2'),
-            (933, False, True, 'NP_246801.2')],
-                  'NC_789012': [
-            (75,  True, True,  'NP_258147.1'),
-            (529, False, True, 'NP_258147.1'),
-            (638, True, True,  'NP_369258.2'),
-            (912, False, True, 'NP_369258.2')]}
-        self.assertFalse(whether_prefix(coords))
-
     def test_calc_gene_lens(self):
         coords = {'NC_123456': [
             (5,   True, True, '1'), (384, False, True, '1'),
@@ -306,7 +300,7 @@ class OrdinalTests(TestCase):
                   'NC_789012': [
             (75,  True, True, '2'), (529, False, True, '2'),
             (638, True, True, '1'), (912, False, True, '1')]}
-        obs = calc_gene_lens(coords, whether_prefix(coords))
+        obs = calc_gene_lens(coords, True)
         exp = {'NC_123456_1': 380,
                'NC_123456_2': 524,
                'NC_789012_2': 455,
@@ -323,7 +317,7 @@ class OrdinalTests(TestCase):
             (529, False, True, 'NP_258147.1'),
             (638, True, True,  'NP_369258.2'),
             (912, False, True, 'NP_369258.2')]}
-        obs = calc_gene_lens(coords, whether_prefix(coords))
+        obs = calc_gene_lens(coords, False)
         exp = {'NP_135792.1': 380,
                'NP_246801.2': 524,
                'NP_258147.1': 455,

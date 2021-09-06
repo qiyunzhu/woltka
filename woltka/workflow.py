@@ -36,7 +36,7 @@ from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
 from .ordinal import (
-    ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
+    ordinal_mapper, read_gene_coords, calc_gene_lens)
 from .table import prep_table, write_table
 
 
@@ -485,12 +485,11 @@ def build_mapper(coords_fp: str = None,
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
         with readzip(coords_fp, zippers) as fh:
-            coords = read_gene_coords(fh, sort=True)
+            coords, prefix = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'  Total number of host sequences: {len(coords)}.')
         chunk = chunk or 1000000
-        return partial(ordinal_mapper, coords=coords,
-                       prefix=whether_prefix(coords),
+        return partial(ordinal_mapper, coords=coords, prefix=prefix,
                        th=overlap and overlap / 100), chunk
     else:
         chunk = chunk or 1000

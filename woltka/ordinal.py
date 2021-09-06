@@ -14,7 +14,6 @@
 from collections import defaultdict
 from itertools import chain
 from operator import itemgetter
-# from math import ceil
 
 from .align import infer_align_format, assign_parser
 
@@ -93,7 +92,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
                 continue
 
             # map reads to genes using the core algorithm
-            for read, gene in match_func(queue, th, nucl):
+            for read, gene in match_func(queue, nucl):
 
                 # merge read-gene pairs to the master map
                 res[rids[read]].add(gene)
@@ -214,6 +213,8 @@ def read_gene_coords(fh, sort=False):
             Whether start (True) or end (False).
             Whether gene (True) or read (False).
             Identifier of gene.
+    bool
+        Whether there are duplicate gene IDs.
 
     See Also
     --------
@@ -228,6 +229,11 @@ def read_gene_coords(fh, sort=False):
     """
     res = {}
     queue_extend = None
+
+    is_dup = None
+    used = set()
+    used_add = used.add
+
     for line in fh:
 
         # ">" or "#" indicates genome (nucleotide) name
@@ -253,58 +259,30 @@ def read_gene_coords(fh, sort=False):
             queue_extend(((start, True, True, idx),
                           (end,  False, True, idx)))
 
+            # check duplicate
+            if is_dup is None:
+                if idx in used:
+                    is_dup = True
+                else:
+                    used_add(idx)
+
     # sort gene coordinates per nucleotide
     if sort:
         sortkey = itemgetter(0)
         for nucl, queue in res.items():
             res[nucl] = sorted(queue, key=sortkey)
-    return res
+    return res, is_dup or False
 
 
-def whether_prefix(coords):
-    """Determine whether gene IDs should be prefixed with nucleotide IDs.
-
-    Parameters
-    ----------
-    coords : dict
-        Gene coordinates table.
-
-    Returns
-    -------
-    bool
-        Whether gene IDs should be prefixed.
-
-    See Also
-    --------
-    read_gene_coords
-
-    Notes
-    -----
-    It is based on a simple mechanism which checks whether there are duplicate
-    gene IDs, and if so, all gene IDs should be prefixed to avoid confusion.
-    """
-    genes = {}
-    for nucl, queue in coords.items():
-        for _, is_start, _, gid in queue:
-            if gid not in genes:
-                genes[gid] = is_start
-            elif genes[gid] == is_start:
-                return True
-    return False
-
-
-def match_read_gene(queue, th, pfx=None):
+def match_read_gene(queue, pfx=None):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
     queue : list of tuple
-        Sorted list of elements.
-        (loc, is_start, is_gene, id)
-    th : float
-        Threshold for read/gene overlapping fraction.
+        Sorted list of elements (loc, is_start, is_gene, id).
     pfx : str, optional
-        Placeholder for compatibility with match_read_gene_pfx
+        Placeholder for compatibility with match_read_gene_pfx.
 
     Yields
     ------
@@ -369,16 +347,13 @@ def match_read_gene(queue, th, pfx=None):
                 del(reads[idx])
 
 
-def match_read_gene_pfx(queue, th, pfx):
+def match_read_gene_pfx(queue, pfx):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
     queue : list of tuple
-        Sorted list of elements.
-        (loc, is_start, is_gene, id)
-    th : float
-        Threshold for read/gene overlapping fraction.
+        Sorted list of elements (loc, is_start, is_gene, id).
     pfx : str
         Prefix to append to gene IDs.
 
