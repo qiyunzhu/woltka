@@ -14,6 +14,7 @@
 from collections import defaultdict
 from itertools import chain
 from operator import itemgetter
+# from math import ceil
 
 from .align import infer_align_format, assign_parser
 
@@ -44,7 +45,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     ------
     tuple of str
         Query queue.
-    dictview of set of str
+    dict of set of str
         Subject(s) queue.
     """
     # determine file format
@@ -66,8 +67,6 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     # cached map of read to coordinates
     locmap = defaultdict(list)
 
-    sortkey = itemgetter(0)
-
     def flush():
         """Match reads in current chunk with genes from all nucleotides.
 
@@ -75,7 +74,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         -------
         tuple of str
             Query queue.
-        dictview of set of str
+        dict of set of str
             Subject(s) queue.
         """
         # master read-to-gene(s) map
@@ -87,8 +86,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # question is to merge an unsorted list into a sorted one
             # Python's built-in timsort algorithm is efficient at this
             try:
-                queue = sorted(chain(coords[nucl], zip(*[iter(loci)] * 4)),
-                               key=sortkey)
+                queue = sorted(coords[nucl] + loci)
 
             # it's possible that no gene was annotated on the nucleotide
             except KeyError:
@@ -137,8 +135,8 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         idx = len(rids)
         rid_append(query)
         locmap[subject].extend((
-            start, length, False, idx,
-            end,  False, False, idx))
+            (start, length * th - 1, False, idx),
+            (end,  False, False, idx)))
 
         this = query
 
@@ -252,14 +250,14 @@ def read_gene_coords(fh, sort=False):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
             idx = x[0]
-            queue_extend((start, True, True, idx,
-                          end,  False, True, idx))
+            queue_extend(((start, True, True, idx),
+                          (end,  False, True, idx)))
 
     # sort gene coordinates per nucleotide
     if sort:
         sortkey = itemgetter(0)
         for nucl, queue in res.items():
-            res[nucl] = sorted(zip(*[iter(queue)] * 4), key=sortkey)
+            res[nucl] = sorted(queue, key=sortkey)
     return res
 
 
@@ -362,7 +360,7 @@ def match_read_gene(queue, th, pfx=None):
         # the same for reads
         else:
             if is_start:
-                reads[idx] = loc, is_start * th - 1
+                reads[idx] = loc, is_start
             else:
                 rloc, rlen = reads[idx]
                 for gid, gloc in genes_items():
@@ -413,7 +411,7 @@ def match_read_gene_pfx(queue, th, pfx):
                 del(genes[idx])
         else:
             if is_start:
-                reads[idx] = loc, is_start * th - 1
+                reads[idx] = loc, is_start
             else:
                 rloc, rlen = reads[idx]
                 for gid, gloc in genes_items():
