@@ -125,12 +125,15 @@ def range_mapper(fh, fmt=None, n=1000):
     ------
     deque of str
         Query queue.
-    deque of dict of str to (int, int)
+    deque of dict of str to list of int
         Subject-to-ranges queue.
 
     Notes
     -----
     Same as `plain_mapper`, except that it also returns subject ranges.
+
+    Ranges are stored as a one-dimensional, interleaved list of start1, end1,
+    start2, end2, start3, end3...
 
     See Also
     --------
@@ -154,7 +157,7 @@ def range_mapper(fh, fmt=None, n=1000):
         if start and end:
 
             if query == this:
-                subque[-1].setdefault(subject, []).append((start, end))
+                subque[-1].setdefault(subject, []).extend((start, end))
             else:
                 if i >= target:
                     yield qryque, subque
@@ -164,7 +167,7 @@ def range_mapper(fh, fmt=None, n=1000):
                 qry_append(query)
 
                 # return subject Id and range
-                sub_append({subject: [(start, end)]})
+                sub_append({subject: [start, end]})
 
                 this = query
     yield qryque, subque

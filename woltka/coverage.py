@@ -21,7 +21,6 @@ Filter program (https://github.com/ucsd-cmi/zebra_filter).
 
 from os import makedirs
 from os.path import join
-from collections import deque
 
 
 def merge_ranges(ranges):
@@ -29,27 +28,27 @@ def merge_ranges(ranges):
 
     Parameters
     ----------
-    ranges : list of (int, int)
-        Ranges (start, end) to merge.
+    ranges : list of int
+        Ranges to merge.
 
     Returns
     -------
-    list of (int, int)
+    list of int
         Merged ranges.
-    
+
     Notes
     -----
     Ranges that have overlaps will be merged into one. For example:
 
-    >>> merge_ranges([(1, 3), (2, 4), (6, 8), (7, 9)])
-    [(1, 4), (6, 9)]
+    >>> merge_ranges([1, 3, 2, 4, 6, 8, 7, 9])
+    [1, 4, 6, 9]
     """
     res = []
-    res_append = res.append
+    res_extend = res.extend
     cstart, cend = None, None
-    for start, end in sorted(ranges):
+    for start, end in sorted(zip(*[iter(ranges)] * 2)):
         if cend is None:
-            # case 1: no active range, start active range.
+            # case 1: no active range, start active range
             cstart, cend = start, end
         elif cend >= start - 1:
             # case 2: active range continues through this range
@@ -58,14 +57,14 @@ def merge_ranges(ranges):
         else:
             # case 3: active range ends before this range begins
             # write new range out, then start new active range
-            res_append((cstart, cend))
+            res_extend((cstart, cend))
             cstart, cend = start, end
     if cend is not None:
-        res_append((cstart, cend))
+        res_extend((cstart, cend))
     return res
 
 
-def parse_ranges(rmaps, covers, chunk=10000):
+def parse_ranges(rmaps, covers, chunk=20000):
     """Extract range information from read maps.
 
     Parameters
@@ -117,7 +116,7 @@ def calc_coverage(covers):
 
     Returns
     -------
-    dict of dict of (int, int)
+    dict of dict of list of int
         Subject coverage data.
 
     Notes
@@ -151,5 +150,5 @@ def write_coverage(covers, outdir):
     for sample, cover in sorted(covers.items()):
         with open(join(outdir, f'{sample}.cov'), 'w') as fh:
             for subject, ranges in sorted(cover.items()):
-                for start, end in sorted(ranges):
+                for start, end in sorted(zip(*[iter(ranges)] * 2)):
                     print(subject, start, end, sep='\t', file=fh)

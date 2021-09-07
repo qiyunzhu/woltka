@@ -38,8 +38,7 @@ from .tree import (
 from .ordinal import (
     ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
 from .table import prep_table, write_table
-from .coverage import (
-    parse_ranges, merge_ranges, calc_coverage, write_coverage)
+from .coverage import parse_ranges, calc_coverage, write_coverage
 
 
 def workflow(input_fp:     str,

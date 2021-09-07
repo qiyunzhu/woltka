@@ -120,11 +120,11 @@ class AlignTests(TestCase):
             'Rx	Gx	95	20	0	0	1	20	0	0	1	1',
             '# this is not an alignment')))
         obs = _res2lst(range_mapper(aln))[0]
-        exp = [('R1', {'G1': [(10, 29)]}),
-               ('R2', {'G1': [(16, 35)]}),
-               ('R3', {'G2': [(21, 39)]}),
-               ('R4', {'G2': [(22, 41)]}),
-               ('R5', {'G3': [(30, 49), (50, 69)]})]
+        exp = [('R1', {'G1': [10, 29]}),
+               ('R2', {'G1': [16, 35]}),
+               ('R3', {'G2': [21, 39]}),
+               ('R4', {'G2': [22, 41]}),
+               ('R5', {'G3': [30, 49, 50, 69]})]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
         self.assertListEqual(list(obs[1]), [x[1] for x in exp])
 
