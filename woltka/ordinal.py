@@ -53,9 +53,6 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     # assign parser for given format
     parser = assign_parser(fmt)
 
-    # choose match function depending on whether prefix
-    match_func = match_read_gene_pfx if prefix else match_read_gene
-
     # cached list of query Ids for reverse look-up
     # gene Ids are unique, but read Ids can have duplicates (i.e., one read is
     # mapped to multiple loci on a genome), therefore an incremental integer
@@ -65,6 +62,9 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
 
     # cached map of read to coordinates
     locmap = defaultdict(list)
+
+    # sort coordinates by 1st column
+    sortkey = itemgetter(0)
 
     def flush():
         """Match reads in current chunk with genes from all nucleotides.
@@ -85,17 +85,20 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # question is to merge an unsorted list into a sorted one
             # Python's built-in timsort algorithm is efficient at this
             try:
-                queue = sorted(coords[nucl] + loci)
+                queue = sorted(chain(coords[nucl], loci), key=sortkey)
 
             # it's possible that no gene was annotated on the nucleotide
             except KeyError:
                 continue
 
+            # append prefix if needed
+            pfx = nucl + '_' if prefix else ''
+
             # map reads to genes using the core algorithm
-            for read, gene in match_func(queue, nucl):
+            for read, gene in match_read_gene(queue):
 
                 # merge read-gene pairs to the master map
-                res[rids[read]].add(gene)
+                res[rids[read]].add(pfx + gene)
 
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
@@ -269,20 +272,18 @@ def read_gene_coords(fh, sort=False):
     # sort gene coordinates per nucleotide
     if sort:
         sortkey = itemgetter(0)
-        for nucl, queue in res.items():
-            res[nucl] = sorted(queue, key=sortkey)
+        for queue in res.values():
+            queue.sort(key=sortkey)
     return res, is_dup or False
 
 
-def match_read_gene(queue, pfx=None):
+def match_read_gene(queue):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
     queue : list of tuple
         Sorted list of elements (loc, is_start, is_gene, id).
-    pfx : str, optional
-        Placeholder for compatibility with match_read_gene_pfx.
 
     Yields
     ------
@@ -333,7 +334,7 @@ def match_read_gene(queue, pfx=None):
                         yield rid, idx
 
                 # remove it from current genes
-                del(genes[idx])
+                del genes[idx]
 
         # the same for reads
         else:
@@ -342,57 +343,9 @@ def match_read_gene(queue, pfx=None):
             else:
                 rloc, rlen = reads[idx]
                 for gid, gloc in genes_items():
-                    if loc - max(rloc, gloc) >= rlen:
+                    if loc - (gloc if gloc > rloc else rloc) >= rlen:
                         yield idx, gid
-                del(reads[idx])
-
-
-def match_read_gene_pfx(queue, pfx):
-    """Associate reads with genes based on a sorted queue of coordinates.
-
-    Parameters
-    ----------
-    queue : list of tuple
-        Sorted list of elements (loc, is_start, is_gene, id).
-    pfx : str
-        Prefix to append to gene IDs.
-
-    Yields
-    ------
-    int
-        Read index.
-    str
-        Gene ID.
-
-    See Also
-    --------
-    match_read_gene
-
-    Notes
-    -----
-    This function is identical to `match_read_gene`, except for that it adds a
-    prefix (usually a nucleotide ID) to each gene ID.
-    """
-    genes, reads = {}, {}
-    reads_items, genes_items = reads.items, genes.items
-    for loc, is_start, is_gene, idx in queue:
-        if is_gene:
-            if is_start:
-                genes[idx] = loc
-            else:
-                for rid, (rloc, rlen) in reads_items():
-                    if loc - max(genes[idx], rloc) >= rlen:
-                        yield rid, f'{pfx}_{idx}'
-                del(genes[idx])
-        else:
-            if is_start:
-                reads[idx] = loc, is_start
-            else:
-                rloc, rlen = reads[idx]
-                for gid, gloc in genes_items():
-                    if loc - max(rloc, gloc) >= rlen:
-                        yield idx, f'{pfx}_{gid}'
-                del(reads[idx])
+                del reads[idx]
 
 
 def calc_gene_lens(coords, prefix=False):
