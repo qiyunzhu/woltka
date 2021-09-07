@@ -308,12 +308,15 @@ def match_read_gene(queue):
     Refer to its unit test `test_match_read_gene` for an actual example and
     illustration.
     """
-    genes = {}  # current genes
-    reads = {}  # current reads
+    genes = []  # current genes
+    reads = []  # current reads
 
     # cache method references
-    reads_items = reads.items
-    genes_items = genes.items
+    genes_append = genes.append
+    reads_append = reads.append
+
+    genes_remove = genes.remove
+    reads_remove = reads.remove
 
     # walk through flattened queue of reads and genes
     for loc, is_start, is_gene, idx in queue:
@@ -321,31 +324,36 @@ def match_read_gene(queue):
 
             # when a gene starts, added to current genes
             if is_start:
-                genes[idx] = loc
+                genes_append((idx, loc))
 
             # when a gene ends,
             else:
 
+                # find gene start
+                for gid, gloc in genes:
+                    if gid == idx:
+                        genes_remove((gid, gloc))
+                        break
+
                 # check current reads
-                for rid, (rloc, rlen) in reads_items():
+                for rid, rloc, rlen in reads:
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(genes[idx], rloc) >= rlen:
+                    if loc - (gloc if gloc > rloc else rloc) >= rlen:
                         yield rid, idx
-
-                # remove it from current genes
-                del genes[idx]
 
         # the same for reads
         else:
             if is_start:
-                reads[idx] = loc, is_start
+                reads_append((idx, loc, is_start))
             else:
-                rloc, rlen = reads[idx]
-                for gid, gloc in genes_items():
+                for rid, rloc, rlen in reads:
+                    if rid == idx:
+                        reads_remove((rid, rloc, rlen))
+                        break
+                for gid, gloc in genes:
                     if loc - (gloc if gloc > rloc else rloc) >= rlen:
                         yield idx, gid
-                del reads[idx]
 
 
 def calc_gene_lens(coords, prefix=False):
