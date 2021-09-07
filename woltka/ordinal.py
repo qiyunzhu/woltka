@@ -13,20 +13,26 @@
 
 from collections import defaultdict
 from itertools import chain
-from operator import itemgetter
+
+import numpy as np
+from numba import jit
+from numba.typed import List
 
 from .align import infer_align_format, assign_parser
 
 
-def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
+def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
+                   prefix=False):
     """Read an alignment file and match reads and genes in an ordinal system.
 
     Parameters
     ----------
     fh : file handle
         Alignment file to parse.
-    coords : dict
+    coords : dict of list
         Gene coordinates table.
+    idmap : dict of list
+        Gene identifiers.
     fmt : str, optional
         Alignment file format.
     n : int, optional
@@ -63,9 +69,6 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     # cached map of read to coordinates
     locmap = defaultdict(list)
 
-    # sort coordinates by 1st column
-    sortkey = itemgetter(0)
-
     def flush():
         """Match reads in current chunk with genes from all nucleotides.
 
@@ -79,26 +82,42 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         # master read-to-gene(s) map
         res = defaultdict(set)
 
-        for nucl, loci in locmap.items():
+        for nucl, reads in locmap.items():
 
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
-            # Python's built-in timsort algorithm is efficient at this
-            try:
-                queue = sorted(chain(coords[nucl], loci), key=sortkey)
-
             # it's possible that no gene was annotated on the nucleotide
+            try:
+                genes = coords[nucl]
             except KeyError:
                 continue
+
+            # convert read coordinates to np.array
+            reads = np.array(reads, dtype='uint32').reshape(-1, 4)
+
+            # merge gene and read coordinates
+            arr = np.concatenate((genes, reads))
+
+            # sort coordinates by 1st column
+            # question is to add unsorted read coordinates into already-sorted
+            # gene coordinates
+            # the 'stable' method uses timsort under the hood, which is
+            # efficient for this task
+            # TODO: can a np.array be iterated efficiently using sorted
+            # indices, without rebuilding a sorted array?
+            arr = arr[arr[:, 0].argsort(kind='stable')]
+
+            # get reference to gene identifiers
+            gids = idmap[nucl]
 
             # append prefix if needed
             pfx = nucl + '_' if prefix else ''
 
             # map reads to genes using the core algorithm
-            for read, gene in match_read_gene(queue):
+            for read, gene in match_read_gene(arr):
 
                 # merge read-gene pairs to the master map
-                res[rids[read]].add(pfx + gene)
+                res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
@@ -137,8 +156,8 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         idx = len(rids)
         rid_append(query)
         locmap[subject].extend((
-            (start, length * th - 1, False, idx),
-            (end,  False, False, idx)))
+            start, -int(-length * th // 1) - 1, 0, idx,
+            end, 0, 0, idx))
 
         this = query
 
@@ -216,6 +235,8 @@ def read_gene_coords(fh, sort=False):
             Whether start (True) or end (False).
             Whether gene (True) or read (False).
             Identifier of gene.
+    dict of list of str
+        Gene identifiers.
     bool
         Whether there are duplicate gene IDs.
 
@@ -233,6 +254,10 @@ def read_gene_coords(fh, sort=False):
     res = {}
     queue_extend = None
 
+    idmap = {}
+    gids = None
+    gids_append = None
+
     is_dup = None
     used = set()
     used_add = used.add
@@ -249,6 +274,8 @@ def read_gene_coords(fh, sort=False):
                 nucl = line[1:].strip()
                 res[nucl] = []
                 queue_extend = res[nucl].extend
+                gids = idmap[nucl] = []
+                gids_append = gids.append
         else:
             x = line.rstrip().split('\t')
 
@@ -258,9 +285,11 @@ def read_gene_coords(fh, sort=False):
             except (IndexError, ValueError):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            idx = x[0]
-            queue_extend(((start, True, True, idx),
-                          (end,  False, True, idx)))
+            gene = x[0]
+            idx = len(gids)
+            gids_append(gene)
+            queue_extend((start, 1, 1, idx,
+                          end,   0, 1, idx))
 
             # check duplicate
             if is_dup is None:
@@ -270,31 +299,30 @@ def read_gene_coords(fh, sort=False):
                     used_add(idx)
 
     # sort gene coordinates per nucleotide
-    if sort:
-        sortkey = itemgetter(0)
-        for queue in res.values():
-            queue.sort(key=sortkey)
-    return res, is_dup or False
+    for nucl, queue in res.items():
+        arr = np.array(queue, dtype='uint32').reshape(-1, 4)
+        res[nucl] = arr[arr[:, 0].argsort(kind='stable')]
+    return res, idmap, is_dup or False
 
 
+@jit(nopython=True)
 def match_read_gene(queue):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
-    queue : list of tuple
-        Sorted list of elements (loc, is_start, is_gene, id).
+    queue : np.array(-1, 4)
+        Sorted array of coordinates (loc, is_start, is_gene, idx).
 
     Yields
     ------
     int
         Read index.
-    str
-        Gene ID.
+    int
+        Gene index.
 
     See Also
     --------
-    match_read_gene_pfx
     read_gene_coords
     .tests.test_ordinal.OrdinalTests.test_match_read_gene
 
@@ -307,9 +335,17 @@ def match_read_gene(queue):
 
     Refer to its unit test `test_match_read_gene` for an actual example and
     illustration.
+
+    This function uses Numba's just-in-time compilation to accelerate the
+    calculation. Without Numba, its performance will be significantly lower
+    (even lower than pure Python without NumPy).
+
+    TODO
+    ----
+    Cannot cache Numba compilation for unknown reason.
     """
-    genes = []  # current genes
-    reads = []  # current reads
+    genes = List()  # current genes
+    reads = List()  # current reads
 
     # cache method references
     genes_append = genes.append
@@ -322,7 +358,7 @@ def match_read_gene(queue):
     for loc, is_start, is_gene, idx in queue:
         if is_gene:
 
-            # when a gene starts, added to current genes
+            # when a gene starts, add to current genes
             if is_start:
                 genes_append((idx, loc))
 
@@ -339,7 +375,7 @@ def match_read_gene(queue):
                 for rid, rloc, rlen in reads:
 
                     # is a match if read/gene overlap is long enough
-                    if loc - (gloc if gloc > rloc else rloc) >= rlen:
+                    if loc - max(gloc, rloc) >= rlen:
                         yield rid, idx
 
         # the same for reads
@@ -352,7 +388,7 @@ def match_read_gene(queue):
                         reads_remove((rid, rloc, rlen))
                         break
                 for gid, gloc in genes:
-                    if loc - (gloc if gloc > rloc else rloc) >= rlen:
+                    if loc - max(gloc, rloc) >= rlen:
                         yield idx, gid
 
 

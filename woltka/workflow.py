@@ -485,12 +485,12 @@ def build_mapper(coords_fp: str = None,
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
         with readzip(coords_fp, zippers) as fh:
-            coords, prefix = read_gene_coords(fh, sort=True)
+            coords, idmap, prefix = read_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'  Total number of host sequences: {len(coords)}.')
         chunk = chunk or 1000000
-        return partial(ordinal_mapper, coords=coords, prefix=prefix,
-                       th=overlap and overlap / 100), chunk
+        return partial(ordinal_mapper, coords=coords, idmap=idmap,
+                       prefix=prefix, th=overlap and overlap / 100), chunk
     else:
         chunk = chunk or 1000
         return plain_mapper, chunk
