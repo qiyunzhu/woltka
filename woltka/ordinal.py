@@ -229,14 +229,14 @@ def read_gene_coords(fh, sort=False):
 
     Returns
     -------
-    dict of list of (int, bool, bool, str)
+    dict of np.array(-1, 4, dtype=uint32)
         Flattened list of gene coordinates per nucleotide.
             Coordinate (nt).
-            Whether start (True) or end (False).
-            Whether gene (True) or read (False).
-            Identifier of gene.
+            Whether start (1) or end (0).
+            Whether gene (1) or read (0).
+            Gene index.
     dict of list of str
-        Gene identifiers.
+        Gene IDs.
     bool
         Whether there are duplicate gene IDs.
 
@@ -285,18 +285,18 @@ def read_gene_coords(fh, sort=False):
             except (IndexError, ValueError):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            gene = x[0]
             idx = len(gids)
+            gene = x[0]
             gids_append(gene)
             queue_extend((start, 1, 1, idx,
                           end,   0, 1, idx))
 
             # check duplicate
             if is_dup is None:
-                if idx in used:
+                if gene in used:
                     is_dup = True
                 else:
-                    used_add(idx)
+                    used_add(gene)
 
     # sort gene coordinates per nucleotide
     for nucl, queue in res.items():
@@ -311,7 +311,7 @@ def match_read_gene(queue):
 
     Parameters
     ----------
-    queue : np.array(-1, 4)
+    queue : np.array(-1, 4, dtype=uint32)
         Sorted array of coordinates (loc, is_start, is_gene, idx).
 
     Yields
@@ -342,7 +342,9 @@ def match_read_gene(queue):
 
     TODO
     ----
-    Cannot cache Numba compilation for unknown reason.
+    Cannot let Numba use typed.Dict.
+    Cannot let Numba cache ompilation.
+    Cannot let Numba use parallelization.
     """
     genes = List()  # current genes
     reads = List()  # current reads
@@ -392,15 +394,13 @@ def match_read_gene(queue):
                         yield idx, gid
 
 
-def calc_gene_lens(coords, prefix=False):
+def calc_gene_lens(mapper):
     """Calculate gene lengths by start and end coordinates.
 
     Parameters
     ----------
-    coords : dict
-        Gene coordinates table.
-    prefix : bool
-        Prefix gene IDs with nucleotide IDs.
+    mapper : callable
+        Ordinal mapper.
 
     Returns
     -------
@@ -408,8 +408,12 @@ def calc_gene_lens(coords, prefix=False):
         Mapping of genes to lengths.
     """
     res = {}
-    for nucl, queue in coords.items():
-        for loc, is_start, _, gid in queue:
+    prefix = mapper.keywords['prefix']
+    idmap = mapper.keywords['idmap']
+    for nucl, queue in mapper.keywords['coords'].items():
+        idmap_ = idmap[nucl]
+        for loc, is_start, _, idx in queue:
+            gid = idmap_[idx]
             if prefix:
                 gid = f'{nucl}_{gid}'
             if is_start:

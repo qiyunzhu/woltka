@@ -527,8 +527,7 @@ def parse_sizes(sizes:       str,
     if sizes == '.':
         click.echo('Calculating gene lengths from coordinates...', nl=False)
         try:
-            sizemap = calc_gene_lens(
-                mapper.keywords['coords'], mapper.keywords['prefix'])
+            sizemap = calc_gene_lens(mapper)
         except AttributeError:
             raise ValueError('Gene coordinates file is not provided.')
         click.echo(' Done.')
