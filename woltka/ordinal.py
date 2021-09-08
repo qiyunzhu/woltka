@@ -61,7 +61,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     rid_append = rids.append
 
     # cached map of read to coordinates
-    locmap = defaultdict(list)
+    locs = defaultdict(list)
 
     # sort coordinates by 1st column
     sortkey = itemgetter(0)
@@ -79,7 +79,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         # master read-to-gene(s) map
         res = defaultdict(set)
 
-        for nucl, loci in locmap.items():
+        for nucl, loci in locs.items():
 
             # merge and sort coordinates
             # question is to merge an unsorted list into a sorted one
@@ -128,7 +128,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # re-initiate read Ids, length map and location map
             rids = []
             rid_append = rids.append
-            locmap = defaultdict(list)
+            locs = defaultdict(list)
 
             # next target line number
             target = i + n
@@ -136,10 +136,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         # append read Id, alignment length and location
         idx = len(rids)
         rid_append(query)
-        locmap[subject].extend((
-            (start, length * th - 1, False, idx),
-            (end,  False, False, idx)))
-
+        locs[subject].extend(((start, length * th, idx), (end,  0, idx)))
         this = query
 
     # final flush
@@ -210,12 +207,16 @@ def read_gene_coords(fh, sort=False):
 
     Returns
     -------
-    dict of list of (int, bool, bool, str)
+    dict of list of (int, None or bool or int, str)
         Flattened list of gene coordinates per nucleotide.
             Coordinate (nt).
-            Whether start (True) or end (False).
-            Whether gene (True) or read (False).
-            Identifier of gene.
+            Code:
+                None: gene start.
+                False: gene end.
+                Positive integer: read start,
+                    value representing effective read length.
+                Zero: read end.
+            Gene identifier.
     bool
         Whether there are duplicate gene IDs.
 
@@ -259,8 +260,7 @@ def read_gene_coords(fh, sort=False):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
             idx = x[0]
-            queue_extend(((start, True, True, idx),
-                          (end,  False, True, idx)))
+            queue_extend(((start, None, idx), (end, False, idx)))
 
             # check duplicate
             if is_dup is None:
@@ -283,7 +283,7 @@ def match_read_gene(queue):
     Parameters
     ----------
     queue : list of tuple
-        Sorted list of elements (loc, is_start, is_gene, id).
+        Sorted list of elements (loc, code, idx).
 
     Yields
     ------
@@ -294,7 +294,6 @@ def match_read_gene(queue):
 
     See Also
     --------
-    match_read_gene_pfx
     read_gene_coords
     .tests.test_ordinal.OrdinalTests.test_match_read_gene
 
@@ -308,52 +307,55 @@ def match_read_gene(queue):
     Refer to its unit test `test_match_read_gene` for an actual example and
     illustration.
     """
-    genes = []  # current genes
-    reads = []  # current reads
+    genes = {}  # current genes
+    reads = {}  # current reads
 
     # cache method references
-    genes_append = genes.append
-    reads_append = reads.append
-
-    genes_remove = genes.remove
-    reads_remove = reads.remove
+    genes_items = genes.items
+    reads_items = reads.items
 
     # walk through flattened queue of reads and genes
-    for loc, is_start, is_gene, idx in queue:
-        if is_gene:
+    for loc, code, idx in queue:
 
-            # when a gene starts, added to current genes
-            if is_start:
-                genes_append((idx, loc))
+        # read starts (positive number)
+        if code:
 
-            # when a gene ends,
-            else:
+            # add read and effective length to cache
+            reads[idx] = loc, code
 
-                # find gene start
-                for gid, gloc in genes:
-                    if gid == idx:
-                        genes_remove((gid, gloc))
-                        break
+        # gene starts (None)
+        elif code is None:
 
-                # check current reads
-                for rid, rloc, rlen in reads:
+            # add gene to cache
+            genes[idx] = loc
 
-                    # is a match if read/gene overlap is long enough
-                    if loc - (gloc if gloc > rloc else rloc) >= rlen:
-                        yield rid, idx
+        # gene ends (False)
+        elif code is False:
 
-        # the same for reads
+            # find gene start position
+            gloc = genes[idx]
+            del genes[idx]
+
+            # check cached reads
+            for rid, (rloc, rlen) in reads_items():
+
+                # is a match if read/gene overlap is long enough
+                if loc - (gloc if gloc > rloc else rloc) >= rlen - 1:
+                    yield rid, idx
+
+        # read end (zero)
         else:
-            if is_start:
-                reads_append((idx, loc, is_start))
-            else:
-                for rid, rloc, rlen in reads:
-                    if rid == idx:
-                        reads_remove((rid, rloc, rlen))
-                        break
-                for gid, gloc in genes:
-                    if loc - (gloc if gloc > rloc else rloc) >= rlen:
-                        yield idx, gid
+
+            # find read start position and effective length
+            rloc, rlen = reads[idx]
+            del reads[idx]
+
+            # check cached genes
+            for gid, gloc in genes_items():
+
+                # for match (same as above)
+                if loc - (gloc if gloc > rloc else rloc) >= rlen - 1:
+                    yield idx, gid
 
 
 def calc_gene_lens(coords, prefix=False):
@@ -373,10 +375,10 @@ def calc_gene_lens(coords, prefix=False):
     """
     res = {}
     for nucl, queue in coords.items():
-        for loc, is_start, _, gid in queue:
+        for loc, code, gid in queue:
             if prefix:
                 gid = f'{nucl}_{gid}'
-            if is_start:
+            if code is None:
                 res[gid] = 1 - loc
             else:
                 res[gid] += loc
