@@ -21,8 +21,8 @@ from io import StringIO
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
-    match_read_gene, match_read_gene_pfx, ordinal_mapper, ordinal_parser,
-    read_gene_coords, calc_gene_lens)
+    match_read_gene, ordinal_mapper, ordinal_parser, read_gene_coords,
+    calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -112,19 +112,6 @@ class OrdinalTests(TestCase):
                ('r7', 'g3'),
                ('r8', 'g3'),
                ('r9', 'g3')]
-        self.assertListEqual(obs, exp)
-
-    def test_match_read_gene_pfx(self):
-        # same as above but adds a prefix to genes
-        queue = [(1,  True,  True,  'g1'),
-                 (11,    7,  False, 'r1'),
-                 (20, False, False, 'r1'),
-                 (26,    7,  False, 'r2'),
-                 (35, False, False, 'r2'),
-                 (50, False, True,  'g1')]
-        obs = list(match_read_gene_pfx(queue, pfx='test'))
-        exp = [('r1', 'test_g1'),
-               ('r2', 'test_g1')]
         self.assertListEqual(obs, exp)
 
     def test_ordinal_mapper(self):
