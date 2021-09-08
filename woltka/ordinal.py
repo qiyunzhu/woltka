@@ -125,7 +125,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # flush: match currently cached reads with genes and yield
             yield flush()
 
-            # re-initiate read Ids, length map and location map
+            # re-initiate read Ids and locations
             rids = []
             rid_append = rids.append
             locs = defaultdict(list)
@@ -321,7 +321,7 @@ def match_read_gene(queue):
         if code:
 
             # add read and effective length to cache
-            reads[idx] = loc, code
+            reads[idx] = loc, code - 1
 
         # gene starts (None)
         elif code is None:
@@ -340,7 +340,7 @@ def match_read_gene(queue):
             for rid, (rloc, rlen) in reads_items():
 
                 # is a match if read/gene overlap is long enough
-                if loc - (gloc if gloc > rloc else rloc) >= rlen - 1:
+                if loc - (gloc if gloc > rloc else rloc) >= rlen:
                     yield rid, idx
 
         # read end (zero)
@@ -354,7 +354,7 @@ def match_read_gene(queue):
             for gid, gloc in genes_items():
 
                 # for match (same as above)
-                if loc - (gloc if gloc > rloc else rloc) >= rlen - 1:
+                if loc - (gloc if gloc > rloc else rloc) >= rlen:
                     yield idx, gid
 
 

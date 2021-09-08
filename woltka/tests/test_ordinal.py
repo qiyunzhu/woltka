@@ -17,6 +17,7 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 from io import StringIO
+from operator import itemgetter
 
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
@@ -80,15 +81,13 @@ class OrdinalTests(TestCase):
 
         # flatten lists
         # read length is uniformly 20, default threshold is 80%, so
-        # length is 20 * 0.8 - 1 = 15
+        # length is 20 * 0.8 = 16
         genes = [x for id_, start, end in genes for x in
-                 ((start, True, True, id_),
-                  (end,  False, True, id_))]
+                 ((start, None, id_), (end,  False, id_))]
         reads = [x for id_, start, end in reads for x in
-                 ((start,   15, False, id_),
-                  (end,  False, False, id_))]
+                 ((start, 16, id_), (end, 0, id_))]
 
-        queue = sorted(genes + reads)
+        queue = sorted(genes + reads, key=itemgetter(0))
 
         # default
         obs = list(match_read_gene(queue))
@@ -98,11 +97,11 @@ class OrdinalTests(TestCase):
                ('r8', 'g3')]
         self.assertListEqual(obs, exp)
 
-        # threashold = 50%, so length is 20 * 0.5 - 1 = 9
+        # threashold = 50%, so length is 20 * 0.5 = 10
         for i in range(len(queue)):
-            point = queue[i]
-            if point[1] and not point[2]:
-                queue[i] = (point[0], 9, point[2], point[3])
+            loc = queue[i]
+            if loc[1]:
+                queue[i] = (loc[0], 10, loc[2])
         obs = list(match_read_gene(queue))
         exp = [('r1', 'g1'),
                ('r2', 'g1'),
@@ -223,9 +222,9 @@ class OrdinalTests(TestCase):
         obs, isdup = read_gene_coords(tbl)
         self.assertFalse(isdup)
         exp = {'n1': [
-            (5,  True, True, 'g1'), (29, False, True, 'g1'),
-            (33, True, True, 'g2'), (61, False, True, 'g2'),
-            (65, True, True, 'g3'), (94, False, True, 'g3')]}
+            (5,  None, 'g1'), (29, False, 'g1'),
+            (33, None, 'g2'), (61, False, 'g2'),
+            (65, None, 'g3'), (94, False, 'g3')]}
         self.assertDictEqual(obs, exp)
 
         # NCBI accession
@@ -239,17 +238,17 @@ class OrdinalTests(TestCase):
         obs, isdup = read_gene_coords(tbl, sort=True)
         self.assertTrue(isdup)
         exp = {'NC_123456': [
-            (5,   True, True, '1'), (384, False, True, '1'),
-            (410, True, True, '2'), (933, False, True, '2')],
+            (5,   None, '1'), (384, False, '1'),
+            (410, None, '2'), (933, False, '2')],
                'NC_789012': [
-            (75,  True, True, '2'), (529, False, True, '2'),
-            (638, True, True, '1'), (912, False, True, '1')]}
+            (75,  None, '2'), (529, False, '2'),
+            (638, None, '1'), (912, False, '1')]}
         self.assertDictEqual(obs, exp)
 
         # don't sort
         obs = read_gene_coords(tbl, sort=False)[0]['NC_789012']
-        exp = [(638, True, True, '1'), (912, False, True, '1'),
-               (75,  True, True, '2'), (529, False, True, '2')]
+        exp = [(638, None, '1'), (912, False, '1'),
+               (75,  None, '2'), (529, False, '2')]
         self.assertListEqual(obs, exp)
 
         # incorrect formats
@@ -275,18 +274,18 @@ class OrdinalTests(TestCase):
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
-        self.assertTupleEqual(obs_[0], (372,  True,  True, '1'))
-        self.assertTupleEqual(obs_[1], (806,  False, True, '1'))
-        self.assertTupleEqual(obs_[2], (816,  True,  True, '2'))
-        self.assertTupleEqual(obs_[3], (2177, False, True, '2'))
+        self.assertTupleEqual(obs_[0], (372,  None,  '1'))
+        self.assertTupleEqual(obs_[1], (806,  False, '1'))
+        self.assertTupleEqual(obs_[2], (816,  None,  '2'))
+        self.assertTupleEqual(obs_[3], (2177, False, '2'))
 
     def test_calc_gene_lens(self):
         coords = {'NC_123456': [
-            (5,   True, True, '1'), (384, False, True, '1'),
-            (410, True, True, '2'), (933, False, True, '2')],
+            (5,   None, '1'), (384, False, '1'),
+            (410, None, '2'), (933, False, '2')],
                   'NC_789012': [
-            (75,  True, True, '2'), (529, False, True, '2'),
-            (638, True, True, '1'), (912, False, True, '1')]}
+            (75,  None, '2'), (529, False, '2'),
+            (638, None, '1'), (912, False, '1')]}
         obs = calc_gene_lens(coords, True)
         exp = {'NC_123456_1': 380,
                'NC_123456_2': 524,
@@ -295,15 +294,15 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(obs, exp)
 
         coords = {'NC_123456': [
-            (5,   True, True,  'NP_135792.1'),
-            (384, False, True, 'NP_135792.1'),
-            (410, True, True,  'NP_246801.2'),
-            (933, False, True, 'NP_246801.2')],
+            (5,   None,  'NP_135792.1'),
+            (384, False, 'NP_135792.1'),
+            (410, None,  'NP_246801.2'),
+            (933, False, 'NP_246801.2')],
                   'NC_789012': [
-            (75,  True, True,  'NP_258147.1'),
-            (529, False, True, 'NP_258147.1'),
-            (638, True, True,  'NP_369258.2'),
-            (912, False, True, 'NP_369258.2')]}
+            (75,  None,  'NP_258147.1'),
+            (529, False, 'NP_258147.1'),
+            (638, None,  'NP_369258.2'),
+            (912, False, 'NP_369258.2')]}
         obs = calc_gene_lens(coords, False)
         exp = {'NP_135792.1': 380,
                'NP_246801.2': 524,
