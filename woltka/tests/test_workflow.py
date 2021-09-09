@@ -7,9 +7,8 @@
 #
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
-
 from unittest import TestCase, main
-from os import remove
+from os import remove, makedirs
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
@@ -44,6 +43,21 @@ class WorkflowTests(TestCase):
         self.assertTrue(cmp(output_fp, join(
             self.datdir, 'output', 'bowtie2.ogu.tsv')))
         remove(output_fp)
+
+    def test_coverage(self):
+        # simplest ogu workflow
+        input_fp = join(self.datdir, 'align', 'bowtie2')
+        output_fp = join(self.tmpdir, 'tmp.tsv')
+        outcov_dir = join(self.tmpdir, 'outcov')
+        makedirs(outcov_dir)
+        workflow(input_fp, output_fp, outcov_dir=outcov_dir)['none']
+        with open(join(outcov_dir, 'S04.cov'), 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 1078)
+        self.assertEqual(obs[10], 'G000007265\t2092666\t2092815')
+        self.assertEqual(obs[200], 'G000215745\t768758\t769038')
+        remove(output_fp)
+        rmtree(outcov_dir)
 
     def test_classify(self):
         # simplest ogu workflow
