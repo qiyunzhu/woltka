@@ -150,7 +150,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     yield flush()
 
 
-def ordinal_parser(fh, parser):
+def ordinal_parser_dummy(fh, parser):
     """Alignment parsing functionalities stripped from for `ordinal_mapper`.
 
     Parameters
@@ -172,16 +172,13 @@ def ordinal_parser(fh, parser):
     See Also
     --------
     ordinal_mapper
-    load_gene_coords
-    .tests.test_ordinal.OrdinalTests.test_ordinal_parser
+    match_read_gene_dummy
+    .tests.test_ordinal.OrdinalTests.test_ordinal_parser_dummy
 
     Notes
     -----
     This is a dummy function only for test and demonstration purpose but not
     called anywhere in the program. See its unit test for details.
-
-    The data structure is central to the algorithm. See `load_gene_coords` for
-    details.
     """
     rids = []
     lenmap = defaultdict(dict)
@@ -362,7 +359,8 @@ def match_read_gene(queue):
         if code & (1 << 30):
 
             # when a gene begins,
-            if code >> 31 & 131071:
+            # if code >> 31 & 131071:
+            if code & (1 << 31):
 
                 # add it to cache
                 genes[code & (1 << 30) - 1] = code >> 48
@@ -457,7 +455,7 @@ def match_read_gene_dummy(queue, lens, th):
                 for rid, rloc in reads.items():
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
+                    if loc - max(gloc, rloc) + 1 >= lens[rid] * th:
                         yield rid, idx
 
         # the same for reads
@@ -467,7 +465,7 @@ def match_read_gene_dummy(queue, lens, th):
             else:
                 rloc = reads.pop(idx)
                 for gid, gloc in genes.items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
+                    if loc - max(rloc, gloc) + 1 >= lens[idx] * th:
                         yield idx, gid
 
 
@@ -481,7 +479,7 @@ def calc_gene_lens(mapper):
 
     Returns
     -------
-    dict of dict
+    dict of int
         Mapping of genes to lengths.
     """
     res = {}
@@ -489,12 +487,13 @@ def calc_gene_lens(mapper):
     idmap = mapper.keywords['idmap']
     for nucl, queue in mapper.keywords['coords'].items():
         idmap_ = idmap[nucl]
-        for loc, is_start, _, idx in queue:
-            gid = idmap_[idx]
+        nucl += '_'
+        for code in queue:
+            gid = idmap_[code & (1 << 30) - 1]
             if prefix:
-                gid = f'{nucl}_{gid}'
-            if is_start:
-                res[gid] = 1 - loc
+                gid = nucl + gid
+            if code >> 31 & 131071:
+                res[gid] = 1 - (code >> 48)
             else:
-                res[gid] += loc
+                res[gid] += code >> 48
     return res

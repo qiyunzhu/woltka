@@ -17,12 +17,13 @@ from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 from io import StringIO
+from functools import partial
 
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
-    match_read_gene, match_read_gene_dummy, ordinal_mapper, ordinal_parser,
-    load_gene_coords, calc_gene_lens)
+    match_read_gene_dummy, match_read_gene, ordinal_parser_dummy,
+    ordinal_mapper, load_gene_coords, calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -133,11 +134,11 @@ class OrdinalTests(TestCase):
         # read length is uniformly 20, threshold is 80%, so effective
         # alignment length is 20 * 0.8 = 16
         genes = [x for idx, beg, end in genes for x in (
-            ((beg << 48),  (1 << 31), (1 << 30), idx),
-            ((end << 48),  (0 << 31), (1 << 30), idx))]
+            (beg << 48) + (1 << 31) + (1 << 30) + idx,
+            (end << 48) + (0 << 31) + (1 << 30) + idx)]
         reads = [x for idx, beg, end in reads for x in (
-            ((beg << 48), (16 << 31), (0 << 30), idx),
-            ((end << 48),  (0 << 31), (0 << 30), idx))]
+            (beg << 48) + (16 << 31) + (0 << 30) + idx,
+            (end << 48) + (0 << 31) + (0 << 30) + idx)]
         queue = sorted(genes + reads)
 
         # default
@@ -148,77 +149,13 @@ class OrdinalTests(TestCase):
                (8, 3)]
         self.assertListEqual(obs, exp)
 
-    def test_ordinal_mapper(self):
-        # uses the same example as above, with some noises
-        coords, _ = load_gene_coords((
-            '>n1',
-            'g1	5	29',
-            'g2	33	61',
-            'g3	65	94',
-            'gx	108	135'))
-        aln = StringIO('\n'.join((
-            'r1	n1	95	20	0	0	1	20	10	29	1	1',
-            'r2	n1	95	20	0	0	1	20	16	35	1	1',
-            'r3	n1	95	20	0	0	1	20	20	39	1	1',
-            'r4	n1	95	20	0	0	20	1	22	41	1	1',
-            'r5	n1	95	20	0	0	20	1	30	49	1	1',
-            'rx	nx	95	20	0	0	1	20	1	20	1	1',
-            'r6	n1	95	20	0	0	1	20	49	30	1	1',
-            'r7	n1	95	20	0	0	25	6	79	60	1	1',
-            'r8	n1	95	20	0	0	1	20	84	65	1	1',
-            'r9	n1	95	20	0	0	1	20	95	82	1	1',
-            'rx	nx	95	0	0	0	0	0	0	0	1	1',
-            '# end of file')))
-        obs = list(ordinal_mapper(aln, coords))[0]
-        exp = [('r1', 'g1'),
-               ('r5', 'g2'),
-               ('r6', 'g2'),
-               ('r8', 'g3')]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
-
-        # specify format
-        aln.seek(0)
-        obs = list(ordinal_mapper(aln, coords, fmt='b6o'))[0]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
-
-        # specify chunk size
-        aln.seek(0)
-        obs = list(ordinal_mapper(aln, coords, n=5))
-        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:2]])
-        self.assertListEqual(list(obs[0][1]), [{x[1]} for x in exp[:2]])
-        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[2:]])
-        self.assertListEqual(list(obs[1][1]), [{x[1]} for x in exp[2:]])
-
-        # add prefix
-        aln.seek(0)
-        obs = list(ordinal_mapper(aln, coords, prefix=True))[0]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{f'n1_{x[1]}'} for x in exp])
-
-        # specify threshold
-        aln.seek(0)
-        obs = list(ordinal_mapper(aln, coords, th=0.5))[0]
-        exp = [('r1', 'g1'),
-               ('r2', 'g1'),
-               ('r3', 'g1'),
-               ('r5', 'g2'),
-               ('r6', 'g2'),
-               ('r7', 'g3'),
-               ('r8', 'g3'),
-               ('r9', 'g3')]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
-
-    def test_ordinal_parser(self):
-
+    def test_ordinal_parser_dummy(self):
         # b6o (BLAST, DIAMOND, BURST, etc.)
         b6o = (
             'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
             'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
         parser = parse_b6o_line
-        obs = ordinal_parser(b6o, parser)
+        obs = ordinal_parser_dummy(b6o, parser)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
         self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
         self.assertDictEqual(obs[2], {'NC_123456': [
@@ -238,7 +175,7 @@ class OrdinalTests(TestCase):
             # unaligned
             'S2	16	*	0	0	*	*	0	0	*	*')
         parser = parse_sam_line
-        obs = ordinal_parser(sam, parser)
+        obs = ordinal_parser_dummy(sam, parser)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
         self.assertDictEqual(obs[1], {
             'NC_123456': {0: 100, 1: 80},
@@ -247,6 +184,69 @@ class OrdinalTests(TestCase):
             'NC_123456': [(26,  True, False, 0), (125, False, False, 0),
                           (151, True, False, 1), (230, False, False, 1)],
             'NC_789012': [(186, True, False, 2), (280, False, False, 2)]})
+
+    def test_ordinal_mapper(self):
+        # uses the same example as above, with some noises
+        coords, idmap, _ = load_gene_coords((
+            '>n1',
+            'g1	5	29',
+            'g2	33	61',
+            'g3	65	94',
+            'gx	108	135'))
+        aln = StringIO('\n'.join((
+            'r1	n1	95	20	0	0	1	20	10	29	1	1',
+            'r2	n1	95	20	0	0	1	20	16	35	1	1',
+            'r3	n1	95	20	0	0	1	20	20	39	1	1',
+            'r4	n1	95	20	0	0	20	1	22	41	1	1',
+            'r5	n1	95	20	0	0	20	1	30	49	1	1',
+            'rx	nx	95	20	0	0	1	20	1	20	1	1',
+            'r6	n1	95	20	0	0	1	20	49	30	1	1',
+            'r7	n1	95	20	0	0	25	6	79	60	1	1',
+            'r8	n1	95	20	0	0	1	20	84	65	1	1',
+            'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
+            '# end of file')))
+        obs = list(ordinal_mapper(aln, coords, idmap))[0]
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+        # specify format
+        aln.seek(0)
+        obs = list(ordinal_mapper(aln, coords, idmap, fmt='b6o'))[0]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+        # specify chunk size
+        aln.seek(0)
+        obs = list(ordinal_mapper(aln, coords, idmap, n=5))
+        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:2]])
+        self.assertListEqual(list(obs[0][1]), [{x[1]} for x in exp[:2]])
+        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[2:]])
+        self.assertListEqual(list(obs[1][1]), [{x[1]} for x in exp[2:]])
+
+        # add prefix
+        aln.seek(0)
+        obs = list(ordinal_mapper(aln, coords, idmap, prefix=True))[0]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{f'n1_{x[1]}'} for x in exp])
+
+        # specify threshold
+        aln.seek(0)
+        obs = list(ordinal_mapper(aln, coords, idmap, th=0.5))[0]
+        exp = [('r1', 'g1'),
+               ('r2', 'g1'),
+               ('r3', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r7', 'g3'),
+               ('r8', 'g3'),
+               ('r9', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
 
     def test_load_gene_coords(self):
         # simple case
@@ -316,44 +316,44 @@ class OrdinalTests(TestCase):
         with openzip(fp) as f:
             obs, idmap, isdup = load_gene_coords(f, sort=True)
         self.assertTrue(isdup)
-        self.assertEqual(len(idmap), 100)
+        self.assertEqual(len(idmap), 107)
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
-        self.assertTupleEqual(obs_[0], (372 << 48) + (3 << 30) + 0)
-        self.assertTupleEqual(obs_[0], (806 << 48) + (1 << 30) + 0)
-        self.assertTupleEqual(obs_[0], (816 << 48) + (3 << 30) + 1)
-        self.assertTupleEqual(obs_[0], (2177 << 48) + (1 << 30) + 1)
+        self.assertEqual(obs_[0], (372 << 48) + (3 << 30) + 0)
+        self.assertEqual(obs_[1], (806 << 48) + (1 << 30) + 0)
+        self.assertEqual(obs_[2], (816 << 48) + (3 << 30) + 1)
+        self.assertEqual(obs_[3], (2177 << 48) + (1 << 30) + 1)
 
     def test_calc_gene_lens(self):
-        coords = {'NC_123456': [
-            (5,   True, True, '1'), (384, False, True, '1'),
-            (410, True, True, '2'), (933, False, True, '2')],
-                  'NC_789012': [
-            (75,  True, True, '2'), (529, False, True, '2'),
-            (638, True, True, '1'), (912, False, True, '1')]}
-        obs = calc_gene_lens(coords, True)
+        coords = {'NC_123456': [(5 << 48) + (3 << 30) + 0,
+                                (384 << 48) + (1 << 30) + 0,
+                                (410 << 48) + (3 << 30) + 1,
+                                (933 << 48) + (1 << 30) + 1],
+                  'NC_789012': [(75 << 48) + (3 << 30) + 1,
+                                (529 << 48) + (1 << 30) + 1,
+                                (638 << 48) + (3 << 30) + 0,
+                                (912 << 48) + (1 << 30) + 0]}
+        idmap = {'NC_123456': ['1', '2'],
+                 'NC_789012': ['1', '2']}
+        mapper = partial(ordinal_mapper, coords=coords, idmap=idmap,
+                         prefix=True)
+        obs = calc_gene_lens(mapper)
         exp = {'NC_123456_1': 380,
                'NC_123456_2': 524,
                'NC_789012_2': 455,
                'NC_789012_1': 275}
         self.assertDictEqual(obs, exp)
 
-        coords = {'NC_123456': [
-            (5,   True, True,  'NP_135792.1'),
-            (384, False, True, 'NP_135792.1'),
-            (410, True, True,  'NP_246801.2'),
-            (933, False, True, 'NP_246801.2')],
-                  'NC_789012': [
-            (75,  True, True,  'NP_258147.1'),
-            (529, False, True, 'NP_258147.1'),
-            (638, True, True,  'NP_369258.2'),
-            (912, False, True, 'NP_369258.2')]}
-        obs = calc_gene_lens(coords, False)
+        idmap = {'NC_123456': ['NP_135792.1', 'NP_246801.2'],
+                 'NC_789012': ['NP_258147.1', 'NP_369258.2']}
+        mapper = partial(ordinal_mapper, coords=coords, idmap=idmap,
+                         prefix=False)
+        obs = calc_gene_lens(mapper)
         exp = {'NP_135792.1': 380,
                'NP_246801.2': 524,
-               'NP_258147.1': 455,
-               'NP_369258.2': 275}
+               'NP_369258.2': 455,
+               'NP_258147.1': 275}
         self.assertDictEqual(obs, exp)
 
 
