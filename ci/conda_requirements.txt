@@ -1,3 +1,2 @@
-numba
 cython
 biom-format

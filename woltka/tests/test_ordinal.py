@@ -18,13 +18,11 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from io import StringIO
 
-import numpy as np
-
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
-    match_read_gene, ordinal_mapper, ordinal_parser, read_gene_coords,
-    calc_gene_lens)
+    match_read_gene, match_read_gene_dummy, ordinal_mapper, ordinal_parser,
+    load_gene_coords, calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -35,9 +33,9 @@ class OrdinalTests(TestCase):
     def tearDown(self):
         rmtree(self.tmpdir)
 
-    def test_match_read_gene(self):
+    def test_match_read_gene_dummy(self):
         """This test demonstrates how genes and reads are matched in an
-        ordinal system.
+        ordinal system. It is for demonstration purpose.
 
         Illustration of gene (>) and read (-) locations on a genome (=):
 
@@ -80,33 +78,30 @@ class OrdinalTests(TestCase):
                  ('r8', 65, 84),
                  ('r9', 82, 95)]  # shorter
 
+        # alignment length map
+        lens = {'r{}'.format(i): 20 for i in range(1, 10)}
+
         # flatten lists
-        # read length is uniformly 20, default threshold is 80%, so
-        # length is 20 * 0.8 - 1 = 15
-        genes = [x for id_, start, end in genes for x in
-                 ((start, 1, 1, id_),
-                  (end,   0, 1, id_))]
-        reads = [x for id_, start, end in reads for x in
-                 ((start, 15, 0, id_),
-                  (end,    0, 0, id_))]
+        genes = [x for id_, beg, end in genes for x in (
+            (beg,  True,  True, id_),
+            (end, False,  True, id_))]
+        reads = [x for id_, beg, end in reads for x in (
+            (beg,  True, False, id_),
+            (end, False, False, id_))]
 
-        arr = np.array(genes + reads, dtype='uint32')
-        queue = arr[arr[:, 0].argsort()]
+        # merge genes and reads and sort
+        queue = sorted(genes + reads)
 
-        # default
-        obs = list(match_read_gene(queue))
+        # default (threshold = 80%)
+        obs = list(match_read_gene_dummy(queue, lens, th=0.8))
         exp = [('r1', 'g1'),
                ('r5', 'g2'),
                ('r6', 'g2'),
                ('r8', 'g3')]
         self.assertListEqual(obs, exp)
 
-        # threashold = 50%, so length is 20 * 0.5 - 1 = 9
-        for i in range(len(queue)):
-            point = queue[i]
-            if point[1] and not point[2]:
-                queue[i] = (point[0], 9, point[2], point[3])
-        obs = list(match_read_gene(queue))
+        # threashold = 50%
+        obs = list(match_read_gene_dummy(queue, lens, th=0.5))
         exp = [('r1', 'g1'),
                ('r2', 'g1'),
                ('r3', 'g1'),
@@ -117,9 +112,45 @@ class OrdinalTests(TestCase):
                ('r9', 'g3')]
         self.assertListEqual(obs, exp)
 
+    def test_match_read_gene(self):
+        """This test is for the real function.
+        """
+        # gene table
+        genes = [(1,  5, 29),
+                 (2, 33, 61),
+                 (3, 65, 94)]
+        # read map
+        reads = [(1, 10, 29),
+                 (2, 16, 35),
+                 (3, 20, 39),
+                 (4, 22, 41),
+                 (5, 30, 49),
+                 (6, 30, 49),  # identical
+                 (7, 60, 79),
+                 (8, 65, 84),
+                 (9, 82, 95)]  # shorter
+
+        # read length is uniformly 20, threshold is 80%, so effective
+        # alignment length is 20 * 0.8 = 16
+        genes = [x for idx, beg, end in genes for x in (
+            ((beg << 48),  (1 << 31), (1 << 30), idx),
+            ((end << 48),  (0 << 31), (1 << 30), idx))]
+        reads = [x for idx, beg, end in reads for x in (
+            ((beg << 48), (16 << 31), (0 << 30), idx),
+            ((end << 48),  (0 << 31), (0 << 30), idx))]
+        queue = sorted(genes + reads)
+
+        # default
+        obs = list(match_read_gene(queue))
+        exp = [(1, 1),
+               (5, 2),
+               (6, 2),
+               (8, 3)]
+        self.assertListEqual(obs, exp)
+
     def test_ordinal_mapper(self):
         # uses the same example as above, with some noises
-        coords, _ = read_gene_coords((
+        coords, _ = load_gene_coords((
             '>n1',
             'g1	5	29',
             'g2	33	61',
@@ -217,18 +248,22 @@ class OrdinalTests(TestCase):
                           (151, True, False, 1), (230, False, False, 1)],
             'NC_789012': [(186, True, False, 2), (280, False, False, 2)]})
 
-    def test_read_gene_coords(self):
+    def test_load_gene_coords(self):
         # simple case
         tbl = ('>n1',
                'g1	5	29',
                'g2	33	61',
                'g3	65	94')
-        obs, isdup = read_gene_coords(tbl)
+        obs, idmap, isdup = load_gene_coords(tbl)
         self.assertFalse(isdup)
+        self.assertDictEqual(idmap, {'n1': ['g1', 'g2', 'g3']})
         exp = {'n1': [
-            (5,  True, True, 'g1'), (29, False, True, 'g1'),
-            (33, True, True, 'g2'), (61, False, True, 'g2'),
-            (65, True, True, 'g3'), (94, False, True, 'g3')]}
+            (5 << 48) + (3 << 30) + 0,
+            (29 << 48) + (1 << 30) + 0,
+            (33 << 48) + (3 << 30) + 1,
+            (61 << 48) + (1 << 30) + 1,
+            (65 << 48) + (3 << 30) + 2,
+            (94 << 48) + (1 << 30) + 2]}
         self.assertDictEqual(obs, exp)
 
         # NCBI accession
@@ -239,49 +274,56 @@ class OrdinalTests(TestCase):
                '# NC_789012\n',
                '1	912	638\n',
                '2	529	75\n')
-        obs, isdup = read_gene_coords(tbl, sort=True)
+        obs, idmap, isdup = load_gene_coords(tbl, sort=True)
         self.assertTrue(isdup)
+        self.assertDictEqual(idmap, {
+            'NC_123456': ['1', '2'], 'NC_789012': ['1', '2']})
         exp = {'NC_123456': [
-            (5,   True, True, '1'), (384, False, True, '1'),
-            (410, True, True, '2'), (933, False, True, '2')],
+            (5 << 48) + (3 << 30) + 0,
+            (384 << 48) + (1 << 30) + 0,
+            (410 << 48) + (3 << 30) + 1,
+            (933 << 48) + (1 << 30) + 1],
                'NC_789012': [
-            (75,  True, True, '2'), (529, False, True, '2'),
-            (638, True, True, '1'), (912, False, True, '1')]}
+            (75 << 48) + (3 << 30) + 1,
+            (529 << 48) + (1 << 30) + 1,
+            (638 << 48) + (3 << 30) + 0,
+            (912 << 48) + (1 << 30) + 0]}
         self.assertDictEqual(obs, exp)
 
         # don't sort
-        obs = read_gene_coords(tbl, sort=False)[0]['NC_789012']
-        exp = [(638, True, True, '1'), (912, False, True, '1'),
-               (75,  True, True, '2'), (529, False, True, '2')]
+        obs = load_gene_coords(tbl, sort=False)[0]['NC_789012']
+        exp = [(638 << 48) + (3 << 30) + 0, (912 << 48) + (1 << 30) + 0,
+               (75 << 48) + (3 << 30) + 1,  (529 << 48) + (1 << 30) + 1]
         self.assertListEqual(obs, exp)
 
         # incorrect formats
         # only one column
         msg = 'Cannot extract coordinates from line:'
         with self.assertRaises(ValueError) as ctx:
-            read_gene_coords(('hello',))
+            load_gene_coords(('hello',))
         self.assertEqual(str(ctx.exception), f'{msg} "hello".')
         # only two columns
         with self.assertRaises(ValueError) as ctx:
-            read_gene_coords(('hello\t100',))
+            load_gene_coords(('hello\t100',))
         self.assertEqual(str(ctx.exception), f'{msg} "hello\t100".')
         # three columns but 3rd is string
         with self.assertRaises(ValueError) as ctx:
-            read_gene_coords(('hello\t100\tthere',))
+            load_gene_coords(('hello\t100\tthere',))
         self.assertEqual(str(ctx.exception), f'{msg} "hello\t100\tthere".')
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
         with openzip(fp) as f:
-            obs, isdup = read_gene_coords(f, sort=True)
+            obs, idmap, isdup = load_gene_coords(f, sort=True)
         self.assertTrue(isdup)
+        self.assertEqual(len(idmap), 100)
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
-        self.assertTupleEqual(obs_[0], (372,  True,  True, '1'))
-        self.assertTupleEqual(obs_[1], (806,  False, True, '1'))
-        self.assertTupleEqual(obs_[2], (816,  True,  True, '2'))
-        self.assertTupleEqual(obs_[3], (2177, False, True, '2'))
+        self.assertTupleEqual(obs_[0], (372 << 48) + (3 << 30) + 0)
+        self.assertTupleEqual(obs_[0], (806 << 48) + (1 << 30) + 0)
+        self.assertTupleEqual(obs_[0], (816 << 48) + (3 << 30) + 1)
+        self.assertTupleEqual(obs_[0], (2177 << 48) + (1 << 30) + 1)
 
     def test_calc_gene_lens(self):
         coords = {'NC_123456': [
