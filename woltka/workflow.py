@@ -961,7 +961,7 @@ def assign_readmap(qryque:    list,
         counts = ((counter(taxque) if not sizes else
                    counter_size(subque, taxque, sizes)) if not strata else
                   (counter_strat(qryque, taxque, strata) if not sizes else
-                   counter_size_strat(qryque, subque, taxque, strata, sizes)))
+                   counter_size_strat(qryque, subque, taxque, sizes, strata)))
     except KeyError:
         raise ValueError('One or more subjects are not found in the size map.')
 
