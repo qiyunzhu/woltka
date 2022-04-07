@@ -62,7 +62,7 @@ Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime
 
 ## Installation
 
-Requirement: [Python](https://www.python.org/) 3.6 or above, with Python package [biom-format](http://biom-format.org/) installed.
+Requirement: [Python](https://www.python.org/) 3.6 or above.
 
 ```bash
 pip install woltka
@@ -133,11 +133,11 @@ One can also combine taxonomic and functional profilings in a **stratification**
 
 ## Citation
 
-The first manuscript describing Woltka has been preprinted at:
+The first paper describing Woltka was published at:
 
-- Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald D, Haiminen N, et al. [OGUs enable effective, phylogeny-aware analysis of even shallow metagenome community structures.](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) _bioRxiv_. 2021. doi: https://doi.org/10.1101/2021.04.04.438427.
+- Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald M, Haiminen N, Armstrong G, et al. [Phylogeny-aware analysis of metagenome community ecology based on matched reference genomes while bypassing taxonomy.](https://journals.asm.org/doi/10.1128/msystems.00167-22) _mSystems_. 2022. e00167-22.
 
-Note: This manuscript focuses on the [OGU analysis](doc/ogu.md). Although it does not discuss other functions of Woltka, it is so far the only citable article if you use Woltka in your studies.
+Note: This paper focuses on the [OGU analysis](doc/ogu.md). Although it does not discuss other functions of Woltka, it is so far the only citable paper if you use Woltka in your studies.
 
 
 ## Contact
