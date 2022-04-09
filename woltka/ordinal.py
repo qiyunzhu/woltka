@@ -78,16 +78,15 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         # master read-to-gene(s) map
         res = defaultdict(set)
 
+        with open('stats.txt', 'a') as fx:
+            nums = [str(len(x) / 2) for x in locmap.values()]
+            print(','.join(nums), file=fx)
+
         for nucl, locs in locmap.items():
 
-            # merge and sort coordinates
-            # question is to add unsorted read coordinates into already-sorted
-            # gene coordinates
-            # Python's timsort algorithm is efficient for this task
-            try:
-                queue = sorted(chain(coords[nucl], locs))
-
             # it's possible that no gene was annotated on the nucleotide
+            try:
+                glocs = coords[nucl]
             except KeyError:
                 continue
 
@@ -97,11 +96,25 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             # append prefix if needed
             pfx = nucl + '_' if prefix else ''
 
-            # map reads to genes using the core algorithm
-            for read, gene in match_read_gene(queue):
+            # execute ordinal algorithm when reads are many
+            if len(locs) > 8:
 
-                # merge read-gene pairs to the master map
-                res[rids[read]].add(pfx + gids[gene])
+                # merge and sort coordinates
+                # question is to add unsorted read coordinates into pre-sorted
+                # gene coordinates
+                # Python's Timsort algorithm is efficient for this task
+                queue = sorted(chain(glocs, locs))
+
+                # map reads to genes using the core algorithm
+                for read, gene in match_read_gene(queue):
+
+                    # add read-gene pairs to the master map
+                    res[rids[read]].add(pfx + gids[gene])
+
+            # execute naive algorithm when reads are few
+            else:
+                for read, gene in match_read_gene_naive(glocs, locs):
+                    res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
@@ -399,6 +412,99 @@ def match_read_gene(queue):
                     # same as above
                     if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
                         yield code & (1 << 30) - 1, gid
+
+
+def match_read_gene_naive(geneque, readque):
+    """Associate reads with genes using a native approach, which performs
+    nested iteration over genes and reads.
+
+    Parameters
+    ----------
+    geneque : list of int
+        Sorted queue of genes.
+    readque : list of int
+        Paired queue of reads.
+
+    Yields
+    ------
+    int
+        Read index.
+    int
+        Gene index.
+
+    See Also
+    --------
+    match_read_gene
+    """
+    # only genes are to be cached
+    genes = {}
+    genes_pop = genes.pop
+
+    # pre-calculate id, start, end, effective length of reads
+    it = iter(readque)
+    reads = [(s & (1 << 30) - 1,
+              s >> 48,
+              e >> 48,
+              s >> 31 & 131071) for s, e in zip(it, it)]
+
+    # iterate over gene queue
+    for code in geneque:
+        if code & (1 << 31):
+            genes[code & (1 << 30) - 1] = code >> 48
+        else:
+            gid = code & (1 << 30) - 1
+            gs, ge = genes_pop(gid), code >> 48
+
+            # check reads for matches
+            for rid, rs, re, L in reads:
+                if min(ge, re) - max(gs, rs) >= L:
+                    yield rid, gid
+
+
+def match_read_gene_g1(queue):
+    """Associate reads with genes based on a sorted queue of coordinates,
+    assuming genes are not overlapped.
+
+    Parameters
+    ----------
+    queue : list of int
+        Sorted queue of coordinates.
+
+    Yields
+    ------
+    int
+        Read index.
+    int
+        Gene index.
+
+    See Also
+    --------
+    match_read_gene
+
+    Notes
+    -----
+    The difference from `match_read_gene` is that the gene cache is a scalar
+    not a dict, and it can store only one gene.
+    """
+    gene, reads = None, {}
+    reads_items, reads_pop = reads.items, reads.pop
+    for code in queue:
+        if code & (1 << 30):
+            if code & (1 << 31):
+                gene = code
+            else:
+                gloc, gene = gene >> 48, None
+                for rid, rloc in reads_items():
+                    if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
+                        yield rid, code & (1 << 30) - 1
+        else:
+            if code >> 31 & 131071:
+                reads[code & (1 << 30) - 1] = (code >> 31) - 1
+            else:
+                rloc = reads_pop(code & (1 << 30) - 1)
+                if gene and (code >> 48) - max(gene >> 48,
+                                               rloc >> 17) >= rloc & 131071:
+                    yield code & (1 << 30) - 1, gene & (1 << 30) - 1
 
 
 def match_read_gene_dummy(queue, lens, th):
