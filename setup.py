@@ -14,7 +14,7 @@ import woltka.__init__ as init
 
 
 classes = """
-    Development Status :: 3 - Alpha
+    Development Status :: 4 - Beta
     License :: OSI Approved :: BSD License
     Topic :: Scientific/Engineering
     Topic :: Scientific/Engineering :: Bio-Informatics
@@ -29,6 +29,7 @@ params = {
     'name':             init.__name__,
     'version':          init.__version__,
     'license':          init.__license__,
+    'description':      init.__description__,
     'long_description': open('README.md').read(),
     'long_description_content_type': 'text/markdown',
     'author':           init.__author__,

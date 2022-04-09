@@ -1,5 +1,11 @@
 # Change Log
 
+## Version 0.1.4 (ongoing)
+
+### Changed
+- Used a single integer to store gene and read information in the ordinal mapper; use bitwise operations to parse the information. This significantly reduced memory consumption and runtime.
+
+
 ## Version 0.1.3 (08/27/2021)
 
 ### Changed

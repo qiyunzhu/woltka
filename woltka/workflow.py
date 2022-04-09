@@ -36,7 +36,7 @@ from .tree import (
     read_names, read_nodes, read_lineage, read_newick, read_columns,
     fill_root)
 from .ordinal import (
-    ordinal_mapper, read_gene_coords, whether_prefix, calc_gene_lens)
+    ordinal_mapper, load_gene_coords, calc_gene_lens)
 from .table import prep_table, write_table
 from .coverage import parse_ranges, calc_coverage, write_coverage
 
@@ -509,13 +509,12 @@ def build_mapper(coords_fp:  str = None,
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
         with readzip(coords_fp, zippers) as fh:
-            coords = read_gene_coords(fh, sort=True)
+            coords, idmap, prefix = load_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'  Total number of host sequences: {len(coords)}.')
         chunk = chunk or 1000000
-        return partial(ordinal_mapper, coords=coords,
-                       prefix=whether_prefix(coords),
-                       th=overlap and overlap / 100), chunk
+        return partial(ordinal_mapper, coords=coords, idmap=idmap,
+                       prefix=prefix, th=overlap and overlap / 100), chunk
     else:
         chunk = chunk or 1000
         return range_mapper if outcov_dir else plain_mapper, chunk
@@ -552,8 +551,7 @@ def parse_sizes(sizes:       str,
     if sizes == '.':
         click.echo('Calculating gene lengths from coordinates...', nl=False)
         try:
-            sizemap = calc_gene_lens(
-                mapper.keywords['coords'], mapper.keywords['prefix'])
+            sizemap = calc_gene_lens(mapper)
         except AttributeError:
             raise ValueError('Gene coordinates file is not provided.')
         click.echo(' Done.')
@@ -987,7 +985,7 @@ def assign_readmap(qryque:    list,
         counts = ((counter(taxque) if not sizes else
                    counter_size(subque, taxque, sizes)) if not strata else
                   (counter_strat(qryque, taxque, strata) if not sizes else
-                   counter_size_strat(qryque, subque, taxque, strata, sizes)))
+                   counter_size_strat(qryque, subque, taxque, sizes, strata)))
     except KeyError:
         raise ValueError('One or more subjects are not found in the size map.')
 
