@@ -2,11 +2,12 @@
 
 The notion of “**OGU**” (operational genomic unit) is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. OGUs are simply the reference genomes to which input sequences are aligned. There is no need to assign taxonomy to them. This is in constrast to conventional practices, in which analyses are based on taxonomic units such as genera or species. Therefore, OGU is analogous to ASV in 16S rRNA studies.
 
-The advantage of using OGUs includes 1) highest-possible resolution, 2) independent from taxonomy which is coarse and error-prone as a classification system. 3) allowing for phylogeny-based analysis such as Faith’s PD and UniFrac. The last part is enhanced by the “Web of Life” ([WoL](https://biocore.github.io/wol/)) reference phylogeny.
+The advantage of using OGUs includes 1) highest-possible resolution, 2) independent from taxonomy which is coarse and error-prone as a classification system. 3) allowing for phylogeny-based analysis such as Faith’s PD and UniFrac. The last part is enhanced by the "Web of Life" ([WoL](https://biocore.github.io/wol/)) reference phylogeny.
 
-Our manuscript introducing the OGU analysis has been preprinted at:
+The OGU analysis was explained, benchmarked and discussed in:
 
-- Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald D, Haiminen N, et al. [OGUs enable effective, phylogeny-aware analysis of even shallow metagenome community structures.](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1) _bioRxiv_. 2021. doi: https://doi.org/10.1101/2021.04.04.438427.
+- Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald M, Haiminen N, Armstrong G, et al. [Phylogeny-aware analysis of metagenome community ecology based on matched reference genomes while bypassing taxonomy.](https://journals.asm.org/doi/10.1128/msystems.00167-22) _mSystems_. 2022. e00167-22.
+
 
 
 ## Contents

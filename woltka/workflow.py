@@ -28,7 +28,7 @@ from .util import (
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
-from .align import plain_mapper
+from .align import plain_mapper, range_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, counter, counter_size,
     counter_strat, counter_size_strat)
@@ -38,6 +38,7 @@ from .tree import (
 from .ordinal import (
     ordinal_mapper, load_gene_coords, calc_gene_lens)
 from .table import prep_table, write_table
+from .coverage import parse_ranges, calc_coverage, write_coverage
 
 
 def workflow(input_fp:     str,
@@ -80,6 +81,7 @@ def workflow(input_fp:     str,
              add_lineage: bool = False,
              outmap_dir:   str = None,
              outmap_zip:   str = 'gz',
+             outcov_dir:   str = None,
              # performance
              chunk:        int = None,
              cache:        int = 1024,
@@ -118,7 +120,8 @@ def workflow(input_fp:     str,
         map_rank, zippers)
 
     # build mapping module
-    mapper, chunk = build_mapper(coords_fp, overlap, chunk, zippers)
+    mapper, chunk = build_mapper(
+        coords_fp, outcov_dir, overlap, chunk, zippers)
 
     # parse length map
     sizes = parse_sizes(sizes, mapper, zippers)
@@ -131,7 +134,7 @@ def workflow(input_fp:     str,
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
-        zippers)
+        zippers, outcov_dir)
 
     # convert counts to fractions
     frac_profiles(data, frac)
@@ -173,7 +176,8 @@ def classify(mapper:  object,
              stratmap:  dict = None,
              chunk:      int = None,
              cache:      int = 1024,
-             zippers:   dict = None) -> dict:
+             zippers:   dict = None,
+             outcov_dir: str = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -235,6 +239,8 @@ def classify(mapper:  object,
         LRU cache size for classification results at each rank.
     zippers : dict, optional
         External compression programs.
+    outcov_dir : str, optional
+        Write Subject coverage maps to directory.
 
     Returns
     -------
@@ -246,6 +252,7 @@ def classify(mapper:  object,
     Subject(s) of each query are sorted and converted into a tuple, which is
     hashable, a property necessary for subsequent assignment result caching.
     """
+
     data = {x: {} for x in ranks}
 
     # assigners for each rank
@@ -257,6 +264,9 @@ def classify(mapper:  object,
               'major': major and major / 100, 'above': above, 'subok': subok,
               'sizes': sizes, 'unasgd': unasgd, 'rank2dir': rank2dir,
               'outzip': outzip if outzip != 'none' else None}
+
+    # (optional) subject coverage data
+    covers = {} if outcov_dir else None
 
     # current sample Id
     csample = False
@@ -275,16 +285,20 @@ def classify(mapper:  object,
             for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
                 nqry += len(qryque)
 
-                # (optional) strip indices and generate tuples
-                subque = deque(map(tuple, map(sorted, strip_suffix(
-                    subque, trimsub) if trimsub else subque)))
-
                 # (optional) demultiplex and generate per-sample maps
                 rmaps = demultiplex(qryque, subque, samples) if demux else {
                     files[fp] if files else None: (qryque, subque)}
 
+                # (optional) calculate subject coverage
+                if outcov_dir:
+                    parse_ranges(rmaps, covers)
+
                 # assign reads at each rank
-                for sample, rmap in rmaps.items():
+                for sample, (qryque, subque) in rmaps.items():
+
+                    # (optional) strip suffixes from subject Ids
+                    subque = deque(map(tuple, map(sorted, strip_suffix(
+                        subque, trimsub) if trimsub else subque)))
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
@@ -294,7 +308,8 @@ def classify(mapper:  object,
 
                     # call assignment workflow for each rank
                     for rank in ranks:
-                        assign_readmap(*rmap, data, rank, sample, **kwargs)
+                        assign_readmap(
+                            qryque, subque, data, rank, sample, **kwargs)
 
                 # show progress
                 istep = nqry // 1000000 - nstep
@@ -304,6 +319,12 @@ def classify(mapper:  object,
 
         click.echo(' Done.')
         click.echo(f'  Number of sequences classified: {nqry}.')
+
+    # write coverage maps
+    if outcov_dir:
+        click.echo('Calculating per sample coverage...', nl=False)
+        write_coverage(calc_coverage(covers), outcov_dir)
+        click.echo(' Done.')
 
     click.echo('Classification completed.')
     return data
@@ -447,16 +468,19 @@ def parse_strata(fp:       str = None,
     return {k: join(fp, v) for k, v in map_.items()}
 
 
-def build_mapper(coords_fp: str = None,
-                 overlap:   int = None,
-                 chunk:     int = None,
-                 zippers:  dict = None) -> Tuple[callable, int]:
+def build_mapper(coords_fp:  str = None,
+                 outcov_dir: str = None,
+                 overlap:    int = None,
+                 chunk:      int = None,
+                 zippers:   dict = None) -> Tuple[callable, int]:
     """Build mapper function (plain or ordinal).
 
     Parameters
     ----------
     coords_fp : str, optional
         Path to gene coordinates file.
+    outcov_dir : str, optional
+        Path to output subject coverage directory.
     overlap : int, optional
         Read/gene overlapping percentage threshold.
     chunk : int, optional
@@ -493,7 +517,7 @@ def build_mapper(coords_fp: str = None,
                        prefix=prefix, th=overlap and overlap / 100), chunk
     else:
         chunk = chunk or 1000
-        return plain_mapper, chunk
+        return range_mapper if outcov_dir else plain_mapper, chunk
 
 
 def parse_sizes(sizes:       str,
@@ -942,7 +966,7 @@ def assign_readmap(qryque:    list,
                 major=major, above=above, uniq=uniq))
         assigner = assigners[rank]
 
-    # call assigner on suject(s) per query
+    # call assigner on subject(s) per query
     taxque = map(assigner, subque)
 
     # report or drop unassigned

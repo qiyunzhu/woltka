@@ -70,7 +70,7 @@ fastp -l 100 -i forward.fastq -I reverse.fastq -o forward_trimmed.fastq -O rever
 
 ## The OGU analysis
 
-**OGU** (operational genomic unit) ([Zhu et al., 2021](https://www.biorxiv.org/content/10.1101/2021.04.04.438427v1)) is a notion we proposed to define the minimum unit of microbiome composition allowed by shotgun metagenomic data. OGUs are reference genomes to which any input sequences have matches. This maximizes the resolution of microbiome composition, and allows for phylogeny-aware analyses using the WoL reference phylogeny. See [details](ogu.md).
+**OGU** (operational genomic unit) ([Zhu et al., 2022](https://journals.asm.org/doi/10.1128/msystems.00167-22)) is a notion we proposed to define the minimum unit of microbiome composition allowed by shotgun metagenomic data. OGUs are reference genomes to which any input sequences have matches. This maximizes the resolution of microbiome composition, and allows for phylogeny-aware analyses using the WoL reference phylogeny. See [details](ogu.md).
 
 In Woltka, an OGU analysis is simply a classification process without a classification system. In such case, the output features will just be the subjects in the alignment file, namely reference genomes.
 

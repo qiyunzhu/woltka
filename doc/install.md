@@ -13,7 +13,6 @@ We recommend [Conda](https://docs.conda.io/en/latest/) for managing Python versi
 ```bash
 conda create -n woltka python=3
 conda activate woltka
-conda install -c conda-forge cython biom-format
 ```
 
 If you already have a [QIIME 2](https://qiime2.org/) environment, these steps can be omitted as the dependencies are already included. See [details](../woltka/q2).

@@ -102,7 +102,7 @@ woltka classify \
   --map    metacyc/protein.map.xz \
   --names  metacyc/protein_name.txt \
   --rank   protein \
-  --size   . \
+  --sizes   . \
   --scale  1k \
   --digits 3 \
   --output protein.tsv
