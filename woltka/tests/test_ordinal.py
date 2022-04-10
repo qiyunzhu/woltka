@@ -22,8 +22,9 @@ from functools import partial
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
-    match_read_gene_dummy, match_read_gene, ordinal_parser_dummy,
-    ordinal_mapper, load_gene_coords, calc_gene_lens)
+    match_read_gene_dummy, match_read_gene, match_read_gene_naive,
+    match_read_gene_g1, ordinal_parser_dummy, ordinal_mapper, load_gene_coords,
+    calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -146,6 +147,69 @@ class OrdinalTests(TestCase):
         exp = [(1, 1),
                (5, 2),
                (6, 2),
+               (8, 3)]
+        self.assertListEqual(obs, exp)
+
+    def test_match_read_gene_naive(self):
+        """The naive solution should produce identical result compared to
+        the default (ordinal) solution.
+        """
+        genes = [(1,  5, 29),
+                 (2, 33, 61),
+                 (3, 65, 94)]
+        reads = [(1, 10, 29),
+                 (2, 16, 35),
+                 (3, 20, 39),
+                 (4, 22, 41),
+                 (5, 30, 49),
+                 (6, 30, 49),
+                 (7, 60, 79),
+                 (8, 65, 84),
+                 (9, 82, 95)]
+        genes = [x for idx, beg, end in genes for x in (
+            (beg << 48) + (1 << 31) + (1 << 30) + idx,
+            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        reads = [x for idx, beg, end in reads for x in (
+            (beg << 48) + (16 << 31) + (0 << 30) + idx,
+            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+
+        # don't sort, but directly feed both queues
+        obs = list(match_read_gene_naive(genes, reads))
+        exp = [(1, 1),
+               (5, 2),
+               (6, 2),
+               (8, 3)]
+        self.assertListEqual(obs, exp)
+
+    def test_match_read_gene_g1(self):
+        """The method should produce identical result when there is no overlap
+        between genes; and it should not be executed when there are.
+        """
+        genes = [(1,  5, 29),
+                 (2, 33, 61),
+                 (3, 65, 94)]
+        reads = [(1, 10, 29),
+                 (2, 16, 35),
+                 (3, 20, 39),
+                 (4, 22, 41),
+                 (5, 30, 49),
+                 (6, 30, 49),
+                 (7, 60, 79),
+                 (8, 65, 84),
+                 (9, 82, 95)]
+        genes = [x for idx, beg, end in genes for x in (
+            (beg << 48) + (1 << 31) + (1 << 30) + idx,
+            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        reads = [x for idx, beg, end in reads for x in (
+            (beg << 48) + (14 << 31) + (0 << 30) + idx,
+            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        queue = sorted(genes + reads)
+        obs = list(match_read_gene_g1(queue))
+        exp = [(1, 1),
+               (2, 1),
+               (5, 2),
+               (6, 2),
+               (7, 3),
                (8, 3)]
         self.assertListEqual(obs, exp)
 

@@ -78,10 +78,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         # master read-to-gene(s) map
         res = defaultdict(set)
 
-        with open('stats.txt', 'a') as fx:
-            nums = [str(len(x) / 2) for x in locmap.values()]
-            print(','.join(nums), file=fx)
-
+        # iterate over nucleotides
         for nucl, locs in locmap.items():
 
             # it's possible that no gene was annotated on the nucleotide
@@ -97,7 +94,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             pfx = nucl + '_' if prefix else ''
 
             # execute ordinal algorithm when reads are many
-            if len(locs) > 8:
+            # 12 (6 reads) is an empirically determined cutoff
+            if len(locs) > 12:
 
                 # merge and sort coordinates
                 # question is to add unsorted read coordinates into pre-sorted
@@ -131,7 +129,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         except (TypeError, IndexError):
             continue
 
-        # skip if length is not available
+        # skip if length is not available or zero
         if not length:
             continue
 
@@ -153,7 +151,9 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         idx = len(rids)
         rid_append(query)
 
+        # effective length = length * th
         # -int(-x // 1) is equivalent to math.ceil(x) but faster
+        # this value must be >= 1
         locmap[subject].extend((
             (beg << 48) + (-int(-length * th // 1) << 31) + idx,
             (end << 48) + idx))
@@ -375,7 +375,7 @@ def match_read_gene(queue):
             # if code >> 31 & 131071:
             if code & (1 << 31):
 
-                # add it to cache
+                # add its index and coordinate to cache
                 genes[code & (1 << 30) - 1] = code >> 48
 
             # when a gene ends,
@@ -388,6 +388,10 @@ def match_read_gene(queue):
                 for rid, rloc in reads_items():
 
                     # is a match if read/gene overlap is long enough
+                    #   code >> 48:     read end coordinate
+                    #   gloc:           gene start coordinate
+                    #   rloc >> 17`:    read start coordinate
+                    #   rloc & 131071`: effective length - 1
                     if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
                         yield rid, code & (1 << 30) - 1
 
@@ -397,7 +401,8 @@ def match_read_gene(queue):
             # when a read begins,
             if code >> 31 & 131071:
 
-                # add it and its effective length to cache
+                # add its index, coordinate and effective length - 1 to cache
+                # the latter two are stored as a single integer
                 reads[code & (1 << 30) - 1] = (code >> 31) - 1
 
             # when a read ends,
@@ -435,17 +440,22 @@ def match_read_gene_naive(geneque, readque):
     See Also
     --------
     match_read_gene
+
+    Notes
+    -----
+    This is a reference implementation. It is O(nm), where n and m are the
+    numbers of genes and reads, respectively. It should be much slower than
+    `match_read_gene`. However, when the number of reads is small, it may be
+    faster because it saves the sorting step.
     """
     # only genes are to be cached
     genes = {}
     genes_pop = genes.pop
 
-    # pre-calculate id, start, end, effective length of reads
+    # pre-calculate index, start, end, effective length - 1 of reads
     it = iter(readque)
-    reads = [(s & (1 << 30) - 1,
-              s >> 48,
-              e >> 48,
-              s >> 31 & 131071) for s, e in zip(it, it)]
+    reads = [(s & (1 << 30) - 1, s >> 48, e >> 48,
+             (s >> 31) - 1 & 131071) for s, e in zip(it, it)]
 
     # iterate over gene queue
     for code in geneque:
