@@ -1,6 +1,6 @@
 # Computational efficiency
 
-Woltka is for handling very large alignment files and complex classification systems. Therefore computational expense is an important consideration. This page explains how much time does Woltka spend on typical datasets and how much memory does it need, as well as multiple tips and tricks for improving performance.
+Woltka is for handling very large alignment files and complex classification systems. Therefore computational expense is an important consideration. This page explains how much time Woltka spends on typical datasets and how much memory it needs, as well as multiple tips and tricks for improving performance.
 
 
 ## Contents

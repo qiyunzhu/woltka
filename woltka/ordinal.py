@@ -413,6 +413,13 @@ def match_read_gene(queue):
                 rloc = reads_pop(code & (1 << 30) - 1)
 
                 # check cached genes
+                # a potential optimization is to pre-calculate `rloc >> 17`
+                #   and `(code >> 48) - (rloc & 131071)`, however, it is not
+                #   worth the overhead in real applications because there is
+                #   usually zero or one gene in cache
+                # another potential optimization is to replace `max` (which is
+                #   a function call with a ternary operator, but one needs the
+                #   first optimization prior to this
                 for gid, gloc in genes_items():
 
                     # same as above
@@ -421,7 +428,7 @@ def match_read_gene(queue):
 
 
 def match_read_gene_naive(geneque, readque):
-    """Associate reads with genes using a native approach, which performs
+    """Associate reads with genes using a naive approach, which performs
     nested iteration over genes and reads.
 
     Parameters

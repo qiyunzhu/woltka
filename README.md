@@ -82,9 +82,9 @@ Woltka provides several small test datasets under [woltka/tests/data](woltka/tes
 
 One can execute the following commands to make sure that Woltka functions correctly, and to get an impression of the basic usage of Woltka.
 
-(Note: a more complete list of commands at provided [here](woltka/tests/data). Alternatively, you can skip this test dataset check out the [instructions](doc/wol.md) for working with WoL.)
+(Note: a more complete list of commands at provided [here](woltka/tests/data). Alternatively, you can skip this test dataset and check out the [instructions](doc/wol.md) for working with WoL.)
 
-1\. OGU table generation ([details](doc/ogu.md)):
+1\. OGU (operational genomic unit) table generation ([details](doc/ogu.md)):
 
 ```bash
 woltka classify -i align/bowtie2 -o ogu.biom
@@ -106,11 +106,11 @@ woltka classify \
   -o output_dir
 ```
 
-The mapping file (`taxid.map`) translates genome IDs to taxonomic IDs, which then allows Woltka to classify query sequences based on the NCBI taxonomy (`nodes.dmp` and `names.dmp`).
+The mapping file (`taxid.map`) translates genome IDs to taxonomy IDs, which then allows Woltka to classify query sequences based on the NCBI taxonomy (`nodes.dmp` and `names.dmp`).
 
 The output directory (`output_dir`) will contain three feature tables: `phylum.biom`, `genus.biom` and `species.biom`, each representing a taxonomic profile at one of the three ranks.
 
-3\. Functional profiling by UniRef entries then by GO terms (molecular process):
+3\. Functional profiling by UniRef entries, then by GO molecular processes ([details](doc/ordinal.md)):
 
 ```bash
 woltka classify \
@@ -122,7 +122,7 @@ woltka classify \
   -o output_dir
 ```
 
-Here, the input files are still read-to-genome alignments, instead of read-to-gene ones, but Woltka matches reads to genes based on their coordinates on the genomes (as indicated by the file `coords.txt`). This ensures consistency between taxonomic and functional classifications.
+Here, the input files are still read-to-genome alignments, instead of read-to-gene ones, but Woltka matches reads with genes based on their coordinates on the genomes, using an efficient [algorithm](doc/ordinal.md). The gene coordinates are given by the database file `coords.txt`. The read coordinates are extracted from the alignment files. This ensures consistency between taxonomic and functional classifications.
 
 Subsequently, Woltka is able to assign query sequences to functional units, as defined in mapping files (`uniref.map` and `go/process.tsv`). As you can see, compressed files are supported and auto-detected.
 

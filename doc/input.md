@@ -33,8 +33,8 @@ S03 S03.sam
 Woltka supports the following alignment formats (specified by parameter `--format` or `-f`):
 
 - `map`: A **simple map** in the format of query \<tab\> subject.
-- `sam`: [**SAM**](https://en.wikipedia.org/wiki/SAM_(file_format)) format. Supported by multiple tools such as Bowtie2 and BWA.
-- `b6o`: **BLAST** tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by multiple tools such as BLAST, DIAMOND, VSEARCH, BURST, etc.
+- `sam`: [**SAM**](https://en.wikipedia.org/wiki/SAM_(file_format)) format. Supported by multiple tools such as Bowtie2, BWA and Minimap2.
+- `b6o`: [**BLAST**](https://www.metagenomics.wiki/tools/blast/blastn-output-format-6) tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by multiple tools such as BLAST, DIAMOND, VSEARCH, BURST, etc.
 
   If not specified, Woltka will automatically infer the format of input alignment files.
 

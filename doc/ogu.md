@@ -1,8 +1,12 @@
 # OGU analysis
 
-The notion of “**OGU**” (operational genomic unit) is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. OGUs are simply the reference genomes to which input sequences are aligned. There is no need to assign taxonomy to them. This is in constrast to conventional practices, in which analyses are based on taxonomic units such as genera or species. Therefore, OGU is analogous to ASV in 16S rRNA studies.
+The notion of “**OGU**” (operational genomic unit) is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. OGUs are simply the reference genomes to which input sequences are aligned. There is no need to assign taxonomy to them. This is in constrast to conventional practices, in which analyses are based on taxonomic units such as genera or species. In this sense, OGU is analogous to ASV in 16S rRNA studies.
 
-The advantage of using OGUs includes 1) highest-possible resolution, 2) independent from taxonomy which is coarse and error-prone as a classification system. 3) allowing for phylogeny-based analysis such as Faith’s PD and UniFrac. The last part is enhanced by the "Web of Life" ([WoL](https://biocore.github.io/wol/)) reference phylogeny.
+The advantage of using OGUs includes:
+
+1. Highest-possible resolution.
+2. Independent from taxonomy, which is coarse and can be error-prone as a classification system.
+3. Allowing for phylogeny-aware analysis such as Faith’s PD and UniFrac. This is enhanced by the "Web of Life" ([WoL](https://biocore.github.io/wol/)) reference phylogeny, or any similar works.
 
 The OGU analysis was explained, benchmarked and discussed in:
 
