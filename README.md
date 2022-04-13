@@ -30,7 +30,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
   - [Working with WoL](doc/wol.md)
   - [OGU analysis](doc/ogu.md)
 - For users of
-  - [QIIME 2](woltka/q2), [Qiita](doc/qiita.md), [SHOGUN](doc/wol.md#sequence-alignment), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
+  - [QIIME 2](woltka/q2), [Qiita](doc/qiita.md), [SHOGUN](doc/align.md#the-shogun-protocol), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
 - References
   - [Command-line interface](doc/cli.md)
   - [Computational efficiency](doc/perform.md)

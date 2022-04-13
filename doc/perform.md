@@ -40,12 +40,14 @@ Here are the benchmarks of multiple typical Woltka analyses:
 
 Analysis | Runtime | Memory
 --- | ---: | ---:
-OGU (no classification) | 50:13 | 101.6 MB
-Free-rank taxonomic classification | 1:00:19 | 107.0 MB
-Taxonomic classification at genus | 52:20 | 106.2 MB
+[OGU](ogu.md) (no classification) | 34:39 | 108.4 MB
+Free-rank taxonomic classification | 40:10 | 114.9 MB
+Taxonomic classification at genus | 35:24 | 113.4 MB
 Taxonomic classification at genus, while writing gzipped read maps | 1:05:35 | 106.3 MB
 Taxonomic classification at three ranks: phylum, genus and species | 1:18:26 | 107.5 MB
-Coordinates-based functional classification | 4:24:10 | 19.7 GB
+Matching reads with genes | 4:08:53 | 7.745 GB
+Matching reads with genes, reporting RPK | 4:16:31 | 11.99 GB
+Functional profiling, collapsed to UniRef, then to GO process | 4:24:49 | 14.92 GB
 
 
 ## Tips for efficient computing
@@ -114,7 +116,7 @@ For the "simple map" format, Woltka will parse first two columns and query and s
 
 ### Trim SAM file columns
 
-A [SAM](https://en.wikipedia.org/wiki/SAM_(file_format)) file can be bulky. The last several columns may contain the entire sequence and quality scores (e.g., Bowtie2 and Minimap2 do this). These texts are not useful for Woltka. If you haven't opted out this during alignment (e.g., calling Bowtie2 with `--omit-sec-seq`), you can do so afterwards to save disk space:
+A [SAM](https://en.wikipedia.org/wiki/SAM_(file_format)) file can be bulky. The last several columns may contain the entire sequence and quality scores (e.g., Bowtie2 and Minimap2 do this). These texts are not useful for Woltka. You can trim them off to save disk space:
 
 ```bash
 zcat input.sam.gz | grep -v ^@ | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz

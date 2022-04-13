@@ -3,6 +3,10 @@
 
 ## Computing
 
+### How many CPU cores does Woltka use?
+
+Woltka works the best with two CPU cores (threads): one for file decompression and the other for classification. This happens automatically.
+
 ### Is Woltka deterministic or stochastic?
 
 Woltka is **deterministic**. Given the same input files and parameters, it always produces the identical output files. There is no "seed" parameter.
@@ -11,23 +15,19 @@ Woltka is **deterministic**. Given the same input files and parameters, it alway
 
 The former. Woltka **exhaustively** captures all valid matches from the alignment file(s).
 
-### How many CPU cores does Woltka use?
+### Are Woltka results consistent across versions?
 
-Woltka works the best with two CPU cores (threads): one for decompression and the other for classification. This is automatically determined.
+To date, all Woltka versions (0.1.0 to 0.1.4) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
 
 
 ## Input files
 
-### Can Woltka parse compressed files?
-
-Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in gzip, bzip2 or xz formats. Woltka will automatically recognize and parse them.
-
-### I ran `woltka classify -i input.fastq -o output.tsv`, and got an error saying it cannot determine alignment file format. Why?
+### I ran `woltka classify -i input.fastq ...`, and got an error saying it cannot determine alignment file format. Why?
 
 Woltka takes alignment files as input, NOT original sequencing data (FASTQ, FASTA, etc.). You need to perform alignment on the sequencing data by yourself, such as:
 
 ```bash
-bowtie2 --very-sensitive -x db -f input.fastq -S output.sam
+bowtie2 -x db -f input.fastq -S output.sam
 ```
 
 Then feed the resulting alignment(s) into Woltka.
@@ -36,7 +36,9 @@ Then feed the resulting alignment(s) into Woltka.
 woltka classify -i output.sam ... -o output.tsv
 ```
 
-### I ran `woltka classify -i S01.sam ... -o S01.tsv`. The output feature table has a single column with an empty header. Why?
+See [here](align.md) for details.
+
+### I ran `woltka classify -i S01.sam ...`. The output feature table has a single column with an empty header. Why?
 
 Woltka is designed to deal with multiple samples at once. If the input is a single alignment file, Woltka automatically treats it as a multiplexed file and attempts to extract individual samples out of it. But in case it is actually not -- Woltka will leave the sample ID empty.
 
@@ -49,6 +51,10 @@ woltka classify --no-demux -i S01.sam ... -o S01.tsv
 The `--no-demux` flag will tell Woltka not to try to demultiplex the alignment file. Instead, it will use the filename `S01` as the only sample ID.
 
 See [here](input.md#demultiplexing) for details.
+
+### Can Woltka parse compressed files?
+
+Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in gzip, bzip2 or xz formats. Woltka will automatically recognize and parse them.
 
 
 ## Output files
