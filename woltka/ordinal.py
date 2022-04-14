@@ -112,7 +112,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
 
             # execute naive algorithm when reads are few
             else:
-                for read, gene in match_read_gene_bis2(glocs, locs):
+                for read, gene in match_read_gene_quart(glocs, locs):
                     res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
@@ -413,6 +413,13 @@ def match_read_gene(queue):
                 rloc = reads_pop(code & (1 << 30) - 1)
 
                 # check cached genes
+                # a potential optimization is to pre-calculate `rloc >> 17`
+                #   and `(code >> 48) - (rloc & 131071)`, however, it is not
+                #   worth the overhead in real applications because there is
+                #   usually zero or one gene in cache
+                # another potential optimization is to replace `max` (which is
+                #   a function call with a ternary operator, but one needs the
+                #   first optimization prior to this
                 for gid, gloc in genes_items():
 
                     # same as above
@@ -421,7 +428,7 @@ def match_read_gene(queue):
 
 
 def match_read_gene_naive(geneque, readque):
-    """Associate reads with genes using a native approach, which performs
+    """Associate reads with genes using a naive approach, which performs
     nested iteration over genes and reads.
 
     Parameters
@@ -441,7 +448,6 @@ def match_read_gene_naive(geneque, readque):
     See Also
     --------
     match_read_gene
-    match_read_gene_half
 
     Notes
     -----
@@ -473,15 +479,16 @@ def match_read_gene_naive(geneque, readque):
                 genes[code & (1 << 30) - 1] = code >> 48
 
             # check overlap while removing gene from cache:
-            #   min(gene end, read end) - max(gene start, read start) >=
-            #   effective length - 1
+            # min(gene end, read end) - max(gene start, read start) >=
+            # effective length - 1
             elif (min(code >> 48, end) -
                   max(genes_pop(code & (1 << 30) - 1), beg)) >= L:
                 yield rid, code & (1 << 30) - 1
 
 
-def match_read_gene_half(geneque, readque):
-    """Associate reads with genes using nested iteration in half length.
+def match_read_gene_quart(geneque, readque):
+    """Associate reads with genes by iterating between read region and nearer
+    end of gene queue.
 
     Parameters
     ----------
@@ -499,231 +506,165 @@ def match_read_gene_half(geneque, readque):
 
     See Also
     --------
-    match_read_gene
     match_read_gene_naive
-    match_read_gene_bis1
 
     Notes
     -----
-    This method improves from the naive method by reducing the iteration length
-    to nearly a half: from beginning of the gene queue until where the read end
-    can fit in. The logic is the same as the bisection solution, and the
-    performance is close to it.
+    This optimized method is similar to the naive method, but it reduces the
+    search space from n to n / 4, thus it significantly improves efficiency.
+
+    The idea is that one only needs to iterate between the position where read
+    can fit it, and the nearer end of the gene queue.
+
+    Further reduction of search space is not possible, because genes may span
+    over half of the genome, and they cannot be detected within out iterating
+    to end of the gene queue.
+
+    This method uses bisection to find insertion points of read start in the
+    pre-sorted gene queue, which has O(logn) time.
     """
-    genes = {}
-    genes_pop = genes.pop
-    genes_items = genes.items
-    genes_clear = genes.clear
+    n = len(geneque)  # entire search space
+    mid = n // 2      # mid point
+
+    # iterate over paired read starts and ends
     it = iter(readque)
     for x, y in zip(it, it):
-        rid = x & (1 << 30) - 1
-        beg = x >> 48
-        end = y >> 48
-        L = (x >> 31) - 1 & 131071
 
-        # iterate over gene queue
-        for code in geneque:
+        # pre-calculate read metrics
+        rid = x & (1 << 30) - 1     # index
+        beg = x >> 48               # start coordinate
+        end = y >> 48               # end coordinate
+        L = (x >> 31) - 1 & 131071  # effective length - 1
 
-            # stop when exceeding read end
-            if code > y:
-                break
+        # genes starting within read region
+        # will record their coordinates
+        within = {}
+        within_pop = within.pop
 
-            # gene starts
-            elif code & (1 << 31):
-                genes[code & (1 << 30) - 1] = code >> 48
+        # read starts in left half of gene queue
+        if x < geneque[mid]:
 
-            # drop gene if it ends before read starts
-            elif code < x:
-                genes_pop(code & (1 << 30) - 1)
+            # genes starting before read region
+            # no need to record coordinates as overlap is not possible
+            before = set()
+            before_add = before.add
+            before_remove = before.remove
 
-            # there is overlap, check match
-            #   there must be gene end <= read end, because the latter hasn't
-            #   been reached
-            elif (code >> 48) - max(genes_pop(code & (1 << 30) - 1), beg) >= L:
-                yield rid, code & (1 << 30) - 1
+            # locate read start using bisection
+            # Python's `bisect` is more efficient than homebrew code
+            i = bisect(geneque, x, hi=mid)
 
-        # check all genes that have started but not yet ended
-        for gid, gloc in genes_items():
-            if end - max(gloc, beg) >= L:
+            # iterate over gene positions before read region
+            for code in geneque[:i]:
+
+                # add gene to cache when it starts
+                if code & (1 << 31):
+                    before_add(code & (1 << 30) - 1)
+
+                # drop gene from cache when it ends
+                else:
+                    before_remove(code & (1 << 30) - 1)
+
+            # iterate over gene positions after read start
+            for code in geneque[i:]:
+
+                # stop when exceeding read end
+                if code > y:
+                    break
+
+                # when gene starts, add it and its coordinate to cache
+                elif code & (1 << 31):
+                    within[code & (1 << 30) - 1] = code >> 48
+
+                # when gene ends, check overlap and remove it from cache
+                else:
+                    gid = code & (1 << 30) - 1
+
+                    # most genes should start before read region
+                    try:
+                        before_remove(gid)
+
+                    # if gene started within read region,
+                    # overlap = gene end - gene start
+                    except KeyError:
+                        if (code >> 48) - within_pop(gid) >= L:
+                            yield rid, gid
+
+                    # if gene started before read region,
+                    # overlap = gene end - read start
+                    else:
+                        if (code >> 48) - beg >= L:
+                            yield rid, gid
+
+            # yield all genes that started before read but not yet ended
+            for gid in before:
                 yield rid, gid
 
-        # a potential optimization is to iterate gene cache in reverse order
-        # (can use popitem in Python 3.7+) until criterion is met, then yield
-        # all remaining genes
-        # it may not be necessary since overlapping genes are rare
-
-        # clear gene cache
-        genes_clear()
-
-
-def match_read_gene_bis1(geneque, readque):
-    """Associate reads with genes by iterating before bisection.
-
-    Parameters
-    ----------
-    geneque : list of int
-        Sorted queue of genes.
-    readque : list of int
-        Paired queue of reads.
-
-    Yields
-    ------
-    int
-        Read index.
-    int
-        Gene index.
-
-    See Also
-    --------
-    match_read_gene
-    match_read_gene_half
-    match_read_gene_bis2
-
-    Notes
-    -----
-    This method uses bisection to find insertion points of read start and end
-    in the pre-sorted gene queue, which has O(logn) time, and appears to be
-    more efficient than condition check in every iteration.
-
-    Two separate iterations are performed: one occurs before the read region,
-    and does not check overlaps (as there is no overlap); the other occurs
-    within the read region, and checks overlaps that end before the read end
-    (they can either start before the read start or after it).
-
-    Finally, the started but not ended genes are screened for matches.
-    """
-    genes = {}
-    genes_pop = genes.pop
-    genes_items = genes.items
-    genes_clear = genes.clear
-    it = iter(readque)
-    for x, y in zip(it, it):
-        rid = x & (1 << 30) - 1
-        beg = x >> 48
-        end = y >> 48
-        L = (x >> 31) - 1 & 131071
-
-        # find insertion sites
-        left = bisect(geneque, x)
-        right = bisect(geneque, y, left)
-
-        # iterate over gene positions before read region
-        for code in geneque[:left]:
-
-            # add gene to cache when it starts
-            if code & (1 << 31):
-                genes[code & (1 << 30) - 1] = code >> 48
-
-            # drop gene from cache when it ends
-            else:
-                genes_pop(code & (1 << 30) - 1)
-
-        # iterate over gene positions within read region
-        for code in geneque[left:right]:
-
-            # when gene starts, add it to cache (same as above)
-            if code & (1 << 31):
-                genes[code & (1 << 30) - 1] = code >> 48
-
-            # when gene ends, check overlapping length and remove it
-            elif (code >> 48) - max(genes_pop(code & (1 << 30) - 1), beg) >= L:
-                yield rid, code & (1 << 30) - 1
-
-        # check genes in cache
-        for gid, gloc in genes_items():
-            if end - max(gloc, beg) >= L:
+            # yield genes that started after read but not yet ended,
+            # until overlap = read end - gene start is too short
+            for gid, gloc in within.items():
+                if end - gloc < L:
+                    break
                 yield rid, gid
-        genes_clear()
 
+        # read starts in right half of gene queue
+        else:
 
-def match_read_gene_bis2(geneque, readque):
-    """Associate reads with genes by iterating after bisection.
+            # genes starting after read region
+            # no need to record coordinates as overlap is not possible
+            after = set()
+            after_add = after.add
+            after_remove = after.remove
 
-    Parameters
-    ----------
-    geneque : list of int
-        Sorted queue of genes.
-    readque : list of int
-        Paired queue of reads.
+            # locate read start using bisection
+            i = bisect(geneque, x, lo=mid + 1, hi=n)
 
-    Yields
-    ------
-    int
-        Read index.
-    int
-        Gene index.
+            # iterate over gene positions within read region
+            # for i in range(bisect(geneque, x), n):
+            while i < n:
+                code = geneque[i]
 
-    See Also
-    --------
-    match_read_gene
-    match_read_gene_bis1
+                # stop when exceeding read end
+                if code > y:
+                    break
 
-    Notes
-    -----
-    This method is similar to `match_read_gene_bis1` but it changes the
-    iteration region to the latter half. It is slightly more efficient in
-    benchmarks.
+                # when gene starts, add it and its coordinate to cache
+                if code & (1 << 31):
+                    within[code & (1 << 30) - 1] = code >> 48
 
-    Two separate iterations are performed: one occurs within the read region,
-    and checks overlaps that end before the read end (they can either start
-    before the read start or after it); the other occurs after the read region,
-    and checks overlaps that end after the read end.
-    """
-    # genes starting within read region
-    # will record their coordinates
-    gene_in = {}
-    gene_in_pop = gene_in.pop
+                # when gene ends, check overlap and remove it from cache
+                # gene end must be <= read end
+                # if gene not found in cache (meaning gene started before read
+                # region), use read start, otherwise use gene start
+                elif (code >> 48) - within_pop(code & (1 << 30) - 1, beg) >= L:
+                    yield rid, code & (1 << 30) - 1
 
-    # genes starting after read region
-    # no need to record coordinates as overlapping is not possible
-    gene_out = set()
-    gene_out_add = gene_out.add
-    gene_out_remove = gene_out.remove
+                # move to next position
+                i += 1
 
-    it = iter(readque)
-    for x, y in zip(it, it):
-        rid = x & (1 << 30) - 1
-        beg = x >> 48
-        end = y >> 48
-        L = (x >> 31) - 1 & 131071
+            # iterate over gene positions after read region
+            for code in geneque[i:]:
 
-        # locate read region in gene queue
-        left = bisect(geneque, x)
-        right = bisect(geneque, y, left)
+                # add gene to cache when it starts
+                if code & (1 << 31):
+                    after_add(code & (1 << 30) - 1)
 
-        # iterate over gene positions within read region
-        for code in geneque[left:right]:
+                # when gene ends,
+                else:
 
-            # add gene to cache when it starts
-            if code & (1 << 31):
-                gene_in[code & (1 << 30) - 1] = code >> 48
+                    # most remaining genes should start after read region
+                    try:
+                        after_remove(code & (1 << 30) - 1)
 
-            # check overlap while removing gene from cache
-            #   gene end must be <= read end
-            #   if gene not found in cache (meaning gene started before read
-            #   region), use read end
-            elif (code >> 48) - gene_in_pop(code & (1 << 30) - 1, beg) >= L:
-                yield rid, code & (1 << 30) - 1
+                    # otherwise, the gene spans over entire read region
+                    except KeyError:
 
-        # iterate over gene positions after read region
-        for code in geneque[right:]:
-
-            # record gene (without coordinate) when it starts
-            if code & (1 << 31):
-                gene_out_add(code & (1 << 30) - 1)
-            else:
-
-                # most remaining genes should start after read region
-                try:
-                    gene_out_remove(code & (1 << 30) - 1)
-
-                # while one or a few gene span over entire read region
-                except KeyError:
-
-                    # check match while removing gene from cache
-                    #   gene end must be >= read end
-                    if end - gene_in_pop(code & (1 << 30) - 1, beg) >= L:
-                        yield rid, code & (1 << 30) - 1
+                        # check overlap while removing gene from cache
+                        # gene end must be >= read end
+                        # if gene not found in cache, use read start, otherwise
+                        # use gene start
+                        if end - within_pop(code & (1 << 30) - 1, beg) >= L:
+                            yield rid, code & (1 << 30) - 1
 
 
 def match_read_gene_dummy(queue, lens, th):
