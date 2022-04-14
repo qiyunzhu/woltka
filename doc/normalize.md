@@ -2,7 +2,7 @@
 
 By default, the cell values in a feature table (profile) are **counts** (**frequencies**) of each feature in each sample. This behavior maximizes the flexibility of downstream analyses. Meanwhile, Woltka provides multiple functions for normalizing cell values to alternative units and scales:
 
-- `--sizes`: **Divide counts by subject sizes** (e.g., genome / gene lengths).
+- `--sizes`: Divide counts by subject sizes (e.g., by genome or gene lengths).
 - `--frac`: Convert counts into fractions (relative abundances).
 - `--scale`: Scale up all values by a constant factor (e.g., "1k", "1M").
 - `--digits`: Keep certain number of digits after the decimal point.
@@ -26,20 +26,20 @@ Woltka has two modes of normalization, each providing all four functions mention
 
 - **Alternatively**, one can perform normalization on profiles that are already generated (`woltka tools normalize`). This saves the need for rerunning the lengthy classification process.
 
-There is a major advantage of normalization by subject size **during** classification, as detailed below. Other than that, the two modes produce mutually identical results.
+There is a major advantage of normalization by subject size **during** classification, as detailed below. Other than that, the two modes produce mutually identical results. See below for some examples.
 
 
 ## Normalization by subject size
 
-The number of reads assigned to each classification unit can be normalized against a **subject-specific** property, which is usually size / length, but can also be other metrics depending on the specific research.
+The number of reads assigned to each classification unit can be normalized against a **subject-specific** property, which is usually size (length), but can also be other metrics depending on the specific research.
 
-During classification:
+During classification (as part of main workflow):
 
 ```bash
 woltka classify --sizes size.map ...
 ```
 
-On existing profiles:
+Or post classification (on existing profiles):
 
 ```bash
 woltka tools normalize --sizes size.map ...

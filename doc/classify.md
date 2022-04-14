@@ -55,11 +55,11 @@ In many cases a query sequence has matches in multiple reference sequences, and 
 
 ### 1. Keep them all, and divide (default)
 
-In the resulting profile, each subject receives 1 / _k_ count, where _k_ is the total number of subjects of the current query.
+In the resulting profile, each subject receives 1 / _k_ count, where _k_ is the total number of subjects of the current query. In this way, the total feature frequency per sample is consistent with the number of reads in the input alignment.
 
-For example, sequence A was aligned to five genomes: two under genus [_Escherichia_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=561&lvl=3&lin=f&keep=1&srchmode=1&unlock), one under each of genera [_Salmonella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=590&lvl=3&lin=f&keep=1&srchmode=1&unlock), [_Klebsiella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=570&lvl=3&lin=f&keep=1&srchmode=1&unlock), and [_Enterobacter_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=547&lvl=3&lin=f&keep=1&srchmode=1&unlock). So at the **genus** level, _Escherichia_ receives 2/5 count, and each of the other three receives 1/5 each.
+For example, sequence A was aligned to five genomes: two under genus [_Escherichia_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=561&lvl=3&lin=f&keep=1&srchmode=1&unlock), one under each of genera [_Salmonella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=590&lvl=3&lin=f&keep=1&srchmode=1&unlock), [_Klebsiella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=570&lvl=3&lin=f&keep=1&srchmode=1&unlock), and [_Enterobacter_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=547&lvl=3&lin=f&keep=1&srchmode=1&unlock). In the **genus** level classification by Woltka, _Escherichia_ receives 2/5 count, and each of the other three receives 1/5 each.
 
-In the read-to-feature maps (`--outmap`), a multi-assignment will be reported as:
+In the read-to-feature maps (`--outmap`), a multi-assignment is reported as:
 
 ```
 A <tab> Escherichia:2 <tab> Salmonella:1 <tab> Klebsiella:1 <tab> Enterobacter:1
