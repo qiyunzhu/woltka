@@ -23,9 +23,8 @@ from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
-    match_read_gene_half, match_read_gene_bis1, match_read_gene_bis2,
-    ordinal_parser_dummy, ordinal_mapper, load_gene_coords,
-    calc_gene_lens)
+    match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
+    load_gene_coords, calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -184,12 +183,15 @@ class OrdinalTests(TestCase):
                (8, 3)]
         self.assertListEqual(obs, exp)
 
-    def test_match_read_gene_half(self):
-        """It should produce same result as the naive solution.
+    def test_match_read_gene_quart(self):
+        """The naive solution should produce identical result compared to
+        the default (ordinal) solution.
         """
         genes = [(1,  5, 29),
                  (2, 33, 61),
-                 (3, 65, 94)]
+                 (3, 65, 94),
+                 (4, 61, 76),  # added a small gene within a read
+                 (5, 68, 72)]  # added a tiny gene
         reads = [(1, 10, 29),
                  (2, 16, 35),
                  (3, 20, 39),
@@ -202,76 +204,35 @@ class OrdinalTests(TestCase):
         genes = [x for idx, beg, end in genes for x in (
             (beg << 48) + (1 << 31) + (1 << 30) + idx,
             (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes.sort()
         reads = [x for idx, beg, end in reads for x in (
             (beg << 48) + (14 << 31) + (0 << 30) + idx,
             (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        obs = list(match_read_gene_half(genes, reads))
+
+        obs = list(match_read_gene_quart(genes, reads))
         exp = [(1, 1),
                (2, 1),
                (5, 2),
                (6, 2),
+               (7, 4),  # match to added small gene
                (7, 3),
                (8, 3)]
         self.assertListEqual(obs, exp)
 
-    def test_match_read_gene_bis1(self):
-        """It should produce same result as the naive solution.
-        """
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94)]
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]
+        # a special case with a giant read
+        genes = [(1, 1, 5),
+                 (2, 6, 7),
+                 (3, 7, 8)]
+        reads = [(1, 4, 9)]
         genes = [x for idx, beg, end in genes for x in (
             (beg << 48) + (1 << 31) + (1 << 30) + idx,
             (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes.sort()
         reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
+            (beg << 48) + (5 << 31) + (0 << 30) + idx,
             (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        obs = list(match_read_gene_bis1(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
-               (6, 2),
-               (7, 3),
-               (8, 3)]
-        self.assertListEqual(obs, exp)
-
-    def test_match_read_gene_bis2(self):
-        """It should produce same result as the naive solution.
-        """
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94)]
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        obs = list(match_read_gene_bis2(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
-               (6, 2),
-               (7, 3),
-               (8, 3)]
+        obs = list(match_read_gene_quart(genes, reads))
+        exp = []
         self.assertListEqual(obs, exp)
 
     def test_ordinal_parser_dummy(self):

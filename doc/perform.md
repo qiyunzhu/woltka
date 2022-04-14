@@ -34,20 +34,20 @@ For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which incl
 
 In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) aligner through [SHOGUN](https://github.com/knights-lab/SHOGUN), against the Web of Life ([WoL](https://biocore.github.io/wol/)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
 
-The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in size. They include **1.05 billion** alignments (lines), with 501 million unique query sequences. They were stored in a hard disk drive (59,000 rpm, SATA 3). The test was performed on with a Xeon E3-1230 v3 CPU (Haswell microarchitecture) and 32 GB DDR3 memory. The software environment was Ubuntu 18.04 plus Python 3.7.
+The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in size. They include **1.05 billion** alignments (lines), with 501 million unique query sequences. They were stored in a hard disk drive (59,000 rpm, SATA 3). The test was performed on with a Xeon E3-1230 v3 CPU (Haswell microarchitecture) and 32 GB DDR3 memory. The software environment was Ubuntu 20.04 plus Python 3.10.
 
 Here are the benchmarks of multiple typical Woltka analyses:
 
 Analysis | Runtime | Memory
 --- | ---: | ---:
-[OGU](ogu.md) (no classification) | 34:39 | 108.4 MB
-Free-rank taxonomic classification | 40:10 | 114.9 MB
-Taxonomic classification at genus | 35:24 | 113.4 MB
-Taxonomic classification at genus, while writing gzipped read maps | 1:05:35 | 106.3 MB
-Taxonomic classification at three ranks: phylum, genus and species | 1:18:26 | 107.5 MB
+Operational genomic unit ([OGU](ogu.md)) | 34:39 | 108.4 MB
+Free-rank taxonomic classification | 40:07 | 115.1 MB
+Taxonomic classification at genus | 35:49 | 113.4 MB
+Taxonomic classification at genus, while writing gzipped read maps | 51:59 | 113.0 MB
+Taxonomic classification at three ranks: phylum, genus and species | 52.01 | 115.4 MB
 Matching reads with genes | 4:08:53 | 7.745 GB
 Matching reads with genes, reporting RPK | 4:16:31 | 11.99 GB
-Functional profiling, collapsed to UniRef, then to GO process | 4:24:49 | 14.92 GB
+Functional profiling at UniRef entry, then GO process | 4:24:49 | 14.92 GB
 
 
 ## Tips for efficient computing

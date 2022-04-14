@@ -169,6 +169,3 @@ Sequence alignment (parameters are for reference only):
 ```bash
 blastn -num_threads 8 -db db -query input.fa -out output.b6o -outfmt 6 -evalue 1e-10 -max_target_seqs 25
 ```
-
-
-### DIAMOND

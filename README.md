@@ -27,6 +27,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - Profile tools
   - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Normalize](doc/normalize.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - Tutorials
+  - [Sequence alignment](doc/align.md)
   - [Working with WoL](doc/wol.md)
   - [OGU analysis](doc/ogu.md)
 - For users of
