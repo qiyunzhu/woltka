@@ -118,120 +118,132 @@ class OrdinalTests(TestCase):
         """This test is for the real function.
         """
         # gene table
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94)]
+        genes = [(5, 29),   # 0
+                 (33, 61),  # 1
+                 (65, 94)]  # 2
         # read map
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),  # identical
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]  # shorter
+        reads = [(10, 29),  # 0
+                 (16, 35),  # 1
+                 (20, 39),  # 2
+                 (22, 41),  # 3
+                 (30, 49),  # 4
+                 (30, 49),  # 5 (identical to 4)
+                 (60, 79),  # 6
+                 (65, 84),  # 7
+                 (82, 95)]  # 8 (shorter than others)
 
-        # read length is uniformly 20, threshold is 80%, so effective
-        # alignment length is 20 * 0.8 = 16
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (16 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        # flatten genes and reads
+        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + idx,
+            (end << 24) + (3 << 22) + idx)]
+        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + idx,
+            (end << 24) + (1 << 23) + idx)]
+
+        # merge and sort genes and reads
         queue = sorted(genes + reads)
 
-        # default
-        obs = list(match_read_gene(queue))
-        exp = [(1, 1),
-               (5, 2),
-               (6, 2),
-               (8, 3)]
+        # read length is uniformly 20, threshold is 80%,
+        # so effective length is 20 * 0.8 = 16
+        rels = [16] * len(reads)
+
+        # default protocol
+        obs = list(match_read_gene(queue, rels))
+
+        # result: read idx, gene idx
+        exp = [(0, 0),
+               (4, 1),
+               (5, 1),
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_naive(self):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94)]
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        genes = [(5, 29),
+                 (33, 61),
+                 (65, 94)]
+        reads = [(10, 29),
+                 (16, 35),
+                 (20, 39),
+                 (22, 41),
+                 (30, 49),
+                 (30, 49),
+                 (60, 79),
+                 (65, 84),
+                 (82, 95)]
+        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + idx,
+            (end << 24) + (3 << 22) + idx)]
+        genes.sort()
+        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + idx,
+            (end << 24) + (1 << 23) + idx)]
+        rels = [14] * len(reads)
 
         # don't sort, but directly feed both queues
-        obs = list(match_read_gene_naive(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
+        obs = list(match_read_gene_naive(genes, reads, rels))
+        exp = [(0, 0),
+               (1, 0),
+               (4, 1),
+               (5, 1),
                (6, 2),
-               (7, 3),
-               (8, 3)]
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_quart(self):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94),
-                 (4, 61, 76),  # added a small gene within a read
-                 (5, 68, 72)]  # added a tiny gene
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes = [(5, 29),
+                 (33, 61),
+                 (65, 94),
+                 (61, 76),  # added a small gene within a read
+                 (68, 72)]  # added a tiny gene
+        reads = [(10, 29),
+                 (16, 35),
+                 (20, 39),
+                 (22, 41),
+                 (30, 49),
+                 (30, 49),
+                 (60, 79),
+                 (65, 84),
+                 (70, 75),  # added a small read starting in right half
+                 (82, 95)]
+        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + idx,
+            (end << 24) + (3 << 22) + idx)]
         genes.sort()
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + idx,
+            (end << 24) + (1 << 23) + idx)]
+        rels = [14] * len(reads)
 
-        obs = list(match_read_gene_quart(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
+        obs = list(match_read_gene_quart(genes, reads, rels))
+        exp = [(0, 0),
+               (1, 0),
+               (4, 1),
+               (5, 1),
+               (6, 3),  # match to added small gene
                (6, 2),
-               (7, 4),  # match to added small gene
-               (7, 3),
-               (8, 3)]
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
         # a special case with a giant read
-        genes = [(1, 1, 5),
-                 (2, 6, 7),
-                 (3, 7, 8)]
-        reads = [(1, 4, 9)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes = [(1, 5),
+                 (6, 7),
+                 (7, 8)]
+        reads = [(4, 9)]
+        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + idx,
+            (end << 24) + (3 << 22) + idx)]
         genes.sort()
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (5 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        obs = list(match_read_gene_quart(genes, reads))
+        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + idx,
+            (end << 24) + (1 << 23) + idx)]
+        rels = [5]
+        obs = list(match_read_gene_quart(genes, reads, rels))
         exp = []
         self.assertListEqual(obs, exp)
 
@@ -344,12 +356,12 @@ class OrdinalTests(TestCase):
         self.assertFalse(isdup)
         self.assertDictEqual(idmap, {'n1': ['g1', 'g2', 'g3']})
         exp = {'n1': [
-            (5 << 48) + (3 << 30) + 0,
-            (29 << 48) + (1 << 30) + 0,
-            (33 << 48) + (3 << 30) + 1,
-            (61 << 48) + (1 << 30) + 1,
-            (65 << 48) + (3 << 30) + 2,
-            (94 << 48) + (1 << 30) + 2]}
+            (5 << 24) + (1 << 22) + 0,
+            (29 << 24) + (3 << 22) + 0,
+            (33 << 24) + (1 << 22) + 1,
+            (61 << 24) + (3 << 22) + 1,
+            (65 << 24) + (1 << 22) + 2,
+            (94 << 24) + (3 << 22) + 2]}
         self.assertDictEqual(obs, exp)
 
         # NCBI accession
@@ -365,21 +377,21 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(idmap, {
             'NC_123456': ['1', '2'], 'NC_789012': ['1', '2']})
         exp = {'NC_123456': [
-            (5 << 48) + (3 << 30) + 0,
-            (384 << 48) + (1 << 30) + 0,
-            (410 << 48) + (3 << 30) + 1,
-            (933 << 48) + (1 << 30) + 1],
+            (5 << 24) + (1 << 22) + 0,
+            (384 << 24) + (3 << 22) + 0,
+            (410 << 24) + (1 << 22) + 1,
+            (933 << 24) + (3 << 22) + 1],
                'NC_789012': [
-            (75 << 48) + (3 << 30) + 1,
-            (529 << 48) + (1 << 30) + 1,
-            (638 << 48) + (3 << 30) + 0,
-            (912 << 48) + (1 << 30) + 0]}
+            (75 << 24) + (1 << 22) + 1,
+            (529 << 24) + (3 << 22) + 1,
+            (638 << 24) + (1 << 22) + 0,
+            (912 << 24) + (3 << 22) + 0]}
         self.assertDictEqual(obs, exp)
 
         # don't sort
         obs = load_gene_coords(tbl, sort=False)[0]['NC_789012']
-        exp = [(638 << 48) + (3 << 30) + 0, (912 << 48) + (1 << 30) + 0,
-               (75 << 48) + (3 << 30) + 1,  (529 << 48) + (1 << 30) + 1]
+        exp = [(638 << 24) + (1 << 22) + 0, (912 << 24) + (3 << 22) + 0,
+               (75 << 24) + (1 << 22) + 1,  (529 << 24) + (3 << 22) + 1]
         self.assertListEqual(obs, exp)
 
         # incorrect formats
@@ -406,20 +418,20 @@ class OrdinalTests(TestCase):
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
-        self.assertEqual(obs_[0], (372 << 48) + (3 << 30) + 0)
-        self.assertEqual(obs_[1], (806 << 48) + (1 << 30) + 0)
-        self.assertEqual(obs_[2], (816 << 48) + (3 << 30) + 1)
-        self.assertEqual(obs_[3], (2177 << 48) + (1 << 30) + 1)
+        self.assertEqual(obs_[0], (372 << 24) + (1 << 22) + 0)
+        self.assertEqual(obs_[1], (806 << 24) + (3 << 22) + 0)
+        self.assertEqual(obs_[2], (816 << 24) + (1 << 22) + 1)
+        self.assertEqual(obs_[3], (2177 << 24) + (3 << 22) + 1)
 
     def test_calc_gene_lens(self):
-        coords = {'NC_123456': [(5 << 48) + (3 << 30) + 0,
-                                (384 << 48) + (1 << 30) + 0,
-                                (410 << 48) + (3 << 30) + 1,
-                                (933 << 48) + (1 << 30) + 1],
-                  'NC_789012': [(75 << 48) + (3 << 30) + 1,
-                                (529 << 48) + (1 << 30) + 1,
-                                (638 << 48) + (3 << 30) + 0,
-                                (912 << 48) + (1 << 30) + 0]}
+        coords = {'NC_123456': [(5 << 24) + (1 << 22) + 0,
+                                (384 << 24) + (3 << 22) + 0,
+                                (410 << 24) + (1 << 22) + 1,
+                                (933 << 24) + (3 << 22) + 1],
+                  'NC_789012': [(75 << 24) + (1 << 22) + 1,
+                                (529 << 24) + (3 << 22) + 1,
+                                (638 << 24) + (1 << 22) + 0,
+                                (912 << 24) + (3 << 22) + 0]}
         idmap = {'NC_123456': ['1', '2'],
                  'NC_789012': ['1', '2']}
         mapper = partial(ordinal_mapper, coords=coords, idmap=idmap,
