@@ -399,6 +399,10 @@ class OrdinalTests(TestCase):
         np.testing.assert_array_equal(obs, exp)
 
         # incorrect formats
+        # empty file
+        msg = 'No coordinate was read from file.'
+        with self.assertRaises(ValueError) as ctx:
+            load_gene_coords(())
         # only one column
         msg = 'Cannot extract coordinates from line:'
         with self.assertRaises(ValueError) as ctx:

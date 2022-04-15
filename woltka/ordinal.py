@@ -84,6 +84,7 @@ Notes:
 
 from collections import defaultdict
 from itertools import chain
+from bisect import bisect
 
 import numpy as np
 
@@ -134,7 +135,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     # unlike gene Ids, read Ids can have duplicates (i.e., one read is mapped
     #   to multiple loci in a genome)
     rids = [None] * 2 ** 24
-    rels = np.empty(2 ** 24, dtype=np.uint16)
+    rels = [None] * 2 ** 24
+    # rels = np.empty(2 ** 24, dtype=np.uint16)
 
     # cached map of read to coordinates
     locmap = defaultdict(list)
@@ -168,11 +170,11 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             pfx = nucl + '_' if prefix else ''
 
             # convert list to array
-            locs = np.array(locs, dtype=np.int64)
+            # locs = np.array(locs, dtype=np.int64)
 
             # execute ordinal algorithm when reads are many
             # 10 (>5 reads) is an empirically determined cutoff
-            if locs.size > 10:
+            if len(locs) > 10:
 
                 # map reads to genes using the core algorithm
                 for read, gene in match_read_gene(glocs, locs, rels):
@@ -182,7 +184,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
 
             # execute naive algorithm when reads are few
             else:
-                for read, gene in match_read_gene_quart(glocs, locs, rels):
+                for read, gene in match_read_gene_quart(glocs.tolist(),
+                                                        locs, rels):
                     res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
@@ -382,8 +385,7 @@ def load_gene_coords(fh, sort=False):
     try:
         coords[nucl] = np.array(coords[nucl], dtype=np.int64)
     except KeyError:
-        # raise error no data
-        pass
+        raise ValueError('No coordinate was read from file.')
 
     # sort gene coordinates per nucleotide
     if sort:
@@ -400,9 +402,9 @@ def match_read_gene(gque, rque, rels):
     ----------
     gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
-    rque : np.array(-1, dtype=int64)
+    rque : list of int
         Paired queue of reads.
-    rels : np.array(2 ** 24, dtype=uint16)
+    rels : list of int
         Effective lengths of reads.
 
     Yields
@@ -437,7 +439,9 @@ def match_read_gene(gque, rque, rels):
 
     # merge pre-sorted genes with reads with unknown sorting status
     # timsort is efficient for this task
-    queue = np.sort(np.concatenate([gque, rque]), kind='stable')
+    # queue = np.sort(np.concatenate([gque, rque]), kind='stable')
+    queue = np.sort(np.concatenate([gque, np.array(rque, dtype=np.int64)]),
+                    kind='stable')
 
     genes = {}  # current genes cache
     reads = {}  # current reads cache
@@ -450,7 +454,7 @@ def match_read_gene(gque, rque, rels):
     reads_pop = reads.pop
 
     # walk through flattened queue of reads and genes
-    for code in queue:
+    for code in queue.tolist():
 
         # if this is a gene,
         if code & (1 << 22):
@@ -506,11 +510,11 @@ def match_read_gene_naive(gque, rque, rels):
 
     Parameters
     ----------
-    gque : np.array(-1, dtype=int64)
+    gque : list of int
         Sorted queue of genes.
-    rque : np.array(-1, dtype=int64)
+    rque : list of int
         Paired queue of reads.
-    rels : np.array(2 ** 24, dtype=uint16)
+    rels : list of int
         Effective lengths of reads.
 
     Yields
@@ -567,11 +571,11 @@ def match_read_gene_quart(gque, rque, rels):
 
     Parameters
     ----------
-    gque : np.array(-1, dtype=int64)
+    gque : list of int
         Sorted queue of genes.
-    rque : np.array(-1, dtype=int64)
+    rque : list of int
         Paired queue of reads.
-    rels : np.array(2 ** 24, dtype=uint16)
+    rels : list of int
         Effective lengths of reads.
 
     Yields
@@ -600,7 +604,8 @@ def match_read_gene_quart(gque, rque, rels):
     This method uses bisection to find insertion points of read start in the
     pre-sorted gene queue, which has O(logn) time.
     """
-    n = gque.size  # entire search space
+    # n = gque.size
+    n = len(gque)  # entire search space
     mid = n // 2   # mid point
 
     # iterate over paired read starts and ends
@@ -619,7 +624,8 @@ def match_read_gene_quart(gque, rque, rels):
         within_pop = within.pop
 
         # locate read start using bisection
-        i = gque.searchsorted(x, side='right')
+        # i = gque.searchsorted(x, side='right')
+        i = bisect(gque, x)
 
         # read starts in left half of gene queue
         if i < mid:
