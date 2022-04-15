@@ -29,14 +29,14 @@ In this sequence, each position contains 4 pieces of information:
     2. Whether gene or read.
     3. Index of gene / read.
 
-For efficient computing, the information is stored as a 64-bit unsigned integer
-(uint64), and accessed using bitwise operations. The bits are defined as (from
+For efficient computing, the information is stored as a 64-bit signed integer
+(int64), and accessed using bitwise operations. The bits are defined as (from
 right to left):
 
     Bits  1-22 (22): Index of gene / read (max.: 4,194,303).
     Bits    23  (1): Whether it is a read (0) or a gene (1).
     Bits    24  (1): Whether it is a start (0) or an end (1).
-    Bits 25-64 (40): Coordinate (max.: 1,099,511,627,775).
+    Bits 25-63 (39): Coordinate (max.: 549,755,813,887).
 
 To construct a position:
 
@@ -51,7 +51,7 @@ To extract information from a position:
 
 Rationales of this design:
 
-    Index (max. ~= 4 million): It is larger than the largest number of protein-
+    Index (max. = 4 million): It is larger than the largest number of protein-
     coding genes in a genome (Trichomonas vaginalis, ca. 60,000). On the other
     side, the input chunk size should be no more than 4 million, otherwise it
     is possible that reads mapped to a single genome exceed the upper limit of
@@ -66,14 +66,26 @@ Rationales of this design:
     sorted in ascending order, such that start always occurs before end, even
     if their coordinates are equal (i.e., the gene/read has a length of 1 bp).
 
-    Coordinate (max. ~= 1 trillion): It is larger than the largest known genome
+    Coordinate (max. = 550 billion): It is larger than the largest known genome
     (Paris japonica, 149 billion bp). Therefore it should be sufficient for the
     desired application.
+
+Notes:
+
+    If data type is uint64 instead of int64, the maximum coordinate can be 2x
+    as large. However, NumPy does not allow bitwise operations on uint64.
+
+    To remove the upper limit of coordinate, one may remove `dtype=np.int64`
+    from the code. This will slightly slow down the code even if no coordinate
+    exceeds the upper limit, and it will notably reduce efficiency when some
+    coordinates exceed the upper limit, because the array will downgrade to
+    data type to 'O' (Python object), which is inefficient.
 """
 
 from collections import defaultdict
 from itertools import chain
-from bisect import bisect
+
+import numpy as np
 
 from .align import infer_align_format, assign_parser
 
@@ -122,7 +134,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     # unlike gene Ids, read Ids can have duplicates (i.e., one read is mapped
     #   to multiple loci in a genome)
     rids = [None] * 2 ** 24
-    rels = [None] * 2 ** 24
+    rels = np.empty(2 ** 24, dtype=np.uint16)
 
     # cached map of read to coordinates
     locmap = defaultdict(list)
@@ -155,18 +167,15 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             # append prefix if needed
             pfx = nucl + '_' if prefix else ''
 
+            # convert list to array
+            locs = np.array(locs, dtype=np.int64)
+
             # execute ordinal algorithm when reads are many
             # 10 (>5 reads) is an empirically determined cutoff
-            if len(locs) > 10:
-
-                # merge and sort coordinates
-                # question is to add unsorted read coordinates into pre-sorted
-                # gene coordinates
-                # Python's Timsort algorithm is efficient for this task
-                queue = sorted(chain(glocs, locs))
+            if locs.size > 10:
 
                 # map reads to genes using the core algorithm
-                for read, gene in match_read_gene(queue, rels):
+                for read, gene in match_read_gene(glocs, locs, rels):
 
                     # add read-gene pairs to the master map
                     res[rids[read]].add(pfx + gids[gene])
@@ -298,7 +307,7 @@ def load_gene_coords(fh, sort=False):
 
     Returns
     -------
-    dict of int
+    dict of np.array(-1, dtype=int64)
         Binarized gene coordinate information per genome sequence.
     dict of list of str
         Gene IDs.
@@ -320,6 +329,8 @@ def load_gene_coords(fh, sort=False):
     used = set()
     used_add = used.add
 
+    nucl = None  # current nucleotide
+
     for line in fh:
 
         # ">" or "#" indicates genome (nucleotide) name
@@ -329,11 +340,20 @@ def load_gene_coords(fh, sort=False):
             # double ">" or "#" indicates genome name, which serves as
             # a super group of subsequent nucleotide names; to be ignored
             if line[1] != c0:
+
+                # convert gene queue to np.array
+                try:
+                    coords[nucl] = np.array(coords[nucl], dtype=np.int64)
+                except KeyError:
+                    pass
+
+                # re-initiate gene queue
                 nucl = line[1:].strip()
                 coords[nucl] = []
                 queue_extend = coords[nucl].extend
                 gids = idmap[nucl] = []
                 gids_append = gids.append
+
         else:
             x = line.rstrip().split('\t')
 
@@ -358,22 +378,31 @@ def load_gene_coords(fh, sort=False):
                 else:
                     used_add(gene)
 
+    # final conversion
+    try:
+        coords[nucl] = np.array(coords[nucl], dtype=np.int64)
+    except KeyError:
+        # raise error no data
+        pass
+
     # sort gene coordinates per nucleotide
     if sort:
         for queue in coords.values():
-            queue.sort()
+            queue.sort(kind='stable')  # timsort
 
     return coords, idmap, isdup or False
 
 
-def match_read_gene(queue, rels):
+def match_read_gene(gque, rque, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
-    queue : list of int
-        Sorted queue of coordinates.
-    rels : list of int
+    gque : np.array(-1, dtype=int64)
+        Sorted queue of genes.
+    rque : np.array(-1, dtype=int64)
+        Paired queue of reads.
+    rels : np.array(2 ** 24, dtype=uint16)
         Effective lengths of reads.
 
     Yields
@@ -405,6 +434,11 @@ def match_read_gene(queue, rels):
     Note: Repeated bitwise operations are usually more efficient that a single
     bitwise operation assigned to a new variable.
     """
+
+    # merge pre-sorted genes with reads with unknown sorting status
+    # timsort is efficient for this task
+    queue = np.sort(np.concatenate([gque, rque]), kind='stable')
+
     genes = {}  # current genes cache
     reads = {}  # current reads cache
 
@@ -422,7 +456,7 @@ def match_read_gene(queue, rels):
         if code & (1 << 22):
 
             # when a gene starts,
-            if code & (1 << 23) == 0:
+            if not code & (1 << 23):
 
                 # add it to cache
                 genes[code & (1 << 22) - 1] = code >> 24
@@ -444,7 +478,7 @@ def match_read_gene(queue, rels):
         else:
 
             # when a read starts,
-            if code & (1 << 23) == 0:
+            if not code & (1 << 23):
 
                 # add it to cache
                 reads[code & (1 << 22) - 1] = code >> 24
@@ -472,11 +506,11 @@ def match_read_gene_naive(gque, rque, rels):
 
     Parameters
     ----------
-    gque : list of int
+    gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
-    rque : list of int
+    rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : list of int
+    rels : np.array(2 ** 24, dtype=uint16)
         Effective lengths of reads.
 
     Yields
@@ -516,7 +550,7 @@ def match_read_gene_naive(gque, rque, rels):
         for code in gque:
 
             # at start, add gene to cache
-            if code & (1 << 23) == 0:
+            if not code & (1 << 23):
                 genes[code & (1 << 22) - 1] = code >> 24
 
             # at end, check overlap while removing gene from cache:
@@ -533,11 +567,11 @@ def match_read_gene_quart(gque, rque, rels):
 
     Parameters
     ----------
-    gque : list of int
+    gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
-    rque : list of int
+    rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : list of int
+    rels : np.array(2 ** 24, dtype=uint16)
         Effective lengths of reads.
 
     Yields
@@ -566,8 +600,8 @@ def match_read_gene_quart(gque, rque, rels):
     This method uses bisection to find insertion points of read start in the
     pre-sorted gene queue, which has O(logn) time.
     """
-    n = len(gque)  # entire search space
-    mid = n // 2      # mid point
+    n = gque.size  # entire search space
+    mid = n // 2   # mid point
 
     # iterate over paired read starts and ends
     it = iter(rque)
@@ -584,8 +618,11 @@ def match_read_gene_quart(gque, rque, rels):
         within = {}
         within_pop = within.pop
 
+        # locate read start using bisection
+        i = gque.searchsorted(x, side='right')
+
         # read starts in left half of gene queue
-        if x < gque[mid]:
+        if i < mid:
 
             # genes starting before read region
             # no need to record coordinates as overlap is not possible
@@ -593,15 +630,11 @@ def match_read_gene_quart(gque, rque, rels):
             before_add = before.add
             before_remove = before.remove
 
-            # locate read start using bisection
-            # Python's `bisect` is more efficient than homebrew code
-            i = bisect(gque, x, hi=mid)
-
             # iterate over gene positions before read region
             for code in gque[:i]:
 
                 # add gene to cache when it starts
-                if code & (1 << 23) == 0:
+                if not code & (1 << 23):
                     before_add(code & (1 << 22) - 1)
 
                 # drop gene from cache when it ends
@@ -616,7 +649,7 @@ def match_read_gene_quart(gque, rque, rels):
                     break
 
                 # when gene starts, add it and its coordinate to cache
-                elif code & (1 << 23) == 0:
+                elif not code & (1 << 23):
                     within[code & (1 << 22) - 1] = code >> 24
 
                 # when gene ends, check overlap and remove it from cache
@@ -659,11 +692,7 @@ def match_read_gene_quart(gque, rque, rels):
             after_add = after.add
             after_remove = after.remove
 
-            # locate read start using bisection
-            i = bisect(gque, x, lo=mid + 1, hi=n)
-
             # iterate over gene positions within read region
-            # for i in range(bisect(gque, x), n):
             while i < n:
                 code = gque[i]
 
@@ -672,7 +701,7 @@ def match_read_gene_quart(gque, rque, rels):
                     break
 
                 # when gene starts, add it and its coordinate to cache
-                if code & (1 << 23) == 0:
+                if not code & (1 << 23):
                     within[code & (1 << 22) - 1] = code >> 24
 
                 # when gene ends, check overlap and remove it from cache
@@ -689,7 +718,7 @@ def match_read_gene_quart(gque, rque, rels):
             for code in gque[i:]:
 
                 # add gene to cache when it starts
-                if code & (1 << 23) == 0:
+                if not code & (1 << 23):
                     after_add(code & (1 << 22) - 1)
 
                 # when gene ends,
@@ -802,7 +831,7 @@ def calc_gene_lens(mapper):
             if prefix:
                 gid = nucl + gid
             # length = end - start + 1
-            if code & (1 << 23) == 0:  # start
+            if not code & (1 << 23):  # start
                 res[gid] = 1 - (code >> 24)
             else:  # end
                 res[gid] += code >> 24

@@ -19,6 +19,8 @@ from tempfile import mkdtemp
 from io import StringIO
 from functools import partial
 
+import numpy as np
+
 from woltka.file import openzip
 from woltka.align import parse_b6o_line, parse_sam_line
 from woltka.ordinal import (
@@ -132,23 +134,21 @@ class OrdinalTests(TestCase):
                  (65, 84),  # 7
                  (82, 95)]  # 8 (shorter than others)
 
-        # flatten genes and reads
-        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
-            (beg << 24) + (1 << 22) + idx,
-            (end << 24) + (3 << 22) + idx)]
-        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
-            (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)]
-
-        # merge and sort genes and reads
-        queue = sorted(genes + reads)
-
         # read length is uniformly 20, threshold is 80%,
         # so effective length is 20 * 0.8 = 16
-        rels = [16] * len(reads)
+        rels = np.full(len(reads), 16)
+
+        # flatten genes and reads
+        genes = np.array([x for idx, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + idx,
+            (end << 24) + (3 << 22) + idx)])
+        genes.sort()
+        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + idx,
+            (end << 24) + (1 << 23) + idx)])
 
         # default protocol
-        obs = list(match_read_gene(queue, rels))
+        obs = list(match_read_gene(genes, reads, rels))
 
         # result: read idx, gene idx
         exp = [(0, 0),
@@ -173,14 +173,14 @@ class OrdinalTests(TestCase):
                  (60, 79),
                  (65, 84),
                  (82, 95)]
-        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+        rels = np.full(len(reads), 14)  # shorten effective length
+        genes = np.array([x for idx, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + idx,
-            (end << 24) + (3 << 22) + idx)]
+            (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)]
-        rels = [14] * len(reads)
+            (end << 24) + (1 << 23) + idx)])
 
         # don't sort, but directly feed both queues
         obs = list(match_read_gene_naive(genes, reads, rels))
@@ -211,14 +211,14 @@ class OrdinalTests(TestCase):
                  (65, 84),
                  (70, 75),  # added a small read starting in right half
                  (82, 95)]
-        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+        rels = np.full(len(reads), 14)  # shorten effective length
+        genes = np.array([x for idx, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + idx,
-            (end << 24) + (3 << 22) + idx)]
+            (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)]
-        rels = [14] * len(reads)
+            (end << 24) + (1 << 23) + idx)])
 
         obs = list(match_read_gene_quart(genes, reads, rels))
         exp = [(0, 0),
@@ -235,14 +235,14 @@ class OrdinalTests(TestCase):
                  (6, 7),
                  (7, 8)]
         reads = [(4, 9)]
-        genes = [x for idx, (beg, end) in enumerate(genes) for x in (
+        rels = np.full(len(reads), 5)  # shorten effective length
+        genes = np.array([x for idx, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + idx,
-            (end << 24) + (3 << 22) + idx)]
+            (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)]
-        rels = [5]
+            (end << 24) + (1 << 23) + idx)])
         obs = list(match_read_gene_quart(genes, reads, rels))
         exp = []
         self.assertListEqual(obs, exp)
@@ -355,14 +355,15 @@ class OrdinalTests(TestCase):
         obs, idmap, isdup = load_gene_coords(tbl)
         self.assertFalse(isdup)
         self.assertDictEqual(idmap, {'n1': ['g1', 'g2', 'g3']})
-        exp = {'n1': [
+        exp = {'n1': np.array([
             (5 << 24) + (1 << 22) + 0,
             (29 << 24) + (3 << 22) + 0,
             (33 << 24) + (1 << 22) + 1,
             (61 << 24) + (3 << 22) + 1,
             (65 << 24) + (1 << 22) + 2,
-            (94 << 24) + (3 << 22) + 2]}
-        self.assertDictEqual(obs, exp)
+            (94 << 24) + (3 << 22) + 2])}
+        self.assertListEqual(list(obs.keys()), list(exp.keys()))
+        np.testing.assert_array_equal(obs['n1'], exp['n1'])
 
         # NCBI accession
         tbl = ('## GCF_000123456\n',
@@ -376,23 +377,26 @@ class OrdinalTests(TestCase):
         self.assertTrue(isdup)
         self.assertDictEqual(idmap, {
             'NC_123456': ['1', '2'], 'NC_789012': ['1', '2']})
-        exp = {'NC_123456': [
-            (5 << 24) + (1 << 22) + 0,
-            (384 << 24) + (3 << 22) + 0,
-            (410 << 24) + (1 << 22) + 1,
-            (933 << 24) + (3 << 22) + 1],
-               'NC_789012': [
-            (75 << 24) + (1 << 22) + 1,
-            (529 << 24) + (3 << 22) + 1,
-            (638 << 24) + (1 << 22) + 0,
-            (912 << 24) + (3 << 22) + 0]}
-        self.assertDictEqual(obs, exp)
+        exp = {'NC_123456': np.array(
+            [(5 << 24) + (1 << 22) + 0,
+             (384 << 24) + (3 << 22) + 0,
+             (410 << 24) + (1 << 22) + 1,
+             (933 << 24) + (3 << 22) + 1]),
+               'NC_789012': np.array(
+            [(75 << 24) + (1 << 22) + 1,
+             (529 << 24) + (3 << 22) + 1,
+             (638 << 24) + (1 << 22) + 0,
+             (912 << 24) + (3 << 22) + 0])}
+        self.assertEqual(obs.keys(), exp.keys())
+        for key in obs.keys():
+            np.testing.assert_array_equal(obs[key], exp[key])
 
         # don't sort
         obs = load_gene_coords(tbl, sort=False)[0]['NC_789012']
-        exp = [(638 << 24) + (1 << 22) + 0, (912 << 24) + (3 << 22) + 0,
-               (75 << 24) + (1 << 22) + 1,  (529 << 24) + (3 << 22) + 1]
-        self.assertListEqual(obs, exp)
+        exp = np.array([
+            (638 << 24) + (1 << 22) + 0, (912 << 24) + (3 << 22) + 0,
+            (75 << 24) + (1 << 22) + 1,  (529 << 24) + (3 << 22) + 1])
+        np.testing.assert_array_equal(obs, exp)
 
         # incorrect formats
         # only one column
