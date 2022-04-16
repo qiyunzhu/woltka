@@ -30,6 +30,7 @@ from functools import lru_cache
 
 def plain_mapper(fh, fmt=None, n=1000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
+
     Parameters
     ----------
     fh : file handle
@@ -38,12 +39,14 @@ def plain_mapper(fh, fmt=None, n=1000):
         Alignment file format.
     n : int, optional
         Number of lines per chunk.
+
     Yields
     ------
     deque of str
         Query queue.
     deque of set of str
         Subject(s) queue.
+
     Notes
     -----
     The design of this function aims to couple with the extremely large size of
@@ -63,16 +66,12 @@ def plain_mapper(fh, fmt=None, n=1000):
     # pre-load method references
     qry_append, sub_append = qryque.append, subque.append
 
-    # parse alignment file
     this = None  # current query Id
     target = n   # target line number at end of current chunk
-    for i, line in enumerate(chain(iter(head), fh)):
 
-        # parse current alignment line
-        try:
-            query, subject = parser(line)[:2]
-        except (TypeError, IndexError):
-            continue
+    # parse alignment file
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject = row[:2]
 
         # add subject to subject set of the same query Id
         if query == this:
@@ -145,13 +144,8 @@ def range_mapper(fh, fmt=None, n=1000):
     qry_append, sub_append = qryque.append, subque.append
     this = None
     target = n
-    for i, line in enumerate(chain(iter(head), fh)):
-
-        # retain subject range
-        try:
-            query, subject, _, _, start, end = parser(line)[:6]
-        except (TypeError, IndexError):
-            continue
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject, _, _, start, end = row[:6]
 
         # range must be positive integers
         if start and end:
@@ -197,8 +191,8 @@ def infer_align_format(fh):
 
     See Also
     --------
-    parse_b6o_line
-    parse_sam_line
+    parse_b6o_file
+    parse_sam_file
 
     TODO
     ----
@@ -252,27 +246,27 @@ def assign_parser(fmt):
         Alignment parser function.
     """
     if fmt == 'map':  # simple map of query <tab> subject
-        return parse_map_line
+        return parse_map_file
     if fmt == 'b6o':  # BLAST format
-        return parse_b6o_line
+        return parse_b6o_file
     elif fmt == 'sam':  # SAM format
-        return parse_sam_line
+        return parse_sam_file
     else:
         raise ValueError(f'Invalid format code: "{fmt}".')
 
 
-def parse_map_line(line, *args):
-    """Parse a line in a simple mapping file.
+def parse_map_file(fh, *args):
+    """Parse a simple mapping file.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        Mapping file to parse.
     args : list, optional
         Placeholder for caller compatibility.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str)
         Query and subject.
 
@@ -280,22 +274,23 @@ def parse_map_line(line, *args):
     -----
     Only the first two columns are considered.
     """
-    query, found, rest = line.partition('\t')
-    if found:
-        subject, found, rest = rest.partition('\t')
-        return query, subject.rstrip()
+    for line in fh:
+        query, found, rest = line.partition('\t')
+        if found:
+            subject, found, rest = rest.partition('\t')
+            yield query, subject.rstrip()
 
 
-def parse_b6o_line(line):
-    """Parse a line in a BLAST tabular file (b6o).
+def parse_b6o_file(fh):
+    """Parse a BLAST tabular file (b6o).
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        BLAST tabular file to parse.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str, float, int, int, int)
         Query, subject, score, length, start, end.
 
@@ -308,22 +303,26 @@ def parse_b6o_line(line):
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
-    x = line.split('\t')
-    qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
-    sstart, send = sorted((int(x[8]), int(x[9])))
-    return qseqid, sseqid, score, length, sstart, send
+    for line in fh:
+        x = line.split('\t')
+        try:
+            qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
+        except IndexError:
+            continue
+        sstart, send = sorted((int(x[8]), int(x[9])))
+        yield qseqid, sseqid, score, length, sstart, send
 
 
-def parse_sam_line(line):
-    """Parse a line in a SAM file (sam).
+def parse_sam_file(fh):
+    """Parse a SAM file (sam).
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        SAM file to parse.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str, None, int, int, int)
         Query, subject, None, length, start, end.
 
@@ -340,36 +339,38 @@ def parse_sam_line(line):
     .. _Bowtie2 manual:
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
     """
-    # skip header
-    if line[0] == '@':
-        return
+    for line in fh:
 
-    # relevant fields
-    qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
+        # skip header
+        if line[0] == '@':
+            continue
 
-    # skip unmapped
-    if rname == '*':
-        return
+        # relevant fields
+        qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
 
-    # leftmost mapping position
-    pos = int(pos)
+        # skip unmapped
+        if rname == '*':
+            continue
 
-    # parse CIGAR string
-    length, offset = cigar_to_lens(cigar)
+        # leftmost mapping position
+        pos = int(pos)
 
-    # append strand to read Id if not already
-    if qname[-2:] not in ('/1', '/2'):
-        flag = int(flag)
+        # parse CIGAR string
+        length, offset = cigar_to_lens(cigar)
 
-        # forward strand: bit 64
-        if flag & (1 << 6):
-            qname += '/1'
+        # append strand to read Id if not already
+        if qname[-2:] not in ('/1', '/2'):
+            flag = int(flag)
 
-        # reverse strand: bit 128
-        elif flag & (1 << 7):
-            qname += '/2'
+            # forward strand: bit 64
+            if flag & (1 << 6):
+                qname += '/1'
 
-    return qname, rname, None, length, pos, pos + offset - 1
+            # reverse strand: bit 128
+            elif flag & (1 << 7):
+                qname += '/2'
+
+        yield qname, rname, None, length, pos, pos + offset - 1
 
 
 @lru_cache(maxsize=128)
@@ -408,16 +409,16 @@ def cigar_to_lens(cigar):
     return align, align + offset
 
 
-def parse_kraken(line):
-    """Parse a line in a Kraken mapping file.
+def parse_kraken(fh):
+    """Parse a Kraken mapping file.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        Kraken mapping file to parse.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str)
         Query and subject.
 
@@ -429,20 +430,22 @@ def parse_kraken(line):
     .. _Kraken2 manual:
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
-    x = line.split('\t')
-    return (x[1], x[2]) if x[0] == 'C' else (None, None)
+    for line in fh:
+        x = line.split('\t')
+        if x[0] == 'C':
+            yield x[1], x[2]
 
 
-def parse_centrifuge(line):
-    """Parse a line in a Centrifuge mapping file.
+def parse_centrifuge(fh):
+    """Parse a Centrifuge mapping file.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        Centrifuge mapping file to parse.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str, int, int)
         Query, subject, score, length.
 
@@ -455,7 +458,7 @@ def parse_centrifuge(line):
     .. _Centrifuge manual:
         https://ccb.jhu.edu/software/centrifuge/manual.shtml
     """
-    if line.startswith('readID'):
-        return
-    x = line.split('\t')
-    return x[0], x[1], int(x[3]), int(x[5])
+    for line in fh:
+        if not line.startswith('readID'):
+            x = line.split('\t')
+            yield x[0], x[1], int(x[3]), int(x[5])
