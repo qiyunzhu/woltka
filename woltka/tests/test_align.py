@@ -225,12 +225,12 @@ class AlignTests(TestCase):
         self.assertTupleEqual(obs[1], exp[1])
 
     def test_parse_sam_file(self):
-        sam = (
+        sam = iter((
             '@HD	VN:1.0	SO:unsorted',
             'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
             'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            'S2	16	*	0	0	*	*	0	0	*	*')
+            'S2	16	*	0	0	*	*	0	0	*	*'))
         obs = list(parse_sam_file(sam))
         self.assertEqual(len(obs), 3)
         exp = [('S1/1', 'NC_123456'),
@@ -245,26 +245,25 @@ class AlignTests(TestCase):
         self.assertTupleEqual(obs[2], exp[2])
         # 5th line: not aligned
 
+        # file is empty
+        obs = list(parse_sam_file_ext(iter(())))
+        self.assertEqual(len(obs), 0)
+
     def test_parse_sam_file_ext(self):
-        sam = (
+        sam = iter((
             '@HD	VN:1.0	SO:unsorted',
             'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
             'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            'S2	16	*	0	0	*	*	0	0	*	*')
+            'S2	16	*	0	0	*	*	0	0	*	*'))
         obs = list(parse_sam_file_ext(sam))
         self.assertEqual(len(obs), 3)
         exp = [('S1/1', 'NC_123456', None, 100, 26, 125),
                ('S1/2', 'NC_123456', None, 80, 151, 230),
                ('S2', 'NC_789012', None, 90, 186, 280)]
-        # 1st line: header
-        # 2nd line: normal, fully-aligned, forward strand
         self.assertTupleEqual(obs[0], exp[0])
-        # 3rd line: shortened, reverse strand
         self.assertTupleEqual(obs[1], exp[1])
-        # 4th line: not perfectly aligned, unpaired
         self.assertTupleEqual(obs[2], exp[2])
-        # 5th line: not aligned
 
     def test_cigar_to_lens(self):
         self.assertTupleEqual(cigar_to_lens('150M'), (150, 150))

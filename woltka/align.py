@@ -361,12 +361,25 @@ def parse_sam_file(fh):
         https://samtools.github.io/hts-specs/SAMv1.pdf
     .. _Bowtie2 manual:
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
+
+    This is by far the fastest solution. Several other solutions were tested,
+    including readlines(chunk), csv.reader, and pd_read_csv(chunk). They were
+    slower.
     """
+    line = None  # not necessary, but in case
+
+    # parse head
     for line in fh:
 
-        # skip header
-        if line[0] == '@':
-            continue
+        # currently, it just skips head
+        if line[0] != '@':
+            break
+
+    # include current line
+    it = chain([line], fh) if line else fh
+
+    # parse body
+    for line in it:
 
         # relevant fields
         qname, flag, rname, _ = line.split('\t', 3)
@@ -403,16 +416,16 @@ def parse_sam_file_ext(fh):
     tuple of (str, str, None, int, int, int)
         Query, subject, None, length, start, end.
     """
+    line = None
     for line in fh:
+        if line[0] != '@':
+            break
 
-        # skip header
-        if line[0] == '@':
-            continue
+    it = chain([line], fh) if line else fh
+    for line in it:
 
         # relevant fields
         qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
-
-        # skip unmapped
         if rname == '*':
             continue
 
@@ -422,15 +435,10 @@ def parse_sam_file_ext(fh):
         # parse CIGAR string
         length, offset = cigar_to_lens(cigar)
 
-        # append strand to read Id if not already
         if qname[-2:] not in ('/1', '/2'):
             flag = int(flag)
-
-            # forward strand: bit 64
             if flag & (1 << 6):
                 qname += '/1'
-
-            # reverse strand: bit 128
             elif flag & (1 << 7):
                 qname += '/2'
 
