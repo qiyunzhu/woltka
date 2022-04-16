@@ -10,6 +10,9 @@
 
 """Functions for matching reads and genes using an ordinal system.
 
+* Note: This is a special version empowered by Numba JIT, which significantly
+  accelerates array iteration and arithmetic.
+
 This modules matches reads and genes based on their coordinates in the genome.
 It uses an efficient algorithm, in which starting and ending positions of reads
 and genes are flattened and sorted by coordinate into one sequence, followed by
@@ -84,9 +87,11 @@ Notes:
 
 from collections import defaultdict
 from itertools import chain
-from bisect import bisect
 
 import numpy as np
+from numba import njit
+from numba.typed import Dict
+from numba.types import uint16, int64, boolean
 
 from .align import infer_align_format, assign_parser
 
@@ -135,8 +140,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     # unlike gene Ids, read Ids can have duplicates (i.e., one read is mapped
     #   to multiple loci in a genome)
     rids = [None] * 2 ** 24
-    rels = [None] * 2 ** 24
-    # rels = np.empty(2 ** 24, dtype=np.uint16)
+    rels = np.empty(2 ** 24, dtype=np.uint16)
 
     # cached map of read to coordinates
     locmap = defaultdict(list)
@@ -170,22 +174,27 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             pfx = nucl + '_' if prefix else ''
 
             # convert list to array
-            # locs = np.array(locs, dtype=np.int64)
+            locs = np.array(locs, dtype=np.int64)
 
             # execute ordinal algorithm when reads are many
-            # 10 (>5 reads) is an empirically determined cutoff
-            if len(locs) > 10:
+            # 8 (5+ reads) is an empirically determined cutoff
+            # in this numba version, this optimization has limited effect
+            if locs.size > 4:
+
+                # merge pre-sorted genes with reads of unknown sorting status
+                # timsort is efficient for this task
+                queue = np.concatenate((glocs, locs))
+                queue.sort(kind='stable')
 
                 # map reads to genes using the core algorithm
-                for read, gene in match_read_gene(glocs, locs, rels):
+                for read, gene in match_read_gene(queue, rels):
 
                     # add read-gene pairs to the master map
                     res[rids[read]].add(pfx + gids[gene])
 
             # execute naive algorithm when reads are few
             else:
-                for read, gene in match_read_gene_quart(glocs.tolist(),
-                                                        locs, rels):
+                for read, gene in match_read_gene_quart(glocs, locs, rels):
                     res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
@@ -311,7 +320,7 @@ def load_gene_coords(fh, sort=False):
     Returns
     -------
     dict of np.array(-1, dtype=int64)
-        Binarized gene coordinate information per genome sequence.
+        Binarized gene position information per genome.
     dict of list of str
         Gene IDs.
     bool
@@ -395,24 +404,21 @@ def load_gene_coords(fh, sort=False):
     return coords, idmap, isdup or False
 
 
-def match_read_gene(gque, rque, rels):
+@njit((int64[:], uint16[:]))
+def match_read_gene(queue, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
-    gque : np.array(-1, dtype=int64)
-        Sorted queue of genes.
-    rque : list of int
-        Paired queue of reads.
-    rels : list of int
+    queue : np.array(-1, dtype=int64)
+        Sorted queue of genes and reads.
+    rels : np.array(2 ** 24, dtype=uint16)
         Effective lengths of reads.
 
-    Yields
+    Returns
     ------
-    int
-        Read index.
-    int
-        Gene index.
+    list of tuple of (int, int)
+        Indices of matched reads and genes.
 
     See Also
     --------
@@ -436,15 +442,12 @@ def match_read_gene(gque, rque, rels):
     Note: Repeated bitwise operations are usually more efficient that a single
     bitwise operation assigned to a new variable.
     """
+    # genes = {}  # current genes cache
+    # reads = {}  # current reads cache
 
-    # merge pre-sorted genes with reads with unknown sorting status
-    # timsort is efficient for this task
-    # queue = np.sort(np.concatenate([gque, rque]), kind='stable')
-    queue = np.sort(np.concatenate([gque, np.array(rque, dtype=np.int64)]),
-                    kind='stable')
-
-    genes = {}  # current genes cache
-    reads = {}  # current reads cache
+    # typed dict in numba 0.55.1 makes no difference in performance
+    genes = Dict.empty(key_type=int64, value_type=int64)
+    reads = Dict.empty(key_type=int64, value_type=int64)
 
     # cache method references
     genes_items = genes.items
@@ -453,8 +456,18 @@ def match_read_gene(gque, rque, rels):
     genes_pop = genes.pop
     reads_pop = reads.pop
 
+    # match read-gene pairs
+    # numba 0.55.1 has issues with jitting generator functions
+    # see https://github.com/numba/numba/issues/6993
+    # therefore return list is used instead of yield
+    matches = []
+    matches_append = matches.append
+
+    # typed list in numba 0.55.1 is very slow
+    # matches = List.empty_list(pairs)
+
     # walk through flattened queue of reads and genes
-    for code in queue.tolist():
+    for code in queue:
 
         # if this is a gene,
         if code & (1 << 22):
@@ -469,14 +482,16 @@ def match_read_gene(gque, rque, rels):
             else:
 
                 # find the gene's start
-                gloc = genes_pop(code & (1 << 22) - 1)
+                gid = code & (1 << 22) - 1
+                # gloc = genes_pop(code & (1 << 22) - 1)
+                gloc = genes_pop(gid)
 
                 # check cached reads for matches
                 for rid, rloc in reads_items():
 
                     # is a match if read/gene overlap is long enough
                     if (code >> 24) - max(gloc, rloc) >= rels[rid] - 1:
-                        yield rid, code & (1 << 22) - 1
+                        matches_append((rid, gid))
 
         # if this is a read,
         else:
@@ -493,40 +508,42 @@ def match_read_gene(gque, rque, rels):
                 # find the read's start
                 rid = code & (1 << 22) - 1
                 rloc = reads_pop(rid)
+                # L = rels[rid] - 1
 
                 # check cached genes
                 # theoretically, an optimization is to loop in reverse order,
-                # `dropwhile` unmatched, then yield all remaining ones
+                # `dropwhile` unmatched, then return all remaining ones
                 for gid, gloc in genes_items():
 
                     # same as above
                     if (code >> 24) - max(gloc, rloc) >= rels[rid] - 1:
-                        yield rid, gid
+                        matches_append((rid, gid))
+    return matches
 
 
+@njit((int64[:], int64[:], uint16[:]))
 def match_read_gene_naive(gque, rque, rels):
     """Associate reads with genes using a naive approach, which performs
     nested iteration over genes and reads.
 
     Parameters
     ----------
-    gque : list of int
+    gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
-    rque : list of int
+    rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : list of int
+    rels : np.array(2 ** 24, dtype=uint16)
         Effective lengths of reads.
 
-    Yields
+    Returns
     ------
-    int
-        Read index.
-    int
-        Gene index.
+    list of tuple of (int, int)
+        Indices of matched reads and genes.
 
     See Also
     --------
     match_read_gene
+    match_read_gene_quart
 
     Notes
     -----
@@ -537,8 +554,11 @@ def match_read_gene_naive(gque, rque, rels):
     because it saves the sorting step.
     """
     # only genes are cached
-    genes = {}
+    genes = Dict.empty(key_type=int64, value_type=int64)
     genes_pop = genes.pop
+
+    matches = []
+    matches_append = matches.append
 
     # iterate over reads (paired)
     it = iter(rque)
@@ -562,31 +582,32 @@ def match_read_gene_naive(gque, rque, rels):
             #   effective length - 1
             elif (min(code >> 24, end) -
                   max(genes_pop(code & (1 << 22) - 1), beg)) >= L:
-                yield rid, code & (1 << 22) - 1
+                matches_append((rid, code & (1 << 22) - 1))
+    return matches
 
 
+@njit((int64[:], int64[:], uint16[:]))
 def match_read_gene_quart(gque, rque, rels):
     """Associate reads with genes by iterating between read region and nearer
     end of gene queue.
 
     Parameters
     ----------
-    gque : list of int
+    gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
-    rque : list of int
+    rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : list of int
+    rels : np.array(2 ** 24, dtype=uint16)
         Effective lengths of reads.
 
-    Yields
+    Returns
     ------
-    int
-        Read index.
-    int
-        Gene index.
+    list of tuple of (int, int)
+        Indices of matched reads and genes.
 
     See Also
     --------
+    match_read_gene
     match_read_gene_naive
 
     Notes
@@ -604,8 +625,20 @@ def match_read_gene_quart(gque, rque, rels):
     This method uses bisection to find insertion points of read start in the
     pre-sorted gene queue, which has O(logn) time.
     """
-    # n = gque.size
-    n = len(gque)  # entire search space
+    # genes within read region
+    within = Dict.empty(key_type=int64, value_type=int64)
+    within_pop = within.pop
+
+    # genes outside read region
+    # there is some numba issue, otherwise set may be more suitable
+    outside = Dict.empty(key_type=int64, value_type=boolean)
+    outside_pop = outside.pop
+
+    # matched read-gene pairs
+    matches = []
+    matches_append = matches.append
+
+    n = gque.size  # entire search space
     mid = n // 2   # mid point
 
     # iterate over paired read starts and ends
@@ -620,32 +653,24 @@ def match_read_gene_quart(gque, rque, rels):
 
         # genes starting within read region
         # will record their coordinates
-        within = {}
-        within_pop = within.pop
 
         # locate read start using bisection
-        # i = gque.searchsorted(x, side='right')
-        i = bisect(gque, x)
+        # i = bisect(gque, x)
+        i = np.searchsorted(gque, x, side='right')
 
         # read starts in left half of gene queue
         if i < mid:
-
-            # genes starting before read region
-            # no need to record coordinates as overlap is not possible
-            before = set()
-            before_add = before.add
-            before_remove = before.remove
 
             # iterate over gene positions before read region
             for code in gque[:i]:
 
                 # add gene to cache when it starts
                 if not code & (1 << 23):
-                    before_add(code & (1 << 22) - 1)
+                    outside[code & (1 << 22) - 1] = True
 
                 # drop gene from cache when it ends
                 else:
-                    before_remove(code & (1 << 22) - 1)
+                    outside_pop(code & (1 << 22) - 1)
 
             # iterate over gene positions after read start
             for code in gque[i:]:
@@ -659,44 +684,32 @@ def match_read_gene_quart(gque, rque, rels):
                     within[code & (1 << 22) - 1] = code >> 24
 
                 # when gene ends, check overlap and remove it from cache
-                else:
-                    gid = code & (1 << 22) - 1
+                # if gene started before read region (most cases),
+                # overlap = gene end - read start
+                elif outside_pop(code & (1 << 22) - 1, False):
+                    if (code >> 24) - beg >= L:
+                        matches_append((rid, code & (1 << 22) - 1))
 
-                    # most genes should start before read region
-                    try:
-                        before_remove(gid)
+                # if gene started within read region,
+                # overlap = gene end - gene start
+                elif (code >> 24) - within_pop(code & (1 << 22) - 1) >= L:
+                    matches_append((rid, code & (1 << 22) - 1))
 
-                    # if gene started within read region,
-                    # overlap = gene end - gene start
-                    except KeyError:
-                        if (code >> 24) - within_pop(gid) >= L:
-                            yield rid, gid
+            # return all genes that started before read but not yet ended
+            for gid in outside:
+                matches_append((rid, gid))
+            outside.clear()
 
-                    # if gene started before read region,
-                    # overlap = gene end - read start
-                    else:
-                        if (code >> 24) - beg >= L:
-                            yield rid, gid
-
-            # yield all genes that started before read but not yet ended
-            for gid in before:
-                yield rid, gid
-
-            # yield genes that started after read but not yet ended,
+            # return genes that started after read but not yet ended,
             # until overlap = read end - gene start is too short
             for gid, gloc in within.items():
                 if end - gloc < L:
                     break
-                yield rid, gid
+                matches_append((rid, gid))
+            within.clear()
 
         # read starts in right half of gene queue
         else:
-
-            # genes starting after read region
-            # no need to record coordinates as overlap is not possible
-            after = set()
-            after_add = after.add
-            after_remove = after.remove
 
             # iterate over gene positions within read region
             while i < n:
@@ -705,44 +718,42 @@ def match_read_gene_quart(gque, rque, rels):
                 # stop when exceeding read end
                 if code > y:
                     break
+                gid = code & (1 << 22) - 1
 
                 # when gene starts, add it and its coordinate to cache
                 if not code & (1 << 23):
-                    within[code & (1 << 22) - 1] = code >> 24
+                    within[gid] = code >> 24
 
                 # when gene ends, check overlap and remove it from cache
                 # gene end must be <= read end
                 # if gene not found in cache (meaning gene started before read
                 # region), use read start, otherwise use gene start
-                elif (code >> 24) - within_pop(code & (1 << 22) - 1, beg) >= L:
-                    yield rid, code & (1 << 22) - 1
+                elif (code >> 24) - within_pop(gid, beg) >= L:
+                    matches_append((rid, gid))
 
                 # move to next position
                 i += 1
 
             # iterate over gene positions after read region
             for code in gque[i:]:
+                gid = code & (1 << 22) - 1
 
                 # add gene to cache when it starts
                 if not code & (1 << 23):
-                    after_add(code & (1 << 22) - 1)
+                    outside[gid] = True
 
                 # when gene ends,
-                else:
+                # most remaining genes should start after read region
+                # otherwise,
+                elif not outside_pop(gid, False):
 
-                    # most remaining genes should start after read region
-                    try:
-                        after_remove(code & (1 << 22) - 1)
-
-                    # otherwise, the gene spans over entire read region
-                    except KeyError:
-
-                        # check overlap while removing gene from cache
-                        # gene end must be >= read end
-                        # if gene not found in cache, use read start, otherwise
-                        # use gene start
-                        if end - within_pop(code & (1 << 22) - 1, beg) >= L:
-                            yield rid, code & (1 << 22) - 1
+                    # check overlap while removing gene from cache
+                    # gene end must be >= read end
+                    # if gene not found in cache, use read start, otherwise
+                    # use gene start
+                    if end - within_pop(gid, beg) >= L:
+                        matches_append((rid, gid))
+    return matches
 
 
 def match_read_gene_dummy(queue, lens, th):
