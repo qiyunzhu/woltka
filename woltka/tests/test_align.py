@@ -18,7 +18,7 @@ from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
     parse_map_file, parse_b6o_file, parse_sam_file, cigar_to_lens,
-    parse_kraken, parse_centrifuge)
+    cigar_to_lens_ord, parse_kraken, parse_centrifuge)
 
 
 class AlignTests(TestCase):
@@ -232,6 +232,10 @@ class AlignTests(TestCase):
     def test_cigar_to_lens(self):
         self.assertTupleEqual(cigar_to_lens('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens('3M1I3M1D5M'), (11, 12))
+
+    def test_cigar_to_lens_ord(self):
+        self.assertTupleEqual(cigar_to_lens_ord('150M'), (150, 150))
+        self.assertTupleEqual(cigar_to_lens_ord('3M1I3M1D5M'), (11, 12))
 
     def test_parse_kraken(self):
         kra = ('C	S1	561	150	561:100 A:10 562:40',

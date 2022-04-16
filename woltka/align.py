@@ -409,6 +409,41 @@ def cigar_to_lens(cigar):
     return align, align + offset
 
 
+def cigar_to_lens_ord(cigar):
+    """Extract lengths from a CIGAR string.
+
+    Parameters
+    ----------
+    cigar : str
+        CIGAR string.
+
+    Returns
+    -------
+    int
+        Alignment length.
+    int
+        Offset in subject sequence.
+
+    Notes
+    -----
+    This is an alternative solution based on unicode numbers of characters.
+    It is slower than the currently adopted solution. But since it is purely
+    based on numbers, there may be room for future optimization.
+    """
+    align, offset = 0, 0
+    n = 0
+    for c in map(ord, cigar):
+        if c < 60:
+            n = n * 10 + c - 48
+        else:
+            if c in (77, 88, 61):
+                align += n
+            elif c in (68, 78):
+                offset += n
+            n = 0
+    return align, align + offset
+
+
 def parse_kraken(fh):
     """Parse a Kraken mapping file.
 
