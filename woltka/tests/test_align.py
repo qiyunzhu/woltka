@@ -17,8 +17,9 @@ from io import StringIO
 from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
-    parse_map_line, parse_b6o_line, parse_sam_line, cigar_to_lens,
-    parse_kraken, parse_centrifuge)
+    parse_map_file, parse_b6o_file, parse_b6o_file_ext, parse_sam_file,
+    parse_sam_file_ext, cigar_to_lens, cigar_to_lens_ord, parse_kraken,
+    parse_centrifuge, parse_sam_file_pd)
 
 
 class AlignTests(TestCase):
@@ -178,92 +179,130 @@ class AlignTests(TestCase):
             self.assertEqual(infer_align_format(f)[0], 'b6o')
 
     def test_assign_parser(self):
-        self.assertEqual(assign_parser('map'), parse_map_line)
-        self.assertEqual(assign_parser('sam'), parse_sam_line)
-        self.assertEqual(assign_parser('b6o'), parse_b6o_line)
+        self.assertEqual(assign_parser('map'), parse_map_file)
+        self.assertEqual(assign_parser('sam'), parse_sam_file)
+        self.assertEqual(assign_parser('b6o'), parse_b6o_file)
+        self.assertEqual(assign_parser('map', True), parse_map_file)
+        self.assertEqual(assign_parser('sam', True), parse_sam_file_ext)
+        self.assertEqual(assign_parser('b6o', True), parse_b6o_file_ext)
         with self.assertRaises(ValueError) as ctx:
             assign_parser('xyz')
         self.assertEqual(str(ctx.exception), (
             'Invalid format code: "xyz".'))
 
-    def test_parse_map_line(self):
-        aln = ('R1	G1', 'R2	G2	# note', '# end of file')
+    def test_parse_map_file(self):
+        aln = (
+            'R1	G1',          # 1st line (normal)
+            'R2	G2	# note',  # 2nd line (with additional column)
+            '# end of file')  # 3rd line (not tab-delimited)
+        obs = list(parse_map_file(aln))
+        self.assertEqual(len(obs), 2)
+        self.assertTupleEqual(obs[0], ('R1', 'G1'))
+        self.assertTupleEqual(obs[1], ('R2', 'G2'))
 
-        # first line
-        self.assertTupleEqual(parse_map_line(aln[0]), ('R1', 'G1'))
+    def test_parse_b6o_file(self):
+        b6o = (
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+        obs = list(parse_b6o_file(b6o))
+        self.assertEqual(len(obs), 2)
+        exp = [('S1/1', 'NC_123456'),
+               ('S1/2', 'NC_123456')]
+        self.assertTupleEqual(obs[0], exp[0])
+        self.assertTupleEqual(obs[1], exp[1])
 
-        # second line (with additional column)
-        self.assertTupleEqual(parse_map_line(aln[1]), ('R2', 'G2'))
+    def test_parse_b6o_file_ext(self):
+        b6o = (
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+        obs = list(parse_b6o_file_ext(b6o))
+        self.assertEqual(len(obs), 2)
+        exp = [('S1/1', 'NC_123456', 345, 100, 225, 324),
+               ('S1/2', 'NC_123456', 270, 98, 608, 708)]
+        self.assertTupleEqual(obs[0], exp[0])
+        self.assertTupleEqual(obs[1], exp[1])
 
-        # third line (not tab-delimited)
-        self.assertIsNone(parse_map_line(aln[2]))
-
-    def test_parse_b6o_line(self):
-        b6o = ('S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-               'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-
-        # first line
-        obs = parse_b6o_line(b6o[0])
-        exp = ('S1/1', 'NC_123456', 345, 100, 225, 324)
-        self.assertTupleEqual(obs, exp)
-
-        # second line
-        obs = parse_b6o_line(b6o[1])
-        exp = ('S1/2', 'NC_123456', 270, 98, 608, 708)
-        self.assertTupleEqual(obs, exp)
-
-    def test_parse_sam_line(self):
-        sam = (
+    def test_parse_sam_file(self):
+        sam = iter((
             '@HD	VN:1.0	SO:unsorted',
             'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
             'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            'S2	16	*	0	0	*	*	0	0	*	*')
+            'S2	16	*	0	0	*	*	0	0	*	*'))
+        obs = list(parse_sam_file(sam))
+        self.assertEqual(len(obs), 3)
+        exp = [('S1/1', 'NC_123456'),
+               ('S1/2', 'NC_123456'),
+               ('S2',   'NC_789012')]
+        # 1st line: header
+        # 2nd line: normal, fully-aligned, forward strand
+        self.assertTupleEqual(obs[0], exp[0])
+        # 3rd line: shortened, reverse strand
+        self.assertTupleEqual(obs[1], exp[1])
+        # 4th line: not perfectly aligned, unpaired
+        self.assertTupleEqual(obs[2], exp[2])
+        # 5th line: not aligned
 
-        # header
-        self.assertIsNone(parse_sam_line(sam[0]))
+        # header only
+        sam = iter((
+            '@HD	VN:1.0	SO:unsorted',
+            '@SQ	SN:G000005825	LN:4249288',
+            '@SQ	SN:G000006175	LN:1936387'))
+        obs = list(parse_sam_file(sam))
+        self.assertEqual(len(obs), 0)
 
-        # normal, fully-aligned, forward strand
-        obs = parse_sam_line(sam[1])
-        exp = ('S1/1', 'NC_123456', None, 100, 26, 125)
-        self.assertTupleEqual(obs, exp)
+        # file is empty
+        obs = list(parse_sam_file(iter(())))
+        self.assertEqual(len(obs), 0)
 
-        # shortened, reverse strand
-        obs = parse_sam_line(sam[2])
-        exp = ('S1/2', 'NC_123456', None, 80, 151, 230)
-        self.assertTupleEqual(obs, exp)
+    def test_parse_sam_file_ext(self):
+        sam = iter((
+            '@HD	VN:1.0	SO:unsorted',
+            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
+            'S2	16	*	0	0	*	*	0	0	*	*'))
+        obs = list(parse_sam_file_ext(sam))
+        self.assertEqual(len(obs), 3)
+        exp = [('S1/1', 'NC_123456', None, 100, 26, 125),
+               ('S1/2', 'NC_123456', None, 80, 151, 230),
+               ('S2', 'NC_789012', None, 90, 186, 280)]
+        self.assertTupleEqual(obs[0], exp[0])
+        self.assertTupleEqual(obs[1], exp[1])
+        self.assertTupleEqual(obs[2], exp[2])
 
-        # not perfectly aligned, unpaired
-        obs = parse_sam_line(sam[3])
-        exp = ('S2', 'NC_789012', None, 90, 186, 280)
-        self.assertTupleEqual(obs, exp)
-
-        # not aligned
-        self.assertIsNone(parse_sam_line(sam[4]))
+        obs = list(parse_sam_file_ext(iter(())))
+        self.assertEqual(len(obs), 0)
 
     def test_cigar_to_lens(self):
         self.assertTupleEqual(cigar_to_lens('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens('3M1I3M1D5M'), (11, 12))
 
+    def test_cigar_to_lens_ord(self):
+        self.assertTupleEqual(cigar_to_lens_ord('150M'), (150, 150))
+        self.assertTupleEqual(cigar_to_lens_ord('3M1I3M1D5M'), (11, 12))
+
     def test_parse_kraken(self):
         kra = ('C	S1	561	150	561:100 A:10 562:40',
                'U	S2	0	150	1:80 A:40 0:20 A:10')
-        obs = parse_kraken(kra[0])
-        exp = ('S1', '561')
-        self.assertTupleEqual(obs, exp)
-        obs = parse_kraken(kra[1])
-        exp = (None, None)
-        self.assertTupleEqual(obs, exp)
+        obs = list(parse_kraken(kra))
+        self.assertEqual(len(obs), 1)
+        exp = [('S1', '561')]
+        self.assertTupleEqual(obs[0], exp[0])
 
     def test_parse_centrifuge(self):
         cen = ('readID	seqID	taxID	score	2ndBestScore	'
                'hitLength	queryLength	numMatches',
                'S1	NC_123456	561	125	0	50	150	1')
-        obs = parse_centrifuge(cen[0])
-        self.assertIsNone(obs)
-        obs = parse_centrifuge(cen[1])
-        exp = ('S1', 'NC_123456', 125, 50)
-        self.assertTupleEqual(obs, exp)
+        obs = list(parse_centrifuge(cen))
+        self.assertEqual(len(obs), 1)
+        exp = [('S1', 'NC_123456', 125, 50)]
+        self.assertTupleEqual(obs[0], exp[0])
+
+    def test_parse_sam_file_pd(self):
+        self.assertIsNone(parse_sam_file_pd([]))
 
 
 if __name__ == '__main__':
