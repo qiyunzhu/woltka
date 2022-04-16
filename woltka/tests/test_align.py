@@ -245,8 +245,16 @@ class AlignTests(TestCase):
         self.assertTupleEqual(obs[2], exp[2])
         # 5th line: not aligned
 
+        # header only
+        sam = iter((
+            '@HD	VN:1.0	SO:unsorted',
+            '@SQ	SN:G000005825	LN:4249288',
+            '@SQ	SN:G000006175	LN:1936387'))
+        obs = list(parse_sam_file(sam))
+        self.assertEqual(len(obs), 0)
+
         # file is empty
-        obs = list(parse_sam_file_ext(iter(())))
+        obs = list(parse_sam_file(iter(())))
         self.assertEqual(len(obs), 0)
 
     def test_parse_sam_file_ext(self):
@@ -264,6 +272,9 @@ class AlignTests(TestCase):
         self.assertTupleEqual(obs[0], exp[0])
         self.assertTupleEqual(obs[1], exp[1])
         self.assertTupleEqual(obs[2], exp[2])
+
+        obs = list(parse_sam_file_ext(iter(())))
+        self.assertEqual(len(obs), 0)
 
     def test_cigar_to_lens(self):
         self.assertTupleEqual(cigar_to_lens('150M'), (150, 150))

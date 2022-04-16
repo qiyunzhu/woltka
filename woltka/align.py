@@ -366,17 +366,18 @@ def parse_sam_file(fh):
     including readlines(chunk), csv.reader, and pd_read_csv(chunk). They were
     slower.
     """
-    line = None  # not necessary, but in case
+    last = None
 
     # parse head
     for line in fh:
 
         # currently, it just skips head
         if line[0] != '@':
+            last = line
             break
 
     # include current line
-    it = chain([line], fh) if line else fh
+    it = chain([last], fh) if last else fh
 
     # parse body
     for line in it:
@@ -416,12 +417,13 @@ def parse_sam_file_ext(fh):
     tuple of (str, str, None, int, int, int)
         Query, subject, None, length, start, end.
     """
-    line = None
+    last = None
     for line in fh:
         if line[0] != '@':
+            last = line
             break
 
-    it = chain([line], fh) if line else fh
+    it = chain([last], fh) if last else fh
     for line in it:
 
         # relevant fields

@@ -248,7 +248,7 @@ class OrdinalTests(TestCase):
             (608, True, False, 1), (708, False, False, 1)]})
 
         # sam (BWA, Bowtie2, Minimap2 etc.)
-        sam = (
+        sam = iter((
             # SAM header to be ignored
             '@HD	VN:1.0	SO:unsorted',
             # normal, fully-aligned, forward strand
@@ -258,7 +258,7 @@ class OrdinalTests(TestCase):
             # not perfectly aligned, unpaired
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
             # unaligned
-            'S2	16	*	0	0	*	*	0	0	*	*')
+            'S2	16	*	0	0	*	*	0	0	*	*'))
         obs = ordinal_parser_dummy(sam, parse_sam_file_ext)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
         self.assertDictEqual(obs[1], {
