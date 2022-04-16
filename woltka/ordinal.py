@@ -127,7 +127,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
-    parser = assign_parser(fmt)
+    parser = assign_parser(fmt, ext=True)
 
     # read Ids and effective lengths
     # they are arrays of fixed length = 2 ^ 24
@@ -196,13 +196,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     target = n   # target line number at end of current chunk
 
     # parse alignment file
-    for i, line in enumerate(chain(iter(head), fh)):
-
-        # parse current alignment line
-        try:
-            query, subject, _, length, beg, end = parser(line)[:6]
-        except (TypeError, IndexError):
-            continue
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject, _, length, beg, end = row[:6]
 
         # skip if length is not available or zero
         if not length:
@@ -283,11 +278,8 @@ def ordinal_parser_dummy(fh, parser):
     lenmap = defaultdict(dict)
     locmap = defaultdict(list)
 
-    for line in fh:
-        try:
-            query, subject, _, length, start, end = parser(line)[:6]
-        except (TypeError, IndexError):
-            continue
+    for row in parser(fh):
+        query, subject, _, length, start, end = row[:6]
         idx = len(rids)
         rids_append(query)
         lenmap[subject][idx] = length

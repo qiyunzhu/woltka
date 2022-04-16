@@ -22,7 +22,7 @@ from functools import partial
 import numpy as np
 
 from woltka.file import openzip
-from woltka.align import parse_b6o_line, parse_sam_line
+from woltka.align import parse_b6o_file_ext, parse_sam_file_ext
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
     match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
@@ -252,8 +252,7 @@ class OrdinalTests(TestCase):
         b6o = (
             'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
             'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        parser = parse_b6o_line
-        obs = ordinal_parser_dummy(b6o, parser)
+        obs = ordinal_parser_dummy(b6o, parse_b6o_file_ext)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
         self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
         self.assertDictEqual(obs[2], {'NC_123456': [
@@ -261,7 +260,7 @@ class OrdinalTests(TestCase):
             (608, True, False, 1), (708, False, False, 1)]})
 
         # sam (BWA, Bowtie2, Minimap2 etc.)
-        sam = (
+        sam = iter((
             # SAM header to be ignored
             '@HD	VN:1.0	SO:unsorted',
             # normal, fully-aligned, forward strand
@@ -271,9 +270,8 @@ class OrdinalTests(TestCase):
             # not perfectly aligned, unpaired
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
             # unaligned
-            'S2	16	*	0	0	*	*	0	0	*	*')
-        parser = parse_sam_line
-        obs = ordinal_parser_dummy(sam, parser)
+            'S2	16	*	0	0	*	*	0	0	*	*'))
+        obs = ordinal_parser_dummy(sam, parse_sam_file_ext)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
         self.assertDictEqual(obs[1], {
             'NC_123456': {0: 100, 1: 80},
