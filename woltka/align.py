@@ -497,3 +497,56 @@ def parse_centrifuge(fh):
         if not line.startswith('readID'):
             x = line.split('\t')
             yield x[0], x[1], int(x[3]), int(x[5])
+
+
+def parse_sam_file_pd(fh, n=65536):
+    """Parse a SAM file (sam) using Pandas.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+    n : int, optional
+        Chunk size.
+
+    Yields
+    ------
+    None
+
+    Notes
+    -----
+    This is a SAM file parser using Pandas. It is slower than the current
+    parser. The `read_csv` is fast, but the data frame manipulation slows
+    down the process. It is here for reference only.
+    """
+    return
+    # with pd.read_csv(fp, sep='\t',
+    #                  header=None,
+    #                  comment='@',
+    #                  na_values='*',
+    #                  usecols=[0, 1, 2, 3, 5],
+    #                  names=['qname', 'flag', 'rname', 'pos', 'cigar'],
+    #                  dtype={'qname': str,
+    #                         'flag':  np.uint16,
+    #                         'rname': str,
+    #                         'pos':   int,
+    #                         'cigar': str},
+    #                  chunksize=n) as reader:
+    #     for chunk in reader:
+    #         chunk.dropna(subset=['rname'], inplace=True)
+    #         # this is slow, because of function all
+    #         chunk['length'], offset = zip(*chunk['cigar'].apply(
+    #             cigar_to_lens))
+    #         chunk['right'] = chunk['pos'] + offset - 1
+    #         # this is slow, because of function all
+    #         # chunk['qname'] = chunk[['qname', 'flag']].apply(
+    #         #   qname_by_flag, axis=1)
+    #         # this is a faster method
+    #         chunk['qname'] += np.where(
+    #             chunk['qname'].str[-2:].isin(('/1', '/2')), '',
+    #             np.where(np.bitwise_and(chunk['flag'], (1 << 6)), '/1',
+    #                      np.where(np.bitwise_and(chunk['flag'], (1 << 7)),
+    #                      '/2', '')))
+    #         chunk['score'] = 0
+    #         yield from chunk[['qname', 'rname', 'score', 'length',
+    #                           'pos', 'right']].values

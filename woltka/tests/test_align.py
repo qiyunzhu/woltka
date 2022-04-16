@@ -18,7 +18,7 @@ from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
     parse_map_file, parse_b6o_file, parse_sam_file, cigar_to_lens,
-    cigar_to_lens_ord, parse_kraken, parse_centrifuge)
+    cigar_to_lens_ord, parse_kraken, parse_centrifuge, parse_sam_file_pd)
 
 
 class AlignTests(TestCase):
@@ -253,6 +253,9 @@ class AlignTests(TestCase):
         self.assertEqual(len(obs), 1)
         exp = [('S1', 'NC_123456', 125, 50)]
         self.assertTupleEqual(obs[0], exp[0])
+
+    def test_parse_sam_file_pd(self):
+        self.assertIsNone(parse_sam_file_pd([]))
 
 
 if __name__ == '__main__':
