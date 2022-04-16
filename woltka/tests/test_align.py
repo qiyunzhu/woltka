@@ -17,8 +17,9 @@ from io import StringIO
 from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
-    parse_map_file, parse_b6o_file, parse_sam_file, cigar_to_lens,
-    cigar_to_lens_ord, parse_kraken, parse_centrifuge, parse_sam_file_pd)
+    parse_map_file, parse_b6o_file, parse_b6o_file_ext, parse_sam_file,
+    parse_sam_file_ext, cigar_to_lens, cigar_to_lens_ord, parse_kraken,
+    parse_centrifuge, parse_sam_file_pd)
 
 
 class AlignTests(TestCase):
@@ -181,6 +182,9 @@ class AlignTests(TestCase):
         self.assertEqual(assign_parser('map'), parse_map_file)
         self.assertEqual(assign_parser('sam'), parse_sam_file)
         self.assertEqual(assign_parser('b6o'), parse_b6o_file)
+        self.assertEqual(assign_parser('map', True), parse_map_file)
+        self.assertEqual(assign_parser('sam', True), parse_sam_file_ext)
+        self.assertEqual(assign_parser('b6o', True), parse_b6o_file_ext)
         with self.assertRaises(ValueError) as ctx:
             assign_parser('xyz')
         self.assertEqual(str(ctx.exception), (
@@ -203,6 +207,18 @@ class AlignTests(TestCase):
             'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
         obs = list(parse_b6o_file(b6o))
         self.assertEqual(len(obs), 2)
+        exp = [('S1/1', 'NC_123456'),
+               ('S1/2', 'NC_123456')]
+        self.assertTupleEqual(obs[0], exp[0])
+        self.assertTupleEqual(obs[1], exp[1])
+
+    def test_parse_b6o_file_ext(self):
+        b6o = (
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+        obs = list(parse_b6o_file_ext(b6o))
+        self.assertEqual(len(obs), 2)
         exp = [('S1/1', 'NC_123456', 345, 100, 225, 324),
                ('S1/2', 'NC_123456', 270, 98, 608, 708)]
         self.assertTupleEqual(obs[0], exp[0])
@@ -216,6 +232,27 @@ class AlignTests(TestCase):
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
             'S2	16	*	0	0	*	*	0	0	*	*')
         obs = list(parse_sam_file(sam))
+        self.assertEqual(len(obs), 3)
+        exp = [('S1/1', 'NC_123456'),
+               ('S1/2', 'NC_123456'),
+               ('S2',   'NC_789012')]
+        # 1st line: header
+        # 2nd line: normal, fully-aligned, forward strand
+        self.assertTupleEqual(obs[0], exp[0])
+        # 3rd line: shortened, reverse strand
+        self.assertTupleEqual(obs[1], exp[1])
+        # 4th line: not perfectly aligned, unpaired
+        self.assertTupleEqual(obs[2], exp[2])
+        # 5th line: not aligned
+
+    def test_parse_sam_file_ext(self):
+        sam = (
+            '@HD	VN:1.0	SO:unsorted',
+            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
+            'S2	16	*	0	0	*	*	0	0	*	*')
+        obs = list(parse_sam_file_ext(sam))
         self.assertEqual(len(obs), 3)
         exp = [('S1/1', 'NC_123456', None, 100, 26, 125),
                ('S1/2', 'NC_123456', None, 80, 151, 230),

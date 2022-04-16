@@ -54,7 +54,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
-    parser = assign_parser(fmt)
+    parser = assign_parser(fmt, ext=True)
 
     # cached list of query Ids for reverse look-up
     # gene Ids are unique, but read Ids can have duplicates (i.e., one read is

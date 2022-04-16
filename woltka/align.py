@@ -70,8 +70,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     target = n   # target line number at end of current chunk
 
     # parse alignment file
-    for i, row in enumerate(parser(chain(iter(head), fh))):
-        query, subject = row[:2]
+    for i, (query, subject) in enumerate(parser(chain(iter(head), fh))):
 
         # add subject to subject set of the same query Id
         if query == this:
@@ -139,7 +138,7 @@ def range_mapper(fh, fmt=None, n=1000):
     plain_mapper
     """
     fmt, head = (fmt, []) if fmt else infer_align_format(fh)
-    parser = assign_parser(fmt)
+    parser = assign_parser(fmt, ext=True)
     qryque, subque = deque(), deque()
     qry_append, sub_append = qryque.append, subque.append
     this = None
@@ -232,13 +231,15 @@ def infer_align_format(fh):
     raise ValueError('Cannot determine alignment file format.')
 
 
-def assign_parser(fmt):
+def assign_parser(fmt, ext=False):
     """Assign parser function based on format code.
 
     Parameters
     ----------
     fmt : str
         Alignment file format code.
+    ext : bool, optional
+        Whether to get extra information.
 
     Returns
     -------
@@ -248,9 +249,9 @@ def assign_parser(fmt):
     if fmt == 'map':  # simple map of query <tab> subject
         return parse_map_file
     if fmt == 'b6o':  # BLAST format
-        return parse_b6o_file
+        return parse_b6o_file_ext if ext else parse_b6o_file
     elif fmt == 'sam':  # SAM format
-        return parse_sam_file
+        return parse_sam_file_ext if ext else parse_sam_file
     else:
         raise ValueError(f'Invalid format code: "{fmt}".')
 
@@ -282,7 +283,38 @@ def parse_map_file(fh, *args):
 
 
 def parse_b6o_file(fh):
-    """Parse a BLAST tabular file (b6o).
+    """Parse a BLAST tabular file (b6o) to get basic information.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to parse.
+
+    Yields
+    ------
+    tuple of (str, str)
+        Query, subject.
+
+    Notes
+    -----
+    BLAST tabular format:
+        qseqid sseqid pident length mismatch gapopen qstart qend sstart send
+        evalue bitscore
+
+    .. _BLAST manual:
+        https://www.ncbi.nlm.nih.gov/books/NBK279684/
+    """
+    for line in fh:
+        try:
+            qseqid, sseqid, _ = line.split('\t', 2)
+        except ValueError:
+            continue
+        else:
+            yield qseqid, sseqid
+
+
+def parse_b6o_file_ext(fh):
+    """Parse a BLAST tabular file (b6o) to get extra information.
 
     Parameters
     ----------
@@ -293,15 +325,6 @@ def parse_b6o_file(fh):
     ------
     tuple of (str, str, float, int, int, int)
         Query, subject, score, length, start, end.
-
-    Notes
-    -----
-    BLAST tabular format:
-        qseqid sseqid pident length mismatch gapopen qstart qend sstart send
-        evalue bitscore
-
-    .. _BLAST manual:
-        https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
     for line in fh:
         x = line.split('\t')
@@ -314,7 +337,7 @@ def parse_b6o_file(fh):
 
 
 def parse_sam_file(fh):
-    """Parse a SAM file (sam).
+    """Parse a SAM file (sam) to get basic information.
 
     Parameters
     ----------
@@ -323,8 +346,8 @@ def parse_sam_file(fh):
 
     Yields
     ------
-    tuple of (str, str, None, int, int, int)
-        Query, subject, None, length, start, end.
+    tuple of (str, str)
+        Query, subject.
 
     Notes
     -----
@@ -338,6 +361,47 @@ def parse_sam_file(fh):
         https://samtools.github.io/hts-specs/SAMv1.pdf
     .. _Bowtie2 manual:
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
+    """
+    for line in fh:
+
+        # skip header
+        if line[0] == '@':
+            continue
+
+        # relevant fields
+        qname, flag, rname, _ = line.split('\t', 3)
+
+        # skip unmapped
+        if rname == '*':
+            continue
+
+        # append strand to read Id if not already
+        if qname[-2:] not in ('/1', '/2'):
+            flag = int(flag)
+
+            # forward strand: bit 64
+            if flag & (1 << 6):
+                qname += '/1'
+
+            # reverse strand: bit 128
+            elif flag & (1 << 7):
+                qname += '/2'
+
+        yield qname, rname
+
+
+def parse_sam_file_ext(fh):
+    """Parse a SAM file (sam) to get extra information.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+
+    Yields
+    ------
+    tuple of (str, str, None, int, int, int)
+        Query, subject, None, length, start, end.
     """
     for line in fh:
 
