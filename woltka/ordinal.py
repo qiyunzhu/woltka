@@ -129,16 +129,20 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     # assign parser for given format
     parser = assign_parser(fmt, ext=True)
 
-    # read Ids and effective lengths
-    # they are arrays of fixed length = 2 ^ 24
+    # read Ids and lengths
+    # pre-allocate space to save compute
+    #   size = chunk size + 1000
+    #     (1000 is in case duplicate read Ids in alignment exceed chunk size)
+    #   max. size = 2 ^ 24 (currently not checked)
     # there is no need to reset after each flush
     # unlike gene Ids, read Ids can have duplicates (i.e., one read is mapped
-    #   to multiple loci in a genome)
-    rids = [None] * 2 ** 24
-    rels = [None] * 2 ** 24
-    # rels = np.empty(2 ** 24, dtype=np.uint16)
+    #   to multiple loci in a genome), therefore it is necessary to identify
+    #   reads by index not Id
+    rids = [None] * (n + 1000)
+    # rlens = [1] * (n + 1000)
+    rlens = np.empty((n + 1000), dtype=np.uint16)
 
-    # cached map of read to coordinates
+    # map of read to coordinates per genome
     locmap = defaultdict(list)
 
     def flush():
@@ -151,6 +155,14 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         dict of set of str
             Subject(s) queue.
         """
+        # calculate effective lengths of reads
+        #   Le = ceil(L * th)
+        # in python, this is equivalent to math.ceil(x) but faster
+        #   Le = -int(-L * th // 1)
+        # rels = np.ceil(np.array(rlens[:idx], dtype=np.uint16) * th).astype(
+        #     np.uint16).tolist()
+        rels = np.ceil(rlens[:idx] * th).astype(np.uint16).tolist()
+
         # master read-to-gene(s) map
         res = defaultdict(set)
 
@@ -225,12 +237,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             # next target line number
             target = i + n
 
-        # store read Id
-        rids[idx] = query
-
-        # store effective length = length * th
-        # -int(-x // 1) is equivalent to math.ceil(x) but faster
-        rels[idx] = -int(-length * th // 1)
+        # store read Id and length
+        rids[idx], rlens[idx] = query, length
 
         # add read start and end to queue
         locmap[subject].extend((
