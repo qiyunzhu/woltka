@@ -338,7 +338,7 @@ def load_gene_coords(fh, sort=False):
 
                 # convert gene queue to np.array
                 try:
-                    coords[nucl] = np.array(coords[nucl], dtype=np.int64)
+                    coords[nucl] = encode_genes(coords[nucl])
                 except KeyError:
                     pass
 
@@ -350,23 +350,19 @@ def load_gene_coords(fh, sort=False):
                 gids_append = gids.append
 
         else:
-            x = line.rstrip().split('\t')
 
-            # begin and end positions are based on genome (nucleotide)
+            # extract Id, start, end
             try:
-                beg, end = int(x[1]), int(x[2])
-            except (IndexError, ValueError):
+                gene, beg, end = line.rstrip().split('\t')
+            except ValueError:
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            idx = len(gids)
-            gene = x[0]
-            gids_append(gene)
 
             # add positions to queue
-            if beg > end:
-                beg, end = end, beg
-            queue_extend(((beg << 24) + (1 << 22) + idx,
-                          (end << 24) + (3 << 22) + idx))
+            queue_extend((beg, end))
+
+            # record gene Id
+            gids_append(gene)
 
             # check duplicate
             if isdup is None:
@@ -377,7 +373,7 @@ def load_gene_coords(fh, sort=False):
 
     # final conversion
     try:
-        coords[nucl] = np.array(coords[nucl], dtype=np.int64)
+        coords[nucl] = encode_genes(coords[nucl])
     except KeyError:
         raise ValueError('No coordinate was read from file.')
 
@@ -387,6 +383,51 @@ def load_gene_coords(fh, sort=False):
             queue.sort(kind='stable')  # timsort
 
     return coords, idmap, isdup or False
+
+
+def encode_genes(lst):
+    """Encode gene positions into a binary queue.
+
+    Parameters
+    ----------
+    lst : list of str
+        Flattened list of start and end coordinates.
+
+    Returns
+    -------
+    np.array(-1, dtype=int64)
+        Encoded gene queue.
+    """
+    try:
+        arr = np.asarray(lst, dtype=np.int64)
+    except ValueError:
+        raise ValueError('Invalid coordinate(s) found.')
+
+    n = len(arr) // 2
+    idx = np.arange(n)  # gene indices
+
+    # separate start (odd) and end (even) positions
+    beg, end = arr[0::2], arr[1::2]
+
+    # order each pair of start and end coordinates such that smaller one
+    # comes first
+    # faster than np.sort since there are only two numbers
+    # < is slightly faster than np.less
+    cmp = beg < end
+    lo = np.where(cmp, beg, end)
+    hi = np.where(cmp, end, beg)
+
+    # encode coordinate, start/end, is gene, and index into one integer
+    lo = np.left_shift(lo, 24) + (1 << 22) + idx
+    hi = np.left_shift(hi, 24) + (3 << 22) + idx
+
+    # fastest way to interleave two arrays
+    # https://stackoverflow.com/questions/5347065/
+    que = np.empty((2 * n,), dtype=np.int64)
+    que[0::2] = lo
+    que[1::2] = hi
+
+    return que
 
 
 def match_read_gene(gque, rque, rels):

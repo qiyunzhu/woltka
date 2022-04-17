@@ -26,7 +26,7 @@ from woltka.align import parse_b6o_file_ext, parse_sam_file_ext
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
     match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
-    load_gene_coords, calc_gene_lens)
+    load_gene_coords, encode_genes, calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -410,10 +410,6 @@ class OrdinalTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             load_gene_coords(('hello\t100',))
         self.assertEqual(str(ctx.exception), f'{msg} "hello\t100".')
-        # three columns but 3rd is string
-        with self.assertRaises(ValueError) as ctx:
-            load_gene_coords(('hello\t100\tthere',))
-        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100\tthere".')
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
@@ -428,6 +424,21 @@ class OrdinalTests(TestCase):
         self.assertEqual(obs_[1], (806 << 24) + (3 << 22) + 0)
         self.assertEqual(obs_[2], (816 << 24) + (1 << 22) + 1)
         self.assertEqual(obs_[3], (2177 << 24) + (3 << 22) + 1)
+
+    def test_encode_genes(self):
+        lst = ['5', '384', '410', '933', '912', '638', '529', '75']
+        obs = encode_genes(lst)
+        exp = np.array([
+            (5 << 24) + (1 << 22) + 0, (384 << 24) + (3 << 22) + 0,
+            (410 << 24) + (1 << 22) + 1, (933 << 24) + (3 << 22) + 1,
+            (638 << 24) + (1 << 22) + 2, (912 << 24) + (3 << 22) + 2,
+            (75 << 24) + (1 << 22) + 3,  (529 << 24) + (3 << 22) + 3])
+        np.testing.assert_array_equal(obs, exp)
+
+        # coordinate not a number
+        with self.assertRaises(ValueError) as ctx:
+            encode_genes(['hello', 'there'])
+        self.assertEqual(str(ctx.exception), 'Invalid coordinate(s) found.')
 
     def test_calc_gene_lens(self):
         coords = {'NC_123456': [(5 << 24) + (1 << 22) + 0,
