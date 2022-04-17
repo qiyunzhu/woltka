@@ -354,7 +354,7 @@ def load_gene_coords(fh, sort=False):
 
             # begin and end positions are based on genome (nucleotide)
             try:
-                beg, end = sorted((int(x[1]), int(x[2])))
+                beg, end = int(x[1]), int(x[2])
             except (IndexError, ValueError):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
@@ -363,6 +363,8 @@ def load_gene_coords(fh, sort=False):
             gids_append(gene)
 
             # add positions to queue
+            if beg > end:
+                beg, end = end, beg
             queue_extend(((beg << 24) + (1 << 22) + idx,
                           (end << 24) + (3 << 22) + idx))
 
