@@ -142,13 +142,16 @@ class OrdinalTests(TestCase):
         genes = np.array([x for idx, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + idx,
             (end << 24) + (3 << 22) + idx)])
-        genes.sort()
         reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
             (end << 24) + (1 << 23) + idx)])
 
+        # merge and sort genes and reads
+        queue = np.concatenate((genes, reads))
+        queue.sort()
+
         # default protocol
-        obs = list(match_read_gene(genes, reads, rels))
+        obs = list(match_read_gene(queue, rels))
 
         # result: read idx, gene idx
         exp = [(0, 0),
@@ -178,9 +181,9 @@ class OrdinalTests(TestCase):
             (beg << 24) + (1 << 22) + idx,
             (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)])
+            (end << 24) + (1 << 23) + idx)]
 
         # don't sort, but directly feed both queues
         obs = list(match_read_gene_naive(genes, reads, rels))
@@ -193,8 +196,7 @@ class OrdinalTests(TestCase):
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_quart(self):
-        """The naive solution should produce identical result compared to
-        the default (ordinal) solution.
+        """It should produce identical result compared to the naive method.
         """
         genes = [(5, 29),
                  (33, 61),
@@ -216,9 +218,9 @@ class OrdinalTests(TestCase):
             (beg << 24) + (1 << 22) + idx,
             (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)])
+            (end << 24) + (1 << 23) + idx)]
 
         obs = list(match_read_gene_quart(genes, reads, rels))
         exp = [(0, 0),

@@ -176,17 +176,24 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             # 10 (>5 reads) is an empirically determined cutoff
             if len(locs) > 10:
 
-                # map reads to genes using the core algorithm
-                for read, gene in match_read_gene(glocs, locs, rels):
+                # merge pre-sorted genes with reads of unknown sorting status
+                queue = np.concatenate((
+                    glocs, np.array(locs, dtype=np.int64)))
 
-                    # add read-gene pairs to the master map
-                    res[rids[read]].add(pfx + gids[gene])
+                # sort genes and reads into a mixture
+                # timsort is efficient for this task
+                queue.sort(kind='stable')
+
+                # map reads to genes using the core algorithm
+                gen = match_read_gene(queue, rels)
 
             # execute naive algorithm when reads are few
             else:
-                for read, gene in match_read_gene_quart(glocs.tolist(),
-                                                        locs, rels):
-                    res[rids[read]].add(pfx + gids[gene])
+                gen = match_read_gene_quart(glocs, locs, rels)
+
+            # add read-gene pairs to the master map
+            for read, gene in gen:
+                res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
@@ -430,15 +437,13 @@ def encode_genes(lst):
     return que
 
 
-def match_read_gene(gque, rque, rels):
+def match_read_gene(queue, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
-    gque : np.array(-1, dtype=int64)
-        Sorted queue of genes.
-    rque : list of int
-        Paired queue of reads.
+    queue : np.array(-1, dtype=int64)
+        Sorted queue of genes and reads.
     rels : list of int
         Effective lengths of reads.
 
@@ -471,13 +476,6 @@ def match_read_gene(gque, rque, rels):
     Note: Repeated bitwise operations are usually more efficient that a single
     bitwise operation assigned to a new variable.
     """
-
-    # merge pre-sorted genes with reads with unknown sorting status
-    # timsort is efficient for this task
-    # queue = np.sort(np.concatenate([gque, rque]), kind='stable')
-    queue = np.sort(np.concatenate([gque, np.array(rque, dtype=np.int64)]),
-                    kind='stable')
-
     genes = {}  # current genes cache
     reads = {}  # current reads cache
 
@@ -545,7 +543,7 @@ def match_read_gene_naive(gque, rque, rels):
 
     Parameters
     ----------
-    gque : list of int
+    gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
     rque : list of int
         Paired queue of reads.
@@ -586,7 +584,7 @@ def match_read_gene_naive(gque, rque, rels):
         L = rels[rid] - 1        # effective length - 1
 
         # iterate over gene positions
-        for code in gque:
+        for code in gque.tolist():
 
             # at start, add gene to cache
             if not code & (1 << 23):
@@ -606,7 +604,7 @@ def match_read_gene_quart(gque, rque, rels):
 
     Parameters
     ----------
-    gque : list of int
+    gque : np.array(-1, dtype=int64)
         Sorted queue of genes.
     rque : list of int
         Paired queue of reads.
@@ -639,9 +637,11 @@ def match_read_gene_quart(gque, rque, rels):
     This method uses bisection to find insertion points of read start in the
     pre-sorted gene queue, which has O(logn) time.
     """
-    # n = gque.size
-    n = len(gque)  # entire search space
+    n = gque.size  # entire search space
     mid = n // 2   # mid point
+
+    # convert to python list because iterating numpy array is not efficient
+    gque = gque.tolist()
 
     # iterate over paired read starts and ends
     it = iter(rque)
