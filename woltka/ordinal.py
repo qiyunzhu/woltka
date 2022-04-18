@@ -96,6 +96,57 @@ from numba.types import uint16, int64, boolean
 from .align import infer_align_format, assign_parser
 
 
+def ordinal_mapper_dummy(fh, parser):
+    """Alignment parsing functionalities stripped from for `ordinal_mapper`.
+
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    parser : callable
+        Function to parse alignment lines of certain format.
+
+    Returns
+    -------
+    list of str
+        Read Ids in same order as in alignment file.
+    defaultdict of dict of int
+        Map of read indices to alignment lengths per nucleotide.
+    defaultdict of list of (int, bool, bool, str)
+        Flattened list of read coordinates per nucleotide.
+
+    See Also
+    --------
+    ordinal_mapper
+    match_read_gene_dummy
+    .tests.test_ordinal.OrdinalTests.test_ordinal_mapper_dummy
+
+    Notes
+    -----
+    This is a dummy function only for test and demonstration purpose but not
+    called anywhere in the program. See its unit test for details.
+
+    The data structure of the queue is:
+    0. Coordinate (nt).
+    1. Whether start (True) or end (False).
+    2. Whether gene (True) or read (False).
+    3. Identifier of gene/read.
+    """
+    rids = []
+    rids_append = rids.append
+    lenmap = defaultdict(dict)
+    locmap = defaultdict(list)
+    for row in parser(fh):
+        query, subject, _, length, start, end = row[:6]
+        idx = len(rids)
+        rids_append(query)
+        lenmap[subject][idx] = length
+        locmap[subject].extend((
+            (start, True, False, idx),
+            (end,  False, False, idx)))
+    return rids, lenmap, locmap
+
+
 def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
                    prefix=False):
     """Read an alignment file and match reads and genes in an ordinal system.
@@ -132,86 +183,35 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
-    parser = assign_parser(fmt)
+    parser = assign_parser(fmt, ext=True)
 
-    # read Ids and effective lengths
-    # they are arrays of fixed length = 2 ^ 24
+    # read Ids and lengths
+    # pre-allocate space to save compute
+    #   size = chunk size + 1000
+    #     (1000 is in case duplicate read Ids in alignment exceed chunk size)
+    #   max. size = 2 ^ 24 (currently not checked)
     # there is no need to reset after each flush
     # unlike gene Ids, read Ids can have duplicates (i.e., one read is mapped
-    #   to multiple loci in a genome)
-    rids = [None] * 2 ** 24
-    rels = np.empty(2 ** 24, dtype=np.uint16)
+    #   to multiple loci in a genome), therefore it is necessary to identify
+    #   reads by index not Id
+    N = n + 1000
+    rids = [None] * N
+    # rlens = [1] * N
+    rlens = np.empty((N,), dtype=np.uint16)
 
-    # cached map of read to coordinates
+    # arguments for flush
+    args = (rids, rlens, coords, idmap, th, prefix)
+
+    # map of read to coordinates per genome
     locmap = defaultdict(list)
-
-    def flush():
-        """Match reads in current chunk with genes from all nucleotides.
-
-        Returns
-        -------
-        tuple of str
-            Query queue.
-        dict of set of str
-            Subject(s) queue.
-        """
-        # master read-to-gene(s) map
-        res = defaultdict(set)
-
-        # iterate over nucleotides
-        for nucl, locs in locmap.items():
-
-            # it's possible that no gene was annotated on the nucleotide
-            try:
-                glocs = coords[nucl]
-            except KeyError:
-                continue
-
-            # get reference to gene identifiers
-            gids = idmap[nucl]
-
-            # append prefix if needed
-            pfx = nucl + '_' if prefix else ''
-
-            # convert list to array
-            locs = np.array(locs, dtype=np.int64)
-
-            # execute ordinal algorithm when reads are many
-            # 8 (5+ reads) is an empirically determined cutoff
-            # in this numba version, this optimization has limited effect
-            if locs.size > 4:
-
-                # merge pre-sorted genes with reads of unknown sorting status
-                # timsort is efficient for this task
-                queue = np.concatenate((glocs, locs))
-                queue.sort(kind='stable')
-
-                # map reads to genes using the core algorithm
-                for read, gene in match_read_gene(queue, rels):
-
-                    # add read-gene pairs to the master map
-                    res[rids[read]].add(pfx + gids[gene])
-
-            # execute naive algorithm when reads are few
-            else:
-                for read, gene in match_read_gene_quart(glocs, locs, rels):
-                    res[rids[read]].add(pfx + gids[gene])
-
-        # return matching read Ids and gene Ids
-        return res.keys(), res.values()
 
     idx = 0      # current read index
     this = None  # current query Id
     target = n   # target line number at end of current chunk
 
     # parse alignment file
-    for i, line in enumerate(chain(iter(head), fh)):
-
-        # parse current alignment line
-        try:
-            query, subject, _, length, beg, end = parser(line)[:6]
-        except (TypeError, IndexError):
-            continue
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject, _, length, beg, end = row[:6]
 
         # skip if length is not available or zero
         if not length:
@@ -221,7 +221,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         if query != this and i >= target:
 
             # flush: match currently cached reads with genes and yield
-            yield flush()
+            yield flush_chunk(idx, locmap, *args)
 
             # reset read index
             idx = 0
@@ -232,12 +232,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             # next target line number
             target = i + n
 
-        # store read Id
-        rids[idx] = query
-
-        # store effective length = length * th
-        # -int(-x // 1) is equivalent to math.ceil(x) but faster
-        rels[idx] = -int(-length * th // 1)
+        # store read Id and length
+        rids[idx], rlens[idx] = query, length
 
         # add read start and end to queue
         locmap[subject].extend((
@@ -248,63 +244,294 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         this = query
 
     # final flush
-    yield flush()
+    yield flush_chunk(idx, locmap, *args)
 
 
-def ordinal_parser_dummy(fh, parser):
-    """Alignment parsing functionalities stripped from for `ordinal_mapper`.
+def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
+    """Match reads in current chunk with genes from all genomes.
+
+    Parameters
+    ----------
+    n : int
+        Number of reads.
+    rlocmap : dict of list
+        Read coordinates per genome.
+    rids : list of str
+        Read IDs.
+    rlens : list of int
+        Read lengths.
+    glocmap : dict of list
+        Gene coordinates per genome.
+    gidmap : dict of list
+        Gene identifiers.
+    th : float
+        Length threshold.
+    prefix : bool
+        Prefix gene IDs with nucleotide IDs.
+
+    Returns
+    -------
+    list of str
+        Query queue.
+    list of set of str
+        Subject(s) queue.
+    """
+    # calculate effective lengths of reads
+    #   Le = ceil(L * th)
+    # in python, this is equivalent to math.ceil(x) but faster
+    #   Le = -int(-L * th // 1)
+    # rels = np.ceil(np.array(rlens[:idx], dtype=np.uint16) * th).astype(
+    #     np.uint16)
+    rels = np.ceil(rlens[:n] * th).astype(np.uint16)
+
+    # master read-to-gene(s) map
+    res = defaultdict(set)
+
+    # iterate over nucleotides
+    for nucl, rlocs in rlocmap.items():
+
+        # it's possible that no gene was annotated on the nucleotide
+        try:
+            glocs = glocmap[nucl]
+        except KeyError:
+            continue
+
+        # get reference to gene identifiers
+        gids = gidmap[nucl]
+
+        # append prefix if needed
+        pfx = nucl + '_' if prefix else ''
+
+        # convert list to array
+        rlocs = np.array(rlocs, dtype=np.int64)
+
+        # execute ordinal algorithm when reads are many
+        # 10 (>5 reads) is an empirically determined cutoff
+        if rlocs.size > 10:
+
+            # merge pre-sorted genes with reads of unknown sorting status
+            queue = np.concatenate((glocs, rlocs))
+
+            # sort genes and reads into a mixture
+            # timsort is efficient for this task
+            queue.sort(kind='stable')
+
+            # map reads to genes using the core algorithm
+            gen = match_read_gene(queue, rels)
+
+        # execute naive algorithm when reads are few
+        else:
+            gen = match_read_gene_quart(glocs, rlocs, rels)
+
+        # add read-gene pairs to the master map
+        for read, gene in gen:
+            res[rids[read]].add(pfx + gids[gene])
+
+    # return matching read Ids and gene Ids
+    return res.keys(), res.values()
+
+
+def ordinal_mapper_np(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
+                      prefix=False):
+    """Read an alignment file and match reads and genes in an ordinal system,
+    using NumPy vectorized operations.
 
     Parameters
     ----------
     fh : file handle
         Alignment file to parse.
-    parser : callable
-        Function to parse alignment lines of certain format.
-
-    Returns
-    -------
-    list of str
-        Read Ids in same order as in alignment file.
-    defaultdict of dict of int
-        Map of read indices to alignment lengths per nucleotide.
-    defaultdict of list of (int, bool, bool, str)
-        Flattened list of read coordinates per nucleotide.
+    coords : dict of list
+        Gene coordinates table.
+    idmap : dict of list
+        Gene identifiers.
+    fmt : str, optional
+        Alignment file format.
+    n : int, optional
+        Number of lines per chunk.
+    th : float
+        Minimum threshold of overlap length : alignment length for a match.
+    prefix : bool
+        Prefix gene IDs with nucleotide IDs.
 
     See Also
     --------
     ordinal_mapper
-    match_read_gene_dummy
-    .tests.test_ordinal.OrdinalTests.test_ordinal_parser_dummy
+    align.plain_mapper
+
+    Yields
+    ------
+    tuple of str
+        Query queue.
+    dict of set of str
+        Subject(s) queue.
 
     Notes
     -----
-    This is a dummy function only for test and demonstration purpose but not
-    called anywhere in the program. See its unit test for details.
-
-    The data structure of the queue is:
-    0. Coordinate (nt).
-    1. Whether start (True) or end (False).
-    2. Whether gene (True) or read (False).
-    3. Identifier of gene/read.
+    This method uses NumPy sort to replace Python dict inserts. Thought it
+    should be faster but in reality it isn't. Code is kept for future use.
     """
-    rids = []
-    rids_append = rids.append
-    lenmap = defaultdict(dict)
-    locmap = defaultdict(list)
+    # determine file format
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
-    for line in fh:
-        try:
-            query, subject, _, length, start, end = parser(line)[:6]
-        except (TypeError, IndexError):
+    # assign parser for given format
+    parser = assign_parser(fmt, ext=True)
+
+    # transposed read information
+    N = n + 1000
+    qrys = [None] * N
+    subs = [None] * N
+    lens = np.empty((N,), dtype=np.uint16)
+    begs = np.empty((N,), dtype=np.int64)
+    ends = np.empty((N,), dtype=np.int64)
+
+    # arguments for flush
+    args = (qrys, subs, lens, begs, ends, coords, idmap, th, prefix)
+
+    idx = 0      # current read index
+    this = None  # current query Id
+    target = n   # target line number at end of current chunk
+
+    # parse alignment file
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject, _, length, beg, end = row[:6]
+
+        # skip if length is not available or zero
+        if not length:
             continue
-        idx = len(rids)
-        rids_append(query)
-        lenmap[subject][idx] = length
-        locmap[subject].extend((
-            (start, True, False, idx),
-            (end,  False, False, idx)))
 
-    return rids, lenmap, locmap
+        # when query Id changes and chunk limit has been reached
+        if query != this and i >= target:
+
+            # flush: match currently cached reads with genes and yield
+            yield flush_chunk_np(idx, *args)
+
+            # reset read index
+            idx = 0
+
+            # next target line number
+            target = i + n
+
+        # store information
+        qrys[idx] = query
+        subs[idx] = subject
+        lens[idx] = length
+        begs[idx] = beg
+        ends[idx] = end
+
+        idx += 1
+        this = query
+
+    # final flush
+    yield flush_chunk_np(idx, *args)
+
+
+def flush_chunk_np(n, qrys, subs, lens, begs, ends, glocmap, gidmap, th,
+                   prefix):
+    """Match reads in current chunk with genes from all genomes, using NumPy.
+
+    Parameters
+    ----------
+    n : int
+        Number of reads.
+    qrys : list of str
+        Query (read) IDs.
+    subs : list of str
+        Subject (genome) IDs.
+    lens : np.array(-1, dtype=uint16)
+        Read lengths.
+    begs : np.array(-1, dtype=int64)
+        Read start coordinates.
+    ends : np.array(-1, dtype=int64)
+        Read end coordinates.
+    glocmap : dict of list
+        Gene coordinates per genome.
+    gidmap : dict of list
+        Gene identifiers.
+    th : float
+        Length threshold.
+    prefix : bool
+        Prefix gene IDs with nucleotide IDs.
+
+    Returns
+    -------
+    list of str
+        Query queue.
+    list of set of str
+        Subject(s) queue.
+    """
+    # master read-to-gene(s) map
+    res = defaultdict(set)
+
+    # calculate effective lengths of reads
+    rels = np.ceil(lens[:n] * th).astype(np.uint16)
+
+    # encode read start and end positions
+    idxs = np.arange(n)
+    begs_ = np.left_shift(begs[:n], 24) + idxs
+    ends_ = np.left_shift(ends[:n], 24) + (1 << 23) + idxs
+
+    # group reads by subject (genome)
+    # complicated but fast (maybe...), but does not preserve order
+    subs_ = np.array(subs[:n])
+    sort_idx = subs_.argsort()
+    sort_arr = subs_[sort_idx]
+    edges = np.concatenate(([True], sort_arr[1:] != sort_arr[:-1]))
+    uniq = sort_arr[edges]
+    cuts = np.nonzero(edges)[0]
+    group = np.split(sort_idx, cuts[1:])
+
+    # a pandas solution is simply:
+    # s = pd.Series(subs[:idx])
+    # for sub, group in s.groupby(s):
+    #   idx_ = group.index.values
+    # which is better because pandas does not sort, but it is still
+    # not as fast in test
+
+    # iterate over genomes:
+    for nucl, idx_ in zip(uniq, group):
+
+        # it's possible that no gene was annotated on the nucleotide
+        try:
+            glocs = glocmap[nucl]
+        except KeyError:
+            continue
+
+        # get reference to gene identifiers
+        gids = gidmap[nucl]
+
+        # append prefix if needed
+        pfx = nucl + '_' if prefix else ''
+
+        # pair read starts and ends
+        m = idx_.size
+        locs = np.empty((2 * m,), dtype=np.int64)
+        locs[0::2] = begs_[idx_]
+        locs[1::2] = ends_[idx_]
+
+        # execute ordinal algorithm when reads are many
+        # 5 is an empirically determined cutoff
+        if m > 5:
+
+            # merge pre-sorted genes with reads of unknown sorting status
+            queue = np.concatenate((glocs, locs))
+
+            # sort genes and reads into a mixture
+            # timsort is efficient for this task
+            queue.sort(kind='stable')
+
+            # map reads to genes using the core algorithm
+            gen = match_read_gene(queue, rels)
+
+        # execute naive algorithm when reads are few
+        else:
+            gen = match_read_gene_quart(glocs, locs, rels)
+
+        # add read-gene pairs to the master map
+        for read, gene in gen:
+            res[qrys[read]].add(pfx + gids[gene])
+
+    # return matching read Ids and gene Ids
+    return res.keys(), res.values()
 
 
 def load_gene_coords(fh, sort=False):
@@ -355,7 +582,7 @@ def load_gene_coords(fh, sort=False):
 
                 # convert gene queue to np.array
                 try:
-                    coords[nucl] = np.array(coords[nucl], dtype=np.int64)
+                    coords[nucl] = encode_genes(coords[nucl])
                 except KeyError:
                     pass
 
@@ -367,21 +594,19 @@ def load_gene_coords(fh, sort=False):
                 gids_append = gids.append
 
         else:
-            x = line.rstrip().split('\t')
 
-            # begin and end positions are based on genome (nucleotide)
+            # extract Id, start, end
             try:
-                beg, end = sorted((int(x[1]), int(x[2])))
-            except (IndexError, ValueError):
+                gene, beg, end = line.rstrip().split('\t')
+            except ValueError:
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            idx = len(gids)
-            gene = x[0]
-            gids_append(gene)
 
             # add positions to queue
-            queue_extend(((beg << 24) + (1 << 22) + idx,
-                          (end << 24) + (3 << 22) + idx))
+            queue_extend((beg, end))
+
+            # record gene Id
+            gids_append(gene)
 
             # check duplicate
             if isdup is None:
@@ -392,7 +617,7 @@ def load_gene_coords(fh, sort=False):
 
     # final conversion
     try:
-        coords[nucl] = np.array(coords[nucl], dtype=np.int64)
+        coords[nucl] = encode_genes(coords[nucl])
     except KeyError:
         raise ValueError('No coordinate was read from file.')
 
@@ -404,6 +629,51 @@ def load_gene_coords(fh, sort=False):
     return coords, idmap, isdup or False
 
 
+def encode_genes(lst):
+    """Encode gene positions into a binary queue.
+
+    Parameters
+    ----------
+    lst : list of str
+        Flattened list of start and end coordinates.
+
+    Returns
+    -------
+    np.array(-1, dtype=int64)
+        Encoded gene queue.
+    """
+    try:
+        arr = np.asarray(lst, dtype=np.int64)
+    except ValueError:
+        raise ValueError('Invalid coordinate(s) found.')
+
+    n = arr.size // 2
+    idx = np.arange(n)  # gene indices
+
+    # separate start (odd) and end (even) positions
+    beg, end = arr[0::2], arr[1::2]
+
+    # order each pair of start and end coordinates such that smaller one
+    # comes first
+    # faster than np.sort since there are only two numbers
+    # < is slightly faster than np.less
+    cmp = beg < end
+    lo = np.where(cmp, beg, end)
+    hi = np.where(cmp, end, beg)
+
+    # encode coordinate, start/end, is gene, and index into one integer
+    lo = np.left_shift(lo, 24) + (1 << 22) + idx
+    hi = np.left_shift(hi, 24) + (3 << 22) + idx
+
+    # fastest way to interleave two arrays
+    # https://stackoverflow.com/questions/5347065/
+    que = np.empty((2 * n,), dtype=np.int64)
+    que[0::2] = lo
+    que[1::2] = hi
+
+    return que
+
+
 @njit((int64[:], uint16[:]))
 def match_read_gene(queue, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
@@ -412,7 +682,7 @@ def match_read_gene(queue, rels):
     ----------
     queue : np.array(-1, dtype=int64)
         Sorted queue of genes and reads.
-    rels : np.array(2 ** 24, dtype=uint16)
+    rels : np.array(-1, dtype=uint16)
         Effective lengths of reads.
 
     Returns
@@ -532,7 +802,7 @@ def match_read_gene_naive(gque, rque, rels):
         Sorted queue of genes.
     rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : np.array(2 ** 24, dtype=uint16)
+    rels : np.array(-1, dtype=uint16)
         Effective lengths of reads.
 
     Returns
@@ -597,7 +867,7 @@ def match_read_gene_quart(gque, rque, rels):
         Sorted queue of genes.
     rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : np.array(2 ** 24, dtype=uint16)
+    rels : np.array(-1, dtype=uint16)
         Effective lengths of reads.
 
     Returns
@@ -640,6 +910,9 @@ def match_read_gene_quart(gque, rque, rels):
 
     n = gque.size  # entire search space
     mid = n // 2   # mid point
+
+    # convert to python list because iterating numpy array is not efficient
+    # gque = gque.tolist()
 
     # iterate over paired read starts and ends
     it = iter(rque)
