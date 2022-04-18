@@ -18,6 +18,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from io import StringIO
 from functools import partial
+from collections import defaultdict
 
 import numpy as np
 
@@ -25,8 +26,9 @@ from woltka.file import openzip
 from woltka.align import parse_b6o_file_ext, parse_sam_file_ext
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
-    match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
-    load_gene_coords, encode_genes, calc_gene_lens)
+    match_read_gene_quart, ordinal_mapper_dummy, ordinal_mapper, flush_chunk,
+    ordinal_mapper_np, flush_chunk_np, load_gene_coords, encode_genes,
+    calc_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -249,12 +251,12 @@ class OrdinalTests(TestCase):
         exp = []
         self.assertListEqual(obs, exp)
 
-    def test_ordinal_parser_dummy(self):
+    def test_ordinal_mapper_dummy(self):
         # b6o (BLAST, DIAMOND, BURST, etc.)
         b6o = (
             'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
             'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        obs = ordinal_parser_dummy(b6o, parse_b6o_file_ext)
+        obs = ordinal_mapper_dummy(b6o, parse_b6o_file_ext)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
         self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
         self.assertDictEqual(obs[2], {'NC_123456': [
@@ -273,7 +275,7 @@ class OrdinalTests(TestCase):
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
             # unaligned
             'S2	16	*	0	0	*	*	0	0	*	*'))
-        obs = ordinal_parser_dummy(sam, parse_sam_file_ext)
+        obs = ordinal_mapper_dummy(sam, parse_sam_file_ext)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
         self.assertDictEqual(obs[1], {
             'NC_123456': {0: 100, 1: 80},
@@ -343,6 +345,148 @@ class OrdinalTests(TestCase):
                ('r7', 'g3'),
                ('r8', 'g3'),
                ('r9', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+    def test_flush_chunk(self):
+        coords, idmap, _ = load_gene_coords((
+            '>n1',
+            'g1	5	29',
+            'g2	33	61',
+            'g3	65	94',
+            'gx	108	135'))
+        aln = StringIO('\n'.join((
+            'r1	n1	95	20	0	0	1	20	10	29	1	1',
+            'r2	n1	95	20	0	0	1	20	16	35	1	1',
+            'r3	n1	95	20	0	0	1	20	20	39	1	1',
+            'r4	n1	95	20	0	0	20	1	22	41	1	1',
+            'r5	n1	95	20	0	0	20	1	30	49	1	1',
+            'rx	nx	95	20	0	0	1	20	1	20	1	1',
+            'r6	n1	95	20	0	0	1	20	49	30	1	1',
+            'r7	n1	95	20	0	0	25	6	79	60	1	1',
+            'r8	n1	95	20	0	0	1	20	84	65	1	1',
+            'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
+            '# end of file')))
+        idx, rids, rlens = 0, [], []
+        locmap = defaultdict(list)
+        for idx, row in enumerate(parse_b6o_file_ext(aln)):
+            query, subject, _, length, beg, end = row[:6]
+            rids.append(query)
+            rlens.append(length)
+            locmap[subject].extend((
+                (beg << 24) + idx, (end << 24) + (1 << 23) + idx))
+        rlens = np.array(rlens, dtype=np.uint16)
+        obs = flush_chunk(
+            idx + 1, locmap, rids, rlens, coords, idmap, 0.8, False)
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+    def test_ordinal_mapper_np(self):
+        # should produce the same result as ordinal_mapper
+        coords, idmap, _ = load_gene_coords((
+            '>n1',
+            'g1	5	29',
+            'g2	33	61',
+            'g3	65	94',
+            'gx	108	135'))
+        aln = StringIO('\n'.join((
+            'r1	n1	95	20	0	0	1	20	10	29	1	1',
+            'r2	n1	95	20	0	0	1	20	16	35	1	1',
+            'r3	n1	95	20	0	0	1	20	20	39	1	1',
+            'r4	n1	95	20	0	0	20	1	22	41	1	1',
+            'r5	n1	95	20	0	0	20	1	30	49	1	1',
+            'rx	nx	95	20	0	0	1	20	1	20	1	1',
+            'r6	n1	95	20	0	0	1	20	49	30	1	1',
+            'r7	n1	95	20	0	0	25	6	79	60	1	1',
+            'r8	n1	95	20	0	0	1	20	84	65	1	1',
+            'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
+            '# end of file')))
+        obs = list(ordinal_mapper_np(aln, coords, idmap))[0]
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+        # specify format
+        aln.seek(0)
+        obs = list(ordinal_mapper_np(aln, coords, idmap, fmt='b6o'))[0]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+        # specify chunk size
+        aln.seek(0)
+        obs = list(ordinal_mapper_np(aln, coords, idmap, n=5))
+        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:2]])
+        self.assertListEqual(list(obs[0][1]), [{x[1]} for x in exp[:2]])
+        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[2:]])
+        self.assertListEqual(list(obs[1][1]), [{x[1]} for x in exp[2:]])
+
+        # add prefix
+        aln.seek(0)
+        obs = list(ordinal_mapper_np(aln, coords, idmap, prefix=True))[0]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{f'n1_{x[1]}'} for x in exp])
+
+        # specify threshold
+        aln.seek(0)
+        obs = list(ordinal_mapper_np(aln, coords, idmap, th=0.5))[0]
+        exp = [('r1', 'g1'),
+               ('r2', 'g1'),
+               ('r3', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r7', 'g3'),
+               ('r8', 'g3'),
+               ('r9', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+    def test_flush_chunk_np(self):
+        coords, idmap, _ = load_gene_coords((
+            '>n1',
+            'g1	5	29',
+            'g2	33	61',
+            'g3	65	94',
+            'gx	108	135'))
+        aln = StringIO('\n'.join((
+            'r1	n1	95	20	0	0	1	20	10	29	1	1',
+            'r2	n1	95	20	0	0	1	20	16	35	1	1',
+            'r3	n1	95	20	0	0	1	20	20	39	1	1',
+            'r4	n1	95	20	0	0	20	1	22	41	1	1',
+            'r5	n1	95	20	0	0	20	1	30	49	1	1',
+            'rx	nx	95	20	0	0	1	20	1	20	1	1',
+            'r6	n1	95	20	0	0	1	20	49	30	1	1',
+            'r7	n1	95	20	0	0	25	6	79	60	1	1',
+            'r8	n1	95	20	0	0	1	20	84	65	1	1',
+            'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
+            '# end of file')))
+        idx = 0
+        qrys, subs, lens, begs, ends = [], [], [], [], []
+        for idx, row in enumerate(parse_b6o_file_ext(aln)):
+            query, subject, _, length, beg, end = row[:6]
+            qrys.append(query)
+            subs.append(subject)
+            lens.append(length)
+            begs.append(beg)
+            ends.append(end)
+        lens = np.array(lens, dtype=np.uint16)
+        begs = np.array(begs, dtype=np.int64)
+        ends = np.array(ends, dtype=np.int64)
+        obs = flush_chunk_np(idx + 1, qrys, subs, lens, begs, ends, coords,
+                             idmap, 0.8, False)
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
         self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
 
