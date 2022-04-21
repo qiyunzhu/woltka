@@ -56,7 +56,7 @@ Woltka provides several utilities for handling feature tables, including collaps
 
 ### What does Woltka not do
 
-Woltka does NOT **align** sequences. You need to align your FastQ (or Fast5, etc.) files against a reference database (we recommend [WoL](https://biocore.github.io/wol/)) use an aligner of your choice (BLAST, Bowtie2, etc.). The resulting alignment files can be fed into Woltka.
+Woltka does NOT **align** sequences. You need to align your FastQ (or Fast5, etc.) files against a reference database (we recommend [WoL](https://biocore.github.io/wol/)) use an aligner of your choice (BLAST, Bowtie2, etc.). The resulting alignment files can be fed into Woltka. Here are [guidelines](align.md).
 
 Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime2.org/) for robust downstream analyses of the profiles to decode the relationships among micobial communities and with their environments.
 

@@ -60,12 +60,16 @@ The output file `output.sam` is an alignment file in [SAM](https://en.wikipedia.
 
 As a rule of thumb, the `--very-sensitive` flag is recommended, because we want to maximize discovery of diverse microbes in the sample (instead for pursuing accurate alignment to the human genome). 
 
-Meanwhile, we can suppress SAM header (`--no-head`) and unaligned sequences (`--no-unal`) to reduce the size of output files. Woltka won't need these. But in case you need them for other applications, you may skip these flags.
+In addition, we can suppress SAM header (`--no-head`) and unaligned sequences (`--no-unal`) to reduce the size of output files. Woltka won't need these. But in case you need them for other applications, you may skip these flags.
+
+Moreover, we can crop out the aligned sequences and scores (again, don't do it if you need these). Bowtie2 doesn't have this function, but it can be achieved using simple Linux commands.
+
+Finally, we can compress the SAM files to further save disk space.
 
 So the command becomes (**recommended**):
 
 ```bash
-bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq -S output.sam --very-sensitive --no-head --no-unal
+bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq --very-sensitive --no-head --no-unal | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz
 ```
 
 The alignment step is fast and it costs much less memory compared with the database indexing step. Below is our benchmark on the [HMP](https://www.hmpdacc.org/hmp/) metagenome dataset against our [WoL](wol.md) database (disclaimer: we make no warranty to its accuracy).

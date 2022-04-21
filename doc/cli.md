@@ -11,7 +11,7 @@ The command-line interface (CLI) of Woltka provides several commands:
 
 Option | Description
 --- | ---
-`--input`, `-i` (required) | Path to input alignment file or directory of alignment files.
+`--input`, `-i` (required) | Path to input alignment file or directory of alignment files. Enter "-" for stdin.
 `--output`, `-o` (required) | Path to output profile file or directory of profile files.
 
 ### Input files
