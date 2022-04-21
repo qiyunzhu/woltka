@@ -15,7 +15,14 @@ The input files for Woltka are sequence **alignment** files. The term "alignment
 
 Parameter `--input` or `-i` is to let Woltka know where to find the input alignment file(s). It can be any of the following four scenarios:
 
-1\. A **directory**. Woltka will search this directory for alignment files, and treat each of them as _one sample_. One may control. See below for [details](#filename-patterns).
+1\. A **directory**. Woltka will search this directory for alignment files, and treat each of them as _one sample_. An example is below. If not all files in the directory are alignments, one may specify a filename pattern (see [details](#filename-patterns)) to include alignments only.
+
+```
+align/
+├── S01.sam.gz
+├── S02.sam.gz
+└── S03.sam.gz
+```
 
 2\. A **mapping file** of sample ID \<tab\> alignment file path. The paths must point to existing files. They can either be full paths, or simply filenames under the same directory as the mapping file. For example, one can place a `map.txt` of the following content to where alignment files are located.
 
@@ -40,18 +47,19 @@ bowtie2 -x db -U input.fq | woltka classify -i - -o output.biom
 samtools view input.bam | woltka classify -i - -o output.biom
 ```
 
-
 ## File formats
 
 Woltka supports the following alignment formats (specified by parameter `--format` or `-f`):
 
 - `map`: A **simple map** in the format of query \<tab\> subject.
 - `sam`: [**SAM**](https://en.wikipedia.org/wiki/SAM_(file_format)) format. Supported by multiple tools such as Bowtie2, BWA and Minimap2.
-- `b6o`: [**BLAST**](https://www.metagenomics.wiki/tools/blast/blastn-output-format-6) tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by multiple tools such as BLAST, DIAMOND, VSEARCH, BURST, etc.
+- `b6o`: [**BLAST**](https://www.metagenomics.wiki/tools/blast/blastn-output-format-6) tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by multiple tools such as BLAST, DIAMOND and BURST.
 
-  If not specified, Woltka will automatically infer the format of input alignment files.
+If not specified, Woltka will automatically infer the format of input alignment files.
 
-Woltka supports and automatically detects common file compression formats including `gzip`, `bzip2` and `xz`.
+Other formats may be converted into any of these three formats so that Woltka can parse them. Examples include **BAM**, **CRAM** and **PAF**. Here are example [commands](faq.md#input-files).
+
+Woltka supports and automatically detects common file compression formats including `gzip`, `bzip2` and `xz`. Any input files, including alignment files and database files, can be supplied in any of these three formats. This saves disk space and compute.
 
 ## Filename pattern
 

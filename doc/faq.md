@@ -27,14 +27,23 @@ To date, all Woltka versions (0.1.0 to 0.1.4) generate **identical** output file
 
 Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in gzip, bzip2 or xz formats. Woltka will automatically recognize and process them.
 
+### Does Woltka support [BAM](https://en.wikipedia.org/wiki/Binary_Alignment_Map) and [CRAM](https://en.wikipedia.org/wiki/CRAM_(file_format)) formats?
 
-### Does Woltka support BAM files?
-
-Not out-of-the-box. But you can use SAMtools to extract BAM files and directly "pipe" into Woltka, like this:
+Not out-of-the-box. But you can use SAMtools to extract BAM/CRAM files and directly "pipe" into Woltka, like this ("-" represents stdin):
 
 ```bash
 samtools view input.bam | woltka classify -i - -o output.biom
 ```
+
+### Does Woltka support [PAF](https://github.com/lh3/miniasm/blob/master/PAF.md) format?
+
+Not out-of-the-box. But you can use the following AWK trick to convert a PAF file into mock BLAST format and feed into Woltka. There will be no percent identity, e-value or bit score, but Woltka doesn't need them anyway.
+
+```bash
+cat input.paf | awk -v OFS="\t" '{print $1,$6,0,$11,0,0,$3+1,$4,$8+1,$9,0,$12}' | woltka classify -i - -o output.biom
+```
+
+
 
 ### I ran `woltka classify -i input.fastq ...`, and got an error saying it cannot determine alignment file format. Why?
 
