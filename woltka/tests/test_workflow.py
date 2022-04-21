@@ -8,11 +8,13 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 from unittest import TestCase, main
+from unittest.mock import patch
 from os import remove, makedirs
 from os.path import join, dirname, realpath
 from shutil import rmtree
 from tempfile import mkdtemp
 from filecmp import cmp
+from io import StringIO
 
 import pandas as pd
 from biom import load_table
@@ -93,7 +95,29 @@ class WorkflowTests(TestCase):
         self.assertEqual(obs['S03'][('Escherichia', 'GO:0006813')], 2)
         self.assertEqual(len(obs['S04']), 39)
 
+        # get input from stdin
+        aln = StringIO('\n'.join((
+            '@HD	VN:1.0	SO:unsorted',
+            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
+            'S2	16	*	0	0	*	*	0	0	*	*')))
+        with patch('sys.stdin', aln):
+            samples, files, demux = parse_samples('-')
+            mapper, chunk = build_mapper()
+            ranks = ['none']
+            obs = classify(mapper, files, samples=samples, demux=demux,
+                           ranks=ranks, chunk=chunk)['none']
+            self.assertEqual(obs['']['NC_123456'], 2)
+
     def test_parse_samples(self):
+        # stdin
+        obs = parse_samples('-')
+        self.assertTupleEqual(obs, (None, ['-'], True))
+        obs = parse_samples('-', demux=False)
+        self.assertListEqual(obs[0], [''])
+        self.assertDictEqual(obs[1], {'-': ''})
+
         # file (assuming demultiplexed)
         fp = join(self.tmpdir, 'input.fq')
         open(fp, 'a').close()

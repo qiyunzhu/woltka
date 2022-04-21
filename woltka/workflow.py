@@ -273,10 +273,17 @@ def classify(mapper:  object,
 
     # parse input alignment file(s) and generate profile(s)
     for fp in sorted(files):
-        click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
+
+        # decide input type (stdin or file)
+        if fp == '-':
+            fileobj = click.open_file(fp).__iter__()
+            click.echo('Parsing alignment from stdin ', nl=False)
+        else:
+            fileobj = readzip(fp, zippers)
+            click.echo(f'Parsing alignment file {basename(fp)} ', nl=False)
 
         # read alignment file into query-to-subject(s) map
-        with readzip(fp, zippers) as fh:
+        with fileobj as fh:
 
             # query and progress counters
             nqry, nstep = 0, -1
@@ -363,8 +370,23 @@ def parse_samples(fp:        str,
 
     errmsg = 'Provided sample IDs and actual files are inconsistent.'
 
+    # input is stdin
+    if fp == '-':
+
+        # turn on demultiplexing if not decided
+        demux = demux is not False
+        if demux:
+            files = [fp]
+
+        # sample Id is empty
+        else:
+            files = {fp: ''}
+            samples = ['']
+
+        click.echo('Input alignment is from stdin.')
+
     # path is a directory
-    if isdir(fp):
+    elif isdir(fp):
 
         # turn off demultiplexing if not decided
         demux = demux or False

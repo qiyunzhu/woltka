@@ -36,8 +36,8 @@ def cli():
 @cli.command('classify')
 # input and output
 @click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, file_okay=True, dir_okay=True),
+    '--input', '-i', 'input_fp', required=True, type=click.Path(
+        exists=True, file_okay=True, dir_okay=True, allow_dash=True),
     help='Path to input alignment file or directory of alignment files.')
 @click.option(
     '--output', '-o', 'output_fp', required=True,
