@@ -1,6 +1,6 @@
 # Coordinates-based classification
 
-Woltka combines the two fundamental analyses in metagenomics: taxonomic profiling (mapping reads to **genomes**) and functional profiling (mapping reads to functional **genes**) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
+Woltka combines the two fundamental analyses in metagenomics: Structural profiling (mapping reads to **genomes**) and functional profiling (mapping reads to functional **genes**) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
 
 This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their **coordinates** on the host genome. The algorithm matches reads and genes in an [ordinal](https://en.wikipedia.org/wiki/Ordinal_number) scale, with the efficiency of _O_(_n_+_m_) (_n_ and _m_ are numbers of reads and genes), therefore suitable for handling large microbiome datasets and databases.
 

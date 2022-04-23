@@ -4,15 +4,15 @@ Woltka takes sequence alignment files as input and generate feature tables. This
 
 ## Contents
 
-- [Sequence data](#sequence-data)
+- [Sequencing data](#sequencing-data)
 - [Reference database](#reference-database)
 - [Alignment with Bowtie2](#alignment-with-bowtie2)
 - [Other alignment tools](#other-alignment-tools)
   - [SHOGUN](#the-shogun-protocol), [Minimap2](#minimap2), [BWA](#bwa), [BURST](#burst), [BLASTn](#blastn)
 
-## Sequence data
+## Sequencing data
 
-This will be your sequence data generated from microbiome samples. They can be DNA (metagenome), RNA (metatranscriptome), or other types of data. They are usually in the file format of FastQ or Fasta, but other formats may also apply.
+This will be your sequencing data generated from microbiome samples. They can be DNA (metagenome), RNA (metatranscriptome), or other types of data. They are usually in the file format of FastQ or Fasta, but other formats may also apply.
 
 - **Note**: Woltka is designed for whole-(meta)genome shotgun sequencing data. Technically, you can analyze 16S rRNA data using Woltka, but I don't see the rationale. Please instead learn about [QIIME 2](https://docs.qiime2.org/).
 
@@ -58,13 +58,13 @@ bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq -S output.sam
 
 The output file `output.sam` is an alignment file in [SAM](https://en.wikipedia.org/wiki/SAM_(file_format)) format. This will be the [input](input.md) file for Woltka.
 
-As a rule of thumb, the `--very-sensitive` flag is recommended, because we want to maximize discovery of diverse microbes in the sample (instead for pursuing accurate alignment to the human genome). 
+As a rule of thumb, the `--very-sensitive` flag is recommended, because we want to maximize discovery of diverse microbes in the sample (instead for pursuing accurate alignment to the human genome).
 
 In addition, we can suppress SAM header (`--no-head`) and unaligned sequences (`--no-unal`) to reduce the size of output files. Woltka won't need these. But in case you need them for other applications, you may skip these flags.
 
-Moreover, we can crop out the aligned sequences and scores (again, don't do it if you need these). Bowtie2 doesn't have this function, but it can be achieved using simple Linux commands.
+Moreover, we can crop out the aligned sequences and scores (again, don't do it if you need these). Bowtie2 doesn't have this function, but it can be achieved using Linux commands `cut -f1-9` and `sed 's/$/\t*\t*/'`.
 
-Finally, we can compress the SAM files to further save disk space.
+Finally, we can compress the SAM files using `gzip` to further save disk space.
 
 So the command becomes (**recommended**):
 
@@ -72,7 +72,7 @@ So the command becomes (**recommended**):
 bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq --very-sensitive --no-head --no-unal | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz
 ```
 
-The alignment step is fast and it costs much less memory compared with the database indexing step. Below is our benchmark on the [HMP](https://www.hmpdacc.org/hmp/) metagenome dataset against our [WoL](wol.md) database (disclaimer: we make no warranty to its accuracy).
+The alignment step costs much less memory compared with the database indexing step. Below is our benchmark on the [HMP](https://www.hmpdacc.org/hmp/) metagenome dataset against our [WoL](wol.md) database (disclaimer: we make no warranty to its accuracy).
 
 - From the benchmark we learned that Bowtie2 scales well with several CPU cores (8 is a good number). But it perhaps makes less sense to use more than 16 CPU cores for a single task.
 
@@ -93,7 +93,7 @@ It maybe worth checking out the [Bowtie2 manual](http://bowtie-bio.sourceforge.n
 So the entire command becomes:
 
 ```bash
-bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq -S output.sam --very-sensitive --no-head --no-unal -k 16 --np 1 --mp "1,1" --rdg "0,1" --rfg "0,1" --score-min "L,0,-0.05"
+bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq --very-sensitive --no-head --no-unal -k 16 --np 1 --mp "1,1" --rdg "0,1" --rfg "0,1" --score-min "L,0,-0.05" | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz
 ```
 
 This is equivalent to the SHOGUN command:
