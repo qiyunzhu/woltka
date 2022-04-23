@@ -182,7 +182,7 @@ Unlike other types of hierarchies, with lineages, Woltka reports the _entire lin
 
 Empty levels in the end are discarded. e.g., `k__Bacteria; p__` is not a valid taxon. Empty levels in the middle are kept. e.g., `k__Bacteria; p__; c_Clostridia` will not be shortened into `k__Bacteria;c_Clostridia`.
 
-[Note] With many other bioinformatics tools, the use of lineage implicates a fixed number of ranks for all taxa. However in Woltka, lineages are still treated in a rank-flexible manner. For example, the following [lineage](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3&lin=f&keep=1&srchmode=1&unlock) is valid:
+[**Note**] With many other bioinformatics tools, the use of lineage implicates a fixed number of ranks for all taxa. However in Woltka, lineages are still treated in a rank-flexible manner. For example, the following [lineage](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=9606&lvl=3&lin=f&keep=1&srchmode=1&unlock) is valid:
 
 ```
 cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazoa; Bilateria; Deuterostomia; Chordata; Craniata; Vertebrata; Gnathostomata; Teleostomi; Euteleostomi; Sarcopterygii; Dipnotetrapodomorpha; Tetrapoda; Amniota; Mammalia; Theria; Eutheria; Boreoeutheria; Euarchontoglires; Primates; Haplorrhini; Simiiformes; Catarrhini; Hominoidea; Hominidae; Homininae; Homo; Homo sapiens
@@ -190,17 +190,16 @@ cellular organisms; Eukaryota; Opisthokonta; Metazoa; Eumetazoa; Bilateria; Deut
 
 ### 4. Table of per-rank columns (`--columns`)
 
-A tab-delimited table (TSV), with aach column representing a rank, and the column header serving as the rank name. For example ([taxonomy/rank_names.tsv](../woltka/tests/data/taxonomy/rank_names.tsv)):
+A tab-delimited table (TSV), with each column representing a rank, and the column header serving as the rank name. For example ([taxonomy/rank_names.tsv](../woltka/tests/data/taxonomy/rank_names.tsv)):
 
-```
-ID <tab> kingdom <tab> phylum <tab> class ...
-Seq1 <tab> Bacteria <tab> Proteobacteria <tab> Gammaproteobacteria
-Seq2 <tab> Bacteria <tab> Firmicutes <tab> Bacilli
-Seq3 <tab> Bacteria <tab> Proteobacteria <tab> Betaproteobacteria
-...
-```
+ID | kingdom | phylum | class | ...
+--- | --- | --- | --- | ---
+Seq1 | Bacteria | Proteobacteria | Gammaproteobacteria | ...
+Seq2 | Bacteria | Firmicutes | Bacilli | ...
+Seq3 | Bacteria | Proteobacteria | Betaproteobacteria | ...
+... |
 
-The assumption with such as table is that ranks displayed in the header are always from high to low. Therefore, it is a form of **fixed-rank** classification.
+The assumption with such a table is that ranks displayed in the header are always from high to low. Therefore, it is a form of **fixed-rank** classification.
 
 Woltka will construct classification hierarchies from this table, and will report if it encounters any conflicting relationships among levels.
 
@@ -252,4 +251,4 @@ One can force it off by flag `--map-no-rank` even when there are only mapping fi
 
 ## Multiple mapping
 
-As explained above, Woltka's main classification workflow relies on a tree-structured hierarchy, i.e., a classification unit can only point to one parent classification unit. However, in some scenarios one may want to perform one-to-many mapping. Examples include functional analyses, where one gene may be involved in multiple pathways. Woltka provides a [profile collapsing](collapse.md) tool to enable this analysis ([see details](collapse.md)).
+As explained above, Woltka's main classification workflow relies on a tree-structured hierarchy, i.e., a classification unit can only point to one parent classification unit. However, in some scenarios one may want to perform one-to-many mapping. Examples include functional analyses, where one gene may be involved in multiple pathways. Woltka provides a **profile collapsing** tool to enable this analysis (see [details](collapse.md)).

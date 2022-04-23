@@ -28,13 +28,13 @@ jobs:
         run: conda install --file ci/conda_requirements.txt 
 
       - name: Install CI packages
-        run: conda install flake8 coveralls
+        run: conda install pycodestyle coveralls
 
       - name: Install program
         run: pip install -e .
 
       - name: Check style
-        run: flake8
+        run: pycodestyle .
 
       - name: Run unit tests
         run: coverage run -m unittest

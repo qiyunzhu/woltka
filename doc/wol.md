@@ -1,6 +1,6 @@
 # Working with "Web of Life" (WoL)
 
-**TL;DR**: Here is a script for running the full-board WoL/Woltka workflow, including genome (OGU) and gene profilings, taxonomic classification, and functional classification (using UniRef, GO, MetaCyc and optionally KEGG). You need to download the WoL data release, perform sequence alignment, customize the "Parameters" section of the script, then run it.
+**TL;DR**: Here is a script for running the full-board WoL/Woltka workflow, including genome (OGU) and gene profilings, taxonomic classification (using NCBI taxonomy), and functional classification (using UniRef, GO, MetaCyc and optionally KEGG). You need to download the WoL data release, perform sequence alignment, customize the "Parameters" section of the script, then run it.
 
 - [**wolsop.sh**](wolsop.sh) (click to download)
 
@@ -8,7 +8,7 @@ Meanwhile, a basic WoL/Woltka workflow is available from our web-based microbiom
 
 ## The WoL database
 
-The "Web of Life" (WoL) aims to reconstruct an accurate reference phylogeny for microbial genomes, and to build resources that can benefit microbiome researchers. In phase I ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)), we built a reference [tree](https://biocore.github.io/wol/data/trees/tree.nwk) of 10,575 bacterial and archaeal genomes using 381 marker genes. The basic WoL data release, which contains all necessary files for performing microbiome data analysis, is available for download from the following FTP site:
+The "Web of Life" (WoL) project aims to reconstruct an accurate reference phylogeny for microbial genomes, and to build resources that can benefit microbiome researchers. In phase I ([Zhu et al., 2019](https://www.nature.com/articles/s41467-019-13443-4)), we built a reference [tree](https://biocore.github.io/wol/data/trees/tree.nwk) of 10,575 bacterial and archaeal genomes using 381 marker genes. The basic WoL data release, which contains all necessary files for performing microbiome data analysis, is available for download from this FTP site:
 
 ```bash
 wget -r -np -nH --cut-dirs=2 ftp://ftp.microbio.me/pub/wol-20April2021/
@@ -30,7 +30,7 @@ The following tutorial assumes that you have downloaded the basic or full WoL da
 
 ## Database indexing
 
-The full WoL data release contains a pre-built [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) index which can be directly used (and you can skip section). The basic release only contains the original genome sequences (`concat.fna.xz`). You will need to build a Bowtie2 index by yourself (see [here](align.md#database-indexing) for details):
+The full WoL data release contains a pre-built [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) index which can be directly used (and you can skip this section). The basic release only contains the original genome sequences (`concat.fna.xz`). You will need to build a Bowtie2 index by yourself (see [here](align.md#database-indexing) for details):
 
 ```bash
 mkdir -p databases/bowtie2
@@ -260,7 +260,7 @@ In the output table, features will be like `Escherichia|K00133`, `Salmonella|K00
 With a stratified taxonomic/functional profile, one may still perform further [collapsing](#method-2) using one of the two systems. For example:
 
 ```bash
-woltka tools collapse -f 2 -i ko_by_genus.biom -m $ke/ko-to-go.txt -o go_by_genus.biom
+woltka tools collapse -f 2 -i ko_by_genus.biom -m ko/ko-to-go.txt -o go_by_genus.biom
 ```
 
 The parameter `-f 2` instructs the program to collapse by the second field of each feature (e.g., `K00133` of `Escherichia|K00133`). See [here](collapse.md#stratification) for details.

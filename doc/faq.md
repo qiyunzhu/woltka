@@ -3,10 +3,6 @@
 
 ## Computing
 
-### How many CPU cores does Woltka use?
-
-Woltka works the best with two CPU cores (threads): one for file decompression and the other for classification. This happens automatically.
-
 ### Is Woltka deterministic or stochastic?
 
 Woltka is **deterministic**. Given the same input files and parameters, it always produces the identical output files. There is no "seed" parameter.
@@ -19,8 +15,38 @@ The former. Woltka **exhaustively** captures all valid matches from the alignmen
 
 To date, all Woltka versions (0.1.0 to 0.1.4) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
 
+### How many CPU cores does Woltka use?
+
+Woltka works the best with two CPU cores: one for file decompression and the other for classification. This happens automatically. See [here](perform,md#keep-external-decompressors-on) for details.
+
+### Does Woltka support multiprocessing?
+
+Not at the moment. But you can run multiple Woltka instances on different subsets of samples and merge results. See [here](perform.md#run-separate-jobs-and-merge-results) for details.
+
 
 ## Input files
+
+### Does Woltka support gzipped alignment files?
+
+Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in gzip, bzip2 or xz formats. Woltka will automatically recognize and process them.
+
+### Does Woltka support [BAM](https://en.wikipedia.org/wiki/Binary_Alignment_Map) and [CRAM](https://en.wikipedia.org/wiki/CRAM_(file_format)) formats?
+
+Not out-of-the-box. But you can use SAMtools to extract BAM/CRAM files and directly "pipe" into Woltka, like this ("-" represents stdin):
+
+```bash
+samtools view input.bam | woltka classify -i - -o output.biom
+```
+
+### Does Woltka support [PAF](https://github.com/lh3/miniasm/blob/master/PAF.md) format?
+
+Not out-of-the-box. But you can use the following AWK trick to convert a PAF file into mock BLAST format and feed into Woltka. There will be no percent identity, e-value or bit score, but Woltka doesn't need them anyway.
+
+```bash
+cat input.paf | awk -v OFS="\t" '{print $1,$6,0,$11,0,0,$3+1,$4,$8+1,$9,0,$12}' | woltka classify -i - -o output.biom
+```
+
+
 
 ### I ran `woltka classify -i input.fastq ...`, and got an error saying it cannot determine alignment file format. Why?
 
@@ -52,10 +78,6 @@ The `--no-demux` flag will tell Woltka not to try to demultiplex the alignment f
 
 See [here](input.md#demultiplexing) for details.
 
-### Can Woltka parse compressed files?
-
-Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in gzip, bzip2 or xz formats. Woltka will automatically recognize and parse them.
-
 
 ## Output files
 
@@ -75,6 +97,9 @@ See [here](normalize.md) for details.
 
 Yes. The `woltka tools merge` command is for you. See [here](merge.md) for details.
 
+### Can Woltka report taxon names instead of TaxIDs when using NCBI taxonomy?
+
+Yes. Add `--name-as-id` to the command? See [here](output.md) for details.
 
 ## Hierarchies
 
