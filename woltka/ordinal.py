@@ -889,10 +889,10 @@ def match_read_gene_quart(gque, rque, rels):
     can fit it, and the nearer end of the gene queue.
 
     Further reduction of search space is not possible, because genes may span
-    over half of the genome, and they cannot be detected within out iterating
-    to end of the gene queue.
+    over half of the genome, and they cannot be detected without iterating to
+    end of the gene queue.
 
-    This method uses bisection to find insertion points of read start in the
+    This method uses bisection to find the insertion point of read start in the
     pre-sorted gene queue, which has O(logn) time.
     """
     # genes within read region

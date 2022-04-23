@@ -108,6 +108,6 @@ With the unassigned part reported, the sum of feature counts in each sample of t
 
 Even if this function was not used in generating the profile, one can still manually calculate the unassigned part by subtracting the sum of feature counts from the number of sequences.
 
-[**Important**] The "unassigned" part represent query sequences that were **aligned** to one or more **subjects**, but Woltka cannot find a suitable assignment based on those subjects. Therefore, assigned + unassigned is NOT the entire sample, but only the part of sample that are found in the alignment.
+[**Important**] The "unassigned" part represents query sequences that were **aligned** to one or more **subjects**, but Woltka cannot find a suitable assignment based on those subjects. Therefore, assigned + unassigned is NOT the entire sample, but only the part of sample that are found in the alignment.
 
-In [ordinal mapping](ordinal.md), subjects are **genes** instead of genomes, therefore despite that some query sequences can be aligned to one or more genomes, they can still be excluded from the unassigned part if their coordinates do not match any gene.
+In the coordinates-based functional classification (see [details](ordinal.md)), subjects are **genes** instead of genomes, therefore despite that some query sequences can be aligned to one or more genomes, they can still be excluded from the unassigned part if their coordinates do not match any gene.

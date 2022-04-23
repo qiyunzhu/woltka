@@ -1,10 +1,10 @@
 # Stratification
 
-It is a frequent need to combine two or more classification systems in one analysis. For example, in a typical shotgun metagenomics study, one not only needs the taxonomic composition and functional potential of whole samples, but also wants to know which functional genes are found in which taxonomic units. This is because in many scenarios, only proteins wrapped within the same cell can constitute metabolic pathways, and this information is only available when the _taxonomy_ and _function_ of each sequence are informed simultaneously.
+It is a frequent need to combine two or more classification systems in one analysis. For example, in a typical shotgun metagenomics study, one not only needs the taxonomic composition and functional potential of whole samples, but also wants to know which functional genes are found in which organism groups. This is because in many scenarios, only proteins wrapped within the same cell constitute metabolic pathways, and this information is only available when the _structure_ and _function_ of each sample are informed simultaneously.
 
 Woltka enables this analysis through a "**stratification**" function. A stratum (plural: strata) is a subset of data grouped under the same label. Woltka allows the user to label sequences using one classification system (e.g., taxonomy), then classify sequences under each label using another classification system (e.g., function). This design maximizes flexibility and modularity. It is not bond by particular classification levels or systems, but can also work with ecological niches, phenotypic features, and other classification methods that best address specific research goals.
 
-There are **two approaches** to achieve combined taxonomic / functional classification. Both are explained and exemplified below.
+There are **two approaches** to achieve combined structural / functional classification. Both are explained and exemplified below.
 
 
 ## Method I: Genome-based analysis

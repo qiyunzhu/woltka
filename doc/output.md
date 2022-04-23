@@ -33,6 +33,8 @@ If there are multiple ranks, this parameter points to a directory, where multipl
 woltka classify ... -r phylum,genus,species -o .
 ```
 
+You will get `phylum.biom`, `genus.biom` and `species.biom` in the current directory.
+
 ## File formats
 
 ### BIOM
@@ -75,7 +77,7 @@ biom export-metadata -i input.biom --observation-metadata-fp metadata.tsv
 
 ### TSV
 
-In addition to BIOM, Woltka supports directly outputing the old-style tab-separated files (**TSV**). This can be toggled as follows:
+Woltka supports directly outputing the classical tab-separated files (**TSV**). This can be toggled as follows:
 
 If the output filepath (`--output`) is a single file (i.e., `--rank` has only one value), simply name it as `xxx.biom` to write in BIOM format, or anything else (e.g., `xxx.tsv`) to write in TSV format.
 
@@ -101,9 +103,9 @@ During the processing of each alignment file, Woltka can optionally write to dis
 The format of a read map is usually as simple as "read \<tab\> classification unit". If ambiguous assignment is allowed (`--ambig`, see [classification](hierarchy.md) for details), one or multiple classification units will be joined by comma, and counted by a number following colon if the same classification unit occurs multiple times. Example:
 
 ```
-R01 Ecoli
-R02 Ecoli,Strep
-R03 Ecoli:2,Kleb:3,Cdiff
+R01 <tab> Ecoli
+R02 <tab> Ecoli,Strep
+R03 <tab> Ecoli:2,Kleb:3,Cdiff
 ...
 ```
 
