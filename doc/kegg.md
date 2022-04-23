@@ -42,4 +42,4 @@ woltka tools coverage -i reaction.tsv -m kegg/module-to-reaction.txt -o module.c
 
 Differently from the last command, the **coverage** command generates a table, where cell values indicate the percentage of reactions required by each module found in each sample.
 
-**Step 5**: You may also consider **stratifying** the functional profile by taxonomy. [See details](stratify.md).
+**Step 5**: You may also consider **stratifying** the functional profile by microbiome components. [See details](stratify.md).

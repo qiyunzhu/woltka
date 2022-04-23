@@ -21,33 +21,38 @@ Woltka is for handling very large alignment files and complex classification sys
 Rules of thumb:
 
 - Woltka's runtime is **linear** (_O_(_n_)) vs. the size of the input alignments, plus a small, constant overhead of reading the database.
-- Woltka's memory consumption is **constant**. It is only determined by the size of the database, but is independent from the input alignments.
+- Woltka's memory consumption is determined by 1) the size of the reference database, and 2) the complexity of the microbiome communities (i.e., the size of the feature table). It is independent from the size of the input alignments.
 - Woltka analyses are I/O-intensive. Performance of disk and memory matter.
 - Woltka works the best with **two threads**: one for decompression and the other for classification.
-- Coordinates-based classification takes several folds more time than simple classification.
+- Coordinates-based functional analysis takes several folds more time than simple structural analysis.
 
-For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which includes 10,575 genomes, the memory consumption is **~120 MB** for taxonomic classification, and **~22 GB** for gene coordinates-based functional classification.
+For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which includes 10,575 genomes, the memory consumption is **<128 MB** for structural classification, and **<16 GB** for coordinates-based functional classification.
 
 ## Benchmarks on a typical dataset
 
-**TL;DR**: It takes 1 hr (taxonomic classification) or 4.5 hr (coordinates-based functional classification) For every 40 GB gzipped SAM files.
+**TL;DR**: It takes 10 min (structural analysis) or 1 hr (coordinates-based functional analysis) For every 10 GB gzipped SAM files.
 
-In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) aligner through [SHOGUN](https://github.com/knights-lab/SHOGUN), against the Web of Life ([WoL](https://biocore.github.io/wol/)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
+In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) following the [SHOGUN](align.md#the-shogun-protocol) protocol against the Web of Life ([WoL](wol.md)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
 
-The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in size. They include **1.05 billion** alignments (lines), with 501 million unique query sequences. They were stored in a hard disk drive (59,000 rpm, SATA 3). The test was performed on with a Xeon E3-1230 v3 CPU (Haswell microarchitecture) and 32 GB DDR3 memory. The software environment was Ubuntu 20.04 plus Python 3.10.
+The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in size. They include **1.05 billion** alignments (lines), with 501 million unique query sequences. They were stored in a hard disk drive (59,000 rpm, SATA 3). The test was performed on with a Xeon E3-1230 v3 CPU (Haswell microarchitecture) and 32 GB DDR3 memory. The software environment was Ubuntu 20.04 with Python 3.10.
 
 Here are the benchmarks of multiple typical Woltka analyses:
 
 Analysis | Runtime | Memory
 --- | ---: | ---:
+Just decompress; don't run Woltka | 21:48 | 1.824 MB
+_Structural analysis_
 Operational genomic unit ([OGU](ogu.md)) | 34:39 | 108.4 MB
 Free-rank taxonomic classification | 40:07 | 115.1 MB
-Taxonomic classification at genus | 35:49 | 113.4 MB
-Taxonomic classification at genus, while writing gzipped read maps | 51:59 | 113.0 MB
-Taxonomic classification at three ranks: phylum, genus and species | 52.01 | 115.4 MB
-Matching reads with genes | 4:08:53 | 7.745 GB
-Matching reads with genes, reporting RPK | 4:16:31 | 11.99 GB
+Classification at genus level | 35:49 | 113.4 MB
+Classification at genus and export gzipped read maps | 51:59 | 113.0 MB
+Classification at phylum, genus and species | 52.01 | 115.4 MB
+_Functional analysis_
+Simple read-gene matching | 4:08:53 | 7.745 GB
+Simple read-gene matching, reporting RPK | 4:16:31 | 11.99 GB
 Functional profiling at UniRef entry, then GO process | 4:24:49 | 14.92 GB
+_Experimental_
+Simple read-gene matching, with Numba acceleration | 1:55:40 | 5.066 GB
 
 
 ## Tips for efficient computing
@@ -64,7 +69,7 @@ Their default values were set based on our experience. However, alternative valu
 
 ### Run separate jobs and merge results
 
-You may have hundreds of alignment files to crunch, and dozens of compute nodes to crunch with, and you realized that Woltka does not support parallel processing. However, the good news is that Woltka's output files -- profiles (feature tables) and read-to-feature maps, are merageable. Therefore, you divide your input files into multiple subsets, run Woltka on each of them, and merge results in the end. The outcome will be identical to that of running Woltka once on all files.
+You may have hundreds of alignment files to crunch, and dozens of compute nodes to crunch with, and you realized that Woltka does not support parallel processing. However, the good news is that Woltka's output files -- profiles (feature tables) and read-to-feature maps, are merageable. Therefore, you may divide your input files into multiple subsets, run Woltka on each of them, and merge results in the end. The outcome will be identical to that of running Woltka once on all files.
 
 Woltka provides a utility to conveniently merge multiple profiles:
 
@@ -156,4 +161,4 @@ Using **xz** | 2:33.65 | 10.664
 
 It is your call how to balance runtime and map file size.
 
-Warning however, converting alignments to maps will **lose alignment coordinates**, and **blocks coordinates-based analyses** (such as functional classification) (see details). If these analyses are in your plan, you should keep the alignment files.
+Warning however, converting alignments to maps will **lose alignment coordinates**, and **blocks coordinates-based read-gene matching** (see [details](ordinal.md)). If these analyses are in your plan, you should keep the alignment files.

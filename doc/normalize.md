@@ -22,9 +22,9 @@ By default, the cell values in a feature table (profile) are **counts** (**frequ
 
 Woltka has two modes of normalization, each providing all four functions mentioned above.
 
-- **First**, The normalization functions can be called as part of the main classification workflow (`woltka classify`), and directly output normalized profiles.
+1. The normalization functions can be called as part of the main classification workflow (`woltka classify`), and directly output normalized profiles.
 
-- **Alternatively**, one can perform normalization on profiles that are already generated (`woltka tools normalize`). This saves the need for rerunning the lengthy classification process.
+2. One can perform normalization on profiles that are already generated (`woltka tools normalize`). This saves the need for re-running the workflow.
 
 There is a major advantage of normalization by subject size **during** classification, as detailed below. Other than that, the two modes produce mutually identical results. See below for some examples.
 
@@ -33,7 +33,16 @@ There is a major advantage of normalization by subject size **during** classific
 
 The number of reads assigned to each classification unit can be normalized against a **subject-specific** property, which is usually size (length), but can also be other metrics depending on the specific research.
 
-During classification (as part of main workflow):
+First, prepare a subject-to-size mapping file `size.map`:
+
+```
+GCF_000123456.1 <tab> 4500000
+GCF_000987654.3 <tab> 3600000
+GCA_900537826.2 <tab> 2750000
+...
+```
+
+Normalize during classification (as part of main workflow):
 
 ```bash
 woltka classify --sizes size.map ...
@@ -43,6 +52,12 @@ Or post classification (on existing profiles):
 
 ```bash
 woltka tools normalize --sizes size.map ...
+```
+
+A special case is during coordinates-based functional classification (see [details](ordina.md)), one can use a dot (`.`) instead of a mapping file. Woltka will read gene sizes from the gene coordinates file.
+
+```bash
+woltka classify -c coords.txt --sizes . ...
 ```
 
 ### Sequence and taxonomic abundances
