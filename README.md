@@ -24,7 +24,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - Table utilities
   - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Normalize](doc/normalize.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - For users of
-  - [QIIME 2](woltka/q2), [Qiita](doc/qiita.md), [Bowtie2](doc/align.md#alignment-with-bowtie2), [SHOGUN](doc/align.md#the-shogun-protocol), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
+  - [QIIME 2](woltka/q2), [Qiita](doc/qiita.md), [Bowtie2](doc/align.md#alignment-with-bowtie2), [SHOGUN](doc/align.md#the-shogun-protocol), [RefSeq](doc/refseq.md), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
 - References
   - [Command-line interface](doc/cli.md)
   - [Computational efficiency](doc/perform.md)
