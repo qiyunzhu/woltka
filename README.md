@@ -17,10 +17,9 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - [Installation](doc/install.md)
 - [Example usage](#example-usage)
 - Tutorials
-  - [Working with WoL](doc/wol.md)
-  - [The OGU analysis](doc/ogu.md)
+  - [Working with WoL](doc/wol.md), [The OGU analysis](doc/ogu.md), [Sequence alignment](doc/align.md)
 - Main workflow
-  - [Input files](doc/input.md), [Output files](doc/output.md), [Sequence alignment](doc/align.md), [Classification systems](doc/hierarchy.md), [Classification methods](doc/classify.md), [Coordinates matching](doc/ordinal.md), [Stratification](doc/stratify.md)
+  - [Input files](doc/input.md), [Output files](doc/output.md), [Classification systems](doc/hierarchy.md), [Classification methods](doc/classify.md), [Coordinates matching](doc/ordinal.md), [Stratification](doc/stratify.md)
 - Table utilities
   - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Normalize](doc/normalize.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - For users of
