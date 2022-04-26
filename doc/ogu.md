@@ -1,4 +1,4 @@
-# OGU analysis
+# The OGU analysis
 
 The notion of "**OGU**" (**operational genomic unit**) is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. OGUs are simply the reference genomes to which input sequences are aligned. There is no need to assign taxonomy to them. This is in constrast to conventional practices, in which analyses are based on taxonomic units such as genera or species. In this sense, OGU is analogous to ASV in 16S rRNA studies.
 

@@ -14,7 +14,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 ## Contents
 
 - [Overview](#overview)
-- [Installation](#doc/install.md)
+- [Installation](doc/install.md)
 - [Example usage](#example-usage)
 - Tutorials
   - [Working with WoL](doc/wol.md)
@@ -26,9 +26,8 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - For users of
   - [QIIME 2](woltka/q2), [Qiita](doc/qiita.md), [Bowtie2](doc/align.md#alignment-with-bowtie2), [SHOGUN](doc/align.md#the-shogun-protocol), [RefSeq](doc/refseq.md), [GTDB](doc/gtdb.md), [MetaCyc](doc/metacyc.md), [KEGG](doc/kegg.md)
 - References
-  - [Command-line interface](doc/cli.md)
-  - [Computational efficiency](doc/perform.md)
-- [FAQs](#doc/faq.md)
+  - [Command-line interface](doc/cli.md), [Test datasets](woltka/tests/data), [Computational efficiency](doc/perform.md)
+- [FAQs](doc/faq.md)
 - [Citation](#citation)
 - [Contact](#contact)
 
@@ -51,7 +50,7 @@ Woltka provides several utilities for handling feature tables, including [normal
 
 Woltka does NOT **align** sequences. You need to align your sequencing data (FastQ, etc.) against a reference database (we recommend [WoL](wol.md)) using an aligner of your choice (e.g., [Bowtie2](doc/align.md#alignment-with-bowtie2)). The resulting alignment files can be fed into Woltka.
 
-Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime2.org/) for robust downstream analyses of the profiles to decode the relationships among micobial communities and with their environments.
+Woltka does NOT **analyze** profiles. We recommend using [QIIME 2](https://qiime2.org/) for robust downstream analyses of the profiles to decode the relationships among microbial communities and with their environments.
 
 Flowchart of Woltka's main classification workflow:
 
@@ -99,7 +98,7 @@ woltka classify \
   --output output_dir
 ```
 
-The mapping file (`taxid.map`) translates genome IDs to taxonomy IDs, which then allows Woltka to classify query sequences based on the NCBI taxonomy (`nodes.dmp` and `names.dmp`).
+The mapping file ([`taxid.map`](woltka/tests/data/taxonomy/taxid.map)) translates genome IDs to taxonomy IDs, which then allow Woltka to classify query sequences based on the NCBI taxonomy ([`nodes.dmp`](woltka/tests/data/taxonomy/nodes.dmp) and [`names.dmp`](woltka/tests/data/taxonomy/names.dmp)).
 
 The output directory (`output_dir`) will contain three feature tables: `phylum.biom`, `genus.biom` and `species.biom`, each representing a taxonomic profile at one of the three ranks.
 
@@ -109,15 +108,15 @@ The output directory (`output_dir`) will contain three feature tables: `phylum.b
 woltka classify \
   --input  align/bowtie2 \
   --coords function/coords.txt.xz \
-  --map    function/uniref.map.xz \
+  --map    function/uniref/uniref.map.xz \
   --map    function/go/process.tsv.xz \
   --rank   uniref,process \
   --output output_dir
 ```
 
-Here, the input files are still **read-to-genome** alignments, rather than read-to-gene ones. Woltka matches reads with genes based on their coordinates on genomes using an efficient [algorithm](doc/ordinal.md). The gene coordinates are given by the database file `coords.txt` (see [details](doc/ordinal.md)). The read coordinates are extracted from the alignment files. This ensures consistency between structural and functional analyses.
+Here, the input files are still **read-to-genome** alignments, rather than read-to-gene ones. Woltka matches reads with genes based on their coordinates on genomes using an efficient [algorithm](doc/ordinal.md). The gene coordinates are given by the database file [`coords.txt`](woltka/tests/data/function/coords.txt.xz) (see [details](doc/ordinal.md)). The read coordinates are extracted from the alignment files. This ensures consistency between structural and functional analyses.
 
-Subsequently, Woltka is able to assign query sequences to functional units, as defined in mapping files (`uniref.map` and `go/process.tsv`). As you can see, compressed files are supported and auto-detected.
+Subsequently, Woltka is able to assign query sequences to functional units, as defined in mapping files ([`uniref.map`](woltka/tests/data/function/uniref/uniref.map.xz) and [`process.tsv`](woltka/tests/data/function/go/process.tsv.xz)). As you can see, compressed files are supported and auto-detected.
 
 Similarly, the output files are two functional profiles: `uniref.biom` and `process.biom`.
 
