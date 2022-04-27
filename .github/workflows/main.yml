@@ -40,6 +40,6 @@ jobs:
         run: coverage run -m unittest
 
       - name: Coveralls
-        run: coveralls --service=github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
