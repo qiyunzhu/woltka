@@ -1,6 +1,6 @@
 # Test Datasets and Commands
 
-Test datasets, including reference genome and taxonomy databases, query sequencing data are based on a a collection of 107 NCBI-defined "reference" bacterial genomes. The database is available for download at:
+The test datasets, including reference genome sequences, taxonomy, and input sequencing data are based on a a collection of 107 NCBI-defined ["reference"](https://www.ncbi.nlm.nih.gov/refseq/about/prokaryotes/#reference_genomes) bacterial genomes.
 
 ## Align
 
@@ -10,7 +10,7 @@ Here "alignment" refers to the operation of aligning short DNA sequences (**read
 
 The query sequences are five samples (S01 to S05) of 150 bp paired-end reads simulated using [CAMISIM](https://github.com/CAMI-challenge/CAMISIM/). The ground-truth mapping of reads against original genomes and locations are provided in `truth`.
 
-Five aligners were used: [BLASTn](https://blast.ncbi.nlm.nih.gov/Blast.cgi), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [Centrifuge](https://ccb.jhu.edu/software/centrifuge/), [DIAMOND](http://diamondsearch.org/index.php), and [BURST](https://github.com/knights-lab/BURST). In particular, `bowtie2` used the Bowtie2 program default, whereas `bt2sho` used the Bowtie2 parameter setting recommended by SHOGUN. The mappings between reads and genomes are provided by each alignment file. `diamond` mapped reads to reference genes instead of genomes.
+Five aligners were used: [BLASTn](https://blast.ncbi.nlm.nih.gov/Blast.cgi), [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml), [Centrifuge](https://ccb.jhu.edu/software/centrifuge/), [DIAMOND](http://diamondsearch.org/index.php), and [BURST](https://github.com/knights-lab/BURST). In particular, `bowtie2` used the Bowtie2 program with its default setting, whereas `bt2sho` used the Bowtie2 parameters recommended by SHOGUN. The mappings between reads and genomes are provided by each alignment file. `diamond` mapped reads to reference genes instead of genomes.
 
 In addition, `burst/split` is the mapping against **genes** annotated from the reference genomes (not genomes themselves).
 
@@ -42,13 +42,13 @@ In addition, `nucl/` contains the mappings from nucleotide sequence accessions (
 
 Woltka output files generated from the provided alignments and classification systems. The commands for generating those files are:
 
-`bowtie2.ogu.tsv`:
+`bowtie2.ogu.tsv`: Generate an [OGU table](../../../doc/ogu.md) (just assign, don't classify).
 
 ```bash
 woltka classify -i align/bowtie2 -o bowtie2.ogu.tsv
 ```
 
-`bowtie2.free.tsv`:
+`bowtie2.free.tsv`: [Free-rank](../../../doc/classify.md#2-free-rank-classification---rank-free) classification
 
 ```bash
 woltka classify \
@@ -59,7 +59,7 @@ woltka classify \
   --output bowtie2.free.tsv
 ```
 
-`bowtie2.free.1p.tsv`:
+`bowtie2.free.1p.tsv`: [Filter](../../../doc/filter.md) out features with <1% per-sample abundance.
 
 ```bash
 woltka tools filter \
@@ -68,7 +68,7 @@ woltka tools filter \
   --output bowtie2.free.1p.tsv
 ```
 
-`blastn.species.tsv`:
+`blastn.species.tsv`: Taxonomic profiling of a [multiplexed](../../../doc/input.md#demultiplexing) alignment file using a Greengenes-style [lineage](../../../doc/hierarchy.md#3-lineage-strings---lineage) file.
 
 ```bash
 woltka classify \
@@ -93,13 +93,15 @@ woltka classify \
   --output burst.genus.tsv
 ```
 
-`burst.genus.map/`: Same as above, adding:
+`burst.genus.map/`: Write [read-to-genus mapping](../../../doc/output.md#output-read-maps) files.
+
+Same as above, adding:
 
 ```bash
 --outmap burst.genus.map
 ```
 
-`bt2sho.phylo.tsv`
+`bt2sho.phylo.tsv`: Classify sequences using a [phylogenetic tree](../../../doc/hierarchy.md#2-newick-tree---newick). Resulting features are tips and internal nodes of the tree.
 
 ```bash
 woltka classify \
@@ -110,7 +112,7 @@ woltka classify \
   --output bt2sho.phylo.tsv
 ```
 
-`bt2sho.order.cpm.tsv`
+`bt2sho.order.cpm.tsv`: Feature frequencies are [normalized by genome length](../../../doc/normalize.md#normalization-by-subject-size), transformed to the unit of CPM (counts per million), rounded to 3 digits after the decimal point.
 
 ```bash
 woltka classify \
@@ -125,7 +127,7 @@ woltka classify \
   --output bt2sho.order.cpm.tsv
 ```
 
-`burst.process.tsv`:
+`burst.process.tsv`: Functional profiling to GO biological processes.
 
 ```bash
 woltka classify \
@@ -137,13 +139,15 @@ woltka classify \
   --output burst.process.tsv
 ```
 
-`burst.genus.process.tsv`: Same as above, adding:
+`burst.genus.process.tsv`: [Stratify](../../../doc/stratify.md) functional units by taxonomic units.
+
+Same as above, adding:
 
 ```bash
 --stratify burst.genus.map
 ```
 
-`split.genus.tsv`:
+`split.genus.tsv`: Input are read-to-gene alignments. Translate gene IDs to host chromosome IDs (by trimming at `_`), then perform taxonomic profiling.
 
 ```bash
 woltka classify \
@@ -157,7 +161,7 @@ woltka classify \
   --output split.genus.tsv
 ```
 
-`split.process.tsv`:
+`split.process.tsv`: Input are read-to-gene alignments. Perform functional profiling.
 
 ```bash
 woltka classify \
@@ -168,7 +172,7 @@ woltka classify \
   --output split.process.tsv
 ```
 
-`merged.process.tsv`:
+`merged.process.tsv`: [Merge](../../../doc/merge.md) two profiles.
 
 ```bash
 woltka tools merge \
@@ -177,7 +181,7 @@ woltka tools merge \
   --output merged.process.tsv
 ```
 
-`diamond.free.tsv`
+`diamond.free.tsv`: Input are read-to-protein alignments. Perform taxonomic profiling.
 
 ```bash
 woltka classify \
@@ -189,7 +193,7 @@ woltka classify \
   --output diamond.free.tsv
 ```
 
-`diamond.function.tsv`
+`diamond.function.tsv`: Input are read-to-protein alignments. Perform functional profiling.
 
 ```bash
 woltka classify \
@@ -200,7 +204,7 @@ woltka classify \
   --output diamond.function.tsv
 ```
 
-`bt2sho.component.rpk.tsv`
+`bt2sho.component.rpk.tsv`: Perform functional profiling, [normalize](../../../doc/normalize.md) gene frequencies by gene lengths, then transform to the unit of RPK (reads per kilobases).
 
 ```bash
 woltka classify \
@@ -215,7 +219,7 @@ woltka classify \
   --output bt2sho.component.rpk.tsv
 ```
 
-`truth.gene.tsv`
+`truth.gene.tsv`: Input are ground truth. Perform simple [read-gene matching](../../../doc/ordinal.md).
 
 ```bash
 woltka classify \
@@ -224,7 +228,7 @@ woltka classify \
   --output truth.gene.tsv
 ```
 
-`truth.uniref.tsv`
+`truth.uniref.tsv`: Perform functional profiling by UniRef entries.
 
 ```bash
 woltka classify \
@@ -236,7 +240,7 @@ woltka classify \
   --output truth.uniref.tsv
 ```
 
-Or:
+Or, instead of doing the one-step classification workflow, [collapse](../../../doc/collapse.md) an existing per-gene profile into a UniRef profile.
 
 ```bash
 woltka tools collapse \
@@ -246,7 +250,7 @@ woltka tools collapse \
   --output truth.uniref.tsv
 ```
 
-`truth.goslim.tsv`
+`truth.goslim.tsv`: Further collapse the UniRef profile into a [GO Slim](https://www.ebi.ac.uk/QuickGO/help/slims) profile. The program can handle one-to-many mappings (e.g., one GO term can be assigned to multiple GO Slim terms).
 
 ```bash
 woltka tools collapse \

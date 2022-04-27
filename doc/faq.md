@@ -46,8 +46,6 @@ Not out-of-the-box. But you can use the following AWK trick to convert a PAF fil
 cat input.paf | awk -v OFS="\t" '{print $1,$6,0,$11,0,0,$3+1,$4,$8+1,$9,0,$12}' | woltka classify -i - -o output.biom
 ```
 
-
-
 ### I ran `woltka classify -i input.fastq ...`, and got an error saying it cannot determine alignment file format. Why?
 
 Woltka takes alignment files as input, NOT original sequencing data (FASTQ, FASTA, etc.). You need to perform alignment on the sequencing data by yourself, such as:
@@ -93,6 +91,10 @@ woltka classify ... --frac
 
 See [here](normalize.md) for details.
 
+### Can Woltka report cell values in the units of CPM, RPK, and TPM?
+
+Yes. See [here](normalize.md) for methods.
+
 ### I ran Woltka separately on multiple subsets of data. Can I merge the results?
 
 Yes. The `woltka tools merge` command is for you. See [here](merge.md) for details.
@@ -100,6 +102,7 @@ Yes. The `woltka tools merge` command is for you. See [here](merge.md) for detai
 ### Can Woltka report taxon names instead of TaxIDs when using NCBI taxonomy?
 
 Yes. Add `--name-as-id` to the command? See [here](output.md) for details.
+
 
 ## Hierarchies
 

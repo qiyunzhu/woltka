@@ -1,17 +1,16 @@
-# OGU analysis
+# The OGU analysis
 
-The notion of "**OGU**" (**operational genomic unit**) is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. OGUs are simply the reference genomes to which input sequences are aligned. There is no need to assign taxonomy to them. This is in constrast to conventional practices, in which analyses are based on taxonomic units such as genera or species. In this sense, OGU is analogous to ASV in 16S rRNA studies.
+The notion of "**OGU**" (**operational genomic unit**) is the minimal unit for community ecology studies based on shotgun metagenome or other forms of whole-genome microbiome data. OGUs are simply the reference genomes to which input sequences are aligned. There is no need to assign taxonomy to them. This is in contrast to conventional practices, in which analyses are based on taxonomic units such as genera or species. In this sense, OGU is analogous to ASV in 16S rRNA studies.
 
 The advantages of using OGUs include:
 
 1. Highest-possible resolution.
 2. Independent from taxonomy, which is coarse and can be error-prone as a classification system.
-3. Allowing for phylogeny-aware analyses such as Faith’s PD and UniFrac. This is enhanced by our "Web of Life" ([WoL](https://biocore.github.io/wol/)) reference phylogeny, or any similar works.
+3. Allowing for phylogeny-aware analyses such as Faith's PD and UniFrac. This is enhanced by our "Web of Life" ([WoL](https://biocore.github.io/wol/)) reference phylogeny, or any similar works.
 
 The OGU analysis was explained, benchmarked and discussed in:
 
 - Zhu Q, Huang S, Gonzalez A, McGrath I, McDonald M, Haiminen N, Armstrong G, et al. [Phylogeny-aware analysis of metagenome community ecology based on matched reference genomes while bypassing taxonomy.](https://journals.asm.org/doi/10.1128/msystems.00167-22) _mSystems_. 2022. e00167-22.
-
 
 
 ## Contents
@@ -40,15 +39,16 @@ Then one can run Woltka to convert the alignment file(s) into an OGU table:
 woltka classify -i bt2out -o table.biom
 ```
 
-The output file `table.biom` is a BIOM table with rows as genome IDs (OGUs), columns as sample IDs, and cell values as counts of OGUs in samples.
+The output file `table.biom` is a BIOM table with rows as genome IDs (OGUs), columns as sample IDs, and cell values as counts of OGUs in individual samples.
 
-If necessary, you may convert a BIOM table into a tab-delimited file:
+If needed, you may convert a BIOM table into a tab-delimited file:
 
 ```bash
 biom convert --to-tsv -i table.biom -o table.tsv
 ```
 
 Note: [**Qiita**](https://qiita.ucsd.edu/) implements the WoL database and a Woltka workflow, which performs sequence alignment using the [SHOGUN protocol](align.md#the-shogun-protocol). If you are a Qiita user, the alignment file can be automatically generated and downloaded from the Qiita interface. See [details](qiita.md).
+
 
 ## OGU analysis using QIIME 2
 
@@ -71,9 +71,14 @@ qiime diversity core-metrics-phylogenetic \
   --output-dir .
 ```
 
+Most (if not all) QIIME 2 analyses designed for 16S rRNA data (ASV or OTU) also apply to OGUs. Please refer to the [QIIME 2 documentation](https://docs.qiime2.org/) for tutorials and references.
+
+
 ## Alignment ambiguity
 
-It is quite common that one query sequence can be aligned to multiple reference genomes. In such cases, Woltka by default counts each OGU as 1 / _k_, where _k_ is the total number of matching genomes.
+It is quite common that one query sequence can be aligned to multiple reference genomes. Bowtie2 by default reports one hit per query. The [SHOGUN protocol](align.md#the-shogun-protocol) reports up to 16 hits. Other programs and protocols have their own ways of dealing with multiple hits.
+
+In such cases, Woltka by default counts each OGU as 1 / _k_, where _k_ is the total number of matching genomes.
 
 Alternatively, one may choose to discard all non-unique matches, by adding a flag:
 
@@ -81,20 +86,21 @@ Alternatively, one may choose to discard all non-unique matches, by adding a fla
 woltka classify --uniq -i input_dir -o output.biom
 ```
 
+
 ## Custom alignment
 
-Technically, one can use any sequence aligners and reference genome databases to generate alignment files which can then be converted into an OGU table. We cannot validate the goodness of outcome, but understand that you may have this intention considering the consistency with existing parts of your analytical pipeline. For examples:
+Technically, one can use any sequence aligners and reference genome databases to generate alignment files, which can then be converted into an OGU table. We cannot validate the goodness of outcome, but understand that you may have this intention considering the consistency with existing parts of your analytical pipeline. For examples:
 
 ```bash
 bwa mem refseq.fna input.R1.fq input.R2.fq > output.sam
 ```
 
 ```bash
-blastn -db refseq_genomes -query input.fa -max_target_seqs 1 -outfmt 6 -out output.txt
+blastn -db refseq_genomes -query input.fa -max_target_seqs 16 -outfmt 6 -out output.txt
 ```
 
-However, most of these protocols generate mappings of reads to nucleotides (e.g., chromosomes or scaffolds), rather than to genomes. In order to produce OGUs, one needs to supply Woltka with a nucleotide-to-genome mapping file (`nucl2g.txt`, example provided under [`taxonomy/nucl`](woltka/tests/data/taxonomy/nucl)):
+In multiple reference genome databases, subject sequences are individual nucleotide sequences (e.g., chromosomes or scaffolds) instead of whole genomes. In order to produce OGUs, one needs to supply Woltka with a sequence-to-genome mapping file (`nucl2g.txt`, example provided under [`taxonomy/nucl`](woltka/tests/data/taxonomy/nucl)):
 
 ```bash
-woltka classify --map nucl2g.txt -i input_dir -o output.biom
+woltka classify -m nucl2g.txt -i input_dir -o output.biom
 ```

@@ -13,7 +13,7 @@ jobs:
       max-parallel: 5
       matrix:
         os: ['ubuntu']
-        python-version: ['3.6']
+        python-version: ['3.8']
 
     steps:
       - uses: actions/checkout@v2
@@ -28,7 +28,7 @@ jobs:
         run: conda install --file ci/conda_requirements.txt 
 
       - name: Install CI packages
-        run: conda install pycodestyle coveralls
+        run: conda install pycodestyle coverage
 
       - name: Install program
         run: pip install -e .
@@ -37,9 +37,10 @@ jobs:
         run: pycodestyle .
 
       - name: Run unit tests
-        run: coverage run -m unittest
+        run: coverage run -m unittest && coverage lcov
 
       - name: Coveralls
-        run: coveralls --service=github
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: coverage.lcov
