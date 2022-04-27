@@ -28,7 +28,7 @@ jobs:
         run: conda install --file ci/conda_requirements.txt 
 
       - name: Install CI packages
-        run: conda install pycodestyle coveralls
+        run: conda install pycodestyle coverage
 
       - name: Install program
         run: pip install -e .
