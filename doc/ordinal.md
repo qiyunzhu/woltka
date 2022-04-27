@@ -1,27 +1,42 @@
-# Coordinates-based classification
+# "Coord-match" functional profiling
 
-Woltka combines the two fundamental analyses in metagenomics: Structural profiling (mapping reads to **genomes**) and functional profiling (mapping reads to functional **genes**) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
+Woltka combines the two fundamental analyses in metagenomics: **Structural** profiling (mapping reads to _genomes_) and **functional** profiling (mapping reads to functional _genes_) into one run. This saves compute, ensures consistency, and allows for stratification which is essential for understanding functional diversity across the microbial community.
 
-This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their **coordinates** on the host genome. The algorithm matches reads and genes in an [ordinal](https://en.wikipedia.org/wiki/Ordinal_number) scale, with the efficiency of _O_(_n_+_m_) (_n_ and _m_ are numbers of reads and genes), therefore suitable for handling large microbiome datasets and databases.
+This is achieved by an efficient algorithm implemented in Woltka, which matches read alignments and annotated genes based on their **coordinates** on the host genome. The algorithm matches reads and genes in an [ordinal](https://en.wikipedia.org/wiki/Ordinal_number) scale, with computational efficiency close to linear (_O_(_n_+_m_), in which _n_ and _m_ are numbers of reads and genes), therefore suitable for handling large microbiome datasets and databases.
+
 
 ## Contents
 
-- [Input alignments](#input-alignments)
+- [Overview](#overview)
 - [Gene coordinates](#gene-coordinates)
-- [Classification system](#classification-system)
-- [Matching threshold](#natching-threshold)
+- [Matching threshold](#matching-threshold)
+- [Unit conversion](#unit-conversion)
+- [Functional catalogs](#functional-catalogs)
+- [Pathway coverage](#pathway-coverage)
+- [Stratification](#stratification)
 
 
-## Input alignments
+## Overview
 
-The alignment files must contains the information of alignment coordinates. Both SAM and BLAST formats (detailed [here](input.md)) have this information. They can just be supplied in the regular way.
+Running "coord-match" functional profiling is nearly identical to that of structural profiling, plus one additional parameter: `--coords`, which points to the coordinates of genes on host genomes, and enables the program to match reads with genes. In addition to this step, one can provide a hierarchical classification system ([details](hierarchy.md)). It won't be taxonomy or phylogeny, but it can be a functional catalog such as UniRef, GO, KEGG or MetaCyc.
+
+A typical command is like (see [more examples](../woltka/tests/data)):
+
+```bash
+woltka classify \
+  --input  indir \
+  --coords coords.txt \
+  --map    gene2func.map \
+  --rank   func \
+  --output func.biom
+```
 
 
 ## Gene coordinates
 
-One needs to provide Woltka with a table of gene coordinates on host genomes. Supported formats include:
+The gene coordinates (ID, start and end) are provided in a file, in either of the following two formats:
 
-Native NCBI annotations and accessions:
+1\. Native NCBI annotations and accessions:
 
 ```
 ## GCF_000005825.2
@@ -33,7 +48,7 @@ WP_012957021.1  3971    5086
 ...
 ```
 
-WoL reannotations (available for [download](https://biocore.github.io/wol/)), in which nucleotides of each genome are concatenated, and a numeric index is used to identify each gene. Woltka will automatically prefix these numbers with the genome ID, such as `G000006745_1`.
+2\. WoL reannotations (available for [download](wol.md)), in which nucleotide sequences (chromosomes, scaffolds, or contigs) of each genome are concatenated, and a numeric index is used to identify each gene. Woltka will automatically prefix these numbers with the genome ID, such as `G000006745_1`.
 
 ```
 >G000006745
@@ -44,29 +59,108 @@ WoL reannotations (available for [download](https://biocore.github.io/wol/)), in
 5       4629    4492
 ```
 
-Compressed files are supported.
+The three columns are IDs, starting and ending coordinates. The coordinates are 1-based and inclusive. For example, `ID <tab> 1 <tab> 100` represents the first 100 bp of a genome. The order of start/end coordinates (i.e., strand) is arbitrary. Compressed files are supported.
 
+With this file (and without any annotation), one can perform read-gene matching by this simple command:
 
-## Classification system
-
-The same as the regular ones detailed [here](hierarchy.md), but subject IDs are gene IDs instead of genomes. For examples, `WP_012957018.1` or `G000006745_1`.
+```bash
+woltka classify -i indir -c coords.txt -o gene.biom
+```
 
 
 ## Matching threshold
 
-Woltka considers a read-to-gene match if their **overlapping** region reaches a percentage threshold of the entire alignment. This is controled by the parameter `--overlap`. The default value is 80 (%).
+Woltka considers a read-to-gene match if their **overlapping** region reaches a percentage threshold of the entire read. This is controlled by the parameter `--overlap`. The default value is 80 (%).
+
+For example, to increase discovery rate, one can do:
+
+```bash
+woltka classify -i indir -c coords.txt --overlap 50 -o gene.biom
+```
+
+Note however, this doesn't necessarily mean higher sensitivity and lower precision. This is because reads were aligned to the genome, NOT the genes. The alignment quality was already controlled during the [alignment](align.md) step. This number only stands for how much of a read happen sits inside a gene vs. the intergenic region.
 
 
-## Example command
+## Unit conversion
 
-With the coordinates file, one can streamline the read-to-gene matching step into a Woltka protocol. Here is an example for functional profiling:
+In a Woltka generated profile, the cell values are frequencies by default. This is a direct measurement of how much "DNA mass" are assigned to each feature (gene), and this is usually relevant in modeling microbial communities. However, other research fields may have different standards in reporting the numbers. For example, in a functional profile generated by [HUMAnN](https://huttenhower.sph.harvard.edu/humann/), the cell values are in the unit of **RPK** (reads per kilobase). This unit measures how many copies of the gene are present in a sample.
+
+To have Woltka report RPK instead of raw counts, do the following. This will divide frequencies by gene length, multiply by 1000, and keep 3 digits after the decimal point, which makes it RPK.
+
+```bash
+woltka classify -i indir -c coords.txt --sizes . --scale 1k --digits 3 -o rpk.biom
+```
+
+One can further convert RPK into **TPM** (transcripts per kilobase million) by the following command, which divides individual RPK values by the total RPK per sample, and multiplies them by 1 million.
+
+```bash
+woltka tools normalize -i rpk.biom --scale 1M -o tpm.biom
+```
+
+See here for more details about [data normalization](normalize.md).
+
+
+## Functional catalogs
+
+The classification system used for functional profiling can be provided in the same format(s) as the ones for structural profiling (detailed [here](hierarchy.md)). One thing to note is that the subject IDs should be gene IDs instead of genome ID. For examples, `WP_012957018.1` or `G000006745_1`.
+
+In a typical structural analysis, the classification system usually stands as a whole, hierarchical system. Examples are taxonomy and phylogeny. However, in a functional analysis, the classification system is usually a set of **mapping files** that "stack" up the functional units level by level.
+
+For example, if you use the [MetaCyc](https://metacyc.org/) functional catalog, the order of "stacking" is:
+
+- ORF -> protein (family) -> enzrxn (enzymatic reaction) -> reaction -> pathway -> super pathway
+
+You will need to provide one mapping file per level to translate lower-level units into higher-level ones. In this example, an all-in-one command is like:
 
 ```bash
 woltka classify \
+  --input  indir \
   --coords coords.txt \
-  --overlap 95 \
-  --map gene2function.txt \
-  --map function2pathway.txt \
-  --rank function,pathway \
-  ...
+  --map    gene-to-protein.map \
+  --map    protein-to-enzrxn.map \
+  --map    enzrxn-to-reaction.map \
+  --map    reaction-to-pathway.map \
+  --map    pathway-to-super.map \
+  --rank   gene,protein,enzrxn,reaction,pathway,super \
+  --output outdir
 ```
+
+This will generate profiles at different levels all at once.
+
+An alternative way is to only generate the gene-level profile using the `classify` workflow. Later, one can collapse it using different functional catalogs as needed, using Woltka's [`collapse`](collapse.md) command. For example:
+
+```bash
+woltka classify -i indir -c coords.txt -o gene.biom
+woltka tools collapse -i gene.biom     -m gene-to-protein.map     -o protein.biom
+woltka tools collapse -i protein.biom  -m protein-to-enzrxn.map   -o enzrxn.biom
+woltka tools collapse -i enzrxn.biom   -m enzrxn-to-reaction.map  -o reaction.biom
+woltka tools collapse -i reaction.biom -m reaction-to-pathway.map -o pathway.biom
+woltka tools collapse -i pathway.biom  -m pathway-to-super.map    -o super.biom
+```
+
+In the [WoL data release](wol.md), there are pre-built mappings to UniRef, GO, MetaCyc, KEGG and more.
+
+
+## Pathway coverage
+
+It is a frequent goal to assess the abundances of individual metabolic pathways in the microbiome. However, a pathway only makes sense when all (or an essential subset) of its member enzymes are present. Woltka can calculate the percent **coverage** of pathways based on the presence/absence of member genes as follows:
+
+```bash
+woltka tools coverage -i gene.biom -m pathway-to-genes.txt -o pathway_coverage.biom
+```
+
+See [here](coverage.md) for details of coverage calculation.
+
+
+## Stratification
+
+It is an attractive idea to figure out which genes are present in which organisms. This can be achieved using an **stratification** analysis that combines both structural and function analyses. In Woltka, this can be done using two steps, like:
+
+```bash
+woltka classify -i indir -m genome-to-species.map -o species.biom --outmap species_map
+woltka classify -i indir -c coords.txt -m gene-to-pathway.map --stratify species_map -o pathway_by_species.biom
+```
+
+In the output profile, the features will be like `species_A|pathway_X`. This helps with the investigation of the functional capacities of individual microbial groups.
+
+See [here](stratify.md) for details of stratification.
