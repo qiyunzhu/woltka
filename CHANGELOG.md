@@ -1,9 +1,18 @@
 # Change Log
 
-## Version 0.1.4 (ongoing)
+## Version 0.1.4 (04/27/2022)
 
 ### Changed
-- Used a single integer to store gene and read information in the ordinal mapper; use bitwise operations to parse the information. This significantly reduced memory consumption and runtime.
+- Used a single integer to store gene and read information in the ordinal mapper; use bitwise operations to parse the information. This significantly reduced memory consumption (#142).
+- Improved alignment file processing efficiency (#153).
+- Updated installation protocol. Currently a single `pip install` command should suffice (#145).
+- Updated GitHub Actions test from Python 3.6 to Python 3.8. The program itself should continue to support Python 3.6+ (#158).
+
+### Added
+- Added a naive algorithm for read-gene matching when the number of reads is small. This improves speed (#148).
+- Added support for stdin as input. This lets the program take a variety of previously unsupported alignment formats (#155).
+- Added or updated several pieces of documentation, such as a RefSeq tutorial (#157).
+- Experimentally added a much accelerated ordinal mapper, powered by NumPy and Numba (branch `numba`) (#152).
 
 
 ## Version 0.1.3 (08/27/2021)

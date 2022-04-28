@@ -22,7 +22,7 @@ The original, full MetaCyc database is available for download from the [official
 
 ## Protein profiling
 
-The following command utilizes Woltka's [ordinal classification](ordinal.md) function to classify sequences to **proteins** -- the entry point of the MetaCyc hierarchies.
+The following command utilizes Woltka's [coord matching](ordinal.md) function to classify sequences to **proteins** -- the entry point of the MetaCyc hierarchies.
 
 ```bash
 woltka classify \
