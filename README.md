@@ -19,7 +19,7 @@ Woltka ships with a **QIIME 2 plugin**. [See here for instructions](woltka/q2).
 - Tutorials
   - [Working with WoL](doc/wol.md), [The OGU analysis](doc/ogu.md), [Sequence alignment](doc/align.md)
 - Main workflow
-  - [Input files](doc/input.md), [Output files](doc/output.md), [Classification systems](doc/hierarchy.md), [Classification methods](doc/classify.md), [Coordinates matching](doc/ordinal.md), [Stratification](doc/stratify.md)
+  - [Input files](doc/input.md), [Output files](doc/output.md), [Classification systems](doc/hierarchy.md), [Classification methods](doc/classify.md), ["Coord-match" functional profiling](doc/ordinal.md), [Stratification](doc/stratify.md)
 - Table utilities
   - [Collapse](doc/collapse.md), [Coverage](doc/coverage.md), [Normalize](doc/normalize.md), [Filter](doc/filter.md), [Merge](doc/merge.md)
 - For users of
@@ -113,7 +113,7 @@ woltka classify \
   --output output_dir
 ```
 
-Here, the input files are still **read-to-genome** alignments, rather than read-to-gene ones. Woltka matches reads with genes based on their coordinates on genomes using an efficient [algorithm](doc/ordinal.md). The gene coordinates are given by the database file [`coords.txt`](woltka/tests/data/function/coords.txt.xz) (see [details](doc/ordinal.md)). The read coordinates are extracted from the alignment files. This ensures consistency between structural and functional analyses.
+Here, the input files are still **read-to-genome** alignments, rather than read-to-gene ones. Woltka matches reads with genes based on their coordinates on genomes using an efficient algorithm (["coord-match"](doc/ordinal.md)). The gene coordinates are given by the database file [`coords.txt`](woltka/tests/data/function/coords.txt.xz) (see [details](doc/ordinal.md)). The read coordinates are extracted from the alignment files. This ensures consistency between structural and functional analyses.
 
 Subsequently, Woltka is able to assign query sequences to functional units, as defined in mapping files ([`uniref.map`](woltka/tests/data/function/uniref/uniref.map.xz) and [`process.tsv`](woltka/tests/data/function/go/process.tsv.xz)). As you can see, compressed files are supported and auto-detected.
 

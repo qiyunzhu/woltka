@@ -54,7 +54,7 @@ Or post classification (on existing profiles):
 woltka tools normalize --sizes size.map ...
 ```
 
-A special case is during coordinates-based functional classification (see [details](ordina.md)), one can use a dot (`.`) instead of a mapping file. Woltka will read gene sizes from the gene coordinates file.
+A special case is during "coord-match" functional classification (see [details](ordina.md)), one can use a dot (`.`) instead of a mapping file. Woltka will read gene sizes from the gene coordinates file.
 
 ```bash
 woltka classify -c coords.txt --sizes . ...
