@@ -17,7 +17,7 @@ To date, all Woltka versions (0.1.0 to 0.1.4) generate **identical** output file
 
 ### How many CPU cores does Woltka use?
 
-Woltka works the best with two CPU cores: one for file decompression and the other for classification. This happens automatically. See [here](perform,md#keep-external-decompressors-on) for details.
+Woltka works the best with two CPU cores: one for file decompression and the other for classification. This happens automatically. See [here](perform.md#keep-external-decompressors-on) for details.
 
 ### Does Woltka support multiprocessing?
 

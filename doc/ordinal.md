@@ -97,6 +97,8 @@ One can further convert RPK into **TPM** (transcripts per kilobase million) by t
 woltka tools normalize -i rpk.biom --scale 1M -o tpm.biom
 ```
 
+- **Note**: This TPM is equivalent to HUMAnN's **CPM** (copies per million; not to be confused with counts per million, see HUMAnN's [documentation](https://github.com/biobakery/humann#humann_renorm_table) for details). However see an important [note](classify.md@considerations) here.
+
 See here for more details about [data normalization](normalize.md).
 
 

@@ -115,7 +115,7 @@ You will get three output files: `phylum.biom`, `genus.biom` and `species.biom`.
 **Note**: There three files are automatically generated in Qiita's Woltka workflow (see above).
 
 
-## Coordinates-based gene profiling
+## "Coord-match" gene profiling
 
 Woltka implements an efficient algorithm which assigns query sequences to open reading frames (ORFs) of the reference genomes based on coordinates matching. See [details](ordinal.md). This new feature combines taxonomic and functional analyses of the microbiome in one alignment step, ensuring consistency and also improving accuracy (manuscript in preparation).
 

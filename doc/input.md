@@ -17,7 +17,7 @@ Also check out this [guideline](align.md) for sequence alignment generation.
 
 Parameter `--input` or `-i` is to let Woltka know where to find the input alignment file(s). It can be any of the following four scenarios:
 
-1\. A **directory**. Woltka will search this directory for alignment files, and treat each of them as _one sample_. An example is below. If not all files in the directory are alignments, one may specify a filename pattern (see [details](#filename-patterns)) to include alignments only.
+1\. A **directory**. Woltka will search this directory for alignment files, and treat each of them as _one sample_. An example is below. If not all files in the directory are alignments, one may specify a filename pattern (see [details](#filename-pattern)) to include alignments only.
 
 ```
 align/

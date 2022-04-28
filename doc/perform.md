@@ -24,13 +24,13 @@ Rules of thumb:
 - Woltka's memory consumption is determined by 1) the size of the reference database, and 2) the complexity of the microbiome communities (i.e., the size of the feature table). It is independent from the size of the input alignments.
 - Woltka analyses are I/O-intensive. Performance of disk and memory matter.
 - Woltka works the best with **two threads**: one for decompression and the other for classification.
-- Coordinates-based functional analysis takes several folds more time than simple structural analysis.
+- "Coord-match" functional analysis takes several folds more time than simple structural analysis.
 
 For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which includes 10,575 genomes, the memory consumption is **<128 MB** for structural classification, and **<16 GB** for coordinates-based functional classification.
 
 ## Benchmarks on a typical dataset
 
-**TL;DR**: It takes 10 min (structural analysis) or 1 hr (coordinates-based functional analysis) For every 10 GB gzipped SAM files.
+**TL;DR**: It takes 10 min (structural analysis) or 1 hr ("coord-match" functional analysis) For every 10 GB gzipped SAM files.
 
 In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) following the [SHOGUN](align.md#the-shogun-protocol) protocol against the Web of Life ([WoL](wol.md)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
 
@@ -115,7 +115,7 @@ If necessary, you can disable the calling of external programs using the `--no-e
 
 ### Parse alignments as simple maps
 
-Woltka currently supports three formats of alignment: BLAST (b6o), SAM and simple map of "query \<tab\> subject". For the former two, Woltka can extract alignment coordinates which are need for coordinates-based classification. However, this is not needed for plain classification.
+Woltka currently supports three formats of alignment: BLAST (b6o), SAM and simple map of "query \<tab\> subject". For the former two, Woltka can extract alignment coordinates which are need for "coord-match" classification. However, this is not needed for plain classification.
 
 For the "simple map" format, Woltka will parse first two columns and query and subject while discarding remaining one. If your alignment files suffice the format of "query \<tab\> subject \<tab\> whatever" (for example, **BLAST** files fall into this category), you can force Woltka to parse it as a simple map, using parameter `--format map`. This will improve the speed of parsing those files.
 
@@ -161,4 +161,4 @@ Using **xz** | 2:33.65 | 10.664
 
 It is your call how to balance runtime and map file size.
 
-Warning however, converting alignments to maps will **lose alignment coordinates**, and **blocks coordinates-based read-gene matching** (see [details](ordinal.md)). If these analyses are in your plan, you should keep the alignment files.
+Warning however, converting alignments to maps will **lose alignment coordinates**, and **blocks "coord-match"** (see [details](ordinal.md)). If these analyses are in your plan, you should keep the alignment files.

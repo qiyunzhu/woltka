@@ -43,7 +43,7 @@ Type `woltka` to check if installation is successful, in which case command-line
 
 ## Acceleration
 
-Woltka has a [Numba](https://numba.pydata.org/)-accelerated version (the [numba](https://github.com/qiyunzhu/woltka/tree/numba) branch) in parallel to the master branch. In this version, the coordinates-based read-gene matching (see [details](ordinal.md)) is significantly faster and consumes less memory. To use this feature, install Woltka using the following commands instead:
+Woltka has a [Numba](https://numba.pydata.org/)-accelerated version (the [numba](https://github.com/qiyunzhu/woltka/tree/numba) branch) in parallel to the master branch. In this version, the "coord-match" algorithm for functional analysis (see [details](ordinal.md)) is significantly faster and consumes less memory. To use this feature, install Woltka using the following commands instead:
 
 ```bash
 conda install -c conda-forge numba biom-format
