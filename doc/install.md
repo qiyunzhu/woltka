@@ -25,13 +25,22 @@ Option 1: Install the latest release using [pip](https://pypi.org/project/pip/):
 pip install woltka
 ```
 
-Option 2: Install the current development from GitHub:
+Option 2: Install the latest release from [Bioconda](https://bioconda.github.io/):
+
+```bash
+conda install -c conda-forge biom-format
+conda install -c bioconda woltka
+```
+
+- **Note**: It is recommended to install `biom-format` from `conda-forge` before installing `woltka` from `bioconda`. In this way, all dependencies will be the latest (tested and working with Python 3.10.4 and BIOM 2.1.12). If one omits this step, conda may install older versions of Python and BIOM.
+
+Option 3: Install the current development from GitHub:
 
 ```bash
 pip install git+https://github.com/qiyunzhu/woltka.git
 ```
 
-Option 3: Install from a local copy:
+Option 4: Install from a local copy:
 
 Download this [repository](https://github.com/qiyunzhu/woltka/archive/master.zip) or any of the previous [releases](https://github.com/qiyunzhu/woltka/releases). Unzip and navigate to the package directory. Then execute:
 
