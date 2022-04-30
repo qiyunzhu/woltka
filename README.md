@@ -4,6 +4,7 @@
 [![CI Status](https://github.com/qiyunzhu/woltka/actions/workflows/main.yml/badge.svg)](https://github.com/qiyunzhu/woltka/actions)
 [![Coverage Status](https://coveralls.io/repos/github/qiyunzhu/woltka/badge.svg?branch=master)](https://coveralls.io/github/qiyunzhu/woltka?branch=master)
 ![PyPI](https://img.shields.io/pypi/v/woltka)
+![Conda (channel only)](https://img.shields.io/conda/vn/bioconda/woltka)
 
 **Woltka** is a versatile program for determining the structure and functional capacity of microbiomes. It mainly works with shotgun metagenomic data. It bridges first-pass sequence aligners with advanced analytical platforms (such as QIIME 2). It takes full advantage of, and is not limited by, the [WoL](https://biocore.github.io/wol/) reference database. Its scope and highlights are:
 
