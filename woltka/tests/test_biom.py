@@ -292,6 +292,12 @@ class BiomTests(TestCase):
         table = Table(*map(np.array, prep_table({
             'S1': {'A|K1': 4, 'A|K2': 5, 'B|K2': 8, 'C|K3': 3, 'C|K4': 0},
             'S2': {'A|K1': 1, 'A|K2': 8, 'B|K2': 0, 'C|K3': 4, 'C|K4': 2}})))
+        mapping = {'A': ['1'], 'B': ['1']}
+        obs = collapse_biom(table.copy(), mapping, field=0)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'1|K1': 4, '1|K2': 13},
+            'S2': {'1|K1': 1, '1|K2': 8}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
         mapping = {'K1': ['H1'], 'K2': ['H2', 'H3'], 'K3': ['H3']}
         obs = collapse_biom(table.copy(), mapping, field=1)
         exp = Table(*map(np.array, prep_table({
