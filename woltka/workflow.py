@@ -365,7 +365,11 @@ def parse_samples(fp:        str,
     """
     # read sample Ids
     if samples:
-        samples = read_ids(samples) if isfile(samples) else samples.split(',')
+        if isfile(samples):
+            with openzip(samples) as fh:
+                samples = read_ids(fh)
+        else:
+            samples = samples.split(',')
         click.echo(f'Number of samples to include: {len(samples)}.')
 
     errmsg = 'Provided sample IDs and actual files are inconsistent.'

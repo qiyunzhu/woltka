@@ -231,6 +231,12 @@ class WorkflowTests(TestCase):
         exp = {join(self.tmpdir, f'S{i}.sam'): f'S{i}' for i in range(1, 4)}
         self.assertDictEqual(obs[1], exp)
 
+        # independent sample Id list file
+        obs = parse_samples(self.tmpdir, samples=fp)
+        self.assertListEqual(obs[0], ['S1', 'S2', 'S3'])
+        exp = {join(self.tmpdir, f'S{i}.sam'): f'S{i}' for i in range(1, 4)}
+        self.assertDictEqual(obs[1], exp)
+
         # some samples only
         obs = parse_samples(fp, samples='S1,S2')
         self.assertListEqual(obs[0], ['S1', 'S2'])
