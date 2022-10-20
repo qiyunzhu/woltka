@@ -142,6 +142,7 @@ woltka tools collapse -i pathway.biom  -m pathway-to-super.map    -o super.biom
 
 In the [WoL data release](wol.md), there are pre-built mappings to UniRef, GO, MetaCyc, KEGG and more.
 
+For some databases, such as [MetaCyc](https://metacyc.org), you might encounter an error regarding `AssertionError: Conflicting values found for ...`, in this case we recommend generating the gene-level profile with `woltka classify`, and then collapsing to individual levels one at a time with `woltka tools collapse`.
 
 ## Pathway coverage
 
