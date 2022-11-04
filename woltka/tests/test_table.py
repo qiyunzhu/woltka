@@ -454,7 +454,7 @@ class TableTests(TestCase):
         self.assertEqual(ob2.descriptive_equality(ex2), 'Tables appear equal')
 
         # missing size
-        del(sizes['G3'])
+        del sizes['G3']
         with self.assertRaises(KeyError):
             divide_table(obs, sizes)
 

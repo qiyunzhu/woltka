@@ -455,9 +455,9 @@ def round_table(table, digits=None):
 
     # remove empty rows
     for i in reversed(todel):
-        del(table[0][i])
-        del(table[1][i])
-        del(table[3][i])
+        del table[0][i]
+        del table[1][i]
+        del table[3][i]
 
 
 def filter_table(table, th):

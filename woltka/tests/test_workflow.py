@@ -577,7 +577,7 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(data['ko']['S1'], {'T1': 0.95, 'T2': 0.5})
 
         # missing size
-        del(sizes['G3'])
+        del sizes['G3']
         with self.assertRaises(ValueError) as ctx:
             assign_readmap(qryq, subq, {'ko': {}}, 'ko', 'S1', assigners,
                            tree=tree, rankdic=rankdic, sizes=sizes)
