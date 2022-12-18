@@ -535,6 +535,7 @@ class TreeTests(TestCase):
         self.assertIsNone(find_lca(['1', '2', '3'], tree))
         self.assertEqual(find_lca(['1', '1'], tree), '1')
         self.assertEqual(find_lca(['1', '2157'], tree), '1')
+        self.assertEqual(find_lca(['1224', '1224'], tree), '1224')
 
         # broken tree, only for unit test coverage
         tree = {'1': '1', '2': '2'}
