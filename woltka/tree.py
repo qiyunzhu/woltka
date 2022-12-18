@@ -559,8 +559,7 @@ def find_lca(taxa, tree):
 
             # trim shared lineage
             else:
-                if idx + 1 < len(lineage):
-                    lineage = lineage[slice(idx + 1)]
+                lineage = lineage[:idx + 1]
                 break
 
     # LCA is the last of shared lineage

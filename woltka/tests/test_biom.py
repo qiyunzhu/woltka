@@ -114,7 +114,7 @@ class BiomTests(TestCase):
             'S2': {'G1': 3, 'G2': 4, 'G3': 4},
             'S3': {'G1': 2, 'G2': 3, 'G3': 0}})))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
-        del(sizes['G3'])
+        del sizes['G3']
         with self.assertRaises(KeyError):
             divide_biom(obs, sizes)
 
