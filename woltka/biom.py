@@ -99,7 +99,7 @@ def biom_max_f(table: biom.Table):
         Maximum decimal precision.
     """
     return max([0] + [str(x)[::-1].find('.') for x in
-               table.matrix_data.todense().ravel().tolist()[0]])
+               table.matrix_data.data])
 
 
 def divide_biom(table: biom.Table, sizes: dict):
