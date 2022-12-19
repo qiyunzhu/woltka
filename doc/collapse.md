@@ -87,7 +87,7 @@ Once a profile is collapsed, the metadata of the source features ("Name", "Rank"
 
 ## Considerations
 
-It is important to highlight that one-to-many mapping may change some of the
+It is important to note that one-to-many mapping may change some of the
 underlying statistical assumptions of downstream analyses.
 
 In the default mode, because one source may be collapsed into multiple targets, the total feature count per sample may be inflated, and the relative abundance of each feature may no longer correspond to that of the sequences assigned to it. In other words, this breaks the [compositionality](https://en.wikipedia.org/wiki/Compositional_data) of the data.

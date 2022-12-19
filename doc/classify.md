@@ -55,11 +55,11 @@ In many cases a query sequence has matches in multiple reference sequences, and 
 
 ### 1. Keep them all, and divide (default)
 
-In the resulting profile, each subject receives 1 / _k_ count, where _k_ is the total number of subjects of the current query.
+In the resulting profile, each subject receives 1 / _k_ count, where _k_ is the total number of subjects of the current query. In this way, the total feature frequency per sample is consistent with the number of reads in the input alignment.
 
-For example, sequence A was aligned to five genomes: two under genus [_Escherichia_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=561&lvl=3&lin=f&keep=1&srchmode=1&unlock), one under each of genera [_Salmonella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=590&lvl=3&lin=f&keep=1&srchmode=1&unlock), [_Klebsiella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=570&lvl=3&lin=f&keep=1&srchmode=1&unlock), and [_Enterobacter_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=547&lvl=3&lin=f&keep=1&srchmode=1&unlock). So at the **genus** level, _Escherichia_ receives 2/5 count, and each of the other three receives 1/5 each.
+For example, sequence A was aligned to five genomes: two under genus [_Escherichia_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=561&lvl=3&lin=f&keep=1&srchmode=1&unlock), one under each of genera [_Salmonella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=590&lvl=3&lin=f&keep=1&srchmode=1&unlock), [_Klebsiella_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=570&lvl=3&lin=f&keep=1&srchmode=1&unlock), and [_Enterobacter_](https://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Info&id=547&lvl=3&lin=f&keep=1&srchmode=1&unlock). In the **genus** level classification by Woltka, _Escherichia_ receives 2/5 count, and each of the other three receives 1/5 each.
 
-In the read-to-feature maps (`--outmap`), a multi-assignment will be reported as:
+In the read-to-feature maps (`--outmap`), a multi-assignment is reported as:
 
 ```
 A <tab> Escherichia:2 <tab> Salmonella:1 <tab> Klebsiella:1 <tab> Enterobacter:1
@@ -108,6 +108,6 @@ With the unassigned part reported, the sum of feature counts in each sample of t
 
 Even if this function was not used in generating the profile, one can still manually calculate the unassigned part by subtracting the sum of feature counts from the number of sequences.
 
-[**Important**] The "unassigned" part represent query sequences that were **aligned** to one or more **subjects**, but Woltka cannot find a suitable assignment based on those subjects. Therefore, assigned + unassigned is NOT the entire sample, but only the part of sample that are found in the alignment.
+[**Important**] The "unassigned" part represents query sequences that were **aligned** to one or more **subjects**, but Woltka cannot find a suitable assignment based on those subjects. Therefore, assigned + unassigned is NOT the entire sample, but only the part of sample that are found in the alignment.
 
-In [ordinal mapping](ordinal.md), subjects are **genes** instead of genomes, therefore despite that some query sequences can be aligned to one or more genomes, they can still be excluded from the unassigned part if their coordinates do not match any gene.
+In the "coord-match" functional classification (see [details](ordinal.md)), subjects are **genes** instead of genomes, therefore despite that some query sequences can be aligned to one or more genomes, they can still be excluded from the unassigned part if their coordinates do not match any gene.

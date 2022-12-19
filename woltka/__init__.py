@@ -9,8 +9,8 @@
 # ----------------------------------------------------------------------------
 
 __name__ = 'woltka'
-__description__ = 'Web of Life ToolKit App'
-__version__ = '0.1.2'
+__description__ = 'versatile metagenome classifier'
+__version__ = '0.1.4'
 __license__ = 'BSD-3-Clause'
 __author__ = 'Qiyun Zhu'
 __email__ = 'qiyunzhu@gmail.com'

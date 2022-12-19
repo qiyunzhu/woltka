@@ -66,16 +66,11 @@ def plain_mapper(fh, fmt=None, n=1000):
     # pre-load method references
     qry_append, sub_append = qryque.append, subque.append
 
-    # parse alignment file
     this = None  # current query Id
     target = n   # target line number at end of current chunk
-    for i, line in enumerate(chain(iter(head), fh)):
 
-        # parse current alignment line
-        try:
-            query, subject = parser(line)[:2]
-        except (TypeError, IndexError):
-            continue
+    # parse alignment file
+    for i, (query, subject) in enumerate(parser(chain(iter(head), fh))):
 
         # add subject to subject set of the same query Id
         if query == this:
@@ -111,6 +106,66 @@ def plain_mapper(fh, fmt=None, n=1000):
     yield qryque, subque
 
 
+def range_mapper(fh, fmt=None, n=1000):
+    """Read an alignment file and yield maps of query to subject(s) and their
+    ranges.
+
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    fmt : str, optional
+        Alignment file format.
+    n : int, optional
+        Number of lines per chunk.
+
+    Yields
+    ------
+    deque of str
+        Query queue.
+    deque of dict of str to list of int
+        Subject-to-ranges queue.
+
+    Notes
+    -----
+    Same as `plain_mapper`, except that it also returns subject ranges.
+
+    Ranges are stored as a one-dimensional, interleaved list of start1, end1,
+    start2, end2, start3, end3...
+
+    See Also
+    --------
+    plain_mapper
+    """
+    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
+    parser = assign_parser(fmt, ext=True)
+    qryque, subque = deque(), deque()
+    qry_append, sub_append = qryque.append, subque.append
+    this = None
+    target = n
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject, _, _, start, end = row[:6]
+
+        # range must be positive integers
+        if start and end:
+
+            if query == this:
+                subque[-1].setdefault(subject, []).extend((start, end))
+            else:
+                if i >= target:
+                    yield qryque, subque
+                    qryque, subque = deque(), deque()
+                    qry_append, sub_append = qryque.append, subque.append
+                    target = i + n
+                qry_append(query)
+
+                # return subject Id and range
+                sub_append({subject: [start, end]})
+
+                this = query
+    yield qryque, subque
+
+
 def infer_align_format(fh):
     """Guess the format of an alignment file based on content.
 
@@ -135,8 +190,8 @@ def infer_align_format(fh):
 
     See Also
     --------
-    parse_b6o_line
-    parse_sam_line
+    parse_b6o_file
+    parse_sam_file
 
     TODO
     ----
@@ -176,13 +231,15 @@ def infer_align_format(fh):
     raise ValueError('Cannot determine alignment file format.')
 
 
-def assign_parser(fmt):
+def assign_parser(fmt, ext=False):
     """Assign parser function based on format code.
 
     Parameters
     ----------
     fmt : str
         Alignment file format code.
+    ext : bool, optional
+        Whether to get extra information.
 
     Returns
     -------
@@ -190,27 +247,27 @@ def assign_parser(fmt):
         Alignment parser function.
     """
     if fmt == 'map':  # simple map of query <tab> subject
-        return parse_map_line
+        return parse_map_file
     if fmt == 'b6o':  # BLAST format
-        return parse_b6o_line
+        return parse_b6o_file_ext if ext else parse_b6o_file
     elif fmt == 'sam':  # SAM format
-        return parse_sam_line
+        return parse_sam_file_ext if ext else parse_sam_file
     else:
         raise ValueError(f'Invalid format code: "{fmt}".')
 
 
-def parse_map_line(line, *args):
-    """Parse a line in a simple mapping file.
+def parse_map_file(fh, *args):
+    """Parse a simple mapping file.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        Mapping file to parse.
     args : list, optional
         Placeholder for caller compatibility.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str)
         Query and subject.
 
@@ -218,24 +275,25 @@ def parse_map_line(line, *args):
     -----
     Only the first two columns are considered.
     """
-    query, found, rest = line.partition('\t')
-    if found:
-        subject, found, rest = rest.partition('\t')
-        return query, subject.rstrip()
+    for line in fh:
+        query, found, rest = line.partition('\t')
+        if found:
+            subject, found, rest = rest.partition('\t')
+            yield query, subject.rstrip()
 
 
-def parse_b6o_line(line):
-    """Parse a line in a BLAST tabular file (b6o).
+def parse_b6o_file(fh):
+    """Parse a BLAST tabular file (b6o) to get basic information.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        BLAST tabular file to parse.
 
-    Returns
-    -------
-    tuple of (str, str, float, int, int, int)
-        Query, subject, score, length, start, end.
+    Yields
+    ------
+    tuple of (str, str)
+        Query, subject.
 
     Notes
     -----
@@ -246,24 +304,50 @@ def parse_b6o_line(line):
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
-    x = line.split('\t')
-    qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
-    sstart, send = sorted((int(x[8]), int(x[9])))
-    return qseqid, sseqid, score, length, sstart, send
+    for line in fh:
+        try:
+            qseqid, sseqid, _ = line.split('\t', 2)
+        except ValueError:
+            continue
+        else:
+            yield qseqid, sseqid
 
 
-def parse_sam_line(line):
-    """Parse a line in a SAM file (sam).
+def parse_b6o_file_ext(fh):
+    """Parse a BLAST tabular file (b6o) to get extra information.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        BLAST tabular file to parse.
 
-    Returns
-    -------
-    tuple of (str, str, None, int, int, int)
-        Query, subject, None, length, start, end.
+    Yields
+    ------
+    tuple of (str, str, float, int, int, int)
+        Query, subject, score, length, start, end.
+    """
+    for line in fh:
+        x = line.split('\t')
+        try:
+            qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
+        except IndexError:
+            continue
+        sstart, send = sorted((int(x[8]), int(x[9])))
+        yield qseqid, sseqid, score, length, sstart, send
+
+
+def parse_sam_file(fh):
+    """Parse a SAM file (sam) to get basic information.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+
+    Yields
+    ------
+    tuple of (str, str)
+        Query, subject.
 
     Notes
     -----
@@ -277,37 +361,90 @@ def parse_sam_line(line):
         https://samtools.github.io/hts-specs/SAMv1.pdf
     .. _Bowtie2 manual:
         http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
+
+    This is by far the fastest solution. Several other solutions were tested,
+    including readlines(chunk), csv.reader, and pd_read_csv(chunk). They were
+    slower.
     """
-    # skip header
-    if line[0] == '@':
-        return
+    last = None
 
-    # relevant fields
-    qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
+    # parse head
+    for line in fh:
 
-    # skip unmapped
-    if rname == '*':
-        return
+        # currently, it just skips head
+        if line[0] != '@':
+            last = line
+            break
 
-    # leftmost mapping position
-    pos = int(pos)
+    # include current line
+    it = chain([last], fh) if last else fh
 
-    # parse CIGAR string
-    length, offset = cigar_to_lens(cigar)
+    # parse body
+    for line in it:
 
-    # append strand to read Id if not already
-    if qname[-2:] not in ('/1', '/2'):
-        flag = int(flag)
+        # relevant fields
+        qname, flag, rname, _ = line.split('\t', 3)
 
-        # forward strand: bit 64
-        if flag & (1 << 6):
-            qname += '/1'
+        # skip unmapped
+        if rname == '*':
+            continue
 
-        # reverse strand: bit 128
-        elif flag & (1 << 7):
-            qname += '/2'
+        # append strand to read Id if not already
+        if qname[-2:] not in ('/1', '/2'):
+            flag = int(flag)
 
-    return qname, rname, None, length, pos, pos + offset - 1
+            # forward strand: bit 64
+            if flag & (1 << 6):
+                qname += '/1'
+
+            # reverse strand: bit 128
+            elif flag & (1 << 7):
+                qname += '/2'
+
+        yield qname, rname
+
+
+def parse_sam_file_ext(fh):
+    """Parse a SAM file (sam) to get extra information.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+
+    Yields
+    ------
+    tuple of (str, str, None, int, int, int)
+        Query, subject, None, length, start, end.
+    """
+    last = None
+    for line in fh:
+        if line[0] != '@':
+            last = line
+            break
+
+    it = chain([last], fh) if last else fh
+    for line in it:
+
+        # relevant fields
+        qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
+        if rname == '*':
+            continue
+
+        # leftmost mapping position
+        pos = int(pos)
+
+        # parse CIGAR string
+        length, offset = cigar_to_lens(cigar)
+
+        if qname[-2:] not in ('/1', '/2'):
+            flag = int(flag)
+            if flag & (1 << 6):
+                qname += '/1'
+            elif flag & (1 << 7):
+                qname += '/2'
+
+        yield qname, rname, None, length, pos, pos + offset - 1
 
 
 @lru_cache(maxsize=128)
@@ -346,16 +483,51 @@ def cigar_to_lens(cigar):
     return align, align + offset
 
 
-def parse_kraken(line):
-    """Parse a line in a Kraken mapping file.
+def cigar_to_lens_ord(cigar):
+    """Extract lengths from a CIGAR string.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    cigar : str
+        CIGAR string.
 
     Returns
     -------
+    int
+        Alignment length.
+    int
+        Offset in subject sequence.
+
+    Notes
+    -----
+    This is an alternative solution based on unicode numbers of characters.
+    It is slower than the currently adopted solution. But since it is purely
+    based on numbers, there may be room for future optimization.
+    """
+    align, offset = 0, 0
+    n = 0
+    for c in map(ord, cigar):
+        if c < 60:
+            n = n * 10 + c - 48
+        else:
+            if c in (77, 88, 61):
+                align += n
+            elif c in (68, 78):
+                offset += n
+            n = 0
+    return align, align + offset
+
+
+def parse_kraken(fh):
+    """Parse a Kraken mapping file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Kraken mapping file to parse.
+
+    Yields
+    ------
     tuple of (str, str)
         Query and subject.
 
@@ -367,20 +539,22 @@ def parse_kraken(line):
     .. _Kraken2 manual:
         https://ccb.jhu.edu/software/kraken2/index.shtml?t=manual
     """
-    x = line.split('\t')
-    return (x[1], x[2]) if x[0] == 'C' else (None, None)
+    for line in fh:
+        x = line.split('\t')
+        if x[0] == 'C':
+            yield x[1], x[2]
 
 
-def parse_centrifuge(line):
-    """Parse a line in a Centrifuge mapping file.
+def parse_centrifuge(fh):
+    """Parse a Centrifuge mapping file.
 
     Parameters
     ----------
-    line : str
-        Line to parse.
+    fh : file handle
+        Centrifuge mapping file to parse.
 
-    Returns
-    -------
+    Yields
+    ------
     tuple of (str, str, int, int)
         Query, subject, score, length.
 
@@ -393,7 +567,60 @@ def parse_centrifuge(line):
     .. _Centrifuge manual:
         https://ccb.jhu.edu/software/centrifuge/manual.shtml
     """
-    if line.startswith('readID'):
-        return
-    x = line.split('\t')
-    return x[0], x[1], int(x[3]), int(x[5])
+    for line in fh:
+        if not line.startswith('readID'):
+            x = line.split('\t')
+            yield x[0], x[1], int(x[3]), int(x[5])
+
+
+def parse_sam_file_pd(fh, n=65536):
+    """Parse a SAM file (sam) using Pandas.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+    n : int, optional
+        Chunk size.
+
+    Yields
+    ------
+    None
+
+    Notes
+    -----
+    This is a SAM file parser using Pandas. It is slower than the current
+    parser. The `read_csv` is fast, but the data frame manipulation slows
+    down the process. It is here for reference only.
+    """
+    return
+    # with pd.read_csv(fp, sep='\t',
+    #                  header=None,
+    #                  comment='@',
+    #                  na_values='*',
+    #                  usecols=[0, 1, 2, 3, 5],
+    #                  names=['qname', 'flag', 'rname', 'pos', 'cigar'],
+    #                  dtype={'qname': str,
+    #                         'flag':  np.uint16,
+    #                         'rname': str,
+    #                         'pos':   int,
+    #                         'cigar': str},
+    #                  chunksize=n) as reader:
+    #     for chunk in reader:
+    #         chunk.dropna(subset=['rname'], inplace=True)
+    #         # this is slow, because of function all
+    #         chunk['length'], offset = zip(*chunk['cigar'].apply(
+    #             cigar_to_lens))
+    #         chunk['right'] = chunk['pos'] + offset - 1
+    #         # this is slow, because of function all
+    #         # chunk['qname'] = chunk[['qname', 'flag']].apply(
+    #         #   qname_by_flag, axis=1)
+    #         # this is a faster method
+    #         chunk['qname'] += np.where(
+    #             chunk['qname'].str[-2:].isin(('/1', '/2')), '',
+    #             np.where(np.bitwise_and(chunk['flag'], (1 << 6)), '/1',
+    #                      np.where(np.bitwise_and(chunk['flag'], (1 << 7)),
+    #                      '/2', '')))
+    #         chunk['score'] = 0
+    #         yield from chunk[['qname', 'rname', 'score', 'length',
+    #                           'pos', 'right']].values

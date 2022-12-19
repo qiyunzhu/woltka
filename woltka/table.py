@@ -455,9 +455,9 @@ def round_table(table, digits=None):
 
     # remove empty rows
     for i in reversed(todel):
-        del(table[0][i])
-        del(table[1][i])
-        del(table[3][i])
+        del table[0][i]
+        del table[1][i]
+        del table[3][i]
 
 
 def filter_table(table, th):
@@ -597,7 +597,7 @@ def collapse_table(table, mapping, divide=False, field=None):
     width = len(samples)
     res = defaultdict(lambda: [0] * width)
     for datum, feature in zip(*table[:2]):
-        if field:
+        if field is not None:
             fields = feature.split('|')
             try:
                 feature = fields[field]
@@ -611,7 +611,7 @@ def collapse_table(table, mapping, divide=False, field=None):
             k = 1 / len(targets)
             datum = [x * k for x in datum]
         for target in targets:
-            if field:
+            if field is not None:
                 fields[field] = target
                 target = '|'.join(fields)
             res[target] = list(map(add, res[target], datum))

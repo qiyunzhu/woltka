@@ -2,7 +2,7 @@
 
 By default, the cell values in a feature table (profile) are **counts** (**frequencies**) of each feature in each sample. This behavior maximizes the flexibility of downstream analyses. Meanwhile, Woltka provides multiple functions for normalizing cell values to alternative units and scales:
 
-- `--sizes`: **Divide counts by subject sizes** (e.g., genome / gene lengths).
+- `--sizes`: Divide counts by subject sizes (e.g., by genome or gene lengths).
 - `--frac`: Convert counts into fractions (relative abundances).
 - `--scale`: Scale up all values by a constant factor (e.g., "1k", "1M").
 - `--digits`: Keep certain number of digits after the decimal point.
@@ -22,27 +22,42 @@ By default, the cell values in a feature table (profile) are **counts** (**frequ
 
 Woltka has two modes of normalization, each providing all four functions mentioned above.
 
-- **First**, The normalization functions can be called as part of the main classification workflow (`woltka classify`), and directly output normalized profiles.
+1. The normalization functions can be called as part of the main classification workflow (`woltka classify`), and directly output normalized profiles.
 
-- **Alternatively**, one can perform normalization on profiles that are already generated (`woltka tools normalize`). This saves the need for rerunning the lengthy classification process.
+2. One can perform normalization on profiles that are already generated (`woltka tools normalize`). This saves the need for re-running the workflow.
 
-There is a major advantage of normalization by subject size **during** classification, as detailed below. Other than that, the two modes produce mutually identical results.
+There is a major advantage of normalization by subject size **during** classification, as detailed below. Other than that, the two modes produce mutually identical results. See below for some examples.
 
 
 ## Normalization by subject size
 
-The number of reads assigned to each classification unit can be normalized against a **subject-specific** property, which is usually size / length, but can also be other metrics depending on the specific research.
+The number of reads assigned to each classification unit can be normalized against a **subject-specific** property, which is usually size (length), but can also be other metrics depending on the specific research.
 
-During classification:
+First, prepare a subject-to-size mapping file `size.map`:
+
+```
+GCF_000123456.1 <tab> 4500000
+GCF_000987654.3 <tab> 3600000
+GCA_900537826.2 <tab> 2750000
+...
+```
+
+Normalize during classification (as part of main workflow):
 
 ```bash
 woltka classify --sizes size.map ...
 ```
 
-On existing profiles:
+Or post classification (on existing profiles):
 
 ```bash
 woltka tools normalize --sizes size.map ...
+```
+
+A special case is during "coord-match" functional classification (see [details](ordina.md)), one can use a dot (`.`) instead of a mapping file. Woltka will read gene sizes from the gene coordinates file.
+
+```bash
+woltka classify -c coords.txt --sizes . ...
 ```
 
 ### Sequence and taxonomic abundances
@@ -102,7 +117,7 @@ woltka classify \
   --map    metacyc/protein.map.xz \
   --names  metacyc/protein_name.txt \
   --rank   protein \
-  --size   . \
+  --sizes   . \
   --scale  1k \
   --digits 3 \
   --output protein.tsv
@@ -126,7 +141,13 @@ The output values are fractions (like "0.05"). One can add `--scale 100` to conv
 On an existing profile:
 
 ```bash
-woltka tools normalize ... (without --sizes, no need for --frac)
+woltka tools normalize ... (without --sizes, automatically applies --frac)
 ```
 
 **Note**: These values are the fractions of reads assigned to each classification units versus all reads that are **assigned**. If you add `--unassigned`, the values become the fractions of reads versus all reads that are **aligned**. Woltka cannot calculate the fractions of reads versus the **original** sequencing data, since it processes alignment files instead of raw FastQ files. However, it isn't hard to do this calculation manually if you know the sequencing depth information.
+
+This function can also convert an RPK functional profile (see above) to the unit of **TPM (transcripts per kilobase million)**:
+
+```bash
+woltka tools normalize -i rpk.biom --scale 1M -o tpm.biom
+```

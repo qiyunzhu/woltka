@@ -230,7 +230,7 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
     metadata = {}
     for id_ in table.ids('observation'):
         feature = id_
-        if field:
+        if field is not None:
             fields = feature.split('|')
             try:
                 feature = fields[field]
@@ -241,7 +241,7 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
             continue
         targets = []
         for target in mapping[feature]:
-            if field:
+            if field is not None:
                 fields[field] = target
                 target = '|'.join(fields)
             targets.append(target)

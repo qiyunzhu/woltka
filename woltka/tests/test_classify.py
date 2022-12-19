@@ -133,7 +133,7 @@ class ClassifyTests(TestCase):
                'Cdiff': 3.0,
                'Strep': 4.5}
         self.assertDictEqual(dict(obs), exp)
-        del(sizes['G3'])
+        del sizes['G3']
         with self.assertRaises(KeyError):
             counter_size(subque, taxque, sizes)
 
@@ -204,7 +204,7 @@ class ClassifyTests(TestCase):
                ('Cdiff', 'ligase'):     4.5,
                ('Strep', 'ligase'):     6.5}
         self.assertDictEqual(dict(obs), exp)
-        del(sizes['G3'])
+        del sizes['G3']
         with self.assertRaises(KeyError):
             counter_size(subque, taxque, sizes)
 

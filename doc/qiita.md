@@ -1,6 +1,6 @@
 # Working with Qiita
 
-[**Qiita**](https://qiita.ucsd.edu/) is a web platform for hosting and analyzing microbiome datasets. Woltka has been implemented in Qiita as part of the standard operating procedure for shotgun metagenomic data analysis. Please find below the instructions for using Woltka and retrieving Woltka results.
+**Qiita** (https://qiita.ucsd.edu/) ([Gonzalez et al., 2018](https://www.nature.com/articles/s41592-018-0141-9)) is a web platform for hosting and analyzing microbiome datasets. Woltka has been implemented in Qiita as part of the standard operating procedure for shotgun metagenomic data analysis. Please find below the instructions for using Woltka and retrieving Woltka results.
 
 ## Existing results
 

@@ -36,9 +36,10 @@ def cli():
 @cli.command('classify')
 # input and output
 @click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, file_okay=True, dir_okay=True),
-    help='Path to input alignment file or directory of alignment files.')
+    '--input', '-i', 'input_fp', required=True, type=click.Path(
+        exists=True, file_okay=True, dir_okay=True, allow_dash=True),
+    help=('Path to input alignment file or directory of alignment files.'
+          ' Enter "-" for stdin.'))
 @click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True),
@@ -159,6 +160,9 @@ def cli():
     '--zipmap', 'outmap_zip', default='gz',
     type=click.Choice(['none', 'gz', 'bz2', 'xz'], case_sensitive=False),
     help='Compress read-to-feature maps using this algorithm.')
+@click.option(
+    '--outcov', 'outcov_dir', type=click.Path(dir_okay=True),
+    help='Write subject coverage maps to this directory.')
 # performance
 @click.option(
     '--chunk', type=click.INT, default=None,

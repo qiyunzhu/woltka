@@ -13,20 +13,23 @@
 
 from collections import defaultdict
 from itertools import chain
-from operator import itemgetter
+from bisect import bisect
 
 from .align import infer_align_format, assign_parser
 
 
-def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
+def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
+                   prefix=False):
     """Read an alignment file and match reads and genes in an ordinal system.
 
     Parameters
     ----------
     fh : file handle
         Alignment file to parse.
-    coords : dict
+    coords : dict of list
         Gene coordinates table.
+    idmap : dict of list
+        Gene identifiers.
     fmt : str, optional
         Alignment file format.
     n : int, optional
@@ -44,17 +47,14 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     ------
     tuple of str
         Query queue.
-    dictview of set of str
+    dict of set of str
         Subject(s) queue.
     """
     # determine file format
     fmt, head = (fmt, []) if fmt else infer_align_format(fh)
 
     # assign parser for given format
-    parser = assign_parser(fmt)
-
-    # choose match function depending on whether prefix
-    match_func = match_read_gene_pfx if prefix else match_read_gene
+    parser = assign_parser(fmt, ext=True)
 
     # cached list of query Ids for reverse look-up
     # gene Ids are unique, but read Ids can have duplicates (i.e., one read is
@@ -62,9 +62,6 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     # here replaces the original read Id as its identifer
     rids = []
     rid_append = rids.append
-
-    # cached map of read to alignment length
-    lenmap = defaultdict(dict)
 
     # cached map of read to coordinates
     locmap = defaultdict(list)
@@ -76,29 +73,47 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         -------
         tuple of str
             Query queue.
-        dictview of set of str
+        dict of set of str
             Subject(s) queue.
         """
         # master read-to-gene(s) map
         res = defaultdict(set)
 
-        for nucl, loci in locmap.items():
-
-            # merge and sort coordinates
-            # question is to merge an unsorted list into a sorted one
-            # Python's built-in timsort algorithm is efficient at this
-            try:
-                queue = sorted(coords[nucl] + loci)
+        # iterate over nucleotides
+        for nucl, locs in locmap.items():
 
             # it's possible that no gene was annotated on the nucleotide
+            try:
+                glocs = coords[nucl]
             except KeyError:
                 continue
 
-            # map reads to genes using the core algorithm
-            for read, gene in match_func(queue, lenmap[nucl], th, nucl):
+            # get reference to gene identifiers
+            gids = idmap[nucl]
 
-                # merge read-gene pairs to the master map
-                res[rids[read]].add(gene)
+            # append prefix if needed
+            pfx = nucl + '_' if prefix else ''
+
+            # execute ordinal algorithm when reads are many
+            # 8 (5+ reads) is an empirically determined cutoff
+            if len(locs) > 8:
+
+                # merge and sort coordinates
+                # question is to add unsorted read coordinates into pre-sorted
+                # gene coordinates
+                # Python's Timsort algorithm is efficient for this task
+                queue = sorted(chain(glocs, locs))
+
+                # map reads to genes using the core algorithm
+                for read, gene in match_read_gene(queue):
+
+                    # add read-gene pairs to the master map
+                    res[rids[read]].add(pfx + gids[gene])
+
+            # execute naive algorithm when reads are few
+            else:
+                for read, gene in match_read_gene_quart(glocs, locs):
+                    res[rids[read]].add(pfx + gids[gene])
 
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
@@ -107,15 +122,10 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
     target = n   # target line number at end of current chunk
 
     # parse alignment file
-    for i, line in enumerate(chain(iter(head), fh)):
+    for i, row in enumerate(parser(chain(iter(head), fh))):
+        query, subject, _, length, beg, end = row[:6]
 
-        # parse current alignment line
-        try:
-            query, subject, _, length, start, end = parser(line)[:6]
-        except (TypeError, IndexError):
-            continue
-
-        # skip if length is not available
+        # skip if length is not available or zero
         if not length:
             continue
 
@@ -128,7 +138,7 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
             # re-initiate read Ids, length map and location map
             rids = []
             rid_append = rids.append
-            lenmap, locmap = defaultdict(dict), defaultdict(list)
+            locmap = defaultdict(list)
 
             # next target line number
             target = i + n
@@ -136,18 +146,20 @@ def ordinal_mapper(fh, coords, fmt=None, n=1000000, th=0.8, prefix=False):
         # append read Id, alignment length and location
         idx = len(rids)
         rid_append(query)
-        lenmap[subject][idx] = length
-        locmap[subject].extend((
-            (start, True, False, idx),
-            (end,  False, False, idx)))
 
+        # effective length = length * th
+        # -int(-x // 1) is equivalent to math.ceil(x) but faster
+        # this value must be >= 1
+        locmap[subject].extend((
+            (beg << 48) + (-int(-length * th // 1) << 31) + idx,
+            (end << 48) + idx))
         this = query
 
     # final flush
     yield flush()
 
 
-def ordinal_parser(fh, parser):
+def ordinal_parser_dummy(fh, parser):
     """Alignment parsing functionalities stripped from for `ordinal_mapper`.
 
     Parameters
@@ -169,26 +181,20 @@ def ordinal_parser(fh, parser):
     See Also
     --------
     ordinal_mapper
-    read_gene_coords
-    .tests.test_ordinal.OrdinalTests.test_ordinal_parser
+    match_read_gene_dummy
+    .tests.test_ordinal.OrdinalTests.test_ordinal_parser_dummy
 
     Notes
     -----
     This is a dummy function only for test and demonstration purpose but not
     called anywhere in the program. See its unit test for details.
-
-    The data structure is central to the algorithm. See `read_gene_coords` for
-    details.
     """
     rids = []
     lenmap = defaultdict(dict)
     locmap = defaultdict(list)
 
-    for line in fh:
-        try:
-            query, subject, _, length, start, end = parser(line)[:6]
-        except (TypeError, IndexError):
-            continue
+    for row in parser(fh):
+        query, subject, _, length, start, end = row[:6]
         idx = len(rids)
         rids.append(query)
         lenmap[subject][idx] = length
@@ -199,7 +205,7 @@ def ordinal_parser(fh, parser):
     return rids, lenmap, locmap
 
 
-def read_gene_coords(fh, sort=False):
+def load_gene_coords(fh, sort=False):
     """Read coordinates of genes on genomes.
 
     Parameters
@@ -211,12 +217,12 @@ def read_gene_coords(fh, sort=False):
 
     Returns
     -------
-    dict of list of (int, bool, bool, str)
-        Flattened list of gene coordinates per nucleotide.
-            Coordinate (nt).
-            Whether start (True) or end (False).
-            Whether gene (True) or read (False).
-            Identifier of gene.
+    dict of int
+        Binarized gene coordinate information per nucleotide.
+    dict of list of str
+        Gene IDs.
+    bool
+        Whether there are duplicate gene IDs.
 
     See Also
     --------
@@ -228,9 +234,20 @@ def read_gene_coords(fh, sort=False):
     coordinates of each gene are separated and flattened into a sorted list.
     which enables only one round of list traversal for the entire set of genes
     plus reads.
+
+    See the docstring of `match_read_gene` for details.
     """
-    res = {}
+    coords = {}
     queue_extend = None
+
+    idmap = {}
+    gids = None
+    gids_append = None
+
+    isdup = None
+    used = set()
+    used_add = used.add
+
     for line in fh:
 
         # ">" or "#" indicates genome (nucleotide) name
@@ -241,88 +258,62 @@ def read_gene_coords(fh, sort=False):
             # a super group of subsequent nucleotide names; to be ignored
             if line[1] != c0:
                 nucl = line[1:].strip()
-                res[nucl] = []
-                queue_extend = res[nucl].extend
+                coords[nucl] = []
+                queue_extend = coords[nucl].extend
+                gids = idmap[nucl] = []
+                gids_append = gids.append
         else:
             x = line.rstrip().split('\t')
 
-            # start and end are based on genome (nucleotide), not gene itself
+            # begin and end positions are based on genome (nucleotide)
             try:
-                start, end = sorted((int(x[1]), int(x[2])))
+                beg, end = int(x[1]), int(x[2])
             except (IndexError, ValueError):
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            idx = x[0]
-            queue_extend(((start, True, True, idx),
-                          (end,  False, True, idx)))
+            idx = len(gids)
+            gene = x[0]
+            gids_append(gene)
+            if beg > end:
+                beg, end = end, beg
+            queue_extend(((beg << 48) + (3 << 30) + idx,
+                          (end << 48) + (1 << 30) + idx))
+
+            # check duplicate
+            if isdup is None:
+                if gene in used:
+                    isdup = True
+                else:
+                    used_add(gene)
 
     # sort gene coordinates per nucleotide
     if sort:
-        sortkey = itemgetter(0)
-        for nucl, queue in res.items():
-            res[nucl] = sorted(queue, key=sortkey)
-    return res
+        for queue in coords.values():
+            queue.sort()
+
+    return coords, idmap, isdup or False
 
 
-def whether_prefix(coords):
-    """Determine whether gene IDs should be prefixed with nucleotide IDs.
-
-    Parameters
-    ----------
-    coords : dict
-        Gene coordinates table.
-
-    Returns
-    -------
-    bool
-        Whether gene IDs should be prefixed.
-
-    See Also
-    --------
-    read_gene_coords
-
-    Notes
-    -----
-    It is based on a simple mechanism which checks whether there are duplicate
-    gene IDs, and if so, all gene IDs should be prefixed to avoid confusion.
-    """
-    genes = {}
-    for nucl, queue in coords.items():
-        for _, is_start, _, gid in queue:
-            if gid not in genes:
-                genes[gid] = is_start
-            elif genes[gid] == is_start:
-                return True
-    return False
-
-
-def match_read_gene(queue, lens, th, pfx=None):
+def match_read_gene(queue):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
-    queue : list of tuple
-        Sorted list of elements.
-        (loc, is_start, is_gene, id)
-    lens : dict
-        Read-to-alignment length map.
-    th : float
-        Threshold for read/gene overlapping fraction.
-    pfx : str, optional
-        Placeholder for compatibility with match_read_gene_pfx
+    queue : list of int
+        Sorted queue of coordinates.
 
     Yields
     ------
     int
         Read index.
-    str
-        Gene ID.
+    int
+        Gene index.
 
     See Also
     --------
-    match_read_gene_pfx
-    read_gene_coords
-    .tests.test_ordinal.OrdinalTests.test_match_read_gene
+    load_gene_coords
+    match_read_gene_dummy
+    .tests.test_ordinal.OrdinalTests.test_match_read_gene_dummy
 
     Notes
     -----
@@ -331,69 +322,122 @@ def match_read_gene(queue, lens, th, pfx=None):
     Only one round of traversal (O(n)) of this list is needed to accurately
     find all gene-read matches.
 
-    Refer to its unit test `test_match_read_gene` for an actual example and
-    illustration.
+    Refer to its unit test `test_match_read_gene` for an illustrated example.
+
+    This function is the most compute-intensive step in the entire analysis,
+    therefore it has been deeply optimized to increase performance wherever
+    possible. Notably, it extensively uses bitwise operations to extract
+    multiple pieces of information from a single integer.
+
+    Specifically, each coordinate (an integer) has the following information
+    (from right to left):
+
+    - Bits  1-30: Index of gene / read (30 bits, max.: 1,073,741,823).
+    - Bits    31: Whether it is a gene (1) or a read (0) (1 bit).
+    - Bits 32-58: Whether it is the start (positive) or end (0) of a gene /
+                  read. If start, the value represents the effective length of
+                  an alignment if it's a read, or 1 if it's a gene (17 bits,
+                  max.: 131,071).
+    - Bits 59-  : Coordinate (position on the genome, nt) (unlimited)
+
+    The Python code to extract these pieces of information is:
+
+    - Coordinate:       `code >> 48`
+    - Effective length: `code >> 31 & (1 << 17) - 1`, or `code >> 31 & 131071`
+    - Gene or read:     `code & (1 << 30)`
+    - Gene/read index:  `code & (1 << 30) - 1`
+
+    Note: Repeated bitwise operations are usually more efficient that a single
+    bitwise operation assigned to a new variable.
     """
-    genes = {}  # current genes
-    reads = {}  # current reads
+    genes = {}  # current genes cache
+    reads = {}  # current reads cache
 
     # cache method references
-    reads_items = reads.items
     genes_items = genes.items
+    reads_items = reads.items
+
+    genes_pop = genes.pop
+    reads_pop = reads.pop
 
     # walk through flattened queue of reads and genes
-    for loc, is_start, is_gene, idx in queue:
-        if is_gene:
+    for code in queue:
 
-            # when a gene starts, added to current genes
-            if is_start:
-                genes[idx] = loc
+        # if this is a gene,
+        if code & (1 << 30):
+
+            # when a gene begins,
+            # if code >> 31 & 131071:
+            if code & (1 << 31):
+
+                # add its index and coordinate to cache
+                genes[code & (1 << 30) - 1] = code >> 48
 
             # when a gene ends,
             else:
 
-                # check current reads
+                # find gene start
+                gloc = genes_pop(code & (1 << 30) - 1)
+
+                # check cached reads for matches
                 for rid, rloc in reads_items():
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
-                        yield rid, idx
+                    #   code >> 48:     read end coordinate
+                    #   gloc:           gene start coordinate
+                    #   rloc >> 17`:    read start coordinate
+                    #   rloc & 131071`: effective length - 1
+                    if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
+                        yield rid, code & (1 << 30) - 1
 
-                # remove it from current genes
-                del(genes[idx])
-
-        # the same for reads
+        # if this is a read,
         else:
-            if is_start:
-                reads[idx] = loc
+
+            # when a read begins,
+            if code >> 31 & 131071:
+
+                # add its index, coordinate and effective length - 1 to cache
+                # the latter two are stored as a single integer
+                reads[code & (1 << 30) - 1] = (code >> 31) - 1
+
+            # when a read ends,
             else:
+
+                # find read start and effective length
+                rloc = reads_pop(code & (1 << 30) - 1)
+
+                # check cached genes
+                # a potential optimization is to pre-calculate `rloc >> 17`
+                #   and `(code >> 48) - (rloc & 131071)`, however, it is not
+                #   worth the overhead in real applications because there is
+                #   usually zero or one gene in cache
+                # another potential optimization is to replace `max` (which is
+                #   a function call with a ternary operator, but one needs the
+                #   first optimization prior to this
                 for gid, gloc in genes_items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
-                        yield idx, gid
-                del(reads[idx])
+
+                    # same as above
+                    if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
+                        yield code & (1 << 30) - 1, gid
 
 
-def match_read_gene_pfx(queue, lens, th, pfx):
-    """Associate reads with genes based on a sorted queue of coordinates.
+def match_read_gene_naive(geneque, readque):
+    """Associate reads with genes using a naive approach, which performs
+    nested iteration over genes and reads.
 
     Parameters
     ----------
-    queue : list of tuple
-        Sorted list of elements.
-        (loc, is_start, is_gene, id)
-    lens : dict
-        Read-to-alignment length map.
-    th : float
-        Threshold for read/gene overlapping fraction.
-    pfx : str
-        Prefix to append to gene IDs.
+    geneque : list of int
+        Sorted queue of genes.
+    readque : list of int
+        Paired queue of reads.
 
     Yields
     ------
     int
         Read index.
-    str
-        Gene ID.
+    int
+        Gene index.
 
     See Also
     --------
@@ -401,52 +445,315 @@ def match_read_gene_pfx(queue, lens, th, pfx):
 
     Notes
     -----
-    This function is identical to `match_read_gene`, except for that it adds a
-    prefix (usually a nucleotide ID) to each gene ID.
+    This is a reference implementation of the naive nested iteration method
+    with limited optimization. It is O(nm), where n and m are the numbers of
+    genes and reads, respectively. It should be much slower than the ordinal
+    method. However, when the number of reads is small, it may be efficient
+    because it saves the sorting step.
     """
-    genes, reads = {}, {}
-    reads_items, genes_items = reads.items, genes.items
+    # only genes are cached
+    genes = {}
+    genes_pop = genes.pop
+
+    # iterate over reads (paired)
+    it = iter(readque)
+    for x, y in zip(it, it):
+
+        # pre-calculate read metrics
+        rid = x & (1 << 30) - 1     # index
+        beg = x >> 48               # start coordinate
+        end = y >> 48               # end coordinate
+        L = (x >> 31) - 1 & 131071  # effective length - 1
+
+        # iterate over genes (ordinal)
+        for code in geneque:
+
+            # add gene to cache
+            if code & (1 << 31):
+                genes[code & (1 << 30) - 1] = code >> 48
+
+            # check overlap while removing gene from cache:
+            # min(gene end, read end) - max(gene start, read start) >=
+            # effective length - 1
+            elif (min(code >> 48, end) -
+                  max(genes_pop(code & (1 << 30) - 1), beg)) >= L:
+                yield rid, code & (1 << 30) - 1
+
+
+def match_read_gene_quart(geneque, readque):
+    """Associate reads with genes by iterating between read region and nearer
+    end of gene queue.
+
+    Parameters
+    ----------
+    geneque : list of int
+        Sorted queue of genes.
+    readque : list of int
+        Paired queue of reads.
+
+    Yields
+    ------
+    int
+        Read index.
+    int
+        Gene index.
+
+    See Also
+    --------
+    match_read_gene_naive
+
+    Notes
+    -----
+    This optimized method is similar to the naive method, but it reduces the
+    search space from n to n / 4, thus it significantly improves efficiency.
+
+    The idea is that one only needs to iterate between the position where read
+    can fit it, and the nearer end of the gene queue.
+
+    Further reduction of search space is not possible, because genes may span
+    over half of the genome, and they cannot be detected without iterating to
+    end of the gene queue.
+
+    This method uses bisection to find the insertion point of read start in the
+    pre-sorted gene queue, which has O(logn) time.
+    """
+    n = len(geneque)  # entire search space
+    mid = n // 2      # mid point
+
+    # iterate over paired read starts and ends
+    it = iter(readque)
+    for x, y in zip(it, it):
+
+        # pre-calculate read metrics
+        rid = x & (1 << 30) - 1     # index
+        beg = x >> 48               # start coordinate
+        end = y >> 48               # end coordinate
+        L = (x >> 31) - 1 & 131071  # effective length - 1
+
+        # genes starting within read region
+        # will record their coordinates
+        within = {}
+        within_pop = within.pop
+
+        # read starts in left half of gene queue
+        if x < geneque[mid]:
+
+            # genes starting before read region
+            # no need to record coordinates as overlap is not possible
+            before = set()
+            before_add = before.add
+            before_remove = before.remove
+
+            # locate read start using bisection
+            # Python's `bisect` is more efficient than homebrew code
+            i = bisect(geneque, x, hi=mid)
+
+            # iterate over gene positions before read region
+            for code in geneque[:i]:
+
+                # add gene to cache when it starts
+                if code & (1 << 31):
+                    before_add(code & (1 << 30) - 1)
+
+                # drop gene from cache when it ends
+                else:
+                    before_remove(code & (1 << 30) - 1)
+
+            # iterate over gene positions after read start
+            for code in geneque[i:]:
+
+                # stop when exceeding read end
+                if code > y:
+                    break
+
+                # when gene starts, add it and its coordinate to cache
+                elif code & (1 << 31):
+                    within[code & (1 << 30) - 1] = code >> 48
+
+                # when gene ends, check overlap and remove it from cache
+                else:
+                    gid = code & (1 << 30) - 1
+
+                    # most genes should start before read region
+                    try:
+                        before_remove(gid)
+
+                    # if gene started within read region,
+                    # overlap = gene end - gene start
+                    except KeyError:
+                        if (code >> 48) - within_pop(gid) >= L:
+                            yield rid, gid
+
+                    # if gene started before read region,
+                    # overlap = gene end - read start
+                    else:
+                        if (code >> 48) - beg >= L:
+                            yield rid, gid
+
+            # yield all genes that started before read but not yet ended
+            for gid in before:
+                yield rid, gid
+
+            # yield genes that started after read but not yet ended,
+            # until overlap = read end - gene start is too short
+            for gid, gloc in within.items():
+                if end - gloc < L:
+                    break
+                yield rid, gid
+
+        # read starts in right half of gene queue
+        else:
+
+            # genes starting after read region
+            # no need to record coordinates as overlap is not possible
+            after = set()
+            after_add = after.add
+            after_remove = after.remove
+
+            # locate read start using bisection
+            i = bisect(geneque, x, lo=mid + 1, hi=n)
+
+            # iterate over gene positions within read region
+            # for i in range(bisect(geneque, x), n):
+            while i < n:
+                code = geneque[i]
+
+                # stop when exceeding read end
+                if code > y:
+                    break
+
+                # when gene starts, add it and its coordinate to cache
+                if code & (1 << 31):
+                    within[code & (1 << 30) - 1] = code >> 48
+
+                # when gene ends, check overlap and remove it from cache
+                # gene end must be <= read end
+                # if gene not found in cache (meaning gene started before read
+                # region), use read start, otherwise use gene start
+                elif (code >> 48) - within_pop(code & (1 << 30) - 1, beg) >= L:
+                    yield rid, code & (1 << 30) - 1
+
+                # move to next position
+                i += 1
+
+            # iterate over gene positions after read region
+            for code in geneque[i:]:
+
+                # add gene to cache when it starts
+                if code & (1 << 31):
+                    after_add(code & (1 << 30) - 1)
+
+                # when gene ends,
+                else:
+
+                    # most remaining genes should start after read region
+                    try:
+                        after_remove(code & (1 << 30) - 1)
+
+                    # otherwise, the gene spans over entire read region
+                    except KeyError:
+
+                        # check overlap while removing gene from cache
+                        # gene end must be >= read end
+                        # if gene not found in cache, use read start, otherwise
+                        # use gene start
+                        if end - within_pop(code & (1 << 30) - 1, beg) >= L:
+                            yield rid, code & (1 << 30) - 1
+
+
+def match_read_gene_dummy(queue, lens, th):
+    """Associate reads with genes based on a sorted queue of coordinates.
+    Parameters
+    ----------
+    queue : list of tuple of (int, bool, bool, int)
+        Sorted queue of coordinates (location, start or end, gene or read,
+        index).
+    lens : dict
+        Read-to-alignment length map.
+    th : float
+        Threshold for read/gene overlapping fraction.
+
+    Yields
+    ------
+    int
+        Read index.
+    int
+        Gene index.
+
+    See Also
+    --------
+    match_read_gene
+    .tests.test_ordinal.OrdinalTests.test_match_read_gene_dummy
+
+    Notes
+    -----
+    This is a dummy function which is only for test and demonstration purpose,
+    but is not called anywhere in the program.
+
+    The formal function `match_read_gene` extensively uses bitwise operations
+    and thus is hard to read. Therefore the current function, which represents
+    the original form of prior to optimization, is retained.
+    """
+    genes = {}  # current genes
+    reads = {}  # current reads
+
+    # walk through flattened queue of reads and genes
     for loc, is_start, is_gene, idx in queue:
         if is_gene:
+
+            # when a gene starts, added to gene cache
             if is_start:
                 genes[idx] = loc
+
+            # when a gene ends,
             else:
-                for rid, rloc in reads_items():
-                    if loc - max(genes[idx], rloc) + 1 >= lens[rid] * th:
-                        yield rid, f'{pfx}_{idx}'
-                del(genes[idx])
+
+                # find gene start and remove it from cache
+                gloc = genes.pop(idx)
+
+                # check cached reads for matches
+                for rid, rloc in reads.items():
+
+                    # is a match if read/gene overlap is long enough
+                    if loc - max(gloc, rloc) + 1 >= lens[rid] * th:
+                        yield rid, idx
+
+        # the same for reads
         else:
             if is_start:
                 reads[idx] = loc
             else:
-                for gid, gloc in genes_items():
-                    if loc - max(reads[idx], gloc) + 1 >= lens[idx] * th:
-                        yield idx, f'{pfx}_{gid}'
-                del(reads[idx])
+                rloc = reads.pop(idx)
+                for gid, gloc in genes.items():
+                    if loc - max(rloc, gloc) + 1 >= lens[idx] * th:
+                        yield idx, gid
 
 
-def calc_gene_lens(coords, prefix=False):
+def calc_gene_lens(mapper):
     """Calculate gene lengths by start and end coordinates.
 
     Parameters
     ----------
-    coords : dict
-        Gene coordinates table.
-    prefix : bool
-        Prefix gene IDs with nucleotide IDs.
+    mapper : callable
+        Ordinal mapper.
 
     Returns
     -------
-    dict of dict
+    dict of int
         Mapping of genes to lengths.
     """
     res = {}
-    for nucl, queue in coords.items():
-        for loc, is_start, _, gid in queue:
+    prefix = mapper.keywords['prefix']
+    idmap = mapper.keywords['idmap']
+    for nucl, queue in mapper.keywords['coords'].items():
+        idmap_ = idmap[nucl]
+        nucl += '_'
+        for code in queue:
+            gid = idmap_[code & (1 << 30) - 1]
             if prefix:
-                gid = f'{nucl}_{gid}'
-            if is_start:
-                res[gid] = 1 - loc
+                gid = nucl + gid
+            if code >> 31 & 131071:
+                res[gid] = 1 - (code >> 48)
             else:
-                res[gid] += loc
+                res[gid] += code >> 48
     return res
