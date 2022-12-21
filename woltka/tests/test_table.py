@@ -19,8 +19,8 @@ from biom import Table, load_table
 from woltka.table import (
     prep_table, read_table, write_table, read_tsv, write_tsv, strip_metacols,
     table_shape, table_max_f, frac_table, round_table, divide_table,
-    scale_table, filter_table, merge_tables, add_metacol, collapse_table,
-    calc_coverage)
+    scale_table, filter_table, merge_tables, add_metacol, clip_table,
+    collapse_table, calc_coverage)
 from woltka.biom import table_to_biom
 
 
@@ -647,6 +647,31 @@ class TableTests(TestCase):
         self.assertListEqual(list(map(
             dict, ob2.metadata(axis='observation'))), exp)
 
+    def test_clip_table(self):
+        table = prep_table({
+            'S1': {'G1_1': 4, 'G1_2': 5, 'G1_3': 0, 'G2_1': 0, 'G2_2': 3},
+            'S2': {'G1_1': 1, 'G1_2': 8, 'G1_4': 0, 'G2_1': 3, 'G2_3': 4},
+            'S3': {'G1_1': 0, 'G1_3': 2, 'G1_4': 3, 'G2_2': 5, 'G2_3': 0}})
+        obs = clip_table(table)
+        exp = prep_table({
+            'S1': {'G1': 9, 'G2': 3},
+            'S2': {'G1': 9, 'G2': 7},
+            'S3': {'G1': 5, 'G2': 5}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # invalid separator
+        with self.assertRaises(ValueError) as ctx:
+            clip_table(table, sep='.')
+        errmsg = 'Feature "G1_1" does not have a suffix.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+        # BIOM table
+        table_ = Table(*map(np.array, table))
+        obs = clip_table(table_)
+        exp = Table(*map(np.array, exp))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
     def test_collapse_table(self):
         table = prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
@@ -749,6 +774,47 @@ class TableTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             collapse_table(table, mapping, field=2)
         errmsg = 'Feature "A|K1" has less than 3 fields.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+        # suffixed table - keep only parents
+        table = prep_table({
+            'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0, 'C_2': 3},
+            'S2': {'A_2': 2, 'A_3': 5, 'B_3': 2, 'C_1': 4, 'C_3': 2}})
+        mapping = {'A': ['X'], 'B': ['X'], 'C': ['Y']}
+        obs = collapse_table(table, mapping, suffix=True)
+        exp = prep_table({
+            'S1': {'X': 16, 'Y': 3},
+            'S2': {'X':  9, 'Y': 6}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # collapse parents
+        table = prep_table({
+            'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0},
+            'S2': {'A_2': 2, 'B_3': 2, 'C_1': 4, 'C_3': 2}})
+        obs = collapse_table(table, mapping, suffix=True, field=0)
+        exp = prep_table({
+            'S1': {'X|A_1': 3, 'X|A_2': 6, 'X|B_1': 7, 'Y|B_2': 0},
+            'S2': {'X|A_2': 2, 'X|B_3': 2, 'Y|C_1': 4, 'Y|C_3': 2}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # collapse children
+        mapping = {'A_1': ['a'], 'A_2': ['b'],
+                   'B_1': ['a'], 'B_2': ['b'],
+                   'C_1': ['a'], 'C_2': ['b']}
+        obs = collapse_table(table, mapping, suffix=True, field=1)
+        exp = prep_table({
+            'S1': {'A|a': 3, 'A|b': 6, 'B|a': 7, 'B|b': 0},
+            'S2': {'A|b': 2, 'C|a': 4}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # no suffix
+        table = prep_table({'S1': {'ABC': 123}})
+        with self.assertRaises(ValueError) as ctx:
+            collapse_table(table, {}, suffix=True)
+        errmsg = 'Feature "ABC" does not have a suffix.'
         self.assertEqual(str(ctx.exception), errmsg)
 
     def test_calc_coverage(self):

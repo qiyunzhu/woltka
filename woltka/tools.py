@@ -19,7 +19,7 @@ import click
 from .table import (
     read_table, table_shape, table_max_f, frac_table, divide_table,
     scale_table, round_table, write_table, filter_table, merge_tables,
-    add_metacol, collapse_table, calc_coverage)
+    add_metacol, clip_table, collapse_table, calc_coverage)
 from .file import readzip, read_map_1st, read_map_many, read_map_all
 from .util import scale_factor
 from .tree import read_names
@@ -40,7 +40,7 @@ def normalize_wf(input_fp:  str,
         Feature not found in size map.
     """
     # read input profile
-    table, fmt = read_table(input_fp)
+    table, _ = read_table(input_fp)
 
     # estimate maximum decimal precision
     if digits is None:
@@ -118,7 +118,7 @@ def filter_wf(input_fp:      str,
     th = min_count or min_percent / 100
 
     # read input profile
-    table, fmt = read_table(input_fp)
+    table, _ = read_table(input_fp)
     n = table_shape(table)[0]
     click.echo(f'Number of features before filtering: {n}.')
 
@@ -155,7 +155,7 @@ def merge_wf(input_fps: list,
 
     def _read_profile(fp):
         try:
-            table = read_table(fp)[0]
+            table, _ = read_table(fp)
         except ValueError:
             exit(f'Cannot parse {basename(fp)} as a profile.')
         n, m = table_shape(table)
@@ -193,9 +193,10 @@ def merge_wf(input_fps: list,
 
 
 def collapse_wf(input_fp:  str,
-                map_fp:    str,
                 output_fp: str,
+                map_fp:    str = None,
                 divide:   bool = False,
+                suffix:   bool = False,
                 field:     int = None,
                 names_fp:  str = None):
     """Workflow for collapsing a profile based on many-to-many mapping.
@@ -203,7 +204,8 @@ def collapse_wf(input_fp:  str,
     Raises
     ------
     SystemExit
-        No relationship is found in mapping file.
+        No mapping file or "-s" is specified.
+        No mapping is found in mapping file.
 
     See Also
     --------
@@ -211,29 +213,37 @@ def collapse_wf(input_fp:  str,
         Command-line arguments and help information.
     """
     # read input profile
-    table, fmt = read_table(input_fp)
+    table, _ = read_table(input_fp)
     n = table_shape(table)[0]
     click.echo(f'Number of features before collapsing: {n}.')
+
+    # read mapping file (many-to-many okay)
+    if map_fp:
+        with readzip(map_fp, {}) as f:
+            mapping = read_map_many(f)
+        if not mapping:
+            exit(f'No source-target mapping is found in {basename(map_fp)}.')
+
+    # no mapping file (okay when trimming suffix)
+    elif not suffix:
+        exit(f'A mapping file must be provided unless "-s" is specified.')
+
+    # convert field index from 1-based to 0-based
+    if field:
+        field -= 1
+
+    click.echo('Collapsing profile...', nl=False)
 
     # maximum decimal precision
     digits = table_max_f(table)
 
-    # read mapping file (many-to-many okay)
-    with readzip(map_fp, {}) as f:
-        mapping = read_map_many(f)
-    if not mapping:
-        exit(f'No source-target relationship is found in {basename(map_fp)}.')
-
-    # convert field index
-    if field:
-        field -= 1
+    # just remove suffix from feature names
+    if suffix and not map_fp:
+        table = clip_table(table)
 
     # collapse profile by mapping
-    click.echo('Collapsing profile...', nl=False)
-    table = collapse_table(table, mapping, divide, field)
-    click.echo(' Done.')
-    n = table_shape(table)[0]
-    click.echo(f'Number of features after collapsing: {n}.')
+    else:
+        table = collapse_table(table, mapping, divide, suffix, field)
 
     # append feature names (optional)
     if names_fp:
@@ -243,6 +253,11 @@ def collapse_wf(input_fp:  str,
 
     # round table values
     round_table(table, digits or None)
+
+    click.echo(' Done.')
+
+    n = table_shape(table)[0]
+    click.echo(f'Number of features after collapsing: {n}.')
 
     # write collapsed profile
     write_table(table, output_fp)
@@ -259,7 +274,7 @@ def coverage_wf(input_fp:   str,
     information.
     """
     # read input profile
-    table, fmt = read_table(input_fp)
+    table, _ = read_table(input_fp)
     n = table_shape(table)[0]
     click.echo(f'Number of features in profile: {n}.')
 

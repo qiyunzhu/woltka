@@ -21,7 +21,8 @@ from .tree import lineage_str
 from .file import openzip
 from .biom import (
     table_to_biom, biom_to_table, write_biom, biom_max_f, divide_biom,
-    scale_biom, filter_biom, round_biom, biom_add_metacol, collapse_biom)
+    scale_biom, filter_biom, round_biom, biom_add_metacol, clip_biom,
+    collapse_biom)
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -234,8 +235,7 @@ def read_tsv(fh):
     width = len(header)
     for line in fh:
         row = line.rstrip('\r\n').split('\t')
-        feature = row[0]
-        features.append(feature)
+        features.append(row[0])
         data.append([int(x) if x.isdigit() else float(x)
                      for x in row[1:width]])
         # data.append(list(map(int, row[1:width])))
@@ -560,7 +560,45 @@ def add_metacol(table, dic, name, missing=''):
         metadatum[name] = dic.get(feature, missing)
 
 
-def collapse_table(table, mapping, divide=False, field=None):
+def clip_table(table, sep='_'):
+    """Remove suffix from feature names in a table.
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to collapse.
+    sep : str, optional
+        Separator (after last of which is suffix).
+
+    Returns
+    -------
+    biom.Table or tuple
+        Clipped table.
+
+    Raises
+    ------
+    ValueError
+        A feature ID does not have a suffix.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        return clip_biom(table, sep)
+
+    # remove suffix from feature names
+    samples = table[2]
+    width = len(samples)
+    res = defaultdict(lambda: [0] * width)
+    for datum, feature in zip(*table[:2]):
+        left, _, _ = feature.rpartition(sep)
+        if not left:
+            raise ValueError(f'Feature "{feature}" does not have a suffix.')
+        res[left] = list(map(add, res[left], datum))
+
+    # reformat table
+    return list(res.values()), list(res.keys()), samples, [dict() for _ in res]
+
+
+def collapse_table(table, mapping, divide=False, suffix=False, field=None):
     """Collapse a table by many-to-many mapping.
 
     Parameters
@@ -571,6 +609,8 @@ def collapse_table(table, mapping, divide=False, field=None):
         Source-to-target(s) mapping.
     divide : bool, optional
         Whether divide per-target counts by number of targets per source.
+    suffix : bool, optional
+        Whether feature names should be treated as with suffixes.
     field : int, optional
         Index of field to be collapsed in a stratified table.
 
@@ -582,7 +622,7 @@ def collapse_table(table, mapping, divide=False, field=None):
     Raises
     ------
     ValueError
-        Field index is not present in a feature ID.
+        A feature ID does not have a suffix or a field.
 
     Notes
     -----
@@ -590,26 +630,49 @@ def collapse_table(table, mapping, divide=False, field=None):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return collapse_biom(table, mapping, divide, field)
+        return collapse_biom(table, mapping, divide, suffix, field)
 
     # collapse table
     samples = table[2]
     width = len(samples)
     res = defaultdict(lambda: [0] * width)
     for datum, feature in zip(*table[:2]):
-        if field is not None:
+
+        # suffixed feature
+        if suffix:
+            left, _, _ = feature.rpartition('_')
+            if not left:
+                raise ValueError(
+                    f'Feature "{feature}" does not have a suffix.')
+
+            # get fields
+            if field is not None:
+                fields = [left, feature]
+
+            # collapse field to parent
+            if not field:
+                feature = left
+
+        # stratified feature
+        elif field is not None:
             fields = feature.split('|')
             try:
                 feature = fields[field]
             except IndexError:
                 raise ValueError(
                     f'Feature "{feature}" has less than {field + 1} fields.')
+
+        # map features to targets
         if feature not in mapping:
             continue
         targets = mapping[feature]
+
+        # divide feature count by target number
         if divide:
             k = 1 / len(targets)
             datum = [x * k for x in datum]
+
+        # add results to same target
         for target in targets:
             if field is not None:
                 fields[field] = target

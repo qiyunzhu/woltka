@@ -194,7 +194,46 @@ def biom_add_metacol(table: biom.Table, dic, name, missing=''):
     table.add_metadata(metadata, axis='observation')
 
 
-def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
+def clip_biom(table: biom.Table, sep='_'):
+    """Remove suffix from feature names in a BIOM table.
+
+    Parameters
+    ----------
+    table : biom.Table
+        Table to collapse.
+    sep : str, optional
+        Separator (after last of which is suffix).
+
+    Returns
+    -------
+    biom.Table
+        Clipped BIOM table.
+
+    Raises
+    ------
+    ValueError
+        A feature ID does not have a suffix.
+
+    Notes
+    -----
+    Metadata will not be retained in the collapsed table.
+
+    See Also
+    --------
+    .table.clip_table
+    """
+    def f(id_, _):
+        left, _, _ = id_.rpartition(sep)
+        if not left:
+            raise ValueError(f'Feature "{id_}" does not have a suffix.')
+        return left
+
+    return table.collapse(f, norm=False, axis='observation',
+                          include_collapsed_metadata=False)
+
+
+def collapse_biom(table: biom.Table, mapping: dict, divide=False, suffix=False,
+                  field=None):
     """Collapse a BIOM table in many-to-many mode.
 
     Parameters
@@ -205,6 +244,8 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
         Source-to-target(s) mapping.
     divide : bool, optional
         Whether divide per-target counts by number of targets per source.
+    suffix : bool, optional
+        Whether feature names should be treated as with suffixes.
     field : int, optional
         Index of field to be collapsed in a stratified table.
 
@@ -216,7 +257,7 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
     Raises
     ------
     ValueError
-        Field index is not present in a feature ID.
+        A feature ID does not have a suffix or a field.
 
     Notes
     -----
@@ -230,7 +271,16 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
     metadata = {}
     for id_ in table.ids('observation'):
         feature = id_
-        if field is not None:
+        if suffix:
+            left, _, _ = feature.rpartition('_')
+            if not left:
+                raise ValueError(
+                    f'Feature "{feature}" does not have a suffix.')
+            if field is not None:
+                fields = [left, feature]
+            if not field:
+                feature = left
+        elif field is not None:
             fields = feature.split('|')
             try:
                 feature = fields[field]

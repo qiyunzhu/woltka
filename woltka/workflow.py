@@ -794,8 +794,8 @@ def strip_suffix(subque: list,
 
     Notes
     -----
-    This function will find the last occurrence of separator in a subject Id,
-    and trim from it to the right end. If not found, the whole subject Id will
+    This function will find the last occurrence of separator in a subject ID,
+    and trim from it to the right end. If not found, the whole subject ID will
     be retained.
     """
     return map(set, map(partial(

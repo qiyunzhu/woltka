@@ -22,7 +22,8 @@ from pandas.testing import assert_frame_equal
 
 from woltka.biom import (
     table_to_biom, biom_to_table, write_biom, biom_max_f, divide_biom,
-    scale_biom, filter_biom, round_biom, biom_add_metacol, collapse_biom)
+    scale_biom, filter_biom, round_biom, biom_add_metacol, clip_biom,
+    collapse_biom)
 from woltka.table import prep_table
 
 
@@ -215,6 +216,24 @@ class BiomTests(TestCase):
         self.assertListEqual(list(map(
             dict, obs.metadata(axis='observation'))), exp)
 
+    def test_clip_biom(self):
+        table = Table(*map(np.array, prep_table({
+            'S1': {'G1_1': 4, 'G1_2': 5, 'G1_3': 0, 'G2_1': 0, 'G2_2': 3},
+            'S2': {'G1_1': 1, 'G1_2': 8, 'G1_4': 0, 'G2_1': 3, 'G2_3': 4},
+            'S3': {'G1_1': 0, 'G1_3': 2, 'G1_4': 3, 'G2_2': 5, 'G2_3': 0}})))
+        obs = clip_biom(table.copy())
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'G1': 9, 'G2': 3},
+            'S2': {'G1': 9, 'G2': 7},
+            'S3': {'G1': 5, 'G2': 5}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # invalid separator
+        with self.assertRaises(ValueError) as ctx:
+            clip_biom(table.copy(), sep='.')
+        errmsg = 'Feature "G1_1" does not have a suffix.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
     def test_collapse_biom(self):
         table = Table(*map(np.array, prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3, 'G6': 0},
@@ -311,6 +330,44 @@ class BiomTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             collapse_biom(table, mapping, field=2)
         errmsg = 'Feature "A|K1" has less than 3 fields.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+        # suffixed table - keep only parents
+        table = Table(*map(np.array, prep_table({
+            'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0, 'C_2': 3},
+            'S2': {'A_2': 2, 'A_3': 5, 'B_3': 2, 'C_1': 4, 'C_3': 2}})))
+        mapping = {'A': ['X'], 'B': ['X'], 'C': ['Y']}
+        obs = collapse_biom(table.copy(), mapping, suffix=True)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'X': 16, 'Y': 3},
+            'S2': {'X':  9, 'Y': 6}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # collapse parents
+        table = Table(*map(np.array, prep_table({
+            'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0},
+            'S2': {'A_2': 2, 'B_3': 2, 'C_1': 4, 'C_3': 2}})))
+        obs = collapse_biom(table.copy(), mapping, suffix=True, field=0)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'X|A_1': 3, 'X|A_2': 6, 'X|B_1': 7, 'Y|B_2': 0},
+            'S2': {'X|A_2': 2, 'X|B_3': 2, 'Y|C_1': 4, 'Y|C_3': 2}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # collapse children
+        mapping = {'A_1': ['a'], 'A_2': ['b'],
+                   'B_1': ['a'], 'B_2': ['b'],
+                   'C_1': ['a'], 'C_2': ['b']}
+        obs = collapse_biom(table.copy(), mapping, suffix=True, field=1)
+        exp = Table(*map(np.array, prep_table({
+            'S1': {'A|a': 3, 'A|b': 6, 'B|a': 7, 'B|b': 0},
+            'S2': {'A|b': 2, 'C|a': 4}})))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # no suffix
+        table = Table(*map(np.array, prep_table({'S1': {'ABC': 123}})))
+        with self.assertRaises(ValueError) as ctx:
+            collapse_biom(table.copy(), {}, suffix=True)
+        errmsg = 'Feature "ABC" does not have a suffix.'
         self.assertEqual(str(ctx.exception), errmsg)
 
 

@@ -261,18 +261,21 @@ def merge_cmd(ctx, **kwargs):
     type=click.Path(exists=True, dir_okay=False),
     help='Path to input profile.')
 @click.option(
-    '--map', '-m', 'map_fp', required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help=('Mapping of source features to target features. (supports '
-          'many-to-many relationships).'))
-@click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True, dir_okay=False),
     help='Path to output profile.')
 @click.option(
+    '--map', '-m', 'map_fp',
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Mapping of source features to target features. Supports '
+          'many-to-many relationships. Required unless with "-s"'))
+@click.option(
     '--divide', '-d', is_flag=True,
     help=('Count each target feature as 1/k (k is the number of targets '
           'mapped to a source). Otherwise, count as one.'))
+@click.option(
+    '--suffix', '-s', is_flag=True,
+    help='Treat features as with suffixes')
 @click.option(
     '--field', '-f', type=click.INT,
     help='Index of field to be collapsed in a stratified profile.')
