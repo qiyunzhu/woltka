@@ -24,7 +24,7 @@ Option | Description
 `--filext`, `-e` | Input filename extension following sample ID.
 `--samples`, `-s` | List of sample IDs to be included.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
-`--trim-sub` | Trim subject IDs at the last given delimiter.
+`--trim-sub` | Trim subject IDs at the last given delimiter. Can accept the default value "_" or enter a custom value.
 
 ### Hierarchies
 
@@ -145,7 +145,8 @@ Option | Description
 `--map`, `-m` (required) | Path to mapping of source features to target features.
 `--output`, `-o` (required) | Path to output profile.
 `--divide`, `-d` | Count each target feature as 1 / _k_ (_k_ is the number of targets mapped to a source). Otherwise, count as one.
-`--field`, `-f` | Index of field to be collapsed in a stratified profile. For example, use `-f 2` to collapse "gene" in "microbe\|gene".
+`--field`, `-f` | Features are stratified (strata delimited by "\|"). For example, if features are like "microbe\|gene", one can use `-f 1` to collapse "microbe" or `-f 2` to collapse "gene".
+`--suffix`, `-s` | Features have suffixes that indicate parent-child relationships. For example, "A_1" represents "1" of "A", and the entire feature is equivalent to "A\|A_1". Can accept the default delimiter "_" or enter a custom delimiter. This parameter overrides the "\|"-delimited strata.
 `--names`, `-n` | Path to mapping of target features to names. The names will be appended to the collapsed profile as a metadata column.
 
 ### Coverage

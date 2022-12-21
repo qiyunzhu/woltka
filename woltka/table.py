@@ -598,7 +598,7 @@ def clip_table(table, sep='_'):
     return list(res.values()), list(res.keys()), samples, [dict() for _ in res]
 
 
-def collapse_table(table, mapping, divide=False, suffix=False, field=None):
+def collapse_table(table, mapping, divide=False, field=None, suffix=None):
     """Collapse a table by many-to-many mapping.
 
     Parameters
@@ -609,10 +609,10 @@ def collapse_table(table, mapping, divide=False, suffix=False, field=None):
         Source-to-target(s) mapping.
     divide : bool, optional
         Whether divide per-target counts by number of targets per source.
-    suffix : bool, optional
-        Whether feature names should be treated as with suffixes.
     field : int, optional
         Index of field to be collapsed in a stratified table.
+    suffix : str, optional
+        Feature names have a suffix following this delimiter.
 
     Returns
     -------
@@ -640,7 +640,7 @@ def collapse_table(table, mapping, divide=False, suffix=False, field=None):
 
         # suffixed feature
         if suffix:
-            left, _, _ = feature.rpartition('_')
+            left, _, _ = feature.rpartition(suffix)
             if not left:
                 raise ValueError(
                     f'Feature "{feature}" does not have a suffix.')

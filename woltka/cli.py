@@ -61,8 +61,9 @@ def cli():
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
 @click.option(
-    '--trim-sub', 'trimsub',
-    help='Trim subject IDs at the last given delimiter.')
+    '--trim-sub', 'trimsub', is_flag=False, flag_value='_',
+    help=('Trim subject IDs at the last given delimiter. Default: "_", or '
+          'enter a custom value.'))
 # hierarchies
 @click.option(
     '--nodes', 'nodes_fps', type=click.Path(exists=True), multiple=True,
@@ -274,11 +275,14 @@ def merge_cmd(ctx, **kwargs):
     help=('Count each target feature as 1/k (k is the number of targets '
           'mapped to a source). Otherwise, count as one.'))
 @click.option(
-    '--suffix', '-s', is_flag=True,
-    help='Treat features as with suffixes')
-@click.option(
     '--field', '-f', type=click.INT,
-    help='Index of field to be collapsed in a stratified profile.')
+    help=('Features are stratified (strata delimited by "|"), and the x-th '
+          'field is to be collapsed, while other fields stay the same.'))
+@click.option(
+    '--suffix', '-s', is_flag=False, flag_value='_',
+    help=('Features have suffixes that indicate parent-child relationships. '
+          'For example, "A_1" represents "1" of "A". Enter an delimiter if '
+          'not "_". Overrides "|"-delimited strata.'))
 @click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of target features to append to the output profile.')

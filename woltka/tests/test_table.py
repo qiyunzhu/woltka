@@ -778,10 +778,10 @@ class TableTests(TestCase):
 
         # suffixed table - keep only parents
         table = prep_table({
-            'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0, 'C_2': 3},
-            'S2': {'A_2': 2, 'A_3': 5, 'B_3': 2, 'C_1': 4, 'C_3': 2}})
+            'S1': {'A.1': 3, 'A.2': 6, 'B.1': 7, 'B.2': 0, 'C.2': 3},
+            'S2': {'A.2': 2, 'A.3': 5, 'B.3': 2, 'C.1': 4, 'C.3': 2}})
         mapping = {'A': ['X'], 'B': ['X'], 'C': ['Y']}
-        obs = collapse_table(table, mapping, suffix=True)
+        obs = collapse_table(table, mapping, suffix='.')
         exp = prep_table({
             'S1': {'X': 16, 'Y': 3},
             'S2': {'X':  9, 'Y': 6}})
@@ -792,7 +792,7 @@ class TableTests(TestCase):
         table = prep_table({
             'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0},
             'S2': {'A_2': 2, 'B_3': 2, 'C_1': 4, 'C_3': 2}})
-        obs = collapse_table(table, mapping, suffix=True, field=0)
+        obs = collapse_table(table, mapping, field=0, suffix='_')
         exp = prep_table({
             'S1': {'X|A_1': 3, 'X|A_2': 6, 'X|B_1': 7, 'Y|B_2': 0},
             'S2': {'X|A_2': 2, 'X|B_3': 2, 'Y|C_1': 4, 'Y|C_3': 2}})
@@ -803,7 +803,7 @@ class TableTests(TestCase):
         mapping = {'A_1': ['a'], 'A_2': ['b'],
                    'B_1': ['a'], 'B_2': ['b'],
                    'C_1': ['a'], 'C_2': ['b']}
-        obs = collapse_table(table, mapping, suffix=True, field=1)
+        obs = collapse_table(table, mapping, field=1, suffix='_')
         exp = prep_table({
             'S1': {'A|a': 3, 'A|b': 6, 'B|a': 7, 'B|b': 0},
             'S2': {'A|b': 2, 'C|a': 4}})
@@ -813,7 +813,7 @@ class TableTests(TestCase):
         # no suffix
         table = prep_table({'S1': {'ABC': 123}})
         with self.assertRaises(ValueError) as ctx:
-            collapse_table(table, {}, suffix=True)
+            collapse_table(table, {}, suffix='x')
         errmsg = 'Feature "ABC" does not have a suffix.'
         self.assertEqual(str(ctx.exception), errmsg)
 

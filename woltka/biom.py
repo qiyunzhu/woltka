@@ -232,8 +232,8 @@ def clip_biom(table: biom.Table, sep='_'):
                           include_collapsed_metadata=False)
 
 
-def collapse_biom(table: biom.Table, mapping: dict, divide=False, suffix=False,
-                  field=None):
+def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None,
+                  suffix=None):
     """Collapse a BIOM table in many-to-many mode.
 
     Parameters
@@ -244,10 +244,10 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, suffix=False,
         Source-to-target(s) mapping.
     divide : bool, optional
         Whether divide per-target counts by number of targets per source.
-    suffix : bool, optional
-        Whether feature names should be treated as with suffixes.
     field : int, optional
         Index of field to be collapsed in a stratified table.
+    suffix : str, optional
+        Feature names have a suffix following this delimiter.
 
     Returns
     -------
@@ -272,7 +272,7 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, suffix=False,
     for id_ in table.ids('observation'):
         feature = id_
         if suffix:
-            left, _, _ = feature.rpartition('_')
+            left, _, _ = feature.rpartition(suffix)
             if not left:
                 raise ValueError(
                     f'Feature "{feature}" does not have a suffix.')

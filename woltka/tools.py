@@ -196,8 +196,8 @@ def collapse_wf(input_fp:  str,
                 output_fp: str,
                 map_fp:    str = None,
                 divide:   bool = False,
-                suffix:   bool = False,
                 field:     int = None,
+                suffix:    str = None,
                 names_fp:  str = None):
     """Workflow for collapsing a profile based on many-to-many mapping.
 
@@ -226,7 +226,7 @@ def collapse_wf(input_fp:  str,
 
     # no mapping file (okay when trimming suffix)
     elif not suffix:
-        exit(f'A mapping file must be provided unless "-s" is specified.')
+        exit(f'A mapping file is required unless features are suffixed.')
 
     # convert field index from 1-based to 0-based
     if field:
@@ -239,11 +239,11 @@ def collapse_wf(input_fp:  str,
 
     # just remove suffix from feature names
     if suffix and not map_fp:
-        table = clip_table(table)
+        table = clip_table(table, suffix)
 
     # collapse profile by mapping
     else:
-        table = collapse_table(table, mapping, divide, suffix, field)
+        table = collapse_table(table, mapping, divide, field, suffix)
 
     # append feature names (optional)
     if names_fp:

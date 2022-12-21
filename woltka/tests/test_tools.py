@@ -189,7 +189,7 @@ class ToolsTests(TestCase):
         # no mapping file
         with self.assertRaises(SystemExit) as ctx:
             collapse_wf(input_fp, output_fp)
-        errmsg = 'A mapping file must be provided unless "-s" is specified.'
+        errmsg = 'A mapping file is required unless features are suffixed.'
         self.assertEqual(str(ctx.exception), errmsg)
 
         # wrong mapping file
@@ -215,7 +215,7 @@ class ToolsTests(TestCase):
 
         # suffixed profile
         input_fp = join(self.datdir, 'output', 'bowtie2.orf.tsv')
-        collapse_wf(input_fp, output_fp, suffix=True)
+        collapse_wf(input_fp, output_fp, suffix='_')
         with open(output_fp, 'r') as f:
             obs = f.read().splitlines()
         self.assertEqual(len(obs), 50)

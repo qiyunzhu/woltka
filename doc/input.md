@@ -120,6 +120,10 @@ woltka classify \
 
 ## Subject trimming
 
-The parameter `--trim-sub <delim>` lets Woltka trim subject IDs at the last occurrence of the given delimiter. Examples include trimming off version numbers from NCBI accessions (`--trim-sub .`: `NP_123456.1` => `NP_123456`, trimming off ORF indices from nucleotide sequences (`--trim-sub _`: `Contig_5_20` => `Contig_5`).
+The parameter `--trim-sub <delim>` lets Woltka trim subject IDs at the last occurrence of the given delimiter (default: "_"). For examples:
+
+1. Trim off ORF indices from nucleotide sequences: Add `--trim-sub` (without a value). Effect: "Contig_5_20" becomes "Contig_5".
+ 
+2. Trim off version numbers from NCBI accessions: Add `--trim-sub .` (dot). Effect: "NP_123456.1" becomes "NP_123456".
 
 This allows flexible adaptation to alternative classification systems without manually editing the alignment files. A use case is the stratified structural/functional classification (see [details](stratify.md)).
