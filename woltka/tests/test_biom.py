@@ -35,6 +35,19 @@ class BiomTests(TestCase):
     def tearDown(self):
         rmtree(self.tmpdir)
 
+    def assertBIOMEqual(self, a, b):
+        """Assert two BIOM tables are equal.
+        """
+        self.assertEqual(a.descriptive_equality(b), 'Tables appear equal')
+
+    def assertBIOMEmpty(self, a, samples=None):
+        """Assert a BIOM table is empty; optionally check sample IDs.
+        """
+        self.assertTrue(a.is_empty())
+        self.assertListEqual(list(a.ids('observation')), [])
+        if samples:
+            self.assertListEqual(list(a.ids('sample')), samples)
+
     def test_table_to_biom(self):
         data = [[4, 2, 0],
                 [5, 0, 3],
@@ -93,7 +106,7 @@ class BiomTests(TestCase):
         fp = join(self.tmpdir, 'tmp.biom')
         write_biom(exp, fp)
         obs = load_table(fp)
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
         remove(fp)
 
     def test_biom_max_f(self):
@@ -114,7 +127,7 @@ class BiomTests(TestCase):
             'S1': {'G1': 4, 'G2': 6, 'G3': 2},
             'S2': {'G1': 3, 'G2': 4, 'G3': 4},
             'S3': {'G1': 2, 'G2': 3, 'G3': 0}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
         del sizes['G3']
         with self.assertRaises(KeyError):
             divide_biom(obs, sizes)
@@ -127,7 +140,7 @@ class BiomTests(TestCase):
         exp = Table(*map(np.array, prep_table({
             'S1': {'G1': 12, 'G2': 21, 'G3': 0},
             'S2': {'G1':  6, 'G2':  9, 'G3': 3}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
     def test_filter_biom(self):
         table = Table(*map(np.array, prep_table({
@@ -139,39 +152,38 @@ class BiomTests(TestCase):
             'S1': {'G1': 4, 'G2': 5, 'G3': 8},
             'S2': {'G4': 3, 'G5': 7},
             'S3': {'G2': 3, 'G5': 5}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         obs = filter_biom(table, th=4)
         exp = Table(*map(np.array, prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8},
             'S2': {'G5': 7},
             'S3': {'G5': 5}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         obs = filter_biom(table, th=6)
         exp = Table(*map(np.array, prep_table({
             'S1': {'G3': 8},
             'S2': {'G5': 7},
             'S3': {}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         obs = filter_biom(table, th=0.25)
         exp = Table(*map(np.array, prep_table({
             'S1': {'G2': 5, 'G3': 8},
             'S2': {'G4': 3, 'G5': 7},
             'S3': {'G2': 3, 'G5': 5}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         obs = filter_biom(table, th=0.5)
         exp = Table(*map(np.array, prep_table({
             'S1': {},
             'S2': {'G5': 7},
             'S3': {'G5': 5}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
-        # empty BIOM table cannot be directly compared
         obs = filter_biom(table, th=10)
-        self.assertTupleEqual(obs.to_dataframe(True).shape, (0, 3))
+        self.assertBIOMEmpty(obs, ['S1', 'S2', 'S3'])
 
     def test_round_biom(self):
         obs = Table(*map(np.array, prep_table({
@@ -183,7 +195,7 @@ class BiomTests(TestCase):
             'S1': {'G1': 0, 'G3': 2},
             'S2': {'G1': 2, 'G3': 2},
             'S3': {'G1': 2, 'G3': 4}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
         obs = Table(*map(np.array, prep_table({
             'S1': {'G1': 0.225, 'G2': 0.0,   'G3': 2.375},
             'S2': {'G1': 1.547, 'G2': 0.173, 'G3': 1.499}})))
@@ -191,7 +203,7 @@ class BiomTests(TestCase):
         exp = Table(*map(np.array, prep_table({
             'S1': {'G1': 0.23, 'G2': 0.0,  'G3': 2.38},
             'S2': {'G1': 1.55, 'G2': 0.17, 'G3': 1.5}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
     def test_biom_add_metacol(self):
         obs = Table(*map(np.array, prep_table({
@@ -228,11 +240,11 @@ class BiomTests(TestCase):
             'S1': {'G1': 9, 'G2': 3},
             'S2': {'G1': 9, 'G2': 7},
             'S3': {'G1': 5, 'G2': 5}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # nested
         obs = clip_biom(table.copy(), 1, sep='_', nested=True)
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # 2nd field
         obs = clip_biom(table.copy(), 2, sep='_')
@@ -240,21 +252,19 @@ class BiomTests(TestCase):
             'S1': {'1': 4, '2': 8, '3': 0, '4': 0},
             'S2': {'1': 4, '2': 8, '3': 4, '4': 0},
             'S3': {'1': 0, '2': 5, '3': 2, '4': 3}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # nested (no change)
         obs = clip_biom(table.copy(), 2, sep='_', nested=True)
-        self.assertEqual(obs.descriptive_equality(table),
-                         'Tables appear equal')
+        self.assertBIOMEqual(obs, table)
 
         # field number too large (all dropped)
         obs = clip_biom(table.copy(), 3, sep='_')
-        self.assertTupleEqual(obs.to_dataframe(True).shape, (0, 3))
+        self.assertBIOMEmpty(obs, ['S1', 'S2', 'S3'])
 
         # invalid separator
         obs = clip_biom(table.copy(), 1, sep='.')
-        self.assertEqual(obs.descriptive_equality(table),
-                         'Tables appear equal')
+        self.assertBIOMEqual(obs, table)
 
         # empty fields
         table = Table(*map(np.array, prep_table({
@@ -262,13 +272,13 @@ class BiomTests(TestCase):
         obs = clip_biom(table.copy(), 2, sep='_')
         exp = Table(*map(np.array, prep_table({
             'S1': {'G1': 3, '4': 1}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # nested
         obs = clip_biom(table.copy(), 2, sep='_', nested=True)
         exp = Table(*map(np.array, prep_table({
             'S1': {'_G1': 3, 'G5_4': 1}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
     def test_collapse_biom(self):
         table = Table(*map(np.array, prep_table({
@@ -284,7 +294,7 @@ class BiomTests(TestCase):
             'S1': {'H1': 4, 'H2': 5, 'H3': 8, 'H4': 0, 'H5': 3, 'H6': 0},
             'S2': {'H1': 1, 'H2': 8, 'H3': 0, 'H4': 7, 'H5': 4, 'H6': 2},
             'S3': {'H1': 0, 'H2': 2, 'H3': 3, 'H4': 5, 'H5': 0, 'H6': 9}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # some missing, some extra
         mapping = {'G1': ['H1'], 'G2': ['H2'], 'G3': ['H3'], 'G9': ['H9']}
@@ -293,14 +303,12 @@ class BiomTests(TestCase):
             'S1': {'H1': 4, 'H2': 5, 'H3': 8},
             'S2': {'H1': 1, 'H2': 8, 'H3': 0},
             'S3': {'H1': 0, 'H2': 2, 'H3': 3}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # wrong mapping (no match)
         mapping = {'H1': ['I1'], 'H2': ['I2'], 'H3': ['I3']}
         obs = collapse_biom(table.copy(), mapping)
-        self.assertTrue(obs.is_empty())
-        self.assertListEqual(list(obs.ids('sample')), ['S1', 'S2', 'S3'])
-        self.assertListEqual(list(obs.ids('observation')), [])
+        self.assertBIOMEmpty(obs, ['S1', 'S2', 'S3'])
 
         # many-to-one mapping (e.g., taxonomic rank up)
         mapping = {'G1': ['H1'], 'G2': ['H1'], 'G3': ['H2'],
@@ -310,7 +318,7 @@ class BiomTests(TestCase):
             'S1': {'H1': 9, 'H2': 11, 'H3': 0},
             'S2': {'H1': 9, 'H2': 11, 'H3': 2},
             'S3': {'H1': 2, 'H2':  8, 'H3': 9}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # many-to-many mapping (e.g., genes to pathways)
         mapping = {'G1': ['H1'],
@@ -324,7 +332,7 @@ class BiomTests(TestCase):
             'S1': {'H1': 9, 'H2': 13, 'H3':  8, 'H4': 11, 'H5':  0},
             'S2': {'H1': 9, 'H2': 15, 'H3':  2, 'H4':  4, 'H5':  9},
             'S3': {'H1': 2, 'H2': 10, 'H3': 12, 'H4':  3, 'H5': 14}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # many-to-many mapping, with normalization
         obs = collapse_biom(table.copy(), mapping, divide=True)
@@ -332,16 +340,14 @@ class BiomTests(TestCase):
             'S1': {'H1': 6, 'H2': 5, 'H3': 3, 'H4': 6, 'H5': 0},
             'S2': {'H1': 5, 'H2': 8, 'H3': 1, 'H4': 4, 'H5': 4},
             'S3': {'H1': 1, 'H2': 4, 'H3': 6, 'H4': 1, 'H5': 7}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # nothing left after normalization
         table = Table(*map(np.array, prep_table({
             'S1': {'G1': 0}, 'S2': {'G1': 1}, 'S3': {'G1': 2}})))
         mapping = {'G1': ['H1', 'H2', 'H3', 'H4']}
         obs = collapse_biom(table.copy(), mapping, divide=True)
-        self.assertTrue(obs.is_empty())
-        self.assertListEqual(list(obs.ids('sample')), ['S1', 'S2', 'S3'])
-        self.assertListEqual(list(obs.ids('observation')), [])
+        self.assertBIOMEmpty(obs, ['S1', 'S2', 'S3'])
 
         # stratified features
         table = Table(*map(np.array, prep_table({
@@ -352,7 +358,7 @@ class BiomTests(TestCase):
         exp = Table(*map(np.array, prep_table({
             'S1': {'1|K1': 4, '1|K2': 13},
             'S2': {'1|K1': 1, '1|K2': 8}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
         mapping = {'K1': ['H1'], 'K2': ['H2', 'H3'], 'K3': ['H3']}
         obs = collapse_biom(table.copy(), mapping, field=2, sep='|')
         exp = Table(*map(np.array, prep_table({
@@ -360,7 +366,7 @@ class BiomTests(TestCase):
                    'C|H3': 3},
             'S2': {'A|H1': 1, 'A|H2': 8, 'A|H3': 8, 'B|H2': 0, 'B|H3': 0,
                    'C|H3': 4}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # invalid or empty field
         table = Table(*map(np.array, prep_table({
@@ -368,7 +374,7 @@ class BiomTests(TestCase):
             'S2': {'G|1': 1, 'G2|': 7}})))
         mapping = {'G1': ['H1'], 'G2': ['H2']}
         obs = collapse_biom(table.copy(), mapping, field=2, sep='|')
-        self.assertTupleEqual(obs.to_dataframe(True).shape, (0, 2))
+        self.assertBIOMEmpty(obs, ['S1', 'S2'])
 
         # nested features - 1st level
         table = Table(*map(np.array, prep_table({
@@ -380,7 +386,7 @@ class BiomTests(TestCase):
         exp = Table(*map(np.array, prep_table({
             'S1': {'X|A_1': 3, 'X|A_2': 6, 'X|B_1': 7, 'Y|B_2': 0},
             'S2': {'X|A_2': 2, 'X|B_3': 2, 'Y|C_1': 4, 'Y|C_3': 2}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
         # 2nd level
         mapping = {'A_1': ['a'], 'A_2': ['b'],
@@ -391,7 +397,7 @@ class BiomTests(TestCase):
         exp = Table(*map(np.array, prep_table({
             'S1': {'A|a': 3, 'A|b': 6, 'B|a': 7, 'B|b': 0},
             'S2': {'A|b': 2, 'C|a': 4}})))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+        self.assertBIOMEqual(obs, exp)
 
 
 if __name__ == '__main__':
