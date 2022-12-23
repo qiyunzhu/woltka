@@ -561,7 +561,7 @@ def add_metacol(table, dic, name, missing=''):
         metadatum[name] = dic.get(feature, missing)
 
 
-def clip_table(table, field, sep):
+def clip_table(table, field, sep, nested=False):
     """Clip stratified or nested feature names to a field.
 
     Parameters
@@ -572,6 +572,8 @@ def clip_table(table, field, sep):
         Field index to clip at.
     sep : str
         Field separator.
+    nested : bool, optional
+        Whether features are nested.
 
     Returns
     -------
@@ -580,7 +582,7 @@ def clip_table(table, field, sep):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return clip_biom(table, field, sep)
+        return clip_biom(table, field, sep, nested)
 
     # clip feature names to given field
     samples = table[2]
@@ -590,7 +592,7 @@ def clip_table(table, field, sep):
     for datum, feature in zip(*table[:2]):
         fields = feature.split(sep)
         if len(fields) >= field and fields[idx]:
-            clipped = sep.join(fields[:field])
+            clipped = sep.join(fields[:field]) if nested else fields[idx]
             res[clipped] = list(map(add, res[clipped], datum))
 
     # reformat table

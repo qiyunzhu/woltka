@@ -196,7 +196,7 @@ def biom_add_metacol(table: biom.Table, dic, name, missing=''):
     table.add_metadata(metadata, axis='observation')
 
 
-def clip_biom(table: biom.Table, field, sep):
+def clip_biom(table: biom.Table, field, sep, nested=False):
     """Clip stratified or nested feature names to a field.
 
     Parameters
@@ -207,6 +207,8 @@ def clip_biom(table: biom.Table, field, sep):
         Field index to clip at.
     sep : str
         Field separator.
+    nested : bool, optional
+        Whether features are nested.
 
     Returns
     -------
@@ -226,7 +228,7 @@ def clip_biom(table: biom.Table, field, sep):
     def f1(id_, md):
         fields = id_.split(sep)
         if len(fields) >= field and fields[idx]:
-            return sep.join(fields[:field])
+            return sep.join(fields[:field]) if nested else fields[idx]
 
     table = table.collapse(f1, norm=False, axis='observation',
                            include_collapsed_metadata=False)

@@ -652,6 +652,8 @@ class TableTests(TestCase):
             'S1': {'G1_1': 4, 'G1_2': 5, 'G1_3': 0, 'G2_1': 0, 'G2_2': 3},
             'S2': {'G1_1': 1, 'G1_2': 8, 'G1_4': 0, 'G2_1': 3, 'G2_3': 4},
             'S3': {'G1_1': 0, 'G1_3': 2, 'G1_4': 3, 'G2_2': 5, 'G2_3': 0}})
+
+        # 1st field
         obs = clip_table(table, 1, sep='_')
         exp = prep_table({
             'S1': {'G1': 9, 'G2': 3},
@@ -660,8 +662,28 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
-        # field number the same (no change)
+        # nested
+        obs = clip_table(table, 1, sep='_', nested=True)
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # BIOM table
+        table_ = Table(*map(np.array, table))
+        obs = clip_table(table_, 1, sep='_')
+        exp = Table(*map(np.array, exp))
+        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # 2nd field
         obs = clip_table(table, 2, sep='_')
+        exp = prep_table({
+            'S1': {'1': 4, '2': 8, '3': 0, '4': 0},
+            'S2': {'1': 4, '2': 8, '3': 4, '4': 0},
+            'S3': {'1': 0, '2': 5, '3': 2, '4': 3}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # nested (no change)
+        obs = clip_table(table, 2, sep='_', nested=True)
         for i in range(4):
             self.assertListEqual(obs[i], table[i])
 
@@ -675,18 +697,17 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], table[i])
 
-        # BIOM table
-        table_ = Table(*map(np.array, table))
-        obs = clip_table(table_, 1, sep='_')
-        exp = Table(*map(np.array, exp))
-        self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
-
         # empty fields
         table = prep_table({
             'S1': {'_G1_1': 3, 'G2__3': 5, 'G5_4_': 1, '__G0': 2}})
         obs = clip_table(table, 2, sep='_')
-        exp = prep_table({
-            'S1': {'_G1': 3, 'G5_4': 1}})
+        exp = prep_table({'S1': {'G1': 3, '4': 1}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
+
+        # nested
+        obs = clip_table(table, 2, sep='_', nested=True)
+        exp = prep_table({'S1': {'_G1': 3, 'G5_4': 1}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
@@ -791,7 +812,7 @@ class TableTests(TestCase):
         # invalid or empty field
         table = prep_table({
             'S1': {'G_1': 6, '||G2': 3},
-            'S2': {'G|1': 1, 'G2|': 7,}})
+            'S2': {'G|1': 1, 'G2|': 7}})
         mapping = {'G1': ['H1'], 'G2': ['H2']}
         obs = collapse_table(table, mapping, field=2, sep='|')
         for i in range(2):

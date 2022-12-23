@@ -243,7 +243,7 @@ def collapse_wf(input_fp:  str,
 
     # just clip feature names
     else:
-        table = clip_table(table, field, sep)
+        table = clip_table(table, field, sep, nested)
 
     # append feature names (optional)
     if names_fp:
