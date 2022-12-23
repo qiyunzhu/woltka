@@ -171,13 +171,11 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 `Sente\|mRNASyn` | 9 | 0 | 3
 `Cdiff\|CellDiv` | 1 | 6 | 0
 
-One can combine the two operations into one command:
+One can combine the two operations:
 
 ```bash
-cat species_gene.tsv |\
-  woltka tools collapse -f 1 -m phylum.map |\
-  woltka tools collapse -f 2 -m process.map |\
-  > phylum_process.tsv
+woltka tools collapse -i species_gene.tsv -f 1 -m phylum.map -o phylum_gene.tsv
+woltka tools collapse -i phylum_gene.tsv -f 2 -m process.map -o phylum_process.tsv
 ```
 
 The output profile `phylum_process.tsv` will be like:
@@ -222,7 +220,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 One can collapse them into 2-level EC numbers with:
 
 ```bash
-woltka tools collapse -i ec4.tsv -e -s . -f 2 -o ec2.tsv
+woltka tools collapse -i ec4.tsv -e -s "." -f 2 -o ec2.tsv
 ```
 
 The output profile `ec2.tsv` is like:
@@ -296,13 +294,13 @@ The resulting feature IDs are like:
 G000006785|J9GI19
 ```
 
-One can combine the two analyses:
+One can execute the `collapse` command multiple times to collapse the first and second fields separately to achieve desired taxonomic and functional resolution. Note that starting from the second command, features are no longer nested.
 
 ```bash
-cat orf.biom |\
-  woltka tools collapse -e -f 1 -m genus.map |\
-  woltka tools collapse -f 2 -m uniref.map |\
-  > genus_uniref.biom
+woltka tools collapse -i orf.biom -e -f 2 -m uniref.map -o ogu_uniref.biom
+woltka tools collapse -i ogu_uniref.biom -f 1 -m genus.map -o genus_uniref.biom
+woltka tools collapse -i genus_uniref.biom -f 2 -m uniref2go.map -o genus_go.biom
+...
 ```
 
 Note that feature IDs in the original profile are nested. However, in the collapsed profile, they become stratified by a pipe (`|`) from the collapsed field to the end. This is because the collapsed field has broken the nestedness.

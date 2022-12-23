@@ -205,7 +205,6 @@ def collapse_wf(input_fp:  str,
     Raises
     ------
     SystemExit
-        No mapping file or "-s" is specified.
         No mapping is found in mapping file.
 
     See Also

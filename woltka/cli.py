@@ -279,7 +279,7 @@ def merge_cmd(ctx, **kwargs):
     help=('Collapse x-th field of stratified features. For example, "A|a" '
           'has fields 1 ("A") and 2 ("a").'))
 @click.option(
-    '--nested', '-e', is_flag=False, flag_value='_',
+    '--nested', '-e', is_flag=True,
     help=('Fields are nested (each field is a child of the previous field). '
           'For example, "A_1" represents "1" of "A".'))
 @click.option(
