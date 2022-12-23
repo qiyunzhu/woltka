@@ -628,8 +628,8 @@ def match_read_gene_quart(geneque, readque):
 
                 # when gene ends, check overlap and remove it from cache
                 # gene end must be <= read end
-                # if gene not found in cache (meaning gene started before read
-                # region), use read start, otherwise use gene start
+                # if gene not found in cache (gene started before read region),
+                # use read start, otherwise use gene start
                 elif (code >> 48) - within_pop(code & (1 << 30) - 1, beg) >= L:
                     yield rid, code & (1 << 30) - 1
 

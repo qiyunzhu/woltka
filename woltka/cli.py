@@ -61,8 +61,9 @@ def cli():
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
 @click.option(
-    '--trim-sub', 'trimsub',
-    help='Trim subject IDs at the last given delimiter.')
+    '--trim-sub', 'trimsub', is_flag=False, flag_value='_',
+    help=('Trim subject IDs at the last given delimiter. Default: "_", or '
+          'enter a custom value.'))
 # hierarchies
 @click.option(
     '--nodes', 'nodes_fps', type=click.Path(exists=True), multiple=True,
@@ -261,21 +262,30 @@ def merge_cmd(ctx, **kwargs):
     type=click.Path(exists=True, dir_okay=False),
     help='Path to input profile.')
 @click.option(
-    '--map', '-m', 'map_fp', required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help=('Mapping of source features to target features. (supports '
-          'many-to-many relationships).'))
-@click.option(
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True, dir_okay=False),
     help='Path to output profile.')
+@click.option(
+    '--map', '-m', 'map_fp',
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Mapping of source features to target features. Supports '
+          'many-to-many relationships.'))
 @click.option(
     '--divide', '-d', is_flag=True,
     help=('Count each target feature as 1/k (k is the number of targets '
           'mapped to a source). Otherwise, count as one.'))
 @click.option(
     '--field', '-f', type=click.INT,
-    help='Index of field to be collapsed in a stratified profile.')
+    help=('Collapse x-th field of stratified features. For example, "A|a" '
+          'has fields 1 ("A") and 2 ("a").'))
+@click.option(
+    '--nested', '-e', is_flag=True,
+    help=('Fields are nested (each field is a child of the previous field). '
+          'For example, "A_1" represents "1" of "A".'))
+@click.option(
+    '--sep', '-s', type=click.STRING,
+    help=('Field separator for nested features (default: "_") or otherwise '
+          '(default: "|").'))
 @click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of target features to append to the output profile.')

@@ -66,12 +66,12 @@ Firmicutes\|GO:0000006 | 0 | 0 | 0 | 18
 
 With this method, we start with the alignments of reads against reference **genes** (not genomes). This methods is faster, with a cost in accuracy (since genes only represent a proportion of their host genomes, and are confounded by homology, copy number, boundaries etc.). Therefore, this methods only demonstrates what "_you could_". However, if you already obtained and decided to proceed with gene alignments (for example, you already ran BLAST on UniProt), this method is worth consideration.
 
-The following example is also based on the [sample data](../woltka/tests/data). Here we used the gene alignment results computed by DIAMOND. The gene IDs are Prodigal-annotated ORFs from the reference genomes, in the format of `genome ID <underscore> index` (e.g., `G000123456_20`). With parameter `--trim-sub _`, Woltka converts them to genome IDs, and everything after is straightforward.
+The following example is also based on the [sample data](../woltka/tests/data). Here we used the gene alignment results computed by DIAMOND. The gene IDs are Prodigal-annotated ORFs from the reference genomes, in the format of `genome ID <underscore> index` (e.g., `G000123456_20`). With flag `--trim-sub`, Woltka converts them to genome IDs, and everything after is straightforward.
 
 ```bash
 woltka classify \
   -i align/diamond \
-  --trim-sub _ \
+  --trim-sub \
   --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \

@@ -152,7 +152,7 @@ Same as above, adding:
 ```bash
 woltka classify \
   --input align/burst/split \
-  --trim-sub _ \
+  --trim-sub \
   --map taxonomy/nucl/nucl2tid.txt \
   --nodes taxonomy/nodes.dmp \
   --names taxonomy/names.dmp \
@@ -186,7 +186,7 @@ woltka tools merge \
 ```bash
 woltka classify \
   --input align/diamond \
-  --trim-sub _ \
+  --trim-sub \
   --map taxonomy/taxid.map \
   --nodes taxonomy/nodes.dmp \
   --rank free \
