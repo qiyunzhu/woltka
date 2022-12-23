@@ -652,7 +652,7 @@ class TableTests(TestCase):
             'S1': {'G1_1': 4, 'G1_2': 5, 'G1_3': 0, 'G2_1': 0, 'G2_2': 3},
             'S2': {'G1_1': 1, 'G1_2': 8, 'G1_4': 0, 'G2_1': 3, 'G2_3': 4},
             'S3': {'G1_1': 0, 'G1_3': 2, 'G1_4': 3, 'G2_2': 5, 'G2_3': 0}})
-        obs = clip_table(table)
+        obs = clip_table(table, 1, sep='_')
         exp = prep_table({
             'S1': {'G1': 9, 'G2': 3},
             'S2': {'G1': 9, 'G2': 7},
@@ -660,17 +660,35 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
+        # field number the same (no change)
+        obs = clip_table(table, 2, sep='_')
+        for i in range(4):
+            self.assertListEqual(obs[i], table[i])
+
+        # field number too large (all dropped)
+        obs = clip_table(table, 3, sep='_')
+        for i in range(2):
+            self.assertListEqual(obs[i], [])
+
         # invalid separator
-        with self.assertRaises(ValueError) as ctx:
-            clip_table(table, sep='.')
-        errmsg = 'Feature "G1_1" does not have a suffix.'
-        self.assertEqual(str(ctx.exception), errmsg)
+        obs = clip_table(table, 1, sep='.')
+        for i in range(4):
+            self.assertListEqual(obs[i], table[i])
 
         # BIOM table
         table_ = Table(*map(np.array, table))
-        obs = clip_table(table_)
+        obs = clip_table(table_, 1, sep='_')
         exp = Table(*map(np.array, exp))
         self.assertEqual(obs.descriptive_equality(exp), 'Tables appear equal')
+
+        # empty fields
+        table = prep_table({
+            'S1': {'_G1_1': 3, 'G2__3': 5, 'G5_4_': 1, '__G0': 2}})
+        obs = clip_table(table, 2, sep='_')
+        exp = prep_table({
+            'S1': {'_G1': 3, 'G5_4': 1}})
+        for i in range(4):
+            self.assertListEqual(obs[i], exp[i])
 
     def test_collapse_table(self):
         table = prep_table({
@@ -749,19 +767,19 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
-        # stratified table
+        # stratified features
         table = prep_table({
             'S1': {'A|K1': 4, 'A|K2': 5, 'B|K2': 8, 'C|K3': 3, 'C|K4': 0},
             'S2': {'A|K1': 1, 'A|K2': 8, 'B|K2': 0, 'C|K3': 4, 'C|K4': 2}})
         mapping = {'A': ['1'], 'B': ['1']}
-        obs = collapse_table(table, mapping, field=0)
+        obs = collapse_table(table, mapping, field=1, sep='|')
         exp = prep_table({
             'S1': {'1|K1': 4, '1|K2': 13},
             'S2': {'1|K1': 1, '1|K2': 8}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
         mapping = {'K1': ['H1'], 'K2': ['H2', 'H3'], 'K3': ['H3']}
-        obs = collapse_table(table, mapping, field=1)
+        obs = collapse_table(table, mapping, field=2, sep='|')
         exp = prep_table({
             'S1': {'A|H1': 4, 'A|H2': 5, 'A|H3': 5, 'B|H2': 8, 'B|H3': 8,
                    'C|H3': 3},
@@ -770,52 +788,37 @@ class TableTests(TestCase):
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
-        # invalid field
-        with self.assertRaises(ValueError) as ctx:
-            collapse_table(table, mapping, field=2)
-        errmsg = 'Feature "A|K1" has less than 3 fields.'
-        self.assertEqual(str(ctx.exception), errmsg)
-
-        # suffixed table - keep only parents
+        # invalid or empty field
         table = prep_table({
-            'S1': {'A.1': 3, 'A.2': 6, 'B.1': 7, 'B.2': 0, 'C.2': 3},
-            'S2': {'A.2': 2, 'A.3': 5, 'B.3': 2, 'C.1': 4, 'C.3': 2}})
-        mapping = {'A': ['X'], 'B': ['X'], 'C': ['Y']}
-        obs = collapse_table(table, mapping, suffix='.')
-        exp = prep_table({
-            'S1': {'X': 16, 'Y': 3},
-            'S2': {'X':  9, 'Y': 6}})
-        for i in range(4):
-            self.assertListEqual(obs[i], exp[i])
+            'S1': {'G_1': 6, '||G2': 3},
+            'S2': {'G|1': 1, 'G2|': 7,}})
+        mapping = {'G1': ['H1'], 'G2': ['H2']}
+        obs = collapse_table(table, mapping, field=2, sep='|')
+        for i in range(2):
+            self.assertListEqual(obs[i], [])
 
-        # collapse parents
+        # nested features - 1st level
         table = prep_table({
             'S1': {'A_1': 3, 'A_2': 6, 'B_1': 7, 'B_2': 0},
             'S2': {'A_2': 2, 'B_3': 2, 'C_1': 4, 'C_3': 2}})
-        obs = collapse_table(table, mapping, field=0, suffix='_')
+        mapping = {'A': ['X'], 'B': ['X'], 'C': ['Y']}
+        obs = collapse_table(table, mapping, field=1, sep='_', nested=True)
         exp = prep_table({
             'S1': {'X|A_1': 3, 'X|A_2': 6, 'X|B_1': 7, 'Y|B_2': 0},
             'S2': {'X|A_2': 2, 'X|B_3': 2, 'Y|C_1': 4, 'Y|C_3': 2}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
 
-        # collapse children
+        # 2nd level
         mapping = {'A_1': ['a'], 'A_2': ['b'],
                    'B_1': ['a'], 'B_2': ['b'],
                    'C_1': ['a'], 'C_2': ['b']}
-        obs = collapse_table(table, mapping, field=1, suffix='_')
+        obs = collapse_table(table, mapping, field=2, sep='_', nested=True)
         exp = prep_table({
             'S1': {'A|a': 3, 'A|b': 6, 'B|a': 7, 'B|b': 0},
             'S2': {'A|b': 2, 'C|a': 4}})
         for i in range(4):
             self.assertListEqual(obs[i], exp[i])
-
-        # no suffix
-        table = prep_table({'S1': {'ABC': 123}})
-        with self.assertRaises(ValueError) as ctx:
-            collapse_table(table, {}, suffix='x')
-        errmsg = 'Feature "ABC" does not have a suffix.'
-        self.assertEqual(str(ctx.exception), errmsg)
 
     def test_calc_coverage(self):
         table = prep_table({

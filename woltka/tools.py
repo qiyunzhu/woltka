@@ -197,7 +197,8 @@ def collapse_wf(input_fp:  str,
                 map_fp:    str = None,
                 divide:   bool = False,
                 field:     int = None,
-                suffix:    str = None,
+                nested:   bool = False,
+                sep:       str = None,
                 names_fp:  str = None):
     """Workflow for collapsing a profile based on many-to-many mapping.
 
@@ -219,31 +220,30 @@ def collapse_wf(input_fp:  str,
 
     # read mapping file (many-to-many okay)
     if map_fp:
+        fname = basename(map_fp)
+        click.echo(f'Reading mapping file: {fname}...', nl=False)
         with readzip(map_fp, {}) as f:
             mapping = read_map_many(f)
+        click.echo(' Done.')
         if not mapping:
-            exit(f'No source-target mapping is found in {basename(map_fp)}.')
+            exit(f'No source-target mapping is found in {fname}.')
 
-    # no mapping file (okay when trimming suffix)
-    elif not suffix:
-        exit(f'A mapping file is required unless features are suffixed.')
-
-    # convert field index from 1-based to 0-based
-    if field:
-        field -= 1
+    # determine default field separator
+    if sep is None:
+        sep = '_' if nested else '|'
 
     click.echo('Collapsing profile...', nl=False)
 
     # maximum decimal precision
     digits = table_max_f(table)
 
-    # just remove suffix from feature names
-    if suffix and not map_fp:
-        table = clip_table(table, suffix)
-
     # collapse profile by mapping
+    if map_fp:
+        table = collapse_table(table, mapping, divide, field, sep, nested)
+
+    # just clip feature names
     else:
-        table = collapse_table(table, mapping, divide, field, suffix)
+        table = clip_table(table, field, sep)
 
     # append feature names (optional)
     if names_fp:

@@ -12,6 +12,7 @@
 """
 
 from functools import reduce
+from itertools import accumulate
 from collections import defaultdict
 from operator import add
 from biom import Table, load_table
@@ -560,45 +561,44 @@ def add_metacol(table, dic, name, missing=''):
         metadatum[name] = dic.get(feature, missing)
 
 
-def clip_table(table, sep='_'):
-    """Remove suffix from feature names in a table.
+def clip_table(table, field, sep):
+    """Clip stratified or nested feature names to a field.
 
     Parameters
     ----------
     table : biom.Table or tuple
-        Table to collapse.
-    sep : str, optional
-        Separator (after last of which is suffix).
+        Table to clip.
+    field : int
+        Field index to clip at.
+    sep : str
+        Field separator.
 
     Returns
     -------
     biom.Table or tuple
         Clipped table.
-
-    Raises
-    ------
-    ValueError
-        A feature ID does not have a suffix.
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return clip_biom(table, sep)
+        return clip_biom(table, field, sep)
 
-    # remove suffix from feature names
+    # clip feature names to given field
     samples = table[2]
     width = len(samples)
     res = defaultdict(lambda: [0] * width)
+    idx = field - 1
     for datum, feature in zip(*table[:2]):
-        left, _, _ = feature.rpartition(sep)
-        if not left:
-            raise ValueError(f'Feature "{feature}" does not have a suffix.')
-        res[left] = list(map(add, res[left], datum))
+        fields = feature.split(sep)
+        if len(fields) >= field and fields[idx]:
+            clipped = sep.join(fields[:field])
+            res[clipped] = list(map(add, res[clipped], datum))
 
     # reformat table
     return list(res.values()), list(res.keys()), samples, [dict() for _ in res]
 
 
-def collapse_table(table, mapping, divide=False, field=None, suffix=None):
+def collapse_table(table, mapping, divide=False, field=None, sep=None,
+                   nested=False):
     """Collapse a table by many-to-many mapping.
 
     Parameters
@@ -611,18 +611,15 @@ def collapse_table(table, mapping, divide=False, field=None, suffix=None):
         Whether divide per-target counts by number of targets per source.
     field : int, optional
         Index of field to be collapsed in a stratified table.
-    suffix : str, optional
-        Feature names have a suffix following this delimiter.
+    sep : str, optional
+        Field separator (must be provided if field is set).
+    nested : bool, optional
+        Whether features are nested.
 
     Returns
     -------
     biom.Table or tuple
         Collapsed table.
-
-    Raises
-    ------
-    ValueError
-        A feature ID does not have a suffix or a field.
 
     Notes
     -----
@@ -630,7 +627,15 @@ def collapse_table(table, mapping, divide=False, field=None, suffix=None):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return collapse_biom(table, mapping, divide, suffix, field)
+        return collapse_biom(table, mapping, divide, field, sep, nested)
+
+    # function for stacking fields in nested feature
+    if nested:
+        f = ('{}' + sep + '{}').format
+
+    # get 0-based field index
+    if field:
+        idx = field - 1
 
     # collapse table
     samples = table[2]
@@ -638,45 +643,63 @@ def collapse_table(table, mapping, divide=False, field=None, suffix=None):
     res = defaultdict(lambda: [0] * width)
     for datum, feature in zip(*table[:2]):
 
-        # suffixed feature
-        if suffix:
-            left, _, _ = feature.rpartition(suffix)
-            if not left:
-                raise ValueError(
-                    f'Feature "{feature}" does not have a suffix.')
+        # split feature into fields
+        if field:
+            fields = feature.split(sep)
 
-            # get fields
-            if field is not None:
-                fields = [left, feature]
+            # stack fields of nested feature
+            if nested:
+                fields = list(accumulate(fields, f))
 
-            # collapse field to parent
-            if not field:
-                feature = left
-
-        # stratified feature
-        elif field is not None:
-            fields = feature.split('|')
+            # identify target field
             try:
-                feature = fields[field]
-            except IndexError:
-                raise ValueError(
-                    f'Feature "{feature}" has less than {field + 1} fields.')
+                feature = fields[idx]
 
-        # map features to targets
+            # skip if field does not exist
+            except IndexError:
+                continue
+
+            # skip if feature is empty
+            if not feature:
+                continue
+
+        # skip if feature is not mapped
         if feature not in mapping:
             continue
+
+        # map source feature to target(s)
         targets = mapping[feature]
 
-        # divide feature count by target number
+        # divide values by number of targets
         if divide:
-            k = 1 / len(targets)
-            datum = [x * k for x in datum]
+            k = len(targets)
+            if k > 1:
+                k = 1 / k
+                datum = [x * k for x in datum]
 
-        # add results to same target
+        # cache number of fields
+        if field:
+            n = len(fields)
+
+        # process each target
         for target in targets:
-            if field is not None:
-                fields[field] = target
-                target = '|'.join(fields)
+
+            # collapse given field
+            if field:
+
+                # rebuild stratified feature (all fields)
+                if not nested:
+                    fields[idx] = target
+                    target = '|'.join(fields)
+
+                # rebuild nested feature (only previous and last fields)
+                else:
+                    if idx:
+                        target = fields[idx - 1] + '|' + target
+                    if field < n:
+                        target = target + '|' + fields[-1]
+
+            # add results to same target
             res[target] = list(map(add, res[target], datum))
 
     # reformat table

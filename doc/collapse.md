@@ -111,7 +111,7 @@ A solution to this is to turn on the [division](#division) flag (`-d`). This gua
 
 ## Stratified features
 
-Woltka supports collapsing a [stratified](stratify.md) profile using one field in the feature IDs. This can be done using the `--field` or `-f` parameter followed by the field index (starting from 1).
+Woltka supports collapsing a [stratified](stratify.md) profile using one field in the feature IDs. This can be done using the `--field` or `-f` parameter followed by the field index (starting from 1). The default field delimiter is a pipe (`|`), but one can customize it using `--sep` or `-s`.
 
 For example, in the following profile `species_gene.tsv`, feature IDs has the format of "species|gene", representing particular genes (e.g., _rpoA_) found in particular species (e.g., _E. coli_).
 
@@ -137,6 +137,8 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 `Ecoli` | 16 | 22 | 5
 `Sente` | 9 | 0 | 3
 `Cdiff` | 1 | 6 | 0
+
+Alternatively, one can use `-f 2` to collapse to genes (regardless of species).
 
 ### Collapse field by mapping
 
@@ -192,7 +194,7 @@ In some scenarios, a feature ID itself contains hierarchical information. This i
 
 For example, "G12_34" represents the 34th ORF annotated from genome 12. In other words, this is equivalent to a stratified feature ID "G12_34|G12_34", in which the 1st field represents the genome ([OGU](ogu.md)) and the 2nd represents the gene (ORF). Such profiles can be generated using Woltka's ["coord-match" functional profiling](ordinal.md) function.
 
-The `--nested` or `-e` flag instructs Woltka to treat feature IDs as nested. The default delimiter for identifying fields is an underscore (`_`) (in contrast to a pipe (`|`) in a stratified feature), but one may append a custom delimiter to it (such as `-e .` for dot). Then, with the `--field` or `-f` parameter (see above), one can specify the level in the nested features on which collapsing will occur.
+The `--nested` or `-e` flag instructs Woltka to treat feature IDs as nested. The default delimiter for identifying fields is an underscore (`_`) (in contrast to a pipe (`|`) in a stratified feature), but one may customize it using `-s` (see above). Then, with the `--field` or `-f` parameter (see above), one can specify the level in the nested features on which collapsing will occur.
 
 ### Collapse to level
 
@@ -220,7 +222,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 One can collapse them into 2-level EC numbers with:
 
 ```bash
-woltka tools collapse -i ec4.tsv -e . -f 2 -o ec2.tsv
+woltka tools collapse -i ec4.tsv -e -s . -f 2 -o ec2.tsv
 ```
 
 The output profile `ec2.tsv` is like:
@@ -246,7 +248,7 @@ Feature ID | Sample 1 | Sample 2
 One can collapse them into the class level with:
 
 ```bash
-woltka tools collapse -i free.tsv -e "; " -f 2 -o class.tsv
+woltka tools collapse -i free.tsv -e -s "; " -f 2 -o class.tsv
 ```
 
 The output profile `class.tsv` is like:
@@ -305,7 +307,7 @@ cat orf.biom |\
 
 Note that feature IDs in the original profile are nested. However, in the collapsed profile, they become stratified by a pipe (`|`) from the collapsed field to the end. This is because the collapsed field has broken the nestedness.
 
-It is important to avoid confusion when collapsing middle levels in nested features. For example, the original feature IDs are like (4-level EC numbers):
+It is important to avoid confusion when collapsing a certain level in nested features. For example, the original feature IDs are like (4-level EC numbers):
 
 ```
 EC:2.7.2.10

@@ -12,6 +12,8 @@
 """
 
 from functools import partial
+from itertools import accumulate
+from operator import itemgetter
 import numpy as np
 import biom
 from .__init__ import __name__, __version__
@@ -194,46 +196,45 @@ def biom_add_metacol(table: biom.Table, dic, name, missing=''):
     table.add_metadata(metadata, axis='observation')
 
 
-def clip_biom(table: biom.Table, sep='_'):
-    """Remove suffix from feature names in a BIOM table.
+def clip_biom(table: biom.Table, field, sep):
+    """Clip stratified or nested feature names to a field.
 
     Parameters
     ----------
     table : biom.Table
-        Table to collapse.
-    sep : str, optional
-        Separator (after last of which is suffix).
+        Table to clip.
+    field : int
+        Field index to clip at.
+    sep : str
+        Field separator.
 
     Returns
     -------
     biom.Table
         Clipped BIOM table.
 
-    Raises
-    ------
-    ValueError
-        A feature ID does not have a suffix.
-
     Notes
     -----
-    Metadata will not be retained in the collapsed table.
+    Metadata will not be retained in the clipped table.
 
     See Also
     --------
     .table.clip_table
     """
-    def f(id_, _):
-        left, _, _ = id_.rpartition(sep)
-        if not left:
-            raise ValueError(f'Feature "{id_}" does not have a suffix.')
-        return left
+    idx = field - 1
 
-    return table.collapse(f, norm=False, axis='observation',
-                          include_collapsed_metadata=False)
+    def f1(id_, md):
+        fields = id_.split(sep)
+        if len(fields) >= field and fields[idx]:
+            return sep.join(fields[:field])
+
+    table = table.collapse(f1, norm=False, axis='observation',
+                           include_collapsed_metadata=False)
+    return table.filter(lambda val, id_, md:  bool(id_), axis='observation')
 
 
 def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None,
-                  suffix=None):
+                  sep=None, nested=None):
     """Collapse a BIOM table in many-to-many mode.
 
     Parameters
@@ -246,18 +247,15 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None,
         Whether divide per-target counts by number of targets per source.
     field : int, optional
         Index of field to be collapsed in a stratified table.
-    suffix : str, optional
-        Feature names have a suffix following this delimiter.
+    sep : str, optional
+        Field separator (must be provided if field is set).
+    nested : bool, optional
+        Whether features are nested.
 
     Returns
     -------
     biom.Table
         Collapsed BIOM table.
-
-    Raises
-    ------
-    ValueError
-        A feature ID does not have a suffix or a field.
 
     Notes
     -----
@@ -267,33 +265,39 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None,
     --------
     .table.collapse_table
     """
+    if nested:
+        f = ('{}' + sep + '{}').format
+    if field:
+        idx = field - 1
+
     # generate metadata
     metadata = {}
     for id_ in table.ids('observation'):
         feature = id_
-        if suffix:
-            left, _, _ = feature.rpartition(suffix)
-            if not left:
-                raise ValueError(
-                    f'Feature "{feature}" does not have a suffix.')
-            if field is not None:
-                fields = [left, feature]
-            if not field:
-                feature = left
-        elif field is not None:
-            fields = feature.split('|')
+        if field:
+            fields = feature.split(sep)
+            n = len(fields)
+            if nested:
+                fields = list(accumulate(fields, f))
             try:
-                feature = fields[field]
+                feature = fields[idx]
             except IndexError:
-                raise ValueError(
-                    f'Feature "{feature}" has less than {field + 1} fields.')
+                continue
+            if not feature:
+                continue
         if feature not in mapping:
             continue
         targets = []
         for target in mapping[feature]:
-            if field is not None:
-                fields[field] = target
-                target = '|'.join(fields)
+            if field:
+                if not nested:
+                    fields[idx] = target
+                    target = '|'.join(fields)
+                else:
+                    if idx:
+                        target = fields[idx - 1] + '|' + target
+                    if field < n:
+                        target = target + '|' + fields[-1]
             targets.append(target)
         metadata[id_] = dict(part=targets)
 

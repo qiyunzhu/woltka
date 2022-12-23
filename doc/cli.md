@@ -145,8 +145,9 @@ Option | Description
 `--map`, `-m` (required) | Path to mapping of source features to target features.
 `--output`, `-o` (required) | Path to output profile.
 `--divide`, `-d` | Count each target feature as 1 / _k_ (_k_ is the number of targets mapped to a source). Otherwise, count as one.
-`--field`, `-f` | Features are stratified (strata delimited by "\|"). For example, if features are like "microbe\|gene", one can use `-f 1` to collapse "microbe" or `-f 2` to collapse "gene".
-`--suffix`, `-s` | Features have suffixes that indicate parent-child relationships. For example, "A_1" represents "1" of "A", and the entire feature is equivalent to "A\|A_1". Can accept the default delimiter "_" or enter a custom delimiter. This parameter overrides the "\|"-delimited strata.
+`--field`, `-f` | Features are stratified (strata delimited by "\|"). For example, if features are like "species\|gene", one can use `-f 1` to collapse "species" or `-f 2` to collapse "gene".
+`--nested`, `-e` | Features are nested (each field is a child of the previous field). For example, "A_1" represents "1" of "A", and the entire feature is equivalent to stratified feature "A\|A_1". This parameter overrides the "\|"-delimited strata.
+`--sep`, `-s` | Field separator for stratified features (default: "\|") or nested features (default: "_").
 `--names`, `-n` | Path to mapping of target features to names. The names will be appended to the collapsed profile as a metadata column.
 
 ### Coverage

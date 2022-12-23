@@ -269,20 +269,23 @@ def merge_cmd(ctx, **kwargs):
     '--map', '-m', 'map_fp',
     type=click.Path(exists=True, dir_okay=False),
     help=('Mapping of source features to target features. Supports '
-          'many-to-many relationships. Required unless with "-s"'))
+          'many-to-many relationships.'))
 @click.option(
     '--divide', '-d', is_flag=True,
     help=('Count each target feature as 1/k (k is the number of targets '
           'mapped to a source). Otherwise, count as one.'))
 @click.option(
     '--field', '-f', type=click.INT,
-    help=('Features are stratified (strata delimited by "|"), and the x-th '
-          'field is to be collapsed, while other fields stay the same.'))
+    help=('Collapse x-th field of stratified features. For example, "A|a" '
+          'has fields 1 ("A") and 2 ("a").'))
 @click.option(
-    '--suffix', '-s', is_flag=False, flag_value='_',
-    help=('Features have suffixes that indicate parent-child relationships. '
-          'For example, "A_1" represents "1" of "A". Enter an delimiter if '
-          'not "_". Overrides "|"-delimited strata.'))
+    '--nested', '-e', is_flag=False, flag_value='_',
+    help=('Fields are nested (each field is a child of the previous field). '
+          'For example, "A_1" represents "1" of "A".'))
+@click.option(
+    '--sep', '-s', type=click.STRING,
+    help=('Field separator for nested features (default: "_") or otherwise '
+          '(default: "|").'))
 @click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of target features to append to the output profile.')

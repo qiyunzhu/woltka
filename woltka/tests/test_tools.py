@@ -186,12 +186,6 @@ class ToolsTests(TestCase):
                 self.assertEqual(line[11:], '3\t7\t9\t1\t4\tnuclease activity')
         remove(output_fp)
 
-        # no mapping file
-        with self.assertRaises(SystemExit) as ctx:
-            collapse_wf(input_fp, output_fp)
-        errmsg = 'A mapping file is required unless features are suffixed.'
-        self.assertEqual(str(ctx.exception), errmsg)
-
         # wrong mapping file
         map_fp = join(self.datdir, 'tree.nwk')
         with self.assertRaises(SystemExit) as ctx:
@@ -213,9 +207,9 @@ class ToolsTests(TestCase):
                 self.assertEqual(line[25:], '0\t2\t9\t3\t0')
         remove(output_fp)
 
-        # suffixed profile
+        # nested profile
         input_fp = join(self.datdir, 'output', 'bowtie2.orf.tsv')
-        collapse_wf(input_fp, output_fp, suffix='_')
+        collapse_wf(input_fp, output_fp, field=1, sep='_', nested=True)
         with open(output_fp, 'r') as f:
             obs = f.read().splitlines()
         self.assertEqual(len(obs), 50)
