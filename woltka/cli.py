@@ -25,15 +25,22 @@ class NaturalOrderGroup(click.Group):
         return self.commands.keys()
 
 
+GRP_KA = dict(
+    cls=NaturalOrderGroup,
+    context_settings=dict(help_option_names=['-h', '--help']))
+CMD_KA = dict(
+    no_args_is_help=True)
+
+
 @click.version_option(__version__)
-@click.group(cls=NaturalOrderGroup)
+@click.group(**GRP_KA)
 def cli():
+    """Woltka: a versatile meta'omic data classifier.
+    """
     pass  # pragma: no cover
 
 
-# `classify` invokes the main classification workflow
-
-@cli.command('classify')
+@cli.command('classify', **CMD_KA)
 # input and output
 @click.option(
     '--input', '-i', 'input_fp', required=True, type=click.Path(
@@ -180,7 +187,7 @@ def classify_cmd(**kwargs):
     workflow(**kwargs)
 
 
-@cli.command('collapse')
+@cli.command('collapse', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -219,7 +226,7 @@ def collapse_cmd(**kwargs):
     collapse_wf(**kwargs)
 
 
-@cli.command('normalize')
+@cli.command('normalize', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -246,7 +253,7 @@ def normalize_cmd(**kwargs):
     normalize_wf(**kwargs)
 
 
-@cli.command('filter')
+@cli.command('filter', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -267,7 +274,7 @@ def filter_cmd(**kwargs):
     filter_wf(**kwargs)
 
 
-@cli.command('merge')
+@cli.command('merge', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fps', required=True, multiple=True,
     type=click.Path(exists=True),
@@ -283,7 +290,7 @@ def merge_cmd(**kwargs):
     merge_wf(**kwargs)
 
 
-@cli.command('coverage')
+@cli.command('coverage', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
