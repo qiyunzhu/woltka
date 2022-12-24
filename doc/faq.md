@@ -13,7 +13,7 @@ The former. Woltka **exhaustively** captures all valid matches from the alignmen
 
 ### Are Woltka results consistent across versions?
 
-To date, all Woltka versions (0.1.0 to 0.1.4) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
+To date, all Woltka versions (0.1.0 to 0.1.5) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
 
 ### How many CPU cores does Woltka use?
 
