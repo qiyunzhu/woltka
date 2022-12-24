@@ -2,13 +2,13 @@
 
 ## Operating system
 
-There is no restriction as far as we are aware of. Tested and working on Linux, macOS and Windows systems.
+There is no restriction as far as we are aware of. Tested and working on **Linux**, **macOS** and **Windows** systems.
 
 ## Software environment
 
 Woltka is written in **Python 3**. One needs at least Python 3.6 to run the program.
 
-We recommend [Conda](https://docs.conda.io/en/latest/) for managing Python version and packages. One can create a conda environment and install necessary dependencies (Cython and BIOM format) by:
+We recommend [Conda](https://docs.conda.io/en/latest/) for managing Python version and packages. One can create a conda environment for Woltka by:
 
 ```bash
 conda create -n woltka python=3
@@ -17,22 +17,23 @@ conda activate woltka
 
 If you already have a [QIIME 2](https://qiime2.org/) environment, these steps can be omitted as the dependencies are already included. See [details](../woltka/q2).
 
+You may also use [Mamba](https://mamba.readthedocs.io/en/latest/) instead of Conda. The procedures discussed in this page that apply to Conda also apply to Mamba.
+
 ## Installation
 
-Option 1: Install the latest release using [pip](https://pypi.org/project/pip/):
+Option 1: Install the latest release from the [Bioconda](https://bioconda.github.io/) channel:
+
+```bash
+conda install -c conda-forge -c bioconda woltka
+```
+
+- **Note**: It is necessary to also specify the [conda-forge](https://conda-forge.org/) channel, in order to install the latest version of [biom-format](https://biom-format.org/), a dependency of Woltka.
+
+Option 2: Install the latest release using [pip](https://pypi.org/project/pip/):
 
 ```bash
 pip install woltka
 ```
-
-Option 2: Install the latest release from [Bioconda](https://bioconda.github.io/):
-
-```bash
-conda install -c conda-forge biom-format
-conda install -c bioconda woltka
-```
-
-- **Note**: It is recommended to install `biom-format` from `conda-forge` before installing `woltka` from `bioconda`. In this way, all dependencies will be the latest (tested and working with Python 3.10.4 and BIOM 2.1.12). If one omits this step, conda may install older versions of Python and BIOM.
 
 Option 3: Install the current development from GitHub:
 
@@ -63,7 +64,13 @@ pip install git+https://github.com/qiyunzhu/woltka.git@numba
 
 ## Upgrade
 
-Just add `--upgrade` or `-U` to the pip command:
+If you installed Woltka using Conda, do:
+
+```bash
+conda update -c conda-forge -c bioconda woltka
+```
+
+If you installed Woltka using pip, do:
 
 ```bash
 pip install -U woltka
@@ -71,14 +78,22 @@ pip install -U woltka
 
 ## Uninstallation
 
+If you installed Woltka using Conda, do:
+
+```bash
+conda remove woltka
+```
+
+If you installed Woltka using pip, do:
+
 ```bash
 pip uninstall woltka
 ```
 
-If you no longer need the conda environment:
+If you no longer need the Conda environment:
 
 ```bash
-conda env remove -n woltka --all
+conda env remove -n woltka
 ```
 
 ## Compatibility
@@ -86,9 +101,10 @@ conda env remove -n woltka --all
 If in the future some dependencies have changes that are not compatible with the current release of Woltka, the following "safe" commands can be used to install the current versions of dependencies.
 
 ```bash
-conda create -n woltka python=3.8.2
+conda create -n woltka python=3.10.8
 conda activate woltka
-conda install -c conda-forge cython=0.29.6 biom-format=2.1.8
+conda install -c conda-forge biom-format=2.1.13
+conda install -c bioconda woltka=0.1.4
 ```
 
 ## Test
