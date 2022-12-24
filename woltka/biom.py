@@ -11,12 +11,10 @@
 """Functions for operating BIOM tables.
 """
 
-from functools import partial
 from itertools import accumulate
 import numpy as np
 import biom
 from .__init__ import __name__, __version__
-from .util import rounder
 
 
 def table_to_biom(data, observations, samples, metadata=None):
@@ -193,8 +191,9 @@ def round_biom(table: biom.Table, digits=0):
         else:
             return round(num, digits)
 
-    table.matrix_data.data = np.vectorize(f)(table.matrix_data.data)
-    table.matrix_data.eliminate_zeros()
+    tmd = table.matrix_data
+    tmd.data = np.vectorize(f)(tmd.data).astype('float64')
+    tmd.eliminate_zeros()
     table.remove_empty(axis='observation')
 
 
