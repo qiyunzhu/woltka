@@ -320,5 +320,17 @@ def coverage_cmd(**kwargs):
     coverage_wf(**kwargs)
 
 
+# the "tools" menu is for backward compatibility
+@cli.group('tools', cls=NaturalOrderGroup)
+def tools():
+    """Entries to the same commands for backward compatibility (deprecated).
+    """
+    pass  # pragma: no cover
+
+
+for cmd in collapse_cmd, normalize_cmd, filter_cmd, merge_cmd, coverage_cmd:
+    tools.add_command(cmd)
+
+
 if __name__ == '__main__':
     cli()  # pragma: no cover
