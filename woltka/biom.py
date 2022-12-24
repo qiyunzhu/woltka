@@ -11,13 +11,10 @@
 """Functions for operating BIOM tables.
 """
 
-from functools import partial
 from itertools import accumulate
-from operator import itemgetter
 import numpy as np
 import biom
 from .__init__ import __name__, __version__
-from .util import rounder
 
 
 def table_to_biom(data, observations, samples, metadata=None):
@@ -100,8 +97,7 @@ def biom_max_f(table: biom.Table):
     int
         Maximum decimal precision.
     """
-    return max([0] + [str(x)[::-1].find('.') for x in
-               table.matrix_data.data])
+    return max([0] + [str(x)[::-1].find('.') for x in table.matrix_data.data])
 
 
 def divide_biom(table: biom.Table, sizes: dict):
@@ -158,7 +154,7 @@ def filter_biom(table: biom.Table, th: float):
     return res
 
 
-def round_biom(table: biom.Table, digits=None):
+def round_biom(table: biom.Table, digits=0):
     """Round a BIOM table's data and drop empty observations in place.
 
     Parameters
@@ -170,10 +166,34 @@ def round_biom(table: biom.Table, digits=None):
 
     Notes
     -----
-    This function will not drop empty samples.
+    There is a fully vectorized, much faster alternate:
+
+    >>> arr = table.matrix_data.data
+    >>> near = (arr * 2).round(digits) / 2
+    >>> choice = np.abs(arr - near) <= error
+    >>> table.matrix_data.data = np.where(choice, near, arr).round(digits)
+
+    However, this method does not always produce the same result as the current
+    method, because NumPy's `round` is imprecise compared with Python's `round`
+    (discussed in the NumPy documentation). For example, rounding 0.225 to two
+    digits will result in 0.23 (Python) or 0.22 (NumPy).
+
+    See Also
+    --------
+    util.rounder
     """
-    f = np.vectorize(partial(rounder, digits=digits))
-    table.transform(lambda data, id_, md: f(data), axis='observation')
+    error = 1e-7 / 10 ** digits if digits else 1e-7
+
+    def f(num):
+        near = round(num * 2, digits) / 2
+        if abs(num - near) <= error:
+            return round(near, digits)
+        else:
+            return round(num, digits)
+
+    tmd = table.matrix_data
+    tmd.data = np.vectorize(f)(tmd.data).astype('float64')
+    tmd.eliminate_zeros()
     table.remove_empty(axis='observation')
 
 
