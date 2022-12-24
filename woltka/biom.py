@@ -11,11 +11,10 @@
 """Functions for operating BIOM tables.
 """
 
-from functools import partial
+from itertools import accumulate
 import numpy as np
 import biom
 from .__init__ import __name__, __version__
-from .util import rounder
 
 
 def table_to_biom(data, observations, samples, metadata=None):
@@ -98,8 +97,7 @@ def biom_max_f(table: biom.Table):
     int
         Maximum decimal precision.
     """
-    return max([0] + [str(x)[::-1].find('.') for x in
-               table.matrix_data.todense().ravel().tolist()[0]])
+    return max([0] + [str(x)[::-1].find('.') for x in table.matrix_data.data])
 
 
 def divide_biom(table: biom.Table, sizes: dict):
@@ -156,7 +154,7 @@ def filter_biom(table: biom.Table, th: float):
     return res
 
 
-def round_biom(table: biom.Table, digits=None):
+def round_biom(table: biom.Table, digits=0):
     """Round a BIOM table's data and drop empty observations in place.
 
     Parameters
@@ -168,10 +166,34 @@ def round_biom(table: biom.Table, digits=None):
 
     Notes
     -----
-    This function will not drop empty samples.
+    There is a fully vectorized, much faster alternate:
+
+    >>> arr = table.matrix_data.data
+    >>> near = (arr * 2).round(digits) / 2
+    >>> choice = np.abs(arr - near) <= error
+    >>> table.matrix_data.data = np.where(choice, near, arr).round(digits)
+
+    However, this method does not always produce the same result as the current
+    method, because NumPy's `round` is imprecise compared with Python's `round`
+    (discussed in the NumPy documentation). For example, rounding 0.225 to two
+    digits will result in 0.23 (Python) or 0.22 (NumPy).
+
+    See Also
+    --------
+    util.rounder
     """
-    f = np.vectorize(partial(rounder, digits=digits))
-    table.transform(lambda data, id_, md: f(data), axis='observation')
+    error = 1e-7 / 10 ** digits if digits else 1e-7
+
+    def f(num):
+        near = round(num * 2, digits) / 2
+        if abs(num - near) <= error:
+            return round(near, digits)
+        else:
+            return round(num, digits)
+
+    tmd = table.matrix_data
+    tmd.data = np.vectorize(f)(tmd.data).astype('float64')
+    tmd.eliminate_zeros()
     table.remove_empty(axis='observation')
 
 
@@ -194,7 +216,47 @@ def biom_add_metacol(table: biom.Table, dic, name, missing=''):
     table.add_metadata(metadata, axis='observation')
 
 
-def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
+def clip_biom(table: biom.Table, field, sep, nested=False):
+    """Clip stratified or nested feature names to a field.
+
+    Parameters
+    ----------
+    table : biom.Table
+        Table to clip.
+    field : int
+        Field index to clip at.
+    sep : str
+        Field separator.
+    nested : bool, optional
+        Whether features are nested.
+
+    Returns
+    -------
+    biom.Table
+        Clipped BIOM table.
+
+    Notes
+    -----
+    Metadata will not be retained in the clipped table.
+
+    See Also
+    --------
+    .table.clip_table
+    """
+    idx = field - 1
+
+    def f1(id_, md):
+        fields = id_.split(sep)
+        if len(fields) >= field and fields[idx]:
+            return sep.join(fields[:field]) if nested else fields[idx]
+
+    table = table.collapse(f1, norm=False, axis='observation',
+                           include_collapsed_metadata=False)
+    return table.filter(lambda val, id_, md:  bool(id_), axis='observation')
+
+
+def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None,
+                  sep=None, nested=None):
     """Collapse a BIOM table in many-to-many mode.
 
     Parameters
@@ -207,16 +269,15 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
         Whether divide per-target counts by number of targets per source.
     field : int, optional
         Index of field to be collapsed in a stratified table.
+    sep : str, optional
+        Field separator (must be provided if field is set).
+    nested : bool, optional
+        Whether features are nested.
 
     Returns
     -------
     biom.Table
         Collapsed BIOM table.
-
-    Raises
-    ------
-    ValueError
-        Field index is not present in a feature ID.
 
     Notes
     -----
@@ -226,24 +287,39 @@ def collapse_biom(table: biom.Table, mapping: dict, divide=False, field=None):
     --------
     .table.collapse_table
     """
+    if nested:
+        f = ('{}' + sep + '{}').format
+    if field:
+        idx = field - 1
+
     # generate metadata
     metadata = {}
     for id_ in table.ids('observation'):
         feature = id_
-        if field is not None:
-            fields = feature.split('|')
+        if field:
+            fields = feature.split(sep)
+            n = len(fields)
+            if nested:
+                fields = list(accumulate(fields, f))
             try:
-                feature = fields[field]
+                feature = fields[idx]
             except IndexError:
-                raise ValueError(
-                    f'Feature "{feature}" has less than {field + 1} fields.')
+                continue
+            if not feature:
+                continue
         if feature not in mapping:
             continue
         targets = []
         for target in mapping[feature]:
-            if field is not None:
-                fields[field] = target
-                target = '|'.join(fields)
+            if field:
+                if not nested:
+                    fields[idx] = target
+                    target = '|'.join(fields)
+                else:
+                    if idx:
+                        target = fields[idx - 1] + '|' + target
+                    if field < n:
+                        target = target + '|' + fields[-1]
             targets.append(target)
         metadata[id_] = dict(part=targets)
 

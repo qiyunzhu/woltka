@@ -41,7 +41,7 @@ Alternatively, one can split this command into two:
 
 ```bash
 woltka classify -i input_dir -c coords.txt.xz -o orf.biom
-woltka tools collapse -i orf.biom -m metacyc/protein.map.xz -n metacyc/protein_name.txt -o protein.biom
+woltka collapse -i orf.biom -m metacyc/protein.map.xz -n metacyc/protein_name.txt -o protein.biom
 ```
 
 
@@ -74,15 +74,15 @@ Using the following commands:
 
 ```bash
 # protein to enzrxn (enzymatic reaction):
-woltka tools collapse -i protein.biom -m metacyc/protein-to-enzrxn.txt -n metacyc/enzrxn_name.txt -o enzrxn.biom
+woltka collapse -i protein.biom -m metacyc/protein-to-enzrxn.txt -n metacyc/enzrxn_name.txt -o enzrxn.biom
 # enzrxn to reaction:
-woltka tools collapse -i enzrxn.biom -m metacyc/enzrxn-to-reaction.txt -n metacyc/reaction_name.txt -o reaction.biom
+woltka collapse -i enzrxn.biom -m metacyc/enzrxn-to-reaction.txt -n metacyc/reaction_name.txt -o reaction.biom
 # reaction to pathway:
-woltka tools collapse -i reaction.biom -m metacyc/reaction-to-pathway.txt -n metacyc/pathway_name.txt -o pathway.biom
+woltka collapse -i reaction.biom -m metacyc/reaction-to-pathway.txt -n metacyc/pathway_name.txt -o pathway.biom
 # pathway to super pathway:
-woltka tools collapse -i pathway.biom -m metacyc/pathway-to-super_pathway.txt -n metacyc/pathway_name.txt -o super_pathway.biom
+woltka collapse -i pathway.biom -m metacyc/pathway-to-super_pathway.txt -n metacyc/pathway_name.txt -o super_pathway.biom
 # super pathway (or pathway) to pathway type:
-woltka tools collapse -i super_pathway.biom -m metacyc/pathway_type.txt -n metacyc/all_class_name.txt -o pathway_type.biom
+woltka collapse -i super_pathway.biom -m metacyc/pathway_type.txt -n metacyc/all_class_name.txt -o pathway_type.biom
 ```
 
 The collapse command supports **many-to-many** mapping. For example, if one reaction is found in three pathways, each pathway will be counted **once**. In some instances (e.g., to retain compositionality of the profile), one may consider adding the `--divide` flag, which will instruct the program to count each pathway 1 / 3 times ([see details](collapse.md)).
@@ -95,7 +95,7 @@ It is usually important to assess how **completed**, in addition to how abundant
 Among the mapping files there are two files recording the composition of metabolic pathways in terms of **genes** and **reactions**. We recommend using the reaction mapping because there are duplicated gene IDs.
 
 ```bash
-woltka tools coverage -i reaction.biom -m pathway-to-reaction_list.txt -o pathway_coverage.biom
+woltka coverage -i reaction.biom -m pathway-to-reaction_list.txt -o pathway_coverage.biom
 ```
 
 The output file is a **coverage** table in which every cell value represents the percentage of member reactions of a particular pathway present in a particular sample.

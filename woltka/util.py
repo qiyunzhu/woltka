@@ -173,7 +173,7 @@ def intize(num):
     >>> total, round(total)
     (3.5, 4)
 
-    >>> total = sum(sum(data[i:i+4]) for i in range(0, len(data), 4))
+    >>> total = sum(sum(data[i:i + 4]) for i in range(0, len(data), 4))
     >>> total, round(total)
     (3.499999999999999, 3)
 

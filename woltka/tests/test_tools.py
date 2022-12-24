@@ -157,11 +157,11 @@ class ToolsTests(TestCase):
 
     def test_collapse_wf(self):
         input_fp = join(self.datdir, 'output', 'truth.gene.tsv')
-        map_fp = join(self.datdir, 'function', 'nucl', 'uniref.map.xz')
         output_fp = join(self.tmpdir, 'tmp.tsv')
+        map_fp = join(self.datdir, 'function', 'nucl', 'uniref.map.xz')
 
         # one-to-one
-        collapse_wf(input_fp, map_fp, output_fp)
+        collapse_wf(input_fp, output_fp, map_fp)
         with open(output_fp, 'r') as f:
             obs = f.read().splitlines()
         self.assertEqual(len(obs), 2489)
@@ -175,7 +175,7 @@ class ToolsTests(TestCase):
         input_fp = join(self.datdir, 'output', 'truth.uniref.tsv')
         map_fp = join(self.datdir, 'function', 'go', 'goslim.tsv.xz')
         names_fp = join(self.datdir, 'function', 'go', 'name.txt.xz')
-        collapse_wf(input_fp, map_fp, output_fp, names_fp=names_fp)
+        collapse_wf(input_fp, output_fp, map_fp, names_fp=names_fp)
         with open(output_fp, 'r') as f:
             obs = f.read().splitlines()
         self.assertEqual(len(obs), 84)
@@ -189,14 +189,14 @@ class ToolsTests(TestCase):
         # wrong mapping file
         map_fp = join(self.datdir, 'tree.nwk')
         with self.assertRaises(SystemExit) as ctx:
-            collapse_wf(input_fp, map_fp, output_fp, divide=True)
-        errmsg = 'No source-target relationship is found in tree.nwk.'
+            collapse_wf(input_fp, output_fp, map_fp, divide=True)
+        errmsg = 'No source-target mapping is found in tree.nwk.'
         self.assertEqual(str(ctx.exception), errmsg)
 
         # stratified profile
         input_fp = join(self.datdir, 'output', 'burst.genus.process.tsv')
         map_fp = join(self.datdir, 'function', 'go', 'go2slim.map.xz')
-        collapse_wf(input_fp, map_fp, output_fp, field=2)
+        collapse_wf(input_fp, output_fp, map_fp, field=2)
         with open(output_fp, 'r') as f:
             obs = f.read().splitlines()
         self.assertEqual(len(obs), 279)
@@ -206,6 +206,18 @@ class ToolsTests(TestCase):
             if line.startswith('Streptococcus|GO:0008150'):
                 self.assertEqual(line[25:], '0\t2\t9\t3\t0')
         remove(output_fp)
+
+        # nested profile
+        input_fp = join(self.datdir, 'output', 'bowtie2.orf.tsv')
+        collapse_wf(input_fp, output_fp, field=1, sep='_', nested=True)
+        with open(output_fp, 'r') as f:
+            obs = f.read().splitlines()
+        self.assertEqual(len(obs), 50)
+        for line in obs:
+            if line.startswith('G000011705'):
+                self.assertEqual(line[11:], '104\t0\t29\t0\t0')
+            if line.startswith('G000240185'):
+                self.assertEqual(line[11:], '2\t608\t2\t1\t0')
 
     def test_coverage_wf(self):
         input_fp = join(self.datdir, 'output', 'truth.metacyc.tsv')

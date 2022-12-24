@@ -3,7 +3,7 @@
 The **coverage** command calculates the coverage -- percentage of features present in each sample over a pre-defined group of features -- of a profile.
 
 ```bash
-woltka tools coverage -i input.biom -m mapping.txt -o output.biom
+woltka coverage -i input.biom -m mapping.txt -o output.biom
 ```
 
 A typical use case is to assess the likelihoods of presence of **metabolic pathways** in each organism or community. Because a pathway consists of _multiple_ chemical **reactions** or functional **genes** connected to each other, the presence of some of them (even with high abundance) in the sample does not necessarily suggest that the entire pathway is viable. Only when all or a large proportion of them are found can we be more confident about this hypothesis.

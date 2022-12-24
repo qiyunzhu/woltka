@@ -3,7 +3,7 @@
 The **merge** command merges two or more profiles into one, while treating overlapping samples and features in an additive way. This is useful when the analysis includes multiple sets of input files (e.g., multiple sequencing runs).
 
 ```bash
-woltka tools merge -i input1.biom -i input2.biom -i input3.biom -o output.biom
+woltka merge -i input1.biom -i input2.biom -i input3.biom -o output.biom
 ```
 
 This command is different from QIIME 2's `qiime feature-table merge` command, as the latter can only handle unique sample IDs.

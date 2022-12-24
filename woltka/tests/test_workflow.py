@@ -231,6 +231,12 @@ class WorkflowTests(TestCase):
         exp = {join(self.tmpdir, f'S{i}.sam'): f'S{i}' for i in range(1, 4)}
         self.assertDictEqual(obs[1], exp)
 
+        # independent sample Id list file
+        obs = parse_samples(self.tmpdir, samples=fp)
+        self.assertListEqual(obs[0], ['S1', 'S2', 'S3'])
+        exp = {join(self.tmpdir, f'S{i}.sam'): f'S{i}' for i in range(1, 4)}
+        self.assertDictEqual(obs[1], exp)
+
         # some samples only
         obs = parse_samples(fp, samples='S1,S2')
         self.assertListEqual(obs[0], ['S1', 'S2'])
@@ -571,7 +577,7 @@ class WorkflowTests(TestCase):
         self.assertDictEqual(data['ko']['S1'], {'T1': 0.95, 'T2': 0.5})
 
         # missing size
-        del(sizes['G3'])
+        del sizes['G3']
         with self.assertRaises(ValueError) as ctx:
             assign_readmap(qryq, subq, {'ko': {}}, 'ko', 'S1', assigners,
                            tree=tree, rankdic=rankdic, sizes=sizes)

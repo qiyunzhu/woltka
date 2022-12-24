@@ -13,7 +13,7 @@ The former. Woltka **exhaustively** captures all valid matches from the alignmen
 
 ### Are Woltka results consistent across versions?
 
-To date, all Woltka versions (0.1.0 to 0.1.4) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
+To date, all Woltka versions (0.1.0 to 0.1.5) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
 
 ### How many CPU cores does Woltka use?
 
@@ -97,7 +97,7 @@ Yes. See [here](normalize.md) for methods.
 
 ### I ran Woltka separately on multiple subsets of data. Can I merge the results?
 
-Yes. The `woltka tools merge` command is for you. See [here](merge.md) for details.
+Yes. The `woltka merge` command is for you. See [here](merge.md) for details.
 
 ### Can Woltka report taxon names instead of TaxIDs when using NCBI taxonomy?
 

@@ -12,6 +12,7 @@
 """
 
 from functools import reduce
+from itertools import accumulate
 from collections import defaultdict
 from operator import add
 from biom import Table, load_table
@@ -21,7 +22,8 @@ from .tree import lineage_str
 from .file import openzip
 from .biom import (
     table_to_biom, biom_to_table, write_biom, biom_max_f, divide_biom,
-    scale_biom, filter_biom, round_biom, biom_add_metacol, collapse_biom)
+    scale_biom, filter_biom, round_biom, biom_add_metacol, clip_biom,
+    collapse_biom)
 
 
 def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
@@ -234,8 +236,7 @@ def read_tsv(fh):
     width = len(header)
     for line in fh:
         row = line.rstrip('\r\n').split('\t')
-        feature = row[0]
-        features.append(feature)
+        features.append(row[0])
         data.append([int(x) if x.isdigit() else float(x)
                      for x in row[1:width]])
         # data.append(list(map(int, row[1:width])))
@@ -455,9 +456,9 @@ def round_table(table, digits=None):
 
     # remove empty rows
     for i in reversed(todel):
-        del(table[0][i])
-        del(table[1][i])
-        del(table[3][i])
+        del table[0][i]
+        del table[1][i]
+        del table[3][i]
 
 
 def filter_table(table, th):
@@ -560,7 +561,46 @@ def add_metacol(table, dic, name, missing=''):
         metadatum[name] = dic.get(feature, missing)
 
 
-def collapse_table(table, mapping, divide=False, field=None):
+def clip_table(table, field, sep, nested=False):
+    """Clip stratified or nested feature names to a field.
+
+    Parameters
+    ----------
+    table : biom.Table or tuple
+        Table to clip.
+    field : int
+        Field index to clip at.
+    sep : str
+        Field separator.
+    nested : bool, optional
+        Whether features are nested.
+
+    Returns
+    -------
+    biom.Table or tuple
+        Clipped table.
+    """
+    # redirect to BIOM module
+    if isinstance(table, Table):
+        return clip_biom(table, field, sep, nested)
+
+    # clip feature names to given field
+    samples = table[2]
+    width = len(samples)
+    res = defaultdict(lambda: [0] * width)
+    idx = field - 1
+    for datum, feature in zip(*table[:2]):
+        fields = feature.split(sep)
+        if len(fields) >= field and fields[idx]:
+            clipped = sep.join(fields[:field]) if nested else fields[idx]
+            res[clipped] = list(map(add, res[clipped], datum))
+
+    # reformat table
+    return list(res.values()), list(res.keys()), samples, [dict() for _ in res]
+
+
+def collapse_table(table, mapping, divide=False, field=None, sep=None,
+                   nested=False):
     """Collapse a table by many-to-many mapping.
 
     Parameters
@@ -573,16 +613,15 @@ def collapse_table(table, mapping, divide=False, field=None):
         Whether divide per-target counts by number of targets per source.
     field : int, optional
         Index of field to be collapsed in a stratified table.
+    sep : str, optional
+        Field separator (must be provided if field is set).
+    nested : bool, optional
+        Whether features are nested.
 
     Returns
     -------
     biom.Table or tuple
         Collapsed table.
-
-    Raises
-    ------
-    ValueError
-        Field index is not present in a feature ID.
 
     Notes
     -----
@@ -590,30 +629,79 @@ def collapse_table(table, mapping, divide=False, field=None):
     """
     # redirect to BIOM module
     if isinstance(table, Table):
-        return collapse_biom(table, mapping, divide, field)
+        return collapse_biom(table, mapping, divide, field, sep, nested)
+
+    # function for stacking fields in nested feature
+    if nested:
+        f = ('{}' + sep + '{}').format
+
+    # get 0-based field index
+    if field:
+        idx = field - 1
 
     # collapse table
     samples = table[2]
     width = len(samples)
     res = defaultdict(lambda: [0] * width)
     for datum, feature in zip(*table[:2]):
-        if field is not None:
-            fields = feature.split('|')
+
+        # split feature into fields
+        if field:
+            fields = feature.split(sep)
+
+            # stack fields of nested feature
+            if nested:
+                fields = list(accumulate(fields, f))
+
+            # identify target field
             try:
-                feature = fields[field]
+                feature = fields[idx]
+
+            # skip if field does not exist
             except IndexError:
-                raise ValueError(
-                    f'Feature "{feature}" has less than {field + 1} fields.')
+                continue
+
+            # skip if feature is empty
+            if not feature:
+                continue
+
+        # skip if feature is not mapped
         if feature not in mapping:
             continue
+
+        # map source feature to target(s)
         targets = mapping[feature]
+
+        # divide values by number of targets
         if divide:
-            k = 1 / len(targets)
-            datum = [x * k for x in datum]
+            k = len(targets)
+            if k > 1:
+                k = 1 / k
+                datum = [x * k for x in datum]
+
+        # cache number of fields
+        if field:
+            n = len(fields)
+
+        # process each target
         for target in targets:
-            if field is not None:
-                fields[field] = target
-                target = '|'.join(fields)
+
+            # collapse given field
+            if field:
+
+                # rebuild stratified feature (all fields)
+                if not nested:
+                    fields[idx] = target
+                    target = '|'.join(fields)
+
+                # rebuild nested feature (only previous and last fields)
+                else:
+                    if idx:
+                        target = fields[idx - 1] + '|' + target
+                    if field < n:
+                        target = target + '|' + fields[-1]
+
+            # add results to same target
             res[target] = list(map(add, res[target], datum))
 
     # reformat table

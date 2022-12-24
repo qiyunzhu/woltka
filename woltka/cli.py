@@ -25,15 +25,22 @@ class NaturalOrderGroup(click.Group):
         return self.commands.keys()
 
 
+GRP_KA = dict(
+    cls=NaturalOrderGroup,
+    context_settings=dict(help_option_names=['-h', '--help']))
+CMD_KA = dict(
+    no_args_is_help=True)
+
+
 @click.version_option(__version__)
-@click.group(cls=NaturalOrderGroup)
+@click.group(**GRP_KA)
 def cli():
+    """Woltka: a versatile meta'omic data classifier.
+    """
     pass  # pragma: no cover
 
 
-# `classify` invokes the main classification workflow
-
-@cli.command('classify')
+@cli.command('classify', **CMD_KA)
 # input and output
 @click.option(
     '--input', '-i', 'input_fp', required=True, type=click.Path(
@@ -61,8 +68,9 @@ def cli():
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
 @click.option(
-    '--trim-sub', 'trimsub',
-    help='Trim subject IDs at the last given delimiter.')
+    '--trim-sub', 'trimsub', is_flag=False, flag_value='_',
+    help=('Trim subject IDs at the last given delimiter. Default: "_", or '
+          'enter a custom value.'))
 # hierarchies
 @click.option(
     '--nodes', 'nodes_fps', type=click.Path(exists=True), multiple=True,
@@ -174,21 +182,51 @@ def cli():
     '--no-exe', is_flag=True,
     help='Disable calling external programs for decompression.')
 def classify_cmd(**kwargs):
-    """Generate a profile of samples based on a classification system.
+    """Main classification workflow: Alignments => profile(s).
     """
     workflow(**kwargs)
 
 
-# `tools` provides utilities for working with alignments, maps and profiles
-
-@cli.group('tools', cls=NaturalOrderGroup)
-def tools():
-    """Utilities for working with alignments, maps and profiles.
+@cli.command('collapse', **CMD_KA)
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--map', '-m', 'map_fp',
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Mapping of source features to target features. Supports '
+          'many-to-many relationships.'))
+@click.option(
+    '--divide', '-d', is_flag=True,
+    help=('Count each target feature as 1/k (k is the number of targets '
+          'mapped to a source). Otherwise, count as one.'))
+@click.option(
+    '--field', '-f', type=click.INT,
+    help=('Collapse x-th field of stratified features. For example, "A|a" '
+          'has fields 1 ("A") and 2 ("a").'))
+@click.option(
+    '--nested', '-e', is_flag=True,
+    help=('Fields are nested (each field is a child of the previous field). '
+          'For example, "A_1" represents "1" of "A".'))
+@click.option(
+    '--sep', '-s', type=click.STRING,
+    help=('Field separator for nested features (default: "_") or otherwise '
+          '(default: "|").'))
+@click.option(
+    '--names', '-n', 'names_fp', type=click.Path(exists=True),
+    help='Names of target features to append to the output profile.')
+def collapse_cmd(**kwargs):
+    """Collapse a profile by feature mapping and/or hierarchy.
     """
-    pass  # pragma: no cover
+    collapse_wf(**kwargs)
 
 
-@tools.command('normalize')
+@cli.command('normalize', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -209,14 +247,13 @@ def tools():
     '--digits', '-d', type=click.IntRange(0, 10),
     help=('Round values to this number of digits after the decimal point. If '
           'omitted, will keep decimal precision of input profile.'))
-@click.pass_context
-def normalize_cmd(ctx, **kwargs):
-    """Normalize a profile to fractions or by feature sizes.
+def normalize_cmd(**kwargs):
+    """Normalize a profile to fractions and/or by feature sizes.
     """
     normalize_wf(**kwargs)
 
 
-@tools.command('filter')
+@cli.command('filter', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -231,14 +268,13 @@ def normalize_cmd(ctx, **kwargs):
 @click.option(
     '--min-percent', '-p', type=click.FLOAT,
     help='Per-sample minimum percentage threshold.')
-@click.pass_context
-def filter_cmd(ctx, **kwargs):
+def filter_cmd(**kwargs):
     """Filter a profile by per-sample abundance.
     """
     filter_wf(**kwargs)
 
 
-@tools.command('merge')
+@cli.command('merge', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fps', required=True, multiple=True,
     type=click.Path(exists=True),
@@ -248,45 +284,13 @@ def filter_cmd(ctx, **kwargs):
     '--output', '-o', 'output_fp', required=True,
     type=click.Path(writable=True, dir_okay=False),
     help='Path to output profile.')
-@click.pass_context
-def merge_cmd(ctx, **kwargs):
+def merge_cmd(**kwargs):
     """Merge multiple profiles into one profile.
     """
     merge_wf(**kwargs)
 
 
-@tools.command('collapse')
-@click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help='Path to input profile.')
-@click.option(
-    '--map', '-m', 'map_fp', required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help=('Mapping of source features to target features. (supports '
-          'many-to-many relationships).'))
-@click.option(
-    '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True, dir_okay=False),
-    help='Path to output profile.')
-@click.option(
-    '--divide', '-d', is_flag=True,
-    help=('Count each target feature as 1/k (k is the number of targets '
-          'mapped to a source). Otherwise, count as one.'))
-@click.option(
-    '--field', '-f', type=click.INT,
-    help='Index of field to be collapsed in a stratified profile.')
-@click.option(
-    '--names', '-n', 'names_fp', type=click.Path(exists=True),
-    help='Names of target features to append to the output profile.')
-@click.pass_context
-def collapse_cmd(ctx, **kwargs):
-    """Collapse a profile based on feature mapping.
-    """
-    collapse_wf(**kwargs)
-
-
-@tools.command('coverage')
+@cli.command('coverage', **CMD_KA)
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -310,11 +314,22 @@ def collapse_cmd(ctx, **kwargs):
 @click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of feature groups to append to the coverage table.')
-@click.pass_context
-def coverage_cmd(ctx, **kwargs):
+def coverage_cmd(**kwargs):
     """Calculate per-sample coverage of feature groups.
     """
     coverage_wf(**kwargs)
+
+
+# the "tools" menu is for backward compatibility
+@cli.group('tools', cls=NaturalOrderGroup)
+def tools():
+    """Entries to the same commands for backward compatibility (deprecated).
+    """
+    pass  # pragma: no cover
+
+
+for cmd in collapse_cmd, normalize_cmd, filter_cmd, merge_cmd, coverage_cmd:
+    tools.add_command(cmd)
 
 
 if __name__ == '__main__':
