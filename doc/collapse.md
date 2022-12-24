@@ -5,13 +5,13 @@ The **profile collapsing** function is a lightweight and flexible addition to th
 Collapse features based on a mapping file:
 
 ```bash
-woltka tools collapse -i input.biom -m mapping.txt -o output.biom
+woltka collapse -i input.biom -m mapping.txt -o output.biom
 ```
 
 Collapse nested features to the first level:
 
 ```bash
-woltka tools collapse -i input.biom -e -f 1 -o output.biom
+woltka collapse -i input.biom -e -f 1 -o output.biom
 ```
 
 
@@ -127,7 +127,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 One can collapse the "species|gene" features into just species (regardless of gene) with:
 
 ```bash
-woltka tools collapse -i species_gene.tsv -f 1 -o species.tsv
+woltka collapse -i species_gene.tsv -f 1 -o species.tsv
 ```
 
 The output profile `species.tsv` is like:
@@ -145,7 +145,7 @@ Alternatively, one can use `-f 2` to collapse to genes (regardless of species).
 With a species-to-phylum mapping file `phylum.map`, one can collapse the first field (species):
 
 ```bash
-woltka tools collapse -i species_gene.tsv -f 1 -m phylum.map -o phylum_gene.tsv
+woltka collapse -i species_gene.tsv -f 1 -m phylum.map -o phylum_gene.tsv
 ```
 
 The output profile `phylum_gene.tsv` will be like:
@@ -160,7 +160,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 With a gene-to-biological process mapping file `process.map`, one can collapse the second field (gene):
 
 ```bash
-woltka tools collapse -i species_gene.tsv -f 2 -m process.map -o species_process.tsv
+woltka collapse -i species_gene.tsv -f 2 -m process.map -o species_process.tsv
 ```
 
 The output profile `species_process.tsv` will be like:
@@ -174,8 +174,8 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 One can combine the two operations:
 
 ```bash
-woltka tools collapse -i species_gene.tsv -f 1 -m phylum.map -o phylum_gene.tsv
-woltka tools collapse -i phylum_gene.tsv -f 2 -m process.map -o phylum_process.tsv
+woltka collapse -i species_gene.tsv -f 1 -m phylum.map -o phylum_gene.tsv
+woltka collapse -i phylum_gene.tsv -f 2 -m process.map -o phylum_process.tsv
 ```
 
 The output profile `phylum_process.tsv` will be like:
@@ -199,7 +199,7 @@ The `--nested` or `-e` flag instructs Woltka to treat feature IDs as nested. The
 For example, with an ORF table `orf.tsv`, one can do:
 
 ```bash
-woltka tools collapse -i orf.tsv -e -f 1 -o ogu.tsv
+woltka collapse -i orf.tsv -e -f 1 -o ogu.tsv
 ```
 
 This will collapse an ORF table into an [OGU table](ogu.md), in which only "G12" but not "_34" is retained.
@@ -220,7 +220,7 @@ Feature ID | Sample 1 | Sample 2 | Sample 3
 One can collapse them into 2-level EC numbers with:
 
 ```bash
-woltka tools collapse -i ec4.tsv -e -s "." -f 2 -o ec2.tsv
+woltka collapse -i ec4.tsv -e -s "." -f 2 -o ec2.tsv
 ```
 
 The output profile `ec2.tsv` is like:
@@ -246,7 +246,7 @@ Feature ID | Sample 1 | Sample 2
 One can collapse them into the class level with:
 
 ```bash
-woltka tools collapse -i free.tsv -e -s "; " -f 2 -o class.tsv
+woltka collapse -i free.tsv -e -s "; " -f 2 -o class.tsv
 ```
 
 The output profile `class.tsv` is like:
@@ -273,7 +273,7 @@ G000007845_1274
 With a genome-to-genus mapping file `genus.map`, one can collapse the first field (i.e., taxonomic analysis):
 
 ```bash
-woltka tools collapse -i orf.biom -e -f 1 -m genus.map -o genus_orf.biom
+woltka collapse -i orf.biom -e -f 1 -m genus.map -o genus_orf.biom
 ```
 
 The resulting feature IDs are like:
@@ -285,7 +285,7 @@ Bacillus|G000006785_1274
 With an ORF-to-UniRef mapping file `uniref.map`, one can collapse the second field (i.e., functional analysis):
 
 ```bash
-woltka tools collapse -i orf.biom -e -f 2 -m uniref.map -o ogu_uniref.biom
+woltka collapse -i orf.biom -e -f 2 -m uniref.map -o ogu_uniref.biom
 ```
 
 The resulting feature IDs are like:
@@ -297,9 +297,9 @@ G000006785|J9GI19
 One can execute the `collapse` command multiple times to collapse the first and second fields separately to achieve desired taxonomic and functional resolution. Note that starting from the second command, features are no longer nested.
 
 ```bash
-woltka tools collapse -i orf.biom -e -f 2 -m uniref.map -o ogu_uniref.biom
-woltka tools collapse -i ogu_uniref.biom -f 1 -m genus.map -o genus_uniref.biom
-woltka tools collapse -i genus_uniref.biom -f 2 -m uniref2go.map -o genus_go.biom
+woltka collapse -i orf.biom -e -f 2 -m uniref.map -o ogu_uniref.biom
+woltka collapse -i ogu_uniref.biom -f 1 -m genus.map -o genus_uniref.biom
+woltka collapse -i genus_uniref.biom -f 2 -m uniref2go.map -o genus_go.biom
 ...
 ```
 
@@ -314,7 +314,7 @@ EC:2.7.2.10
 One can collapse the 2nd level by using an enzyme-to-substrate mapping file `substrate.map`:
 
 ```bash
-woltka tools collapse -i ec4.tsv -e -f 2 -m substrate.map -o output.tsv
+woltka collapse -i ec4.tsv -e -f 2 -m substrate.map -o output.tsv
 ```
 
 The output feature IDs will be like:

@@ -74,13 +74,13 @@ You may have hundreds of alignment files to crunch, and dozens of compute nodes 
 Woltka provides a utility to conveniently merge multiple profiles:
 
 ```bash
-woltka tools merge -i table1.biom -i table2.biom -i table3.biom ... -o merged.biom
+woltka merge -i table1.biom -i table2.biom -i table3.biom ... -o merged.biom
 ```
 
 Or:
 
 ```bash
-woltka tools merge -i <directory containing lots of .biom/tsv> -o merged.biom/tsv
+woltka merge -i <directory containing lots of .biom/tsv> -o merged.biom/tsv
 ```
 
 Note: If you plan to run Woltka on each individual file (not multiplexed), you should add `--no-demux` to the command, otherwise Woltka will attempted to demultiplex it. Example:

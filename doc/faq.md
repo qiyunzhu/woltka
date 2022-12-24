@@ -97,7 +97,7 @@ Yes. See [here](normalize.md) for methods.
 
 ### I ran Woltka separately on multiple subsets of data. Can I merge the results?
 
-Yes. The `woltka tools merge` command is for you. See [here](merge.md) for details.
+Yes. The `woltka merge` command is for you. See [here](merge.md) for details.
 
 ### Can Woltka report taxon names instead of TaxIDs when using NCBI taxonomy?
 

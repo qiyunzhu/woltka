@@ -29,7 +29,7 @@ This will generate multiple mapping files in the current directory. The filename
 **Step 3**: Use Woltka's [**collapse**](collapse.md) command to convert KO's to higher-level classification units. This command supports many-to-many mapping, because that's the nature of the relationships between functional units (e.g., genes vs pathways). For example, the following command will generate a profile of **reactions**:
 
 ```bash
-woltka tools collapse -i ko.tsv -m kegg/ko-to-reaction.txt -o reaction.tsv
+woltka collapse -i ko.tsv -m kegg/ko-to-reaction.txt -o reaction.tsv
 ```
 
 Once a reaction profile is generated, several mapping files help to find more information about the reactions, such as `reaction_name.txt`, `reaction_equation.txt` and `reaction_definition.txt`. Meanwhile several other one-to-many mapping files, such as `reaction-to-compound.txt`, `reaction-to-module.txt`, `reaction-to-rclass.txt` help to explore the data toward other classification levels. All are enabled by the `collapse` command.
@@ -37,7 +37,7 @@ Once a reaction profile is generated, several mapping files help to find more in
 **Step 4**: You may want to explore the completeness of individual reactions, modules and pathways. This can be achieved using Woltka's [**coverage**](coverage.md) command. For example:
 
 ```bash
-woltka tools coverage -i reaction.tsv -m kegg/module-to-reaction.txt -o module.cov.tsv
+woltka coverage -i reaction.tsv -m kegg/module-to-reaction.txt -o module.cov.tsv
 ```
 
 Differently from the last command, the **coverage** command generates a table, where cell values indicate the percentage of reactions required by each module found in each sample.

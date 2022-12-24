@@ -175,88 +175,12 @@ def cli():
     '--no-exe', is_flag=True,
     help='Disable calling external programs for decompression.')
 def classify_cmd(**kwargs):
-    """Generate a profile of samples based on a classification system.
+    """Main classification workflow: Alignments => profile(s).
     """
     workflow(**kwargs)
 
 
-# `tools` provides utilities for working with alignments, maps and profiles
-
-@cli.group('tools', cls=NaturalOrderGroup)
-def tools():
-    """Utilities for working with alignments, maps and profiles.
-    """
-    pass  # pragma: no cover
-
-
-@tools.command('normalize')
-@click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help='Path to input profile.')
-@click.option(
-    '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True, dir_okay=False),
-    help='Path to output profile.')
-@click.option(
-    '--sizes', '-z', 'sizes_fp',
-    type=click.Path(exists=True, dir_okay=False),
-    help=('Path to mapping of feature sizes, by which values will be divided. '
-          'If omitted, will divide values by sum per sample.'))
-@click.option(
-    '--scale', '-s', type=click.STRING,
-    help='Scale values by this factor. Accepts "k", "M" suffixes.')
-@click.option(
-    '--digits', '-d', type=click.IntRange(0, 10),
-    help=('Round values to this number of digits after the decimal point. If '
-          'omitted, will keep decimal precision of input profile.'))
-@click.pass_context
-def normalize_cmd(ctx, **kwargs):
-    """Normalize a profile to fractions or by feature sizes.
-    """
-    normalize_wf(**kwargs)
-
-
-@tools.command('filter')
-@click.option(
-    '--input', '-i', 'input_fp', required=True,
-    type=click.Path(exists=True, dir_okay=False),
-    help='Path to input profile.')
-@click.option(
-    '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True, dir_okay=False),
-    help='Path to output profile.')
-@click.option(
-    '--min-count', '-c', type=click.IntRange(min=1),
-    help='Per-sample minimum count threshold.')
-@click.option(
-    '--min-percent', '-p', type=click.FLOAT,
-    help='Per-sample minimum percentage threshold.')
-@click.pass_context
-def filter_cmd(ctx, **kwargs):
-    """Filter a profile by per-sample abundance.
-    """
-    filter_wf(**kwargs)
-
-
-@tools.command('merge')
-@click.option(
-    '--input', '-i', 'input_fps', required=True, multiple=True,
-    type=click.Path(exists=True),
-    help=('Path to input profiles or directories containing profiles. Can '
-          'accept multiple paths.'))
-@click.option(
-    '--output', '-o', 'output_fp', required=True,
-    type=click.Path(writable=True, dir_okay=False),
-    help='Path to output profile.')
-@click.pass_context
-def merge_cmd(ctx, **kwargs):
-    """Merge multiple profiles into one profile.
-    """
-    merge_wf(**kwargs)
-
-
-@tools.command('collapse')
+@cli.command('collapse')
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -289,14 +213,77 @@ def merge_cmd(ctx, **kwargs):
 @click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of target features to append to the output profile.')
-@click.pass_context
-def collapse_cmd(ctx, **kwargs):
-    """Collapse a profile based on feature mapping.
+def collapse_cmd(**kwargs):
+    """Collapse a profile by feature mapping and/or hierarchy.
     """
     collapse_wf(**kwargs)
 
 
-@tools.command('coverage')
+@cli.command('normalize')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--sizes', '-z', 'sizes_fp',
+    type=click.Path(exists=True, dir_okay=False),
+    help=('Path to mapping of feature sizes, by which values will be divided. '
+          'If omitted, will divide values by sum per sample.'))
+@click.option(
+    '--scale', '-s', type=click.STRING,
+    help='Scale values by this factor. Accepts "k", "M" suffixes.')
+@click.option(
+    '--digits', '-d', type=click.IntRange(0, 10),
+    help=('Round values to this number of digits after the decimal point. If '
+          'omitted, will keep decimal precision of input profile.'))
+def normalize_cmd(**kwargs):
+    """Normalize a profile to fractions and/or by feature sizes.
+    """
+    normalize_wf(**kwargs)
+
+
+@cli.command('filter')
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--min-count', '-c', type=click.IntRange(min=1),
+    help='Per-sample minimum count threshold.')
+@click.option(
+    '--min-percent', '-p', type=click.FLOAT,
+    help='Per-sample minimum percentage threshold.')
+def filter_cmd(**kwargs):
+    """Filter a profile by per-sample abundance.
+    """
+    filter_wf(**kwargs)
+
+
+@cli.command('merge')
+@click.option(
+    '--input', '-i', 'input_fps', required=True, multiple=True,
+    type=click.Path(exists=True),
+    help=('Path to input profiles or directories containing profiles. Can '
+          'accept multiple paths.'))
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+def merge_cmd(**kwargs):
+    """Merge multiple profiles into one profile.
+    """
+    merge_wf(**kwargs)
+
+
+@cli.command('coverage')
 @click.option(
     '--input', '-i', 'input_fp', required=True,
     type=click.Path(exists=True, dir_okay=False),
@@ -320,8 +307,7 @@ def collapse_cmd(ctx, **kwargs):
 @click.option(
     '--names', '-n', 'names_fp', type=click.Path(exists=True),
     help='Names of feature groups to append to the coverage table.')
-@click.pass_context
-def coverage_cmd(ctx, **kwargs):
+def coverage_cmd(**kwargs):
     """Calculate per-sample coverage of feature groups.
     """
     coverage_wf(**kwargs)
