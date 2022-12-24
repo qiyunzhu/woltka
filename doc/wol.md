@@ -173,26 +173,26 @@ mcdir=function/metacyc
 Collapse ORFs into MetaCyc proteins:
 
 ```bash
-woltka tools collapse -i gene.biom -m $mc/protein.map.xz -n $mc/protein_name.txt -o protein.biom
+woltka collapse -i gene.biom -m $mc/protein.map.xz -n $mc/protein_name.txt -o protein.biom
 ```
 - Here `-i`, `-o`, `-m` and `-n` are abbreviations for `--input`, `--output`, `--map` and `--names`.
 
 Collapse proteins into enzymatic reactions:
 
 ```bash
-woltka tools collapse -i protein.biom -m $mc/protein-to-enzrxn.txt -n $mc/enzrxn_name.txt -o enzrxn.biom
+woltka collapse -i protein.biom -m $mc/protein-to-enzrxn.txt -n $mc/enzrxn_name.txt -o enzrxn.biom
 ```
 
 Collapse enzymatic reactions into reactions:
 
 ```bash
-woltka tools collapse -i enzrxn.biom -m $mc/enzrxn-to-reaction.txt -n $mc/reaction_name.txt -o reaction.biom
+woltka collapse -i enzrxn.biom -m $mc/enzrxn-to-reaction.txt -n $mc/reaction_name.txt -o reaction.biom
 ```
 
 Collapse reactions to metabolic pathways:
 
 ```bash
-woltka tools collapse -i reaction.biom -m $mc/reaction-to-pathway.txt -n $mc/pathway_name.txt -o pathway.biom
+woltka collapse -i reaction.biom -m $mc/reaction-to-pathway.txt -n $mc/pathway_name.txt -o pathway.biom
 ```
 
 So on so forth. See [here](metacyc.md) for a graph of all available collapsing directions.
@@ -260,7 +260,7 @@ In the output table, features will be like `Escherichia|K00133`, `Salmonella|K00
 With a stratified taxonomic/functional profile, one may still perform further [collapsing](#method-2) using one of the two systems. For example:
 
 ```bash
-woltka tools collapse -f 2 -i ko_by_genus.biom -m ko/ko-to-go.txt -o go_by_genus.biom
+woltka collapse -f 2 -i ko_by_genus.biom -m ko/ko-to-go.txt -o go_by_genus.biom
 ```
 
 The parameter `-f 2` instructs the program to collapse by the second field of each feature (e.g., `K00133` of `Escherichia|K00133`). See [here](collapse.md#stratification) for details.

@@ -62,7 +62,7 @@ woltka classify \
 `bowtie2.free.1p.tsv`: [Filter](../../../doc/filter.md) out features with <1% per-sample abundance.
 
 ```bash
-woltka tools filter \
+woltka filter \
   --input output/bowtie2.free.tsv \
   --min-percent 1 \
   --output bowtie2.free.1p.tsv
@@ -175,7 +175,7 @@ woltka classify \
 `merged.process.tsv`: [Merge](../../../doc/merge.md) two profiles.
 
 ```bash
-woltka tools merge \
+woltka merge \
   --input output/burst.process.tsv \
   --input output/split.process.tsv \
   --output merged.process.tsv
@@ -243,7 +243,7 @@ woltka classify \
 Or, instead of doing the one-step classification workflow, [collapse](../../../doc/collapse.md) an existing per-gene profile into a UniRef profile.
 
 ```bash
-woltka tools collapse \
+woltka collapse \
   --input output/truth.gene.tsv \
   --map function/nucl/uniref.map.xz \
   --names function/uniref/uniref.names.xz \
@@ -253,7 +253,7 @@ woltka tools collapse \
 `truth.goslim.tsv`: Further collapse the UniRef profile into a [GO Slim](https://www.ebi.ac.uk/QuickGO/help/slims) profile. The program can handle one-to-many mappings (e.g., one GO term can be assigned to multiple GO Slim terms).
 
 ```bash
-woltka tools collapse \
+woltka collapse \
   --input output/truth.uniref.tsv \
   --map function/go/goslim.tsv.xz \
   --names function/go/name.txt.xz \

@@ -24,7 +24,7 @@ Woltka has two modes of normalization, each providing all four functions mention
 
 1. The normalization functions can be called as part of the main classification workflow (`woltka classify`), and directly output normalized profiles.
 
-2. One can perform normalization on profiles that are already generated (`woltka tools normalize`). This saves the need for re-running the workflow.
+2. One can perform normalization on profiles that are already generated (`woltka normalize`). This saves the need for re-running the workflow.
 
 There is a major advantage of normalization by subject size **during** classification, as detailed below. Other than that, the two modes produce mutually identical results. See below for some examples.
 
@@ -51,7 +51,7 @@ woltka classify --sizes size.map ...
 Or post classification (on existing profiles):
 
 ```bash
-woltka tools normalize --sizes size.map ...
+woltka normalize --sizes size.map ...
 ```
 
 A special case is during "coord-match" functional classification (see [details](ordina.md)), one can use a dot (`.`) instead of a mapping file. Woltka will read gene sizes from the gene coordinates file.
@@ -75,7 +75,7 @@ It is more convenient to scale up resulting values by a constant, such as one mi
 Examples (post classification):
 
 ```bash
-woltka tools normalize -i ogu.biom -m length.map --scale 1M -o ogu.cpm.biom
+woltka normalize -i ogu.biom -m length.map --scale 1M -o ogu.cpm.biom
 ```
 
 During classification:
@@ -141,7 +141,7 @@ The output values are fractions (like "0.05"). One can add `--scale 100` to conv
 On an existing profile:
 
 ```bash
-woltka tools normalize ... (without --sizes, automatically applies --frac)
+woltka normalize ... (without --sizes, automatically applies --frac)
 ```
 
 **Note**: These values are the fractions of reads assigned to each classification units versus all reads that are **assigned**. If you add `--unassigned`, the values become the fractions of reads versus all reads that are **aligned**. Woltka cannot calculate the fractions of reads versus the **original** sequencing data, since it processes alignment files instead of raw FastQ files. However, it isn't hard to do this calculation manually if you know the sequencing depth information.
@@ -149,5 +149,5 @@ woltka tools normalize ... (without --sizes, automatically applies --frac)
 This function can also convert an RPK functional profile (see above) to the unit of **TPM (transcripts per kilobase million)**:
 
 ```bash
-woltka tools normalize -i rpk.biom --scale 1M -o tpm.biom
+woltka normalize -i rpk.biom --scale 1M -o tpm.biom
 ```

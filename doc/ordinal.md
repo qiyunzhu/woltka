@@ -94,7 +94,7 @@ woltka classify -i indir -c coords.txt --sizes . --scale 1k --digits 3 -o rpk.bi
 One can further convert RPK into **TPM** (transcripts per kilobase million) by the following command, which divides individual RPK values by the total RPK per sample, and multiplies them by 1 million.
 
 ```bash
-woltka tools normalize -i rpk.biom --scale 1M -o tpm.biom
+woltka normalize -i rpk.biom --scale 1M -o tpm.biom
 ```
 
 - **Note**: This TPM is equivalent to HUMAnN's **CPM** (copies per million; not to be confused with counts per million, see HUMAnN's [documentation](https://github.com/biobakery/humann#humann_renorm_table) for details). However see an important [note](classify.md@considerations) here.
@@ -133,23 +133,23 @@ An alternative way is to only generate the gene-level profile using the `classif
 
 ```bash
 woltka classify -i indir -c coords.txt -o gene.biom
-woltka tools collapse -i gene.biom     -m gene-to-protein.map     -o protein.biom
-woltka tools collapse -i protein.biom  -m protein-to-enzrxn.map   -o enzrxn.biom
-woltka tools collapse -i enzrxn.biom   -m enzrxn-to-reaction.map  -o reaction.biom
-woltka tools collapse -i reaction.biom -m reaction-to-pathway.map -o pathway.biom
-woltka tools collapse -i pathway.biom  -m pathway-to-super.map    -o super.biom
+woltka collapse -i gene.biom     -m gene-to-protein.map     -o protein.biom
+woltka collapse -i protein.biom  -m protein-to-enzrxn.map   -o enzrxn.biom
+woltka collapse -i enzrxn.biom   -m enzrxn-to-reaction.map  -o reaction.biom
+woltka collapse -i reaction.biom -m reaction-to-pathway.map -o pathway.biom
+woltka collapse -i pathway.biom  -m pathway-to-super.map    -o super.biom
 ```
 
 In the [WoL data release](wol.md), there are pre-built mappings to UniRef, GO, MetaCyc, KEGG and more.
 
-- Note: For some databases, such as [MetaCyc](https://metacyc.org), you might encounter an error regarding `AssertionError: Conflicting values found for ...`. This is likely because some classification units were simultaneously assigned to multiple ranks in the database, which causes conflicts in the Woltka workflow. In this case we recommend generating the gene-level profile with `woltka classify`, and then collapsing to individual levels one at a time with `woltka tools collapse`.
+- Note: For some databases, such as [MetaCyc](https://metacyc.org), you might encounter an error regarding `AssertionError: Conflicting values found for ...`. This is likely because some classification units were simultaneously assigned to multiple ranks in the database, which causes conflicts in the Woltka workflow. In this case we recommend generating the gene-level profile with `woltka classify`, and then collapsing to individual levels one at a time with `woltka collapse`.
 
 ## Pathway coverage
 
 It is a frequent goal to assess the abundances of individual metabolic pathways in the microbiome. However, a pathway only makes sense when all (or an essential subset) of its member enzymes are present. Woltka can calculate the percent **coverage** of pathways based on the presence/absence of member genes as follows:
 
 ```bash
-woltka tools coverage -i gene.biom -m pathway-to-genes.txt -o pathway_coverage.biom
+woltka coverage -i gene.biom -m pathway-to-genes.txt -o pathway_coverage.biom
 ```
 
 See [here](coverage.md) for details of coverage calculation.
