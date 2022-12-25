@@ -2,8 +2,16 @@
 
 The command-line interface (CLI) of Woltka provides several commands:
 
-- [**classify**](#classify): Complete classification workflow with all parameters.
-- [**tools**](#tools): Utilities for working with alignments, maps and profiles.
+Main workflow:
+- [**classify**](#classify): Complete classification workflow that analyzes sequence alignments based on a classification system and generate profiles.
+
+Profile utilities:
+- [**collapse**](#collapse): Collapse a profile by feature mapping and/or hierarchy.
+- [**normalize**](#normalize): Normalize a profile to fractions and/or by feature sizes.
+- [**filter**](#filter): Filter a profile by per-sample abundance.
+- [**merge**](#merge): Merge multiple profiles into one profile.
+- [**coverage**](#coverage): Calculate per-sample coverage of feature groups.
+
 
 ## Classify
 
@@ -93,9 +101,40 @@ Option | Description
 `--no-exe` | Disable calling external programs (`gzip`, `bzip2` and `xz`) for decompression. Otherwise, Woltka will use them if available for faster processing, or switch back to Python if not.
 
 
-## Tools
+## Collapse
 
-### Filter
+Collapse a profile based on feature mapping (supports **many-to-many** mapping) and/or hierarchy.
+
+* See [profile collapsing](collapse.md) for details.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input profile.
+`--output`, `-o` (required) | Path to output profile.
+`--map`, `-m` | Path to mapping of source features to target features.
+`--divide`, `-d` | Count each target feature as 1 / _k_ (_k_ is the number of targets mapped to a source). Otherwise, count as one.
+`--field`, `-f` | Features are stratified (strata delimited by "\|"). For example, if features are like "species\|gene", one can use `-f 1` to collapse "species" or `-f 2` to collapse "gene".
+`--nested`, `-e` | Features are nested (each field is a child of the previous field). For example, "A_1" represents "1" of "A", and the entire feature is equivalent to stratified feature "A\|A_1". This parameter overrides the "\|"-delimited strata.
+`--sep`, `-s` | Field separator for stratified features (default: "\|") or nested features (default: "_").
+`--names`, `-n` | Path to mapping of target features to names. The names will be appended to the collapsed profile as a metadata column.
+
+
+## Normalize
+
+Normalize a profile to fractions and/or by feature sizes
+
+* See [Profile normalization](normalize.md) for details.
+
+Option | Description
+--- | ---
+`--input`, `-i` (required) | Path to input profile.
+`--output`, `-o` (required) | Path to output profile.
+`--sizes`, `-z` | Path to mapping of feature sizes, by which values will be divided. If omitted, will divide values by sum per sample.
+`--scale`, `-s` | Scale values by this factor. Accepts "k", "M" suffixes.
+`--digits`, `-d` | Round values to this number of digits after the decimal point. If omitted, will keep decimal precision of input profile.
+
+
+## Filter
 
 Filter a profile by **per-sample** abundance.
 
@@ -108,7 +147,8 @@ Option | Description
 `--min-count`, `-c` | Per-sample minimum count threshold (>=1).
 `--min-percent`, `-p` | Per-sample minimum percentage threshold (<100).
 
-### Merge
+
+## Merge
 
 Merge multiple profiles into one profile.
 
@@ -119,38 +159,8 @@ Option | Description
 `--input`, `-i` (required) | Path to input profiles or directories containing profiles. Can accept multiple paths.
 `--output`, `-o` (required) | Path to output profile.
 
-### Normalize
 
-Normalize a profile to fractions or by feature sizes.
-
-* See [Profile normalization](normalize.md) for details.
-
-Option | Description
---- | ---
-`--input`, `-i` (required) | Path to input profile.
-`--output`, `-o` (required) | Path to output profile.
-`--sizes`, `-z` | Path to mapping of feature sizes, by which values will be divided. If omitted, will divide values by sum per sample.
-`--scale`, `-s` | Scale values by this factor. Accepts "k", "M" suffixes.
-`--digits`, `-d` | Round values to this number of digits after the decimal point. If omitted, will keep decimal precision of input profile.
-
-### Collapse
-
-Collapse a profile based on feature mapping (supports **many-to-many** mapping) (details).
-
-* See [profile collapsing](collapse.md) for details.
-
-Option | Description
---- | ---
-`--input`, `-i` (required) | Path to input profile.
-`--map`, `-m` (required) | Path to mapping of source features to target features.
-`--output`, `-o` (required) | Path to output profile.
-`--divide`, `-d` | Count each target feature as 1 / _k_ (_k_ is the number of targets mapped to a source). Otherwise, count as one.
-`--field`, `-f` | Features are stratified (strata delimited by "\|"). For example, if features are like "species\|gene", one can use `-f 1` to collapse "species" or `-f 2` to collapse "gene".
-`--nested`, `-e` | Features are nested (each field is a child of the previous field). For example, "A_1" represents "1" of "A", and the entire feature is equivalent to stratified feature "A\|A_1". This parameter overrides the "\|"-delimited strata.
-`--sep`, `-s` | Field separator for stratified features (default: "\|") or nested features (default: "_").
-`--names`, `-n` | Path to mapping of target features to names. The names will be appended to the collapsed profile as a metadata column.
-
-### Coverage
+## Coverage
 
 Calculate per-sample coverage of feature groups in a profile.
 
@@ -164,3 +174,8 @@ Option | Description
 `--threshold`, `-t` | Convert coverage to presence (1) / absence (0) data by this percentage threshold.
 `--count`, `-c` | Record numbers of covered features instead of percentages (overrides threshold).
 `--names`, `-n` | Path to mapping of feature groups to names. The names will be appended to the coverage table as a metadata column.
+
+
+## Tools
+
+A sub menu containing all commands except for `classify`. It is for backward compatibility. It is deprecated and will be removed in the next release.

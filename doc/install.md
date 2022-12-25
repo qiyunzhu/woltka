@@ -104,7 +104,7 @@ If in the future some dependencies have changes that are not compatible with the
 conda create -n woltka python=3.10.8
 conda activate woltka
 conda install -c conda-forge biom-format=2.1.13
-conda install -c bioconda woltka=0.1.4
+conda install -c bioconda woltka=0.1.5
 ```
 
 ## Test

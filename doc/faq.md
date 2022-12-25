@@ -17,7 +17,7 @@ To date, all Woltka versions (0.1.0 to 0.1.5) generate **identical** output file
 
 ### How many CPU cores does Woltka use?
 
-Woltka works the best with two CPU cores: one for file decompression and the other for classification. This happens automatically. See [here](perform.md#keep-external-decompressors-on) for details.
+Woltka works the best with **two CPU cores**: one for file decompression and the other for classification. This happens automatically. See [here](perform.md#keep-external-decompressors-on) for details.
 
 ### Does Woltka support multiprocessing?
 
@@ -28,11 +28,11 @@ Not at the moment. But you can run multiple Woltka instances on different subset
 
 ### Does Woltka support gzipped alignment files?
 
-Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in gzip, bzip2 or xz formats. Woltka will automatically recognize and process them.
+Yes. All input files for Woltka (alignments and databases) can be supplied as compressed in **gzip**, **bzip2** or **xz** formats. Woltka will automatically recognize and process them.
 
 ### Does Woltka support [BAM](https://en.wikipedia.org/wiki/Binary_Alignment_Map) and [CRAM](https://en.wikipedia.org/wiki/CRAM_(file_format)) formats?
 
-Not out-of-the-box. But you can use SAMtools to extract BAM/CRAM files and directly "pipe" into Woltka, like this ("-" represents stdin):
+Not out-of-the-box. But you can use SAMtools to extract BAM/CRAM files and directly "pipe" them into Woltka, like this ("-" represents stdin):
 
 ```bash
 samtools view input.bam | woltka classify -i - -o output.biom
@@ -97,7 +97,7 @@ Yes. See [here](normalize.md) for methods.
 
 ### I ran Woltka separately on multiple subsets of data. Can I merge the results?
 
-Yes. The `woltka merge` command is for you. See [here](merge.md) for details.
+Yes. The `merge` command is for you. See [here](merge.md) for details.
 
 ### Can Woltka report taxon names instead of TaxIDs when using NCBI taxonomy?
 
@@ -123,6 +123,6 @@ See [here](classify.md#unassigned-sequences) for details.
 
 ### I attempted to collapse a stratified feature table, and the output is empty?
 
-In this case, you will need to specify which field of a stratified feature should be collapsed, using parameter `--field` followed by field index (starting from 1), otherwise the program will try to collapse the entire feature.
+In this case, you will need to specify which field of a stratified feature should be collapsed, using parameter `--field` or `-f` followed by field index (starting from 1), otherwise the program will try to collapse the entire feature.
 
-See [here](collapse.md#stratification) for details.
+See [here](collapse.md#stratified-features) for details.

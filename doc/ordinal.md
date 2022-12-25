@@ -166,4 +166,14 @@ woltka classify -i indir -c coords.txt -m gene-to-pathway.map --stratify species
 
 In the output profile, the features will be like `species_A|pathway_X`. This helps with the investigation of the functional capacities of individual microbial groups.
 
+Alternatively, you can start with just the gene table, in which the gene IDs indicate their source genomes (like "G000123456_789"), and perform collapsing on the genome AND the gene respectively.
+
+```bash
+woltka classify -i indir -c coords.txt -o gene.biom
+woltka collapse -i gene.biom -f 1 -e -m genome-to-species.map -o gene_by_species.biom
+woltka collapse -i gene_by_species.biom -f 2 -m gene-to-pathway.map -o pathway_by_species.biom
+```
+
+In this way, you only need to run the classification workflow once, and do not need to save the bulky `outmap` files to the disk.
+
 See [here](stratify.md) for details of stratification.
