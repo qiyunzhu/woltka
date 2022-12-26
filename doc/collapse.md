@@ -5,13 +5,13 @@ The **profile collapsing** function is a lightweight and flexible addition to th
 Collapse features based on a mapping file:
 
 ```bash
-woltka collapse -i input.biom -m mapping.txt -o output.biom
+woltka collapse -i gene.biom -m ko.map -o ko.biom
 ```
 
-Collapse nested features to the first level:
+Collapse nested features to the second level:
 
 ```bash
-woltka collapse -i input.biom -e -f 1 -o output.biom
+woltka collapse -i lineage.tsv -e -f 2 -o phylum.tsv
 ```
 
 

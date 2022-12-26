@@ -47,7 +47,7 @@ If needed, you may convert a BIOM table into a tab-delimited file:
 biom convert --to-tsv -i table.biom -o table.tsv
 ```
 
-Note: [**Qiita**](https://qiita.ucsd.edu/) implements the WoL database and a Woltka workflow, which performs sequence alignment using the [SHOGUN protocol](align.md#the-shogun-protocol). If you are a Qiita user, the alignment file can be automatically generated and downloaded from the Qiita interface. See [details](qiita.md).
+Note: [**Qiita**](https://qiita.ucsd.edu/) implements the WoL database and a Woltka workflow, which performs sequence alignment using the [SHOGUN protocol](align.md#the-shogun-protocol). If you are a Qiita user, the alignment file as well as the OGU table (called a "per-genome" table) can be automatically generated and downloaded from the Qiita interface. See [details](qiita.md).
 
 
 ## OGU analysis using QIIME 2
@@ -104,3 +104,19 @@ In multiple reference genome databases, subject sequences are individual nucleot
 ```bash
 woltka classify -m nucl2g.txt -i input_dir -o output.biom
 ```
+
+## OGUs from ORFs
+
+In some scenarios you may have a profile of genes, or ORFs (open reading frames), denoted as e.g. "G000123456_789" (meaning the 789th ORF of genome G000123456). This can be generated using Woltka's "coord-match" functional classification (see [details](ordinal.md)), or through sequence alignment against genes (instead of genomes) (see [details](align.md)). You can extract genome IDs (i.e., OGUs) from ORF IDs using the [`collapse`](collapse.md) command:
+
+```bash
+woltka collapse -i orf.biom -e -f 1 -o ogu.biom
+```
+
+- In this command, `-e` means that feature IDs are nested (such as the current case); `-f 1` extracts the first field in the feature IDs.
+
+Note however, that the resulting OGU table _is not identical to_ that generated from the [standard method](#ogu-table-generation). This is because gene-based methods automatically miss out [intergenic regions](https://en.wikipedia.org/wiki/Intergenic_region), which are usually insignificant in microbial genomes, but can still make a difference.
+
+When should you use this approach? For certain data types, such as [metatranscriptomic data](https://en.wikipedia.org/wiki/Metatranscriptomics), which are naturally mRNA-derived, the gene-based approach may be more justified (although you still miss out unannotated genes and [non-coding transcripts](https://en.wikipedia.org/wiki/Non-coding_RNA)). You will need to decide based on the study goals.
+
+Another more common scenario is when you want to perform a structural/functional stratification analysis. You start with ORFs, and care what these genes do and which source organisms they are from. See [details](stratify.md) about stratification.
