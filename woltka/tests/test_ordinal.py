@@ -186,9 +186,9 @@ class OrdinalTests(TestCase):
             (beg << 24) + (1 << 22) + idx,
             (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)]
+            (end << 24) + (1 << 23) + idx)])
 
         # don't sort, but directly feed both queues
         obs = list(match_read_gene_naive(genes, reads, rels))
@@ -223,9 +223,9 @@ class OrdinalTests(TestCase):
             (beg << 24) + (1 << 22) + idx,
             (end << 24) + (3 << 22) + idx)])
         genes.sort()
-        reads = [x for idx, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for idx, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + idx,
-            (end << 24) + (1 << 23) + idx)]
+            (end << 24) + (1 << 23) + idx)])
 
         obs = list(match_read_gene_quart(genes, reads, rels))
         exp = [(0, 0),
