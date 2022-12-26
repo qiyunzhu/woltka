@@ -37,10 +37,9 @@ jobs:
         run: pycodestyle .
 
       - name: Run unit tests
-        run: >
+        run: |
           export NUMBA_DISABLE_JIT=1
-          coverage run -m unittest
-          coverage lcov
+          coverage run -m unittest && coverage lcov
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
