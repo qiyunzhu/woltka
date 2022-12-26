@@ -89,11 +89,26 @@ Woltka provides multiple normalization features. For example, if you want to get
 woltka classify ... --frac
 ```
 
-See [here](normalize.md) for details.
+See [here](normalize.md#relative-abundance) for details.
 
 ### Can Woltka report cell values in the units of CPM, RPK, and TPM?
 
-Yes. See [here](normalize.md) for methods.
+Yes. See [here](normalize.md) for methods. For example:
+
+```bash
+woltka classify ... -c coords.txt --sizes . --scale 1k --digits 3 -o rpk.biom
+woltka normalize -i rpk.biom --scale 1M -o tpm.biom
+```
+
+### I already got a gene (ORF) profile of raw counts, can I still convert it into RPK?
+
+Yes. You can do:
+
+```bash
+woltka normalize -i orf.tsv -z coords.txt -s 1k -d 3 -o orf.rpk.tsv
+```
+
+See [here](normalize.md#abundance-of-functional-genes) for details.
 
 ### I ran Woltka separately on multiple subsets of data. Can I merge the results?
 

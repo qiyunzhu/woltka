@@ -144,6 +144,7 @@ In the [WoL data release](wol.md), there are pre-built mappings to UniRef, GO, M
 
 - Note: For some databases, such as [MetaCyc](https://metacyc.org), you might encounter an error regarding `AssertionError: Conflicting values found for ...`. This is likely because some classification units were simultaneously assigned to multiple ranks in the database, which causes conflicts in the Woltka workflow. In this case we recommend generating the gene-level profile with `woltka classify`, and then collapsing to individual levels one at a time with `woltka collapse`.
 
+
 ## Pathway coverage
 
 It is a frequent goal to assess the abundances of individual metabolic pathways in the microbiome. However, a pathway only makes sense when all (or an essential subset) of its member enzymes are present. Woltka can calculate the percent **coverage** of pathways based on the presence/absence of member genes as follows:
