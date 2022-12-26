@@ -51,11 +51,32 @@ class ToolsTests(TestCase):
         errmsg = '"Hi!" is not a valid scale factor.'
         self.assertEqual(str(ctx.exception), errmsg)
 
-        # missing sizes
+        # by gene size (from coords)
+        input_fp = join(self.datdir, 'output', 'bowtie2.orf.tsv')
         sizes_fp = join(self.datdir, 'function', 'coords.txt.xz')
+        normalize_wf(input_fp, output_fp, sizes_fp, scale='1k', digits=3)
+        with open(output_fp, 'r') as f:
+            for line in f:
+                gene, _, datum = line.rstrip().partition('\t')
+                if gene == 'G000006925_52':
+                    self.assertEqual(datum, '0.0\t0.0\t0.849\t0.0\t0.0')
+                if gene == 'G000008165_4079':
+                    self.assertEqual(datum, '0.0\t0.0\t1.178\t0.0\t0.0')
+                if gene == 'G000014525_1009':
+                    self.assertEqual(datum, '0.0\t0.0\t0.0\t0.0\t0.887')
+
+        # missing sizes
+        sizes_fp = join(self.datdir, 'tree.nwk')
         with self.assertRaises(SystemExit) as ctx:
             normalize_wf(input_fp, output_fp, sizes_fp)
         errmsg = 'One or more features are not found in the size map.'
+        self.assertEqual(str(ctx.exception), errmsg)
+
+        # empty size file
+        open(output_fp, 'w').close()
+        with self.assertRaises(SystemExit) as ctx:
+            normalize_wf(input_fp, output_fp, output_fp)
+        errmsg = 'Size map file is empty or unreadable.'
         self.assertEqual(str(ctx.exception), errmsg)
         remove(output_fp)
 

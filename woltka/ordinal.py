@@ -1126,3 +1126,57 @@ def calc_gene_lens(mapper):
             else:  # end
                 res[gid] += code >> 24
     return res
+
+
+def load_gene_lens(fh):
+    """Directly load gene lengths from a coordinates file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Gene coordinates file.
+
+    Returns
+    -------
+    dict of int
+        Gene ID to length mapping.
+
+    See Also
+    --------
+    load_gene_coords
+
+    Notes
+    -----
+    Used by the "normalize" command. This is more efficient than:
+
+    >>> coords, idmap, prefix = load_gene_coords(f, sort=True)
+    >>> mapper = partial(ordinal_mapper, coords=coords, idmap=idmap,
+                         prefix=prefix)
+    >>> sizemap = calc_gene_lens(mapper)
+    """
+    lens, lens_ = {}, None
+    used, isdup = set(), None
+    used_add = used.add
+    for line in fh:
+        c0 = line[0]
+        if c0 in '>#':
+            if line[1] != c0:
+                nucl = line[1:].strip()
+                lens_ = lens[nucl] = []
+        else:
+            x = line.rstrip().split('\t')
+            try:
+                gene, beg, end = x[0], int(x[1]), int(x[2])
+            except (IndexError, ValueError):
+                raise ValueError(
+                    f'Cannot calculate gene length from line: "{line}".')
+            lens_.append((gene, abs(end - beg) + 1))
+            if isdup is None:
+                if gene in used:
+                    isdup = True
+                else:
+                    used_add(gene)
+    if isdup:
+        return {f'{k}_{g}': L for k, v in lens.items() for g, L in v}
+    else:
+        return dict(e for k, v in lens.items() for e in v)

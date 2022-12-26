@@ -4,7 +4,7 @@ It is a frequent need to combine two or more classification systems in one analy
 
 Woltka enables this analysis through a "**stratification**" function. A stratum (plural: strata) is a subset of data grouped under the same label. Woltka allows the user to label sequences using one classification system (e.g., taxonomy), then classify sequences under each label using another classification system (e.g., function). This design maximizes flexibility and modularity. It is not bond by particular classification levels or systems, but can also work with ecological niches, phenotypic features, and other classification methods that best address specific research goals.
 
-There are **two approaches** to achieve combined structural / functional classification. Both are explained and exemplified below.
+There are **three approaches** to achieve combined structural / functional classification. They are explained and exemplified below.
 
 
 ## Method I: Genome-based analysis
@@ -92,3 +92,38 @@ woltka classify \
   --stratify mapdir \
   -o taxfunc.biom
 ```
+
+
+## Method III: Serial collapsing
+
+With this method, you only need to run the time-comsuming `woltka classify` workflow once (instead of twice, as in I and II) to generate a gene (ORF) profile, then you can farewell the bulky alignment files, and only work on the profile in your laptop. All you need to do then is to run as many `woltka collapse` commands as you like to collapse it to the desired structural and functional levels. This grants you the maximum flexibility. It is particularly useful when some SOP (like the [WoL SOP](wol.md) or the [Qiita server](qiita.md)) already generates the ORF profile. The results should be _identical_ to that of method I.
+
+Step 1: Generate a gene (ORF) profile using the [coord-match algorithm](ordinal.md) without any mapping:
+
+```bash
+woltka classify -i align/bowtie2 -coords function/coords.txt.xz -o orf.biom
+```
+
+- In the resulting profile, feature IDs are like: "G000006845_1051".
+
+Step 2 to _n_: Collapse the genome (OGU) to the desired taxonomic level:
+
+```bash
+woltka collapse -i orf.biom      -e -f 1 -m  genome-to-species.map -o species_orf.biom
+woltka collapse -i species_orf.biom -f 1 -m species-to-genus.map   -o   genus_orf.biom
+woltka collapse -i   genus_orf.biom -f 1 -m   genus-to-family.map  -o  family_orf.biom
+...
+```
+
+- Note the first command. The `-e` or `--nested` flag breaks the ORF IDs (like "G000006845_1051") into genomes and genes, and only collapses the genome. You only need it _once_, and on the raw ORF table. Then you can stack up multiple `collapse` commands without `-e` to move up in the taxonomic hierarchy.
+
+Step 3 to _m_: Collapse the gene (ORF) to the desired functional level:
+
+```bash
+woltka collapse -i genus_orf.biom    -f 2 -m    orf-to-ko.map      -o genus_ko.biom
+woltka collapse -i genus_ko.biom     -f 2 -m     ko-to-module.map  -o genus_module.biom
+woltka collapse -i genus_module.biom -f 2 -m module-to-pathway.map -o genus_pathway.biom
+...
+```
+
+- This example uses the ORF by genus profile, but you can start with any intermediate profile generated from step 2. You can also mix `collapse` commands in step 2 (`-f 1`) and step 3 (`-f 2`) (order doesn't matter) until achieving the desired levels.

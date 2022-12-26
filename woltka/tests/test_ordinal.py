@@ -28,7 +28,7 @@ from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
     match_read_gene_quart, ordinal_mapper_dummy, ordinal_mapper, flush_chunk,
     ordinal_mapper_np, flush_chunk_np, load_gene_coords, encode_genes,
-    calc_gene_lens)
+    calc_gene_lens, load_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -619,6 +619,52 @@ class OrdinalTests(TestCase):
                'NP_369258.2': 455,
                'NP_258147.1': 275}
         self.assertDictEqual(obs, exp)
+
+    def test_load_gene_lens(self):
+        # simple case
+        tbl = ('>n1',
+               'g1	5	29',
+               'g2	33	61',
+               'g3	65	94')
+        obs = load_gene_lens(tbl)
+        exp = {'g1': 25, 'g2': 29, 'g3': 30}
+        self.assertDictEqual(obs, exp)
+
+        # NCBI accession
+        tbl = ('## GCF_000123456\n',
+               '# NC_123456\n',
+               '1	5	384\n',
+               '2	410	933\n',
+               '# NC_789012\n',
+               '1	912	638\n',
+               '2	529	75\n')
+        obs = load_gene_lens(tbl)
+        exp = {'NC_123456_1': 380, 'NC_123456_2': 524,
+               'NC_789012_1': 275, 'NC_789012_2': 455}
+        self.assertDictEqual(obs, exp)
+
+        # incorrect formats
+        # only one column
+        msg = 'Cannot calculate gene length from line:'
+        with self.assertRaises(ValueError) as ctx:
+            load_gene_lens(('hello',))
+        self.assertEqual(str(ctx.exception), f'{msg} "hello".')
+        # only two columns
+        with self.assertRaises(ValueError) as ctx:
+            load_gene_lens(('hello\t100',))
+        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100".')
+        # three columns but 3rd is string
+        with self.assertRaises(ValueError) as ctx:
+            load_gene_lens(('hello\t100\tthere',))
+        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100\tthere".')
+
+        # real coords file
+        fp = join(self.datdir, 'function', 'coords.txt.xz')
+        with openzip(fp) as f:
+            obs = load_gene_lens(f)
+        self.assertEqual(obs['G000006845_253'], 996)
+        self.assertEqual(obs['G000006745_1171'], 549)
+        self.assertEqual(obs['G000006925_4349'], 4224)
 
 
 if __name__ == '__main__':

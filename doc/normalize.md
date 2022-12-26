@@ -13,7 +13,8 @@ By default, the cell values in a feature table (profile) are **counts** (**frequ
 - [During or after classification](#during-or-after-classification)
 - [Normalization by subject size](#normalization-by-subject-size)
   - [Sequence and taxonomic abundances](#sequence-and-taxonomic-abundances)
-  - [Why real-time normalization matters](#Why-real-time-normalization-matters)
+  - [Gene coordinates as size map](#gene-coordinates-as-size-map)
+  - [Why real-time normalization matters](#why-real-time-normalization-matters)
   - [Abundance of functional genes](#abundance-of-functional-genes)
 - [Relative abundance](#relative-abundance)
 
@@ -52,12 +53,6 @@ Or post classification (on existing profiles):
 
 ```bash
 woltka normalize --sizes size.map ...
-```
-
-A special case is during "coord-match" functional classification (see [details](ordina.md)), one can use a dot (`.`) instead of a mapping file. Woltka will read gene sizes from the gene coordinates file.
-
-```bash
-woltka classify -c coords.txt --sizes . ...
 ```
 
 ### Sequence and taxonomic abundances
@@ -125,6 +120,20 @@ woltka classify \
 
 The output values are in the unit of **reads per kilobase, or RPK**. They reflect the quantity of functional genes found in the sample.
 
+Alternatively, if one already obtained a gene (ORF) profile without normalization:
+
+```bash
+woltka classify -i indir -c coords.txt -o orf.tsv
+```
+
+On can still normalize the profile by feeding the gene coordinates file to the `normalize` command:
+
+```bash
+woltka normalize -i orf.tsv --sizes coords.txt --scale 1k --digits 3 -o orf.rpk.tsv
+```
+
+There are two notes though. First, this can only be done with the genes (ORFs) but not higher functional units ([explained](#why-real-time-normalization-matters) above). Second, there may be slight difference between some cell values generated using the two methods. This is caused by rounding imprecision when the same read is mapped to multiple genes (ORFs). To avoid this (if you are paranoid about it), you may add `--digits 3` to the `classify` command to make the numbers more precise. Nevertheless, this issue likely won't affect the analysis outcome.
+
 
 ### Relative abundance
 
@@ -146,7 +155,7 @@ woltka normalize ... (without --sizes, automatically applies --frac)
 
 **Note**: These values are the fractions of reads assigned to each classification units versus all reads that are **assigned**. If you add `--unassigned`, the values become the fractions of reads versus all reads that are **aligned**. Woltka cannot calculate the fractions of reads versus the **original** sequencing data, since it processes alignment files instead of raw FastQ files. However, it isn't hard to do this calculation manually if you know the sequencing depth information.
 
-This function can also convert an RPK functional profile (see above) to the unit of **TPM (transcripts per kilobase million)**:
+This command can also convert an RPK functional profile (see above) to the unit of **TPM (transcripts per kilobase million)**:
 
 ```bash
 woltka normalize -i rpk.biom --scale 1M -o tpm.biom
