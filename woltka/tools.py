@@ -14,6 +14,7 @@
 from sys import exit
 from os import listdir
 from os.path import isdir, join, basename
+from itertools import chain
 import click
 
 from .table import (
@@ -23,6 +24,7 @@ from .table import (
 from .file import readzip, read_map_1st, read_map_many, read_map_all
 from .util import scale_factor
 from .tree import read_names
+from .ordinal import load_gene_lens
 
 
 def normalize_wf(input_fp:  str,
@@ -57,7 +59,21 @@ def normalize_wf(input_fp:  str,
         click.echo(f'Reading feature sizes from file: {basename(sizes_fp)}...',
                    nl=False)
         with readzip(sizes_fp, {}) as f:
-            sizes = {k: float(v) for k, v in read_map_1st(f)}
+
+            # check file format based on first line
+            try:
+                line = next(f)
+            except StopIteration:
+                exit('Size map file is empty or unreadable.')
+            f_ = chain(iter([line]), f)
+
+            # gene coordinates file
+            if line[0] in '>#':
+                sizes = load_gene_lens(f_)
+
+            # regular mapping file
+            else:
+                sizes = {k: float(v) for k, v in read_map_1st(f_)}
         click.echo(' Done.')
         click.echo('Normalizing profile by feature size...', nl=False)
         try:
