@@ -1,14 +1,17 @@
 # Change Log
 
-## Version 0.1.5 (12/24/2022)
+## Version 0.1.5 (12/25/2022)
 
 ### Changed
 - Modified the command-line interface. Sub-commands under the `tools` menu were raised to the main menu. For example, `woltka tools collapse` now becomes `woltka collapse` (#176). The `tools` menus is still kept for backward compatibility (#177).
-- Updated installation protocol. Now Woltka can be Conda-installed without explicit pre-installation of biom-format (#174).
 - Improved efficiency of handling BIOM tables (#171, #175).
+- The `--trim-sub` parameter now takes underscore (`_`) as the default separator, if not explicitly specified.
+- Updated installation protocol. Now Woltka can be Conda-installed without explicit pre-installation of biom-format (#174).
 
 ### Added
 - Upgraded the `collapse` command. Now it can collapse using internal hierarchies of feature IDs, such as genome-gene pairs, taxonomic lineages, and EC numbers. This upgrade enables stratified taxonomic/functional analysis of coord-matching ORF tables, without explicitly stratifying them during the classification step (which otherwise is time and space-consuming). The output should be identical to the that of the old method (#173).
+- Added a feature to the `normalize` command, which can extract gene lengths from a gene coordinates file. This enables convenient length-based normalization of an existing gene (ORF) profile. For example, it can convert raw frequencies into RPK (#179).
+- Extended description of stratification and collapsing protocols in the documentation.
 
 ### Fixed
 - Fixed a bug in parsing sample ID lists (#164).
@@ -70,4 +73,3 @@
 
 ### Added
 - First official release.
-
