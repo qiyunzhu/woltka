@@ -13,6 +13,7 @@ from q2_types.feature_data import FeatureData
 
 
 SeqAlnMap = SemanticType('SeqAlnMap', variant_of=FeatureData.field['type'])
+PaimApFmt = SemanticType('PaimApFmt', variant_of=FeatureData.field['type'])
 BLAST6Out = SemanticType('BLAST6Out', variant_of=FeatureData.field['type'])
 SimpleMap = SemanticType('SimpleMap', variant_of=FeatureData.field['type'])
 NCBINodes = SemanticType('NCBINodes', variant_of=FeatureData.field['type'])

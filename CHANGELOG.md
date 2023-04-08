@@ -1,5 +1,10 @@
 # Change Log
 
+## Ongoing
+
+### Added
+- Added native support for PAF file format ([#182](https://github.com/qiyunzhu/woltka/pull/182)).
+
 ## Version 0.1.5 (12/25/2022)
 
 ### Changed

@@ -18,8 +18,8 @@ from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
     parse_map_file, parse_b6o_file, parse_b6o_file_ext, parse_sam_file,
-    parse_sam_file_ext, cigar_to_lens, cigar_to_lens_ord, parse_kraken,
-    parse_centrifuge, parse_sam_file_pd)
+    parse_sam_file_ext, cigar_to_lens, cigar_to_lens_ord, parse_paf_file,
+    parse_paf_file_ext, parse_kraken, parse_centrifuge, parse_sam_file_pd)
 
 
 class AlignTests(TestCase):
@@ -141,6 +141,11 @@ class AlignTests(TestCase):
         line = 'S1/1	NC_123456	100	100	0	0	1	100	25	124	0.1	100'
         self.assertEqual(infer_align_format(StringIO(line))[0], 'b6o')
 
+        # paf
+        line = ('S1/1	100	0	75	+	NC_123456	1000	100	175	70	75	20'
+                '	tp:A:P	cm:i:10	s1:i:100	s2:i:0	rl:i:0')
+        self.assertEqual(infer_align_format(StringIO(line))[0], 'paf')
+
         # sam
         line = 'S1	77	NC_123456	26	0	100M	*	0	0	*	*'
         self.assertEqual(infer_align_format(StringIO(line))[0], 'sam')
@@ -181,9 +186,11 @@ class AlignTests(TestCase):
     def test_assign_parser(self):
         self.assertEqual(assign_parser('map'), parse_map_file)
         self.assertEqual(assign_parser('sam'), parse_sam_file)
+        self.assertEqual(assign_parser('paf'), parse_paf_file)
         self.assertEqual(assign_parser('b6o'), parse_b6o_file)
         self.assertEqual(assign_parser('map', True), parse_map_file)
         self.assertEqual(assign_parser('sam', True), parse_sam_file_ext)
+        self.assertEqual(assign_parser('paf', True), parse_paf_file_ext)
         self.assertEqual(assign_parser('b6o', True), parse_b6o_file_ext)
         with self.assertRaises(ValueError) as ctx:
             assign_parser('xyz')
@@ -283,6 +290,46 @@ class AlignTests(TestCase):
     def test_cigar_to_lens_ord(self):
         self.assertTupleEqual(cigar_to_lens_ord('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens_ord('3M1I3M1D5M'), (11, 12))
+
+    def test_parse_paf_file(self):
+        paf = iter((
+            '# Minimap2 result:',
+            'S1/1	150	25	100	+	NC_123456	1000000	1025	1100	70	75	20'
+            '	tp:A:P	cm:i:10	s1:i:100	s2:i:0	rl:i:0',
+            'S1/2	150	25	125	-	NC_123456	1000000	1200	1300	90	100	6'
+            '	tp:A:P	cm:i:15	s1:i:150	s2:i:120	rl:i:0',
+            'S2/1	250	50	200	-	NC_789012	500000	100000	100150	100	150	65'
+            '	tp:A:P	cm:i:24	s1:i:214	s2:i:193	rl:i:0',
+            'S2/2	250	0	250	+	NC_789012	500000	99900	100150	245	250	0'
+            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0'))
+        obs = list(parse_paf_file(paf))
+        self.assertEqual(len(obs), 4)
+        exp = [('S1/1', 'NC_123456'),
+               ('S1/2', 'NC_123456'),
+               ('S2/1', 'NC_789012'),
+               ('S2/2', 'NC_789012')]
+        for obs_, exp_ in zip(obs, exp):
+            self.assertTupleEqual(obs_, exp_)
+
+    def test_parse_paf_file_ext(self):
+        paf = iter((
+            '# Minimap2 result:',
+            'S1/1	150	25	100	+	NC_123456	1000000	1025	1100	70	75	20'
+            '	tp:A:P	cm:i:10	s1:i:100	s2:i:0	rl:i:0',
+            'S1/2	150	25	125	-	NC_123456	1000000	1200	1300	90	100	6'
+            '	tp:A:P	cm:i:15	s1:i:150	s2:i:120	rl:i:0',
+            'S2/1	250	50	200	-	NC_789012	500000	100000	100150	100	150	65'
+            '	tp:A:P	cm:i:24	s1:i:214	s2:i:193	rl:i:0',
+            'S2/2	250	0	250	+	NC_789012	500000	99900	100150	245	250	0'
+            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0'))
+        obs = list(parse_paf_file_ext(paf))
+        self.assertEqual(len(obs), 4)
+        exp = [('S1/1', 'NC_123456', 20, 75, 1026, 1100),
+               ('S1/2', 'NC_123456', 6, 100, 1201, 1300),
+               ('S2/1', 'NC_789012', 65, 150, 100001, 100150),
+               ('S2/2', 'NC_789012', 0, 250, 99901, 100150)]
+        for obs_, exp_ in zip(obs, exp):
+            self.assertTupleEqual(obs_, exp_)
 
     def test_parse_kraken(self):
         kra = ('C	S1	561	150	561:100 A:10 562:40',

@@ -193,6 +193,7 @@ def classify(mapper:  object,
         Format of input alignment file. Options:
         - 'b6o': BLAST tabular format.
         - 'sam': SAM format.
+        - 'paf': PAF format.
         - 'map': Simple map of query <tab> subject.
         If None, program will automatically infer from file content.
     demux : bool, optional

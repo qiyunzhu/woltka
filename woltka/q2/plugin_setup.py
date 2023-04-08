@@ -16,11 +16,13 @@ from q2_types.feature_data import FeatureData, Taxonomy
 from q2_types.tree import Phylogeny, Rooted
 
 from ._format import (SeqAlnMapFormat, SeqAlnMapDirFmt,
+                      PaimApFmtFormat, PaimApFmtDirFmt,
                       BLAST6OutFormat, BLAST6OutDirFmt,
                       SimpleMapFormat, SimpleMapDirFmt,
                       NCBINodesFormat, NCBINodesDirFmt,
                       GeneCoordFormat, GeneCoordDirFmt)
-from ._type import SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates
+from ._type import (SeqAlnMap, PaimApFmt, BLAST6Out, SimpleMap, NCBINodes,
+                    GeneCoordinates)
 
 from woltka import __version__
 from woltka.q2.plugin import classify, psfilter, collapse, coverage
@@ -38,9 +40,10 @@ plugin = Plugin(
 
 
 plugin.register_semantic_types(
-    SeqAlnMap, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates)
+    SeqAlnMap, PaimApFmt, BLAST6Out, SimpleMap, NCBINodes, GeneCoordinates)
 
 plugin.register_formats(SeqAlnMapFormat, SeqAlnMapDirFmt,
+                        PaimApFmtFormat, PaimApFmtDirFmt,
                         BLAST6OutFormat, BLAST6OutDirFmt,
                         SimpleMapFormat, SimpleMapDirFmt,
                         NCBINodesFormat, NCBINodesDirFmt,
@@ -48,6 +51,8 @@ plugin.register_formats(SeqAlnMapFormat, SeqAlnMapDirFmt,
 
 plugin.register_semantic_type_to_format(
     FeatureData[SeqAlnMap], artifact_format=SeqAlnMapDirFmt)
+plugin.register_semantic_type_to_format(
+    FeatureData[PaimApFmt], artifact_format=PaimApFmtDirFmt)
 plugin.register_semantic_type_to_format(
     FeatureData[BLAST6Out], artifact_format=BLAST6OutDirFmt)
 plugin.register_semantic_type_to_format(
@@ -57,7 +62,7 @@ plugin.register_semantic_type_to_format(
 plugin.register_semantic_type_to_format(
     GeneCoordinates, artifact_format=GeneCoordDirFmt)
 
-alnfmts = SeqAlnMap | BLAST6Out | SimpleMap
+alnfmts = SeqAlnMap | PaimApFmt | BLAST6Out | SimpleMap
 
 plugin.methods.register_function(
     function=classify,
@@ -72,7 +77,7 @@ plugin.methods.register_function(
     input_descriptions={
         'alignment': (
             'Multiplexed sequence alignment map to be classified. Can accept '
-            'SAM, BLAST6 or simple map format.'),
+            'SAM, PAF, BLAST6 or simple map format.'),
         'reference_taxonomy': (
             'Reference taxonomic lineage strings.'),
         'reference_tree': (
