@@ -177,7 +177,7 @@ def infer_align_format(fh):
     Returns
     -------
     str
-        Alignment file format (map, b6o or sam).
+        Alignment file format (map, b6o, sam or paf).
     list of str
         Lines that are read in order to infer format.
 
@@ -192,6 +192,7 @@ def infer_align_format(fh):
     --------
     parse_b6o_file
     parse_sam_file
+    parse_paf_file
 
     TODO
     ----
@@ -217,10 +218,16 @@ def infer_align_format(fh):
     if len(row) == 2:
         return 'map', [line]
 
-    # BLAST standard tabular format
     if len(row) >= 12:
+
+        # BLAST standard tabular format
         if all(row[i].isdigit() for i in range(3, 10)):
             return 'b6o', [line]
+
+        # PAF tabular format
+        elif row[4] in '+-' and all(row[i].isdigit() for i in
+                                    (1, 2, 3, 6, 7, 8, 9, 10, 11)):
+            return 'paf', [line]
 
     # SAM format
     if len(row) >= 11:
@@ -252,6 +259,8 @@ def assign_parser(fmt, ext=False):
         return parse_b6o_file_ext if ext else parse_b6o_file
     elif fmt == 'sam':  # SAM format
         return parse_sam_file_ext if ext else parse_sam_file
+    elif fmt == 'paf':  # PAF format
+        return parse_paf_file_ext if ext else parse_paf_file
     else:
         raise ValueError(f'Invalid format code: "{fmt}".')
 
@@ -516,6 +525,67 @@ def cigar_to_lens_ord(cigar):
                 offset += n
             n = 0
     return align, align + offset
+
+
+def parse_paf_file(fh):
+    """Parse a PAF file (paf) to get basic information.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to parse.
+
+    Yields
+    ------
+    tuple of (str, str)
+        Query, subject.
+
+    Notes
+    -----
+    PAF format (first 12 columns):
+        1 	string 	Query sequence name
+        2 	int 	Query sequence length
+        3 	int 	Query start (0-based; BED-like; closed)
+        4 	int 	Query end (0-based; BED-like; open)
+        5 	char 	Relative strand: "+" or "-"
+        6 	string 	Target sequence name
+        7 	int 	Target sequence length
+        8 	int 	Target start on original strand (0-based)
+        9 	int 	Target end on original strand (0-based)
+        10 	int 	Number of residue matches
+        11 	int 	Alignment block length
+        12 	int 	Mapping quality (0-255; 255 for missing)
+
+    .. _PAF format specification:
+        https://github.com/lh3/miniasm/blob/master/PAF.md
+    """
+    for line in fh:
+        x = line.split('\t', 6)
+        try:
+            yield x[0], x[5]
+        except IndexError:
+            continue
+
+
+def parse_paf_file_ext(fh):
+    """Parse a PAF file (paf) to get extra information.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to parse.
+
+    Yields
+    ------
+    tuple of (str, str, int, int, int, int)
+        Query, subject, score, length, start, end.
+    """
+    for line in fh:
+        x = line.split('\t')
+        try:
+            yield x[0], x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8])
+        except (IndexError, ValueError):
+            continue
 
 
 def parse_kraken(fh):

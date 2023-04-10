@@ -27,8 +27,8 @@ db=
 
 # input alignment file or directory
 #   can be a directory of multiple files, or a multiplexed file, or a mapping
-#   of sample IDs to files; supports SAM, BLAST and plain mappings, supports
-#   regular, gz, bz2 and xz files
+#   of sample IDs to files; supports SAM, PAF, BLAST and plain mappings,
+#   supports regular, gz, bz2 and xz files
 #   see Woltka doc for details
 input=
 

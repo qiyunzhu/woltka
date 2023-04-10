@@ -107,9 +107,10 @@ qiime tools import --type FeatureData[SeqAlnMap] --input-path alignment.sam --ou
 
 In this example, the [semantic type](https://docs.qiime2.org/2020.6/concepts/?highlight=artifact#semantic-types) of the data file is `FeatureData[SeqAlnMap]`, which means the SAM format.
 
-q2-woltka defines five new semantic types:
+q2-woltka defines six new semantic types:
 
 - `FeatureData[SeqAlnMap]`: [Sequence alignment map (SAM) format](../../doc/input.md#file-formats).
+- `FeatureData[PaimApFmt]`: [Pairwise mApping Format (PAF)](../../doc/input.md#file-formats).
 - `FeatureData[BLAST6Out]`: [BLAST tabular output format 6](../../doc/input.md#file-formats).
 - `FeatureData[SimpleMap]`: [Simple mapping format](../../doc/input.md#file-formats) (and [here](../../doc/hierarchy.md#supported-hierarchy-files)).
 - `FeatureData[NCBINodes]`: [NCBI nodes format](../../doc/hierarchy.md#supported-hierarchy-files).
@@ -138,7 +139,7 @@ The following table lists all parameters under `q2-woltka classify` and their co
 
 q2-woltka option | Woltka option | Description
 --- | --- | ---
-`--i-alignment` | `-i\|--input` | Multiplexed sequence alignment map to be classified. Can accept SAM, BLAST6 or simple map format (required).
+`--i-alignment` | `-i\|--input` | Multiplexed sequence alignment map to be classified. Can accept SAM, PAF, BLAST6 or simple map format (required).
 `--i-reference-taxonomy` | `--lineage` | Reference taxonomic lineage strings.
 `--i-reference-tree` | `--newick` | Reference phylogenetic tree.
 `--i-reference-nodes` | `--nodes` | Reference taxonomic nodes.

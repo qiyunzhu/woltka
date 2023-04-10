@@ -56,8 +56,9 @@ def cli():
     '--format', '-f', 'input_fmt',
     type=click.Choice(['b6o', 'sam', 'map'], case_sensitive=False),
     help=('Format of read alignments: "b6o": BLAST tabular format, "sam": SAM '
-          'format, "map": simple map of query <tab> subject. If not specified,'
-          ' program will automatically infer from file content.'))
+          'format, "paf": PAF format, "map": simple query-to-subject map. If '
+          'not specified, program will automatically infer from file content.'
+          ''))
 @click.option(
     '--filext', '-e', 'input_ext',
     help='Input filename extension following sample ID.')

@@ -11,6 +11,7 @@
 from os.path import join
 from .plugin_setup import plugin
 from ._format import (SeqAlnMapDirFmt,
+                      PaimApFmtDirFmt,
                       BLAST6OutDirFmt,
                       SimpleMapDirFmt,
                       NCBINodesDirFmt,
@@ -20,6 +21,11 @@ from ._format import (SeqAlnMapDirFmt,
 @plugin.register_transformer
 def _1(ff: SeqAlnMapDirFmt) -> str:
     return join(str(ff.path), 'alignment.sam')
+
+
+@plugin.register_transformer
+def _1(ff: PaimApFmtDirFmt) -> str:
+    return join(str(ff.path), 'alignment.paf')
 
 
 @plugin.register_transformer

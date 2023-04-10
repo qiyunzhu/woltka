@@ -20,6 +20,15 @@ SeqAlnMapDirFmt = model.SingleFileDirectoryFormat(
     'SeqAlnMapDirFmt', 'alignment.sam', SeqAlnMapFormat)
 
 
+class PaimApFmtFormat(model.TextFileFormat):
+    def _validate_(self, level):
+        pass
+
+
+PaimApFmtDirFmt = model.SingleFileDirectoryFormat(
+    'PaimApFmtDirFmt', 'alignment.paf', PaimApFmtFormat)
+
+
 class BLAST6OutFormat(model.TextFileFormat):
     def _validate_(self, level):
         pass
