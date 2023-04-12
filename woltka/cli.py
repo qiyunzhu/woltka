@@ -15,6 +15,7 @@ import click
 
 from . import __version__
 from .workflow import workflow
+from .disambig import disambig_wf
 from .tools import normalize_wf, filter_wf, merge_wf, collapse_wf, coverage_wf
 
 
@@ -318,6 +319,31 @@ def coverage_cmd(**kwargs):
     """Calculate per-sample coverage of feature groups.
     """
     coverage_wf(**kwargs)
+
+
+@cli.command('disambig', **CMD_KA)
+@click.option(
+    '--input', '-i', 'input_fp', required=True,
+    type=click.Path(exists=True, dir_okay=False),
+    help='Path to input profile.')
+@click.option(
+    '--mapdir', '-m', 'map_dir', required=True,
+    type=click.Path(exists=True, dir_okay=True),
+    help='Directory of read-to-feature maps.')
+@click.option(
+    '--output', '-o', 'output_fp', required=True,
+    type=click.Path(writable=True, dir_okay=False),
+    help='Path to output profile.')
+@click.option(
+    '--min-count', '-c', type=click.IntRange(min=1),
+    help='Minimum unique match number threshold.')
+@click.option(
+    '--min-ratio', '-r', type=click.FloatRange(min=0, max=1),
+    help='Minimum unique match ratio threshold.')
+def disambig_cmd(**kwargs):
+    """Filter a profile to remove ambiguous matches.
+    """
+    disambig_wf(**kwargs)
 
 
 # the "tools" menu is for backward compatibility
