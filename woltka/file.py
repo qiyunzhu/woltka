@@ -11,10 +11,10 @@
 """Functions for handling input and output files.
 """
 
-from os import listdir
 from os.path import basename, dirname, splitext, isfile, join
 from shutil import which
 from subprocess import Popen, PIPE
+import glob
 import gzip
 import bz2
 import lzma
@@ -277,20 +277,20 @@ def id2file_from_dir(dir_, ext=None, ids=None):
     Notes
     -----
     Only top-level directory is searched. Only files but not subdirectories are
-    considered.
+    considered. Hidden files will be ignored.
     """
     res = {}
-    for fname in listdir(dir_):
-        if isfile(join(dir_, fname)):
+    for fname in glob.glob(join(dir_, '*')):
+        if isfile(fname):
             try:
-                id_ = file2stem(fname, ext)
+                id_ = path2stem(fname, ext)
             except ValueError:
                 continue
             if ids and id_ not in ids:
                 continue
             if id_ in res:
                 raise ValueError(f'Ambiguous files for ID: "{id_}".')
-            res[id_] = fname
+            res[id_] = basename(fname)
     return res
 
 
