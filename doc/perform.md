@@ -14,6 +14,7 @@ Woltka is for handling very large alignment files and complex classification sys
   - [Compress alignment files](#compress-alignment-files)
   - [Keep external decompressors on](#keep-external-decompressors-on)
   - [Convert alignments to simple maps](#convert-alignments-to-simple-maps)
+  - [Streamline alignment and classification](#streamline-alignment-and-classification)
 
 
 ## Runtime and memory estimates
@@ -162,3 +163,24 @@ Using **xz** | 2:33.65 | 10.664
 It is your call how to balance runtime and map file size.
 
 Warning however, converting alignments to maps will **lose alignment coordinates**, and **blocks "coord-match"** (see [details](ordinal.md)). If these analyses are in your plan, you should keep the alignment files.
+
+### Streamline alignment and classification
+
+The previous protocols assumed that you want to keep the alignments even after running Woltka. This is understandable because you may want to try various Woltka parameters or other programs on these alignments. However, if all you need is the one-off classification results, you may combine sequence alignment and classification into one operation while skipping the generation of alignment files. This can give you a significant saving in disk space and I/O.
+
+Woltka supports standard input (stdin) as input, which makes the following command valid:
+
+```bash
+bowtie2 -x db -U input.fq | woltka classify -i - -o output.biom
+```
+
+In a real study you may have multiple samples to analyze. Utilizing Woltka's features and some Linux tricks, you may create complex but efficient "one-liner" commands like the following:
+
+```bash
+while read id; do seqtk mergepe $id.F.fq.gz $id.R.fq.gz |\
+sed '1~4s/^@/@'$id'_/'; done < ids.txt |\
+bowtie2 -p 8 -x db --interleaved - --very-sensitive --no-head --no-unal |\
+woltka classify -i - -f sam -o output.biom
+```
+
+In this example, a list of sample IDs are recorded in `ids.txt`. Each sample has forward and reverse reads. The `seqtk` command merges paired-end reads into an "interleaved" style. The `sed` command prefixes each sequence ID with the sample ID, making the entire data flow multiplexed before feeding to Bowtie2. Finally, Woltka automatically recognizes the multiplexed samples from the data flow and generates a single output profile.
