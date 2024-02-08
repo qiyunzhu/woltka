@@ -1,6 +1,5 @@
 [run]
 branch = True
 omit =
-    woltka/q2/*
     */tests/*
     */__init__.py
