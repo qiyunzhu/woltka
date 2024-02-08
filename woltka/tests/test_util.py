@@ -16,7 +16,8 @@ from tempfile import mkdtemp
 from woltka.util import (
     add_dict, update_dict, sum_dict, scale_factor, scale_dict, intize,
     intize_list, intize_dict, rounder, round_list, round_dict, delnone,
-    allkeys, count_list, last_value, feature_count)
+    allkeys, count_list, last_value, feature_count, is_int, is_float,
+    is_pos_int)
 
 
 class UtilTests(TestCase):
@@ -206,6 +207,32 @@ class UtilTests(TestCase):
         self.assertTupleEqual(feature_count(':1'),  (':1', 1))
         self.assertTupleEqual(feature_count('::'),  ('::', 1))
         self.assertTupleEqual(feature_count(''),    ('', 1))
+
+    def test_is_int(self):
+        self.assertTrue(is_int('123'))
+        self.assertTrue(is_int('001'))
+        self.assertTrue(is_int('-5'))
+        self.assertFalse(is_int('1.2'))
+        self.assertFalse(is_int('1e10'))
+        self.assertFalse(is_int('abc'))
+        self.assertFalse(is_int(''))
+
+    def test_is_float(self):
+        self.assertTrue(is_float('123'))
+        self.assertTrue(is_float('0.0'))
+        self.assertTrue(is_float('1.2'))
+        self.assertTrue(is_float('-5'))
+        self.assertTrue(is_float('1e10'))
+        self.assertFalse(is_float('abc'))
+        self.assertFalse(is_float('1x2'))
+        self.assertFalse(is_float(''))
+
+    def test_is_pos_int(self):
+        self.assertTrue(is_pos_int('5'))
+        self.assertFalse(is_pos_int('1.5'))
+        self.assertFalse(is_pos_int('0'))
+        self.assertFalse(is_pos_int('-5'))
+        self.assertFalse(is_pos_int(''))
 
 
 if __name__ == '__main__':

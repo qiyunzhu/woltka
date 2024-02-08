@@ -24,7 +24,7 @@ from woltka.align import parse_b6o_file_ext, parse_sam_file_ext
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
     match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
-    load_gene_coords, calc_gene_lens, load_gene_lens)
+    load_gene_coords, check_gene_coords, calc_gene_lens, load_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -408,6 +408,34 @@ class OrdinalTests(TestCase):
         self.assertEqual(obs_[1], (806 << 48) + (1 << 30) + 0)
         self.assertEqual(obs_[2], (816 << 48) + (3 << 30) + 1)
         self.assertEqual(obs_[3], (2177 << 48) + (1 << 30) + 1)
+
+    def test_check_gene_coords(self):
+        tbl = ('>n1',
+               'g1	5	29',
+               'g2	33	61',
+               'g3	65	94')
+        self.assertIsNone(check_gene_coords(tbl))
+
+        tbl = ('## GCF_000123456\n',
+               '# NC_123456\n',
+               '1	5	384\n',
+               '2	410	933\n',
+               '# NC_789012\n',
+               '1	912	638\n',
+               '2	529	75\n')
+        self.assertIsNone(check_gene_coords(tbl))
+
+        for tbl in ('', '#hello', 'hello	5	10'):
+            with self.assertRaises(ValueError) as ctx:
+                check_gene_coords((tbl,))
+        self.assertEqual(str(ctx.exception), (
+            'No gene coordinates are found in the file.'))
+
+        for tbl in ('hi	x	10', 'hi	5	x', 'hi	5', 'hi'):
+            with self.assertRaises(ValueError) as ctx:
+                check_gene_coords(('#hello', tbl))
+        self.assertEqual(str(ctx.exception), (
+            f'Cannot extract coordinates from line: "{tbl}".'))
 
     def test_calc_gene_lens(self):
         coords = {'NC_123456': [(5 << 48) + (3 << 30) + 0,

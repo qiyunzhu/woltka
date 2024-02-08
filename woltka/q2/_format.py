@@ -8,12 +8,20 @@
 # The full license is in the file LICENSE, distributed with this software.
 # ----------------------------------------------------------------------------
 
-from qiime2.plugin import model
+from qiime2.plugin import model, ValidationError
+
+from woltka.align import (
+    check_map_file, check_b6o_file, check_sam_file, check_paf_file)
+from woltka.ordinal import check_gene_coords
 
 
 class SeqAlnMapFormat(model.TextFileFormat):
     def _validate_(self, level):
-        pass
+        with self.path.open('r') as fh:
+            try:
+                check_sam_file(fh)
+            except ValueError as err:
+                raise ValidationError(str(err))
 
 
 SeqAlnMapDirFmt = model.SingleFileDirectoryFormat(
@@ -22,7 +30,11 @@ SeqAlnMapDirFmt = model.SingleFileDirectoryFormat(
 
 class PaimApFmtFormat(model.TextFileFormat):
     def _validate_(self, level):
-        pass
+        with self.path.open('r') as fh:
+            try:
+                check_paf_file(fh)
+            except ValueError as err:
+                raise ValidationError(str(err))
 
 
 PaimApFmtDirFmt = model.SingleFileDirectoryFormat(
@@ -31,7 +43,11 @@ PaimApFmtDirFmt = model.SingleFileDirectoryFormat(
 
 class BLAST6OutFormat(model.TextFileFormat):
     def _validate_(self, level):
-        pass
+        with self.path.open('r') as fh:
+            try:
+                check_b6o_file(fh)
+            except ValueError as err:
+                raise ValidationError(str(err))
 
 
 BLAST6OutDirFmt = model.SingleFileDirectoryFormat(
@@ -40,7 +56,11 @@ BLAST6OutDirFmt = model.SingleFileDirectoryFormat(
 
 class SimpleMapFormat(model.TextFileFormat):
     def _validate_(self, level):
-        pass
+        with self.path.open('r') as fh:
+            try:
+                check_map_file(fh)
+            except ValueError as err:
+                raise ValidationError(str(err))
 
 
 SimpleMapDirFmt = model.SingleFileDirectoryFormat(
@@ -49,7 +69,12 @@ SimpleMapDirFmt = model.SingleFileDirectoryFormat(
 
 class NCBINodesFormat(model.TextFileFormat):
     def _validate_(self, level):
-        pass
+        with self.path.open('r') as fh:
+            for line in fh:
+                line = line.rstrip()
+                x = line.replace('\t|', '').split('\t')
+                if len(x) < 2 or not x[0] or not x[1]:
+                    raise ValidationError('Invalid node mapping: "{line}".')
 
 
 NCBINodesDirFmt = model.SingleFileDirectoryFormat(
@@ -58,7 +83,11 @@ NCBINodesDirFmt = model.SingleFileDirectoryFormat(
 
 class GeneCoordFormat(model.TextFileFormat):
     def _validate_(self, level):
-        pass
+        with self.path.open('r') as fh:
+            try:
+                check_gene_coords(fh)
+            except ValueError as err:
+                raise ValidationError(str(err))
 
 
 GeneCoordDirFmt = model.SingleFileDirectoryFormat(

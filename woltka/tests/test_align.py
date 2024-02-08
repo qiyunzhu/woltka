@@ -17,9 +17,12 @@ from io import StringIO
 from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
-    parse_map_file, parse_b6o_file, parse_b6o_file_ext, parse_sam_file,
-    parse_sam_file_ext, cigar_to_lens, cigar_to_lens_ord, parse_paf_file,
-    parse_paf_file_ext, parse_kraken, parse_centrifuge, parse_sam_file_pd)
+    parse_map_file, check_map_file,
+    parse_b6o_file, parse_b6o_file_ext, check_b6o_file,
+    parse_sam_file, parse_sam_file_ext, check_sam_file,
+    cigar_to_lens, cigar_to_lens_ord, is_cigar,
+    parse_paf_file, parse_paf_file_ext, check_paf_file,
+    parse_kraken, parse_centrifuge, parse_sam_file_pd)
 
 
 class AlignTests(TestCase):
@@ -207,6 +210,25 @@ class AlignTests(TestCase):
         self.assertTupleEqual(obs[0], ('R1', 'G1'))
         self.assertTupleEqual(obs[1], ('R2', 'G2'))
 
+    def test_check_map_file(self):
+        aln = (
+            'R1	G1',
+            'R2	G2	# note',
+            '# end of file')
+        self.assertIsNone(check_map_file(aln))
+        aln = (
+            '#start',
+            'hello',
+            'world!',
+            'R1		G1',
+            '	G1',
+            'R1	',
+            '-end-')
+        with self.assertRaises(ValueError) as ctx:
+            check_map_file(aln)
+        self.assertEqual(str(ctx.exception), (
+            'No mapping is found in the file.'))
+
     def test_parse_b6o_file(self):
         b6o = (
             '# BLAST result:',
@@ -230,6 +252,31 @@ class AlignTests(TestCase):
                ('S1/2', 'NC_123456', 270, 98, 608, 708)]
         self.assertTupleEqual(obs[0], exp[0])
         self.assertTupleEqual(obs[1], exp[1])
+
+    def test_check_b6o_file(self):
+        b6o = (
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+        self.assertIsNone(check_b6o_file(b6o))
+        b6o = ('#hello', '#world!')
+        with self.assertRaises(ValueError) as ctx:
+            check_b6o_file(b6o)
+        self.assertEqual(str(ctx.exception), (
+            'No BLAST hit record is found in the file.'))
+        for b6o in (
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30',
+            '	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/1		100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/1	NC_123456	100	0	0	0	1	100	225	324	1.2e-30	345',
+            'S1/1	NC_123456	100	100	0	0	1	100	x	324	1.2e-30	345',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	x	1.2e-30	345',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	x'
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                check_b6o_file((b6o,))
+            self.assertEqual(str(ctx.exception), (
+                f'Invalid BLAST hit record: "{b6o}".'))
 
     def test_parse_sam_file(self):
         sam = iter((
@@ -283,6 +330,30 @@ class AlignTests(TestCase):
         obs = list(parse_sam_file_ext(iter(())))
         self.assertEqual(len(obs), 0)
 
+    def test_check_sam_file(self):
+        sam = (
+            '@HD	VN:1.0	SO:unsorted',
+            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*')
+        self.assertIsNone(check_sam_file(sam))
+        sam = ('@hello', '@world!')
+        with self.assertRaises(ValueError) as ctx:
+            check_sam_file(sam)
+        self.assertEqual(str(ctx.exception), (
+            'No SAM alignment is found in the file.'))
+        for sam in (
+            '	77	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	x	NC_123456	26	0	100M	*	0	0	*	*',
+            'S1	77		26	0	100M	*	0	0	*	*',
+            'S1	77	NC_123456	x	0	100M	*	0	0	*	*',
+            'S1	77	NC_123456	26	0	x	*	0	0	*	*'
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                check_sam_file((sam,))
+            self.assertEqual(str(ctx.exception), (
+                f'Invalid SAM alignment: "{sam}".'))
+
     def test_cigar_to_lens(self):
         self.assertTupleEqual(cigar_to_lens('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens('3M1I3M1D5M'), (11, 12))
@@ -290,6 +361,17 @@ class AlignTests(TestCase):
     def test_cigar_to_lens_ord(self):
         self.assertTupleEqual(cigar_to_lens_ord('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens_ord('3M1I3M1D5M'), (11, 12))
+
+    def test_is_cigar(self):
+        self.assertTrue(is_cigar('150M'))
+        self.assertTrue(is_cigar('3M1I3M1D5M'))
+        self.assertTrue(is_cigar('*'))
+        self.assertFalse(is_cigar(''))
+        self.assertFalse(is_cigar('12345'))
+        self.assertFalse(is_cigar('hello'))
+        self.assertFalse(is_cigar('MDI'))
+        self.assertFalse(is_cigar('M1D2I3'))
+        self.assertFalse(is_cigar('M1M2M3M'))
 
     def test_parse_paf_file(self):
         paf = iter((
@@ -330,6 +412,37 @@ class AlignTests(TestCase):
                ('S2/2', 'NC_789012', 0, 250, 99901, 100150)]
         for obs_, exp_ in zip(obs, exp):
             self.assertTupleEqual(obs_, exp_)
+
+    def test_check_paf_file(self):
+        paf = (
+            '# Minimap2 result:',
+            'S1/1	150	25	100	+	NC_123456	1000000	1025	1100	70	75	20'
+            '	tp:A:P	cm:i:10	s1:i:100	s2:i:0	rl:i:0',
+            'S1/2	150	25	125	-	NC_123456	1000000	1200	1300	90	100	6'
+            '	tp:A:P	cm:i:15	s1:i:150	s2:i:120	rl:i:0',
+            'S2/1	250	50	200	-	NC_789012	500000	100000	100150	100	150	65'
+            '	tp:A:P	cm:i:24	s1:i:214	s2:i:193	rl:i:0',
+            'S2/2	250	0	250	+	NC_789012	500000	99900	100150	245	250	0'
+            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0')
+        self.assertIsNone(check_paf_file(paf))
+        paf = ('#hello', '#world!')
+        with self.assertRaises(ValueError) as ctx:
+            check_paf_file(paf)
+        self.assertEqual(str(ctx.exception), (
+            'No PAF alignment is found in the file.'))
+        for paf in (
+            '	150	25	100	+	NC_123456	1000000	1025	1100	70	75	20',
+            'S1	150	25	100	+		1000000	1025	1100	70	75	20',
+            'S1	150	25	100	+	NC_123456	1000000	x	1100	70	75	20',
+            'S1	150	25	100	+	NC_123456	1000000	1025	x	70	75	20',
+            'S1	150	25	100	+	NC_123456	1000000	9999	1100	70	75	20',
+            'S1	150	25	100	+	NC_123456	1000000	1025	1100	70	0	20',
+            'S1	150	25	100	+	NC_123456	1000000	1025	1100	70	75	x'
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                check_paf_file((paf,))
+            self.assertEqual(str(ctx.exception), (
+                f'Invalid PAF alignment: "{paf}".'))
 
     def test_parse_kraken(self):
         kra = ('C	S1	561	150	561:100 A:10 562:40',

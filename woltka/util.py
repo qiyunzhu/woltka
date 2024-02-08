@@ -461,3 +461,64 @@ def feature_count(s, sep=':'):
     # no separator: entire string is feature
     else:
         return s, 1
+
+
+def is_int(s):
+    """Check if a string can be converted into an integer.
+
+    Parameters
+    ----------
+    s : str
+        String to check.
+
+    Returns
+    -------
+    bool
+        Whether the string can be converted into an integer.
+    """
+    try:
+        _ = int(s)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+def is_float(s):
+    """Check if a string can be converted into a floating point number.
+
+    Parameters
+    ----------
+    s : str
+        String to check.
+
+    Returns
+    -------
+    bool
+        Whether the string can be converted into a floating point number.
+    """
+    try:
+        _ = float(s)
+    except ValueError:
+        return False
+    else:
+        return True
+
+
+def is_pos_int(s):
+    """Check if a string can be converted into a positive integer.
+
+    Parameters
+    ----------
+    s : str
+        String to check.
+
+    Returns
+    -------
+    bool
+        Whether the string can be converted into a positive integer.
+    """
+    try:
+        return int(s) > 0
+    except ValueError:
+        return False

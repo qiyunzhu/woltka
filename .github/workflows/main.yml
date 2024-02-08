@@ -37,7 +37,7 @@ jobs:
         run: pycodestyle .
 
       - name: Run unit tests
-        run: coverage run -m unittest && coverage lcov
+        run: coverage run -m unittest discover -s woltka/tests && coverage lcov
 
       - name: Coveralls
         uses: coverallsapp/github-action@master

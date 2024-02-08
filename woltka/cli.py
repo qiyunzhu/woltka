@@ -22,7 +22,7 @@ class NaturalOrderGroup(click.Group):
     """Natural ordering of click command groups.
     """
     def list_commands(self, ctx):
-        return self.commands.keys()
+        return self.commands.keys()  # pragma: no cover
 
 
 GRP_KA = dict(

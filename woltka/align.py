@@ -27,6 +27,8 @@ from collections import deque
 from itertools import chain
 from functools import lru_cache
 
+from .util import is_int, is_float, is_pos_int
+
 
 def plain_mapper(fh, fmt=None, n=1000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
@@ -291,6 +293,30 @@ def parse_map_file(fh, *args):
             yield query, subject.rstrip()
 
 
+def check_map_file(fh):
+    """Check if simple mapping file is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('#'):
+            continue
+        x = line.rstrip().split('\t')
+        if len(x) >= 2 and x[0] and x[1]:
+            count += 1
+    if count == 0:
+        raise ValueError('No mapping is found in the file.')
+
+
 def parse_b6o_file(fh):
     """Parse a BLAST tabular file (b6o) to get basic information.
 
@@ -343,6 +369,44 @@ def parse_b6o_file_ext(fh):
             continue
         sstart, send = sorted((int(x[8]), int(x[9])))
         yield qseqid, sseqid, score, length, sstart, send
+
+
+def check_b6o_file(fh):
+    """Check if a BLAST tabular file (b6o) is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+
+    Notes
+    -----
+    This function only checks if the file can be parsed by this program. It
+    does not perform a full-scale check following the format's definition.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('#'):
+            continue
+        line = line.rstrip()
+        x = line.split('\t')
+        if not (len(x) >= 12
+                and x[0]              # qseqid: non-empty string
+                and x[1]              # sseqid: non-empty string
+                and is_pos_int(x[3])  # length: positive integer
+                and is_int(x[8])      # sstart: integer
+                and is_int(x[9])      # send: integer
+                and is_float(x[11])   # bitscore: float
+                ):
+            raise ValueError(f'Invalid BLAST hit record: "{line}".')
+        count += 1
+    if count == 0:
+        raise ValueError('No BLAST hit record is found in the file.')
 
 
 def parse_sam_file(fh):
@@ -456,6 +520,43 @@ def parse_sam_file_ext(fh):
         yield qname, rname, None, length, pos, pos + offset - 1
 
 
+def check_sam_file(fh):
+    """Check if a SAM file (sam) is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+
+    Notes
+    -----
+    This function only checks if the file can be parsed by this program. It
+    does not perform a full-scale check following the format's definition.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('@'):
+            continue
+        line = line.rstrip()
+        x = line.split('\t')
+        if not (len(x) >= 11
+                and x[0]              # QNAME: non-empty string
+                and is_int(x[1])      # FLAG: non-negative integer
+                and x[2]              # RNAME: non-empty string
+                and is_pos_int(x[3])  # POS: positive integer
+                and is_cigar(x[5])    # CIGAR: valid CIGAR string
+                ):
+            raise ValueError(f'Invalid SAM alignment: "{line}".')
+        count += 1
+    if count == 0:
+        raise ValueError('No SAM alignment is found in the file.')
+
+
 @lru_cache(maxsize=128)
 def cigar_to_lens(cigar):
     """Extract lengths from a CIGAR string.
@@ -527,6 +628,37 @@ def cigar_to_lens_ord(cigar):
     return align, align + offset
 
 
+def is_cigar(cigar):
+    """Check if a CIGAR string is valid.
+
+    Parameters
+    ----------
+    cigar : str
+        CIGAR string to check.
+
+    Returns
+    -------
+    bool
+        Whether the CIGAR string is valid.
+    """
+    if cigar == '*':
+        return True
+    is_code = None
+    for c in cigar:
+        if c in '0123456789':
+            if is_code is not False:
+                is_code = False
+        elif c in 'MDIHNPSX=':
+            if is_code is not False:
+                return False
+            is_code = True
+        else:
+            return False
+    if is_code is not True:
+        return False
+    return True
+
+
 def parse_paf_file(fh):
     """Parse a PAF file (paf) to get basic information.
 
@@ -586,6 +718,45 @@ def parse_paf_file_ext(fh):
             yield x[0], x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8])
         except (IndexError, ValueError):
             continue
+
+
+def check_paf_file(fh):
+    """Check if a PAF file (paf) is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+
+    Notes
+    -----
+    This function only checks if the file can be parsed by this program. It
+    does not perform a full-scale check following the format's definition.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('#'):
+            continue
+        line = line.rstrip()
+        x = line.split('\t')
+        if not (len(x) >= 12
+                and x[0]               # Query sequence: non-empty string
+                and x[5]               # Target sequence: non-empty string
+                and is_int(x[7])       # Target start: integer
+                and is_int(x[8])       # Target end: integer
+                and int(x[8]) > int(x[7])
+                and is_pos_int(x[10])  # Alignment length: positive integer
+                and is_int(x[11])      # Mapping quality: integer
+                ):
+            raise ValueError(f'Invalid PAF alignment: "{line}".')
+        count += 1
+    if count == 0:
+        raise ValueError('No PAF alignment is found in the file.')
 
 
 def parse_kraken(fh):

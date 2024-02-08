@@ -16,6 +16,7 @@ from itertools import chain
 from bisect import bisect
 
 from .align import infer_align_format, assign_parser
+from .util import is_pos_int
 
 
 def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
@@ -292,6 +293,40 @@ def load_gene_coords(fh, sort=False):
             queue.sort()
 
     return coords, idmap, isdup or False
+
+
+def check_gene_coords(fh):
+    """Check if a gene coordinates file is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        Gene coordinates file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+    """
+    has_genome, n_genes = False, 0
+    for line in fh:
+        line = line.rstrip()
+        if line == '':
+            continue
+        elif line.startswith(('>', '#')):
+            if has_genome is False:
+                has_genome = True
+        else:
+            x = line.split('\t')
+            if not (len(x) >= 3
+                    and x[0]
+                    and is_pos_int(x[1])
+                    and is_pos_int(x[2])):
+                raise ValueError(
+                    f'Cannot extract coordinates from line: "{line}".')
+            n_genes += 1
+    if has_genome is False or n_genes == 0:
+        raise ValueError('No gene coordinates are found in the file.')
 
 
 def match_read_gene(queue):
