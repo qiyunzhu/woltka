@@ -96,6 +96,18 @@ So the entire command becomes:
 bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq --very-sensitive --no-head --no-unal -k 16 --np 1 --mp "1,1" --rdg "0,1" --rfg "0,1" --score-min "L,0,-0.05" | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz
 ```
 
+Additionally, the original SHOGUN program only works with unpaired sequencing reads in FASTA format. To fully mimic its behavior, one needs to do:
+
+```bash
+seqtk mergepe R1.fq R2.fq | seqtk seq -a > input.fa
+```
+
+Then:
+
+```bash
+bowtie2 -p 8 -x db -U input.fa --very-sensitive --no-head --no-unal -k 16 --np 1 --mp "1,1" --rdg "0,1" --rfg "0,1" --score-min "L,0,-0.05" | cut -f1-9 | sed 's/$/\t*\t*/' | gzip > output.sam.gz
+```
+
 This is equivalent to the SHOGUN command:
 
 ```bash
