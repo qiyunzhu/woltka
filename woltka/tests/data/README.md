@@ -108,7 +108,7 @@ woltka classify \
   --input align/bt2sho \
   --newick tree.nwk \
   --rank free \
-  --name-as-id \
+  --subok \
   --output bt2sho.phylo.tsv
 ```
 
