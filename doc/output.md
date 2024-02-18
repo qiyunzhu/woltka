@@ -39,7 +39,7 @@ You will get `phylum.biom`, `genus.biom` and `species.biom` in the current direc
 
 ### BIOM
 
-The default output feature table format is [**BIOM**](http://biom-format.org/), a general format for efficiently storing and accessing omics data tables. A feature table file will have the extension name `.biom`.
+The default output feature table format is [**BIOM**](https://biom-format.org/), a general format for efficiently storing and accessing omics data tables. A feature table file will have the extension name `.biom`.
 
 A BIOM table not only stores feature counts per sample, but also allows appending feature metadata to it. Woltka optionally appends the following three metadata columns to a BIOM table:
 

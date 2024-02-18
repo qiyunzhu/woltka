@@ -40,7 +40,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     fmt : str, optional
         Alignment file format.
     n : int, optional
-        Number of lines per chunk.
+        Number of unique queries per chunk.
 
     Yields
     ------
@@ -53,11 +53,15 @@ def plain_mapper(fh, fmt=None, n=1000):
     -----
     The design of this function aims to couple with the extremely large size of
     typical alignment files. It reads the entire file sequentially, pauses and
-    processes current cache for every _n_ lines, yields and clears cache, then
-    proceeds.
+    processes current cache for every _n_ unique queries, yields and clears
+    cache, then proceeds.
     """
     # determine alignment file format
-    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
+    if not fmt:
+        fmt, head = infer_align_format(fh)
+        it = chain(iter(head), fh)
+    else:
+        it = fh
 
     # assign parser for given format
     parser = assign_parser(fmt)
@@ -66,43 +70,30 @@ def plain_mapper(fh, fmt=None, n=1000):
     qryque, subque = deque(), deque()
 
     # pre-load method references
-    qry_append, sub_append = qryque.append, subque.append
+    qryapd, subapd = qryque.append, subque.append
 
-    this = None  # current query Id
-    target = n   # target line number at end of current chunk
+    # target query count at end of current chunk
+    target = n
 
     # parse alignment file
-    for i, (query, subject) in enumerate(parser(chain(iter(head), fh))):
+    for i, (query, subjects) in enumerate(parser(it)):
 
-        # add subject to subject set of the same query Id
-        if query == this:
-            subque[-1].add(subject)
+        # line number has reached target
+        if i == target:
 
-        # when query Id changes,
-        else:
+            # flush current queues of queries and subjects
+            yield qryque, subque
 
-            # line number has reached target
-            if i >= target:
+            # reset queues and method references
+            qryque, subque = deque(), deque()
+            qryapd, subapd = qryque.append, subque.append
 
-                # flush current queries and subject sets
-                # this happens only when: 1) query Id changes, and 2) line
-                # number has reached target, so that subjects of the same query
-                # won't be separated in multiple flushes
-                yield qryque, subque
+            # next target query count
+            target += n
 
-                # re-initiate queues and method references
-                qryque, subque = deque(), deque()
-                qry_append, sub_append = qryque.append, subque.append
-
-                # next target line number
-                target = i + n
-
-            # create new query and subject set pair
-            qry_append(query)
-            sub_append({subject})
-
-            # update current query Id
-            this = query
+        # append query and subjects
+        qryapd(query)
+        subapd(set(subjects))
 
     # final flush
     yield qryque, subque
@@ -119,7 +110,7 @@ def range_mapper(fh, fmt=None, n=1000):
     fmt : str, optional
         Alignment file format.
     n : int, optional
-        Number of lines per chunk.
+        Number of unique queries per chunk.
 
     Yields
     ------
@@ -138,33 +129,40 @@ def range_mapper(fh, fmt=None, n=1000):
     See Also
     --------
     plain_mapper
+    .coverage.merge_ranges
     """
-    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
+    if not fmt:
+        fmt, head = infer_align_format(fh)
+        it = chain(iter(head), fh)
+    else:
+        it = fh
     parser = assign_parser(fmt, ext=True)
     qryque, subque = deque(), deque()
-    qry_append, sub_append = qryque.append, subque.append
-    this = None
+    qryapd, subapd = qryque.append, subque.append
+
     target = n
-    for i, row in enumerate(parser(chain(iter(head), fh))):
-        query, subject, _, _, start, end = row[:6]
+    for i, (query, records) in enumerate(parser(it)):
+        if i == target:
+            yield qryque, subque
+            qryque, subque = deque(), deque()
+            qryapd, subapd = qryque.append, subque.append
+            target += n
 
-        # range must be positive integers
-        if start and end:
+        # generate a mapping of subjects to interleaved starts and ends
+        ranges = {}
+        for subject, _, _, start, end in records:
 
-            if query == this:
-                subque[-1].setdefault(subject, []).extend((start, end))
-            else:
-                if i >= target:
-                    yield qryque, subque
-                    qryque, subque = deque(), deque()
-                    qry_append, sub_append = qryque.append, subque.append
-                    target = i + n
-                qry_append(query)
+            # start and end must be positive integers
+            if start and end:
 
-                # return subject Id and range
-                sub_append({subject: [start, end]})
+                # combine ranges on the same subject
+                ranges.setdefault(subject, []).extend((start, end))
 
-                this = query
+        # append query and ranges
+        if ranges:
+            qryapd(query)
+            subapd(ranges)
+
     yield qryque, subque
 
 
@@ -192,6 +190,7 @@ def infer_align_format(fh):
 
     See Also
     --------
+    parse_map_file
     parse_b6o_file
     parse_sam_file
     parse_paf_file
@@ -252,7 +251,7 @@ def assign_parser(fmt, ext=False):
 
     Returns
     -------
-    function
+    callable
         Alignment parser function.
     """
     if fmt == 'map':  # simple map of query <tab> subject
@@ -267,6 +266,7 @@ def assign_parser(fmt, ext=False):
         raise ValueError(f'Invalid format code: "{fmt}".')
 
 
+<<<<<<< HEAD
 def parse_map_file(fh, *args):
     """Parse a simple mapping file.
 
@@ -409,6 +409,8 @@ def check_b6o_file(fh):
         raise ValueError('No BLAST hit record is found in the file.')
 
 
+=======
+>>>>>>> master
 def parse_sam_file(fh):
     """Parse a SAM file (sam) to get basic information.
 
@@ -419,8 +421,10 @@ def parse_sam_file(fh):
 
     Yields
     ------
-    tuple of (str, str)
-        Query, subject.
+    str
+        Query.
+    list of str
+        Subjects.
 
     Notes
     -----
@@ -433,7 +437,7 @@ def parse_sam_file(fh):
     .. _SAM format specification:
         https://samtools.github.io/hts-specs/SAMv1.pdf
     .. _Bowtie2 manual:
-        http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
+        https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml#sam-output
 
     This is by far the fastest solution. Several other solutions were tested,
     including readlines(chunk), csv.reader, and pd_read_csv(chunk). They were
@@ -449,8 +453,14 @@ def parse_sam_file(fh):
             last = line
             break
 
-    # include current line
+    # include last line in body
     it = chain([last], fh) if last else fh
+
+    # current qname
+    this = None
+
+    # current subjects by mate: unpaired, forward, reverse
+    pool = ([], [], [])
 
     # parse body
     for line in it:
@@ -462,19 +472,33 @@ def parse_sam_file(fh):
         if rname == '*':
             continue
 
-        # append strand to read Id if not already
-        if qname[-2:] not in ('/1', '/2'):
-            flag = int(flag)
+        # extract mate from flag (forward: bit 6; reverse: bit 7)
+        mate = int(flag) >> 6 & 3
 
-            # forward strand: bit 64
-            if flag & (1 << 6):
-                qname += '/1'
+        # previous query completes
+        if qname != this:
 
-            # reverse strand: bit 128
-            elif flag & (1 << 7):
-                qname += '/2'
+            # yield query and subjects
+            if pool[0]:
+                yield this, pool[0]
+            if pool[1]:
+                yield this + '/1', pool[1]
+            if pool[2]:
+                yield this + '/2', pool[2]
 
-        yield qname, rname
+            # reset query and subjects
+            this, pool = qname, ([], [], [])
+
+        # add subject to pool
+        pool[mate].append(rname)
+
+    # final yield
+    if pool[0]:
+        yield this, pool[0]
+    if pool[1]:
+        yield this + '/1', pool[1]
+    if pool[2]:
+        yield this + '/2', pool[2]
 
 
 def parse_sam_file_ext(fh):
@@ -487,8 +511,10 @@ def parse_sam_file_ext(fh):
 
     Yields
     ------
-    tuple of (str, str, None, int, int, int)
-        Query, subject, None, length, start, end.
+    str
+        Query.
+    list of (str, None, int, int, int)
+        Records of (subject, None, length, start, end).
     """
     last = None
     for line in fh:
@@ -497,12 +523,15 @@ def parse_sam_file_ext(fh):
             break
 
     it = chain([last], fh) if last else fh
+
+    this, pool = None, ([], [], [])
     for line in it:
 
         # relevant fields
         qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
         if rname == '*':
             continue
+        mate = int(flag) >> 6 & 3
 
         # leftmost mapping position
         pos = int(pos)
@@ -510,14 +539,26 @@ def parse_sam_file_ext(fh):
         # parse CIGAR string
         length, offset = cigar_to_lens(cigar)
 
-        if qname[-2:] not in ('/1', '/2'):
-            flag = int(flag)
-            if flag & (1 << 6):
-                qname += '/1'
-            elif flag & (1 << 7):
-                qname += '/2'
+        # yield and reset
+        if qname != this:
+            if pool[0]:
+                yield this, pool[0]
+            if pool[1]:
+                yield this + '/1', pool[1]
+            if pool[2]:
+                yield this + '/2', pool[2]
+            this, pool = qname, ([], [], [])
 
-        yield qname, rname, None, length, pos, pos + offset - 1
+        # append
+        pool[mate].append((rname, None, length, pos, pos + offset - 1))
+
+    # final yield
+    if pool[0]:
+        yield this, pool[0]
+    if pool[1]:
+        yield this + '/1', pool[1]
+    if pool[2]:
+        yield this + '/2', pool[2]
 
 
 def check_sam_file(fh):
@@ -628,6 +669,7 @@ def cigar_to_lens_ord(cigar):
     return align, align + offset
 
 
+<<<<<<< HEAD
 def is_cigar(cigar):
     """Check if a CIGAR string is valid.
 
@@ -814,6 +856,8 @@ def parse_centrifuge(fh):
             yield x[0], x[1], int(x[3]), int(x[5])
 
 
+=======
+>>>>>>> master
 def parse_sam_file_pd(fh, n=65536):
     """Parse a SAM file (sam) using Pandas.
 
@@ -865,3 +909,265 @@ def parse_sam_file_pd(fh, n=65536):
     #         chunk['score'] = 0
     #         yield from chunk[['qname', 'rname', 'score', 'length',
     #                           'pos', 'right']].values
+
+
+def parse_map_file(fh, *args):
+    """Parse a simple mapping file.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file to parse.
+    args : list, optional
+        Placeholder for caller compatibility.
+
+    Yields
+    ------
+    str
+        Query.
+    list of str
+        Subjects.
+
+    Notes
+    -----
+    Only the first two columns are considered.
+    """
+    # current query and subjects
+    this, pool = None, []
+
+    # find first query (micro-optimization)
+    for line in fh:
+
+        # extract 1st and 2nd fields (query and subject)
+        query, found, rest = line.partition('\t')
+        if found:
+            subject, _, _ = rest.partition('\t')
+
+            # initialize query
+            this, pool = query, [subject.rstrip()]
+            break
+
+    # iterate over the rest of file
+    for line in fh:
+        query, found, rest = line.partition('\t')
+        if found:
+            subject, _, _ = rest.partition('\t')
+
+            # if query is the same, add subject to pool
+            if query == this:
+                pool.append(subject.rstrip())
+
+            # if not, yield and reset query and subjects
+            else:
+                yield this, pool
+                this, pool = query, [subject.rstrip()]
+
+    # final yield
+    if this is not None:
+        yield this, pool
+
+
+def parse_b6o_file(fh):
+    """Parse a BLAST tabular file (b6o) to get basic information.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to parse.
+
+    Yields
+    ------
+    str
+        Query.
+    list of str
+        Subjects.
+
+    Notes
+    -----
+    BLAST tabular format:
+        qseqid sseqid pident length mismatch gapopen qstart qend sstart send
+        evalue bitscore
+
+    .. _BLAST manual:
+        https://www.ncbi.nlm.nih.gov/books/NBK279684/
+    """
+    this, pool = None, []
+
+    # head
+    for line in fh:
+        try:
+            qseqid, sseqid, _ = line.split('\t', 2)
+        except ValueError:
+            continue
+        this, pool = qseqid, [sseqid]
+        break
+
+    # body
+    for line in fh:
+        try:
+            qseqid, sseqid, _ = line.split('\t', 2)
+        except ValueError:
+            continue
+        if qseqid == this:
+            pool.append(sseqid)
+        else:
+            yield this, pool
+            this, pool = qseqid, [sseqid]
+
+    # foot
+    if this is not None:
+        yield this, pool
+
+
+def parse_b6o_file_ext(fh):
+    """Parse a BLAST tabular file (b6o) to get extra information.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to parse.
+
+    Yields
+    ------
+    str
+        Query.
+    list of (str, float, int, int, int)
+        Records of (subject, score, length, start, end).
+    """
+    this, pool = None, []
+
+    # head
+    for line in fh:
+        x = line.split('\t')
+        try:
+            qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
+        except IndexError:
+            continue
+        sstart, send = sorted((int(x[8]), int(x[9])))
+        this, pool = qseqid, [(sseqid, score, length, sstart, send)]
+        break
+
+    # body
+    for line in fh:
+        x = line.split('\t')
+        try:
+            qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
+        except IndexError:
+            continue
+        sstart, send = sorted((int(x[8]), int(x[9])))
+        if qseqid == this:
+            pool.append((sseqid, score, length, sstart, send))
+        else:
+            yield this, pool
+            this, pool = qseqid, [(sseqid, score, length, sstart, send)]
+
+    # foot
+    if this is not None:
+        yield this, pool
+
+
+def parse_paf_file(fh):
+    """Parse a PAF file (paf) to get basic information.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to parse.
+
+    Yields
+    ------
+    str
+        Query.
+    list of str
+        Subjects.
+
+    Notes
+    -----
+    PAF format (first 12 columns):
+        1 	string 	Query sequence name
+        2 	int 	Query sequence length
+        3 	int 	Query start (0-based; BED-like; closed)
+        4 	int 	Query end (0-based; BED-like; open)
+        5 	char 	Relative strand: "+" or "-"
+        6 	string 	Target sequence name
+        7 	int 	Target sequence length
+        8 	int 	Target start on original strand (0-based)
+        9 	int 	Target end on original strand (0-based)
+        10 	int 	Number of residue matches
+        11 	int 	Alignment block length
+        12 	int 	Mapping quality (0-255; 255 for missing)
+
+    .. _PAF format specification:
+        https://github.com/lh3/miniasm/blob/master/PAF.md
+    """
+    this, pool = None, []
+
+    # head
+    for line in fh:
+        try:
+            qname, _, _, _, _, tname, _ = line.split('\t', 6)
+        except ValueError:
+            continue
+        this, pool = qname, [tname]
+        break
+
+    # body
+    for line in fh:
+        try:
+            qname, _, _, _, _, tname, _ = line.split('\t', 6)
+        except ValueError:
+            continue
+        if qname == this:
+            pool.append(tname)
+        else:
+            yield this, pool
+            this, pool = qname, [tname]
+
+    # foot
+    if this is not None:
+        yield this, pool
+
+
+def parse_paf_file_ext(fh):
+    """Parse a PAF file (paf) to get extra information.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to parse.
+
+    Yields
+    ------
+    str
+        Query.
+    list of (str, int, int, int, int)
+        Records of (subject, score, length, start, end).
+    """
+    this, pool = None, []
+
+    # head
+    for line in fh:
+        x = line.split('\t')
+        try:
+            rec = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+        except (IndexError, ValueError):
+            continue
+        this, pool = x[0], [rec]
+        break
+
+    # body
+    for line in fh:
+        x = line.split('\t')
+        try:
+            rec = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+        except (IndexError, ValueError):
+            continue
+        if x[0] == this:
+            pool.append(rec)
+        else:
+            yield this, pool
+            this, pool = x[0], [rec]
+
+    # foot
+    if this is not None:
+        yield this, pool

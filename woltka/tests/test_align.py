@@ -17,12 +17,11 @@ from io import StringIO
 from woltka.file import openzip
 from woltka.align import (
     plain_mapper, range_mapper, infer_align_format, assign_parser,
-    parse_map_file, check_map_file,
-    parse_b6o_file, parse_b6o_file_ext, check_b6o_file,
     parse_sam_file, parse_sam_file_ext, check_sam_file,
     cigar_to_lens, cigar_to_lens_ord, is_cigar,
-    parse_paf_file, parse_paf_file_ext, check_paf_file,
-    parse_kraken, parse_centrifuge, parse_sam_file_pd)
+    parse_sam_file_pd, parse_map_file, check_map_file,
+    parse_b6o_file, parse_b6o_file_ext, check_b6o_file,
+    parse_paf_file, parse_paf_file_ext, check_paf_file)
 
 
 class AlignTests(TestCase):
@@ -66,21 +65,13 @@ class AlignTests(TestCase):
         aln.seek(0)
         obs = plain_mapper(aln, n=2)
         exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
-               (['R3'], [{'G1', 'G3'}]),
-               (['R4', 'R5'], [{'G4'}, {'G5'}]))
+               (['R3', 'R4'], [{'G1', 'G3'}, {'G4'}]),
+               (['R5'], [{'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # chunk of 3
         aln.seek(0)
         obs = plain_mapper(aln, n=3)
-        exp = ((['R1', 'R2'], [{'G1'}, {'G1', 'G2'}]),
-               (['R3', 'R4'], [{'G1', 'G3'}, {'G4'}]),
-               (['R5'], [{'G5'}]))
-        self.assertTupleEqual(_res2lst(obs), exp)
-
-        # chunk of 4
-        aln.seek(0)
-        obs = plain_mapper(aln, n=4)
         exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
                (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
@@ -88,8 +79,8 @@ class AlignTests(TestCase):
         # chunk of 5
         aln.seek(0)
         obs = plain_mapper(aln, n=5)
-        exp = ((['R1', 'R2', 'R3'], [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}]),
-               (['R4', 'R5'], [{'G4'}, {'G5'}]))
+        exp = ((['R1', 'R2', 'R3', 'R4', 'R5'],
+                [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}, {'G5'}]),)
         self.assertTupleEqual(_res2lst(obs), exp)
 
         # format is given
@@ -118,6 +109,7 @@ class AlignTests(TestCase):
             'R1	G1	95	20	0	0	1	20	10	29	1	1',
             'R2	G1	95	20	0	0	1	20	16	35	1	1',
             'R3	G2	95	20	0	0	1	20	39	21	1	1',
+            'R3	G3	95	20	0	0	1	20	88	70	1	1',
             'R4	G2	95	20	0	0	20	1	41	22	1	1',
             'R5	G3	95	20	0	0	20	1	30	49	1	1',
             'R5	G3	95	20	0	0	20	1	50	69	1	1',
@@ -126,9 +118,14 @@ class AlignTests(TestCase):
         obs = _res2lst(range_mapper(aln))[0]
         exp = [('R1', {'G1': [10, 29]}),
                ('R2', {'G1': [16, 35]}),
-               ('R3', {'G2': [21, 39]}),
+               ('R3', {'G2': [21, 39], 'G3': [70, 88]}),
                ('R4', {'G2': [22, 41]}),
                ('R5', {'G3': [30, 49, 50, 69]})]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
+
+        aln.seek(0)
+        obs = _res2lst(range_mapper(aln, fmt='b6o'))[0]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
         self.assertListEqual(list(obs[1]), [x[1] for x in exp])
 
@@ -200,104 +197,32 @@ class AlignTests(TestCase):
         self.assertEqual(str(ctx.exception), (
             'Invalid format code: "xyz".'))
 
-    def test_parse_map_file(self):
-        aln = (
-            'R1	G1',          # 1st line (normal)
-            'R2	G2	# note',  # 2nd line (with additional column)
-            '# end of file')  # 3rd line (not tab-delimited)
-        obs = list(parse_map_file(aln))
-        self.assertEqual(len(obs), 2)
-        self.assertTupleEqual(obs[0], ('R1', 'G1'))
-        self.assertTupleEqual(obs[1], ('R2', 'G2'))
-
-    def test_check_map_file(self):
-        aln = (
-            'R1	G1',
-            'R2	G2	# note',
-            '# end of file')
-        self.assertIsNone(check_map_file(aln))
-        aln = (
-            '#start',
-            'hello',
-            'world!',
-            'R1		G1',
-            '	G1',
-            'R1	',
-            '-end-')
-        with self.assertRaises(ValueError) as ctx:
-            check_map_file(aln)
-        self.assertEqual(str(ctx.exception), (
-            'No mapping is found in the file.'))
-
-    def test_parse_b6o_file(self):
-        b6o = (
-            '# BLAST result:',
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        obs = list(parse_b6o_file(b6o))
-        self.assertEqual(len(obs), 2)
-        exp = [('S1/1', 'NC_123456'),
-               ('S1/2', 'NC_123456')]
-        self.assertTupleEqual(obs[0], exp[0])
-        self.assertTupleEqual(obs[1], exp[1])
-
-    def test_parse_b6o_file_ext(self):
-        b6o = (
-            '# BLAST result:',
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        obs = list(parse_b6o_file_ext(b6o))
-        self.assertEqual(len(obs), 2)
-        exp = [('S1/1', 'NC_123456', 345, 100, 225, 324),
-               ('S1/2', 'NC_123456', 270, 98, 608, 708)]
-        self.assertTupleEqual(obs[0], exp[0])
-        self.assertTupleEqual(obs[1], exp[1])
-
-    def test_check_b6o_file(self):
-        b6o = (
-            '# BLAST result:',
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
-        self.assertIsNone(check_b6o_file(b6o))
-        b6o = ('#hello', '#world!')
-        with self.assertRaises(ValueError) as ctx:
-            check_b6o_file(b6o)
-        self.assertEqual(str(ctx.exception), (
-            'No BLAST hit record is found in the file.'))
-        for b6o in (
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30',
-            '	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/1		100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/1	NC_123456	100	0	0	0	1	100	225	324	1.2e-30	345',
-            'S1/1	NC_123456	100	100	0	0	1	100	x	324	1.2e-30	345',
-            'S1/1	NC_123456	100	100	0	0	1	100	225	x	1.2e-30	345',
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	x'
-        ):
-            with self.assertRaises(ValueError) as ctx:
-                check_b6o_file((b6o,))
-            self.assertEqual(str(ctx.exception), (
-                f'Invalid BLAST hit record: "{b6o}".'))
-
     def test_parse_sam_file(self):
         sam = iter((
+            # 1st line: header
             '@HD	VN:1.0	SO:unsorted',
+            # 2nd line: normal, fully-aligned, forward strand
             'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
+            # 3rd line: shortened, reverse strand
             'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
+            # 4th line: not perfectly aligned, unpaired
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            'S2	16	*	0	0	*	*	0	0	*	*'))
+            # 5th line: not aligned
+            'S2	16	*	0	0	*	*	0	0	*	*',
+            # 6-9th lines: interleaved forward and reverse reads
+            'S3	83	NC_123456	452	0	100M	*	0	0	*	*',
+            'S3	163	NC_123456	378	0	80M5D15M	*	0	0	*	*',
+            'S3	355	NC_345678	133	0	100M	*	0	0	*	*',
+            'S3	403	NC_345678	261	0	10M5I85M	*	0	0	*	*'))
         obs = list(parse_sam_file(sam))
-        self.assertEqual(len(obs), 3)
-        exp = [('S1/1', 'NC_123456'),
-               ('S1/2', 'NC_123456'),
-               ('S2',   'NC_789012')]
-        # 1st line: header
-        # 2nd line: normal, fully-aligned, forward strand
-        self.assertTupleEqual(obs[0], exp[0])
-        # 3rd line: shortened, reverse strand
-        self.assertTupleEqual(obs[1], exp[1])
-        # 4th line: not perfectly aligned, unpaired
-        self.assertTupleEqual(obs[2], exp[2])
-        # 5th line: not aligned
+        self.assertEqual(len(obs), 5)
+        exp = [('S1/1', ['NC_123456']),
+               ('S1/2', ['NC_123456']),
+               ('S2',   ['NC_789012']),
+               ('S3/1', ['NC_123456', 'NC_345678']),
+               ('S3/2', ['NC_123456', 'NC_345678'])]
+        for i in range(5):
+            self.assertTupleEqual(obs[i], exp[i])
 
         # header only
         sam = iter((
@@ -317,15 +242,22 @@ class AlignTests(TestCase):
             'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
             'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            'S2	16	*	0	0	*	*	0	0	*	*'))
+            'S2	16	*	0	0	*	*	0	0	*	*',
+            'S3	83	NC_123456	452	0	100M	*	0	0	*	*',
+            'S3	163	NC_123456	378	0	80M5D15M	*	0	0	*	*',
+            'S3	355	NC_345678	133	0	100M	*	0	0	*	*',
+            'S3	403	NC_345678	261	0	10M5I85M	*	0	0	*	*'))
         obs = list(parse_sam_file_ext(sam))
-        self.assertEqual(len(obs), 3)
-        exp = [('S1/1', 'NC_123456', None, 100, 26, 125),
-               ('S1/2', 'NC_123456', None, 80, 151, 230),
-               ('S2', 'NC_789012', None, 90, 186, 280)]
-        self.assertTupleEqual(obs[0], exp[0])
-        self.assertTupleEqual(obs[1], exp[1])
-        self.assertTupleEqual(obs[2], exp[2])
+        self.assertEqual(len(obs), 5)
+        exp = [('S1/1', [('NC_123456', None, 100, 26,  125)]),
+               ('S1/2', [('NC_123456', None,  80, 151, 230)]),
+               ('S2',   [('NC_789012', None,  90, 186, 280)]),
+               ('S3/1', [('NC_123456', None, 100, 452, 551),
+                         ('NC_345678', None, 100, 133, 232)]),
+               ('S3/2', [('NC_123456', None,  95, 378, 477),
+                         ('NC_345678', None,  95, 261, 355)])]
+        for i in range(5):
+            self.assertTupleEqual(obs[i], exp[i])
 
         obs = list(parse_sam_file_ext(iter(())))
         self.assertEqual(len(obs), 0)
@@ -373,6 +305,104 @@ class AlignTests(TestCase):
         self.assertFalse(is_cigar('M1D2I3'))
         self.assertFalse(is_cigar('M1M2M3M'))
 
+    def test_parse_sam_file_pd(self):
+        self.assertIsNone(parse_sam_file_pd([]))
+
+    def test_parse_map_file(self):
+        aln = iter((
+            'R1	G1',           # 1st line (normal)
+            'R1	G2',           # 2nd line (normal, same query)
+            'R2	G3	# note',   # 3rd line (with additional column)
+            '',                # 4th line (empty)
+            'R2	G4',           # 5th line (same query)
+            '# end of file'))  # 6th line (not tab-delimited)
+        obs = list(parse_map_file(aln))
+        self.assertEqual(len(obs), 2)
+        self.assertTupleEqual(obs[0], ('R1', ['G1', 'G2']))
+        self.assertTupleEqual(obs[1], ('R2', ['G3', 'G4']))
+
+        obs = list(parse_map_file(iter(('Hi there!'))))
+        self.assertEqual(len(obs), 0)
+
+    def test_check_map_file(self):
+        aln = (
+            'R1	G1',
+            'R2	G2	# note',
+            '# end of file')
+        self.assertIsNone(check_map_file(aln))
+        aln = (
+            '#start',
+            'hello',
+            'world!',
+            'R1		G1',
+            '	G1',
+            'R1	',
+            '-end-')
+        with self.assertRaises(ValueError) as ctx:
+            check_map_file(aln)
+        self.assertEqual(str(ctx.exception), (
+            'No mapping is found in the file.'))
+
+    def test_parse_b6o_file(self):
+        b6o = iter((
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270',
+            'S1/2	NC_789012	80	95	5	2	3	97	337	425	5.6e-15	206',
+            '- the end -'))
+        obs = list(parse_b6o_file(b6o))
+        self.assertEqual(len(obs), 2)
+        exp = [('S1/1', ['NC_123456']),
+               ('S1/2', ['NC_123456', 'NC_789012'])]
+        self.assertTupleEqual(obs[0], exp[0])
+        self.assertTupleEqual(obs[1], exp[1])
+
+        obs = list(parse_b6o_file(iter(('Hi there!'))))
+        self.assertEqual(len(obs), 0)
+
+    def test_parse_b6o_file_ext(self):
+        b6o = iter((
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270',
+            'S1/2	NC_789012	80	95	5	2	3	97	337	425	5.6e-15	206',
+            '- the end -'))
+        obs = list(parse_b6o_file_ext(b6o))
+        self.assertEqual(len(obs), 2)
+        exp = [('S1/1', [('NC_123456', 345, 100, 225, 324)]),
+               ('S1/2', [('NC_123456', 270, 98, 608, 708),
+                         ('NC_789012', 206, 95, 337, 425)])]
+        self.assertTupleEqual(obs[0], exp[0])
+        self.assertTupleEqual(obs[1], exp[1])
+
+        obs = list(parse_b6o_file_ext(iter(('Hi there!'))))
+        self.assertEqual(len(obs), 0)
+
+    def test_check_b6o_file(self):
+        b6o = (
+            '# BLAST result:',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+        self.assertIsNone(check_b6o_file(b6o))
+        b6o = ('#hello', '#world!')
+        with self.assertRaises(ValueError) as ctx:
+            check_b6o_file(b6o)
+        self.assertEqual(str(ctx.exception), (
+            'No BLAST hit record is found in the file.'))
+        for b6o in (
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30',
+            '	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/1		100	100	0	0	1	100	225	324	1.2e-30	345',
+            'S1/1	NC_123456	100	0	0	0	1	100	225	324	1.2e-30	345',
+            'S1/1	NC_123456	100	100	0	0	1	100	x	324	1.2e-30	345',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	x	1.2e-30	345',
+            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	x'
+        ):
+            with self.assertRaises(ValueError) as ctx:
+                check_b6o_file((b6o,))
+            self.assertEqual(str(ctx.exception), (
+                f'Invalid BLAST hit record: "{b6o}".'))
+
     def test_parse_paf_file(self):
         paf = iter((
             '# Minimap2 result:',
@@ -382,16 +412,22 @@ class AlignTests(TestCase):
             '	tp:A:P	cm:i:15	s1:i:150	s2:i:120	rl:i:0',
             'S2/1	250	50	200	-	NC_789012	500000	100000	100150	100	150	65'
             '	tp:A:P	cm:i:24	s1:i:214	s2:i:193	rl:i:0',
+            'S2/1	250	50	150	+	NC_345678	1500000	125000	125100	75	100	50'
+            '	tp:A:P	cm:i:7	s1:i:55	s2:i:0	rl:i:0',
             'S2/2	250	0	250	+	NC_789012	500000	99900	100150	245	250	0'
-            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0'))
+            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0',
+            '- the end -'))
         obs = list(parse_paf_file(paf))
         self.assertEqual(len(obs), 4)
-        exp = [('S1/1', 'NC_123456'),
-               ('S1/2', 'NC_123456'),
-               ('S2/1', 'NC_789012'),
-               ('S2/2', 'NC_789012')]
+        exp = [('S1/1', ['NC_123456']),
+               ('S1/2', ['NC_123456']),
+               ('S2/1', ['NC_789012', 'NC_345678']),
+               ('S2/2', ['NC_789012'])]
         for obs_, exp_ in zip(obs, exp):
             self.assertTupleEqual(obs_, exp_)
+
+        obs = list(parse_paf_file(iter(('Hi there!'))))
+        self.assertEqual(len(obs), 0)
 
     def test_parse_paf_file_ext(self):
         paf = iter((
@@ -402,16 +438,23 @@ class AlignTests(TestCase):
             '	tp:A:P	cm:i:15	s1:i:150	s2:i:120	rl:i:0',
             'S2/1	250	50	200	-	NC_789012	500000	100000	100150	100	150	65'
             '	tp:A:P	cm:i:24	s1:i:214	s2:i:193	rl:i:0',
+            'S2/1	250	50	150	+	NC_345678	1500000	125000	125100	75	100	50'
+            '	tp:A:P	cm:i:7	s1:i:55	s2:i:0	rl:i:0',
             'S2/2	250	0	250	+	NC_789012	500000	99900	100150	245	250	0'
-            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0'))
+            '	tp:A:P	cm:i:24	s1:i:282	s2:i:267	rl:i:0',
+            '- the end -'))
         obs = list(parse_paf_file_ext(paf))
         self.assertEqual(len(obs), 4)
-        exp = [('S1/1', 'NC_123456', 20, 75, 1026, 1100),
-               ('S1/2', 'NC_123456', 6, 100, 1201, 1300),
-               ('S2/1', 'NC_789012', 65, 150, 100001, 100150),
-               ('S2/2', 'NC_789012', 0, 250, 99901, 100150)]
+        exp = [('S1/1', [('NC_123456', 20, 75, 1026, 1100)]),
+               ('S1/2', [('NC_123456', 6, 100, 1201, 1300)]),
+               ('S2/1', [('NC_789012', 65, 150, 100001, 100150),
+                         ('NC_345678', 50, 100, 125001, 125100)]),
+               ('S2/2', [('NC_789012', 0, 250, 99901, 100150)])]
         for obs_, exp_ in zip(obs, exp):
             self.assertTupleEqual(obs_, exp_)
+
+        obs = list(parse_paf_file_ext(iter(('Hi there!'))))
+        self.assertEqual(len(obs), 0)
 
     def test_check_paf_file(self):
         paf = (
@@ -443,26 +486,6 @@ class AlignTests(TestCase):
                 check_paf_file((paf,))
             self.assertEqual(str(ctx.exception), (
                 f'Invalid PAF alignment: "{paf}".'))
-
-    def test_parse_kraken(self):
-        kra = ('C	S1	561	150	561:100 A:10 562:40',
-               'U	S2	0	150	1:80 A:40 0:20 A:10')
-        obs = list(parse_kraken(kra))
-        self.assertEqual(len(obs), 1)
-        exp = [('S1', '561')]
-        self.assertTupleEqual(obs[0], exp[0])
-
-    def test_parse_centrifuge(self):
-        cen = ('readID	seqID	taxID	score	2ndBestScore	'
-               'hitLength	queryLength	numMatches',
-               'S1	NC_123456	561	125	0	50	150	1')
-        obs = list(parse_centrifuge(cen))
-        self.assertEqual(len(obs), 1)
-        exp = [('S1', 'NC_123456', 125, 50)]
-        self.assertTupleEqual(obs[0], exp[0])
-
-    def test_parse_sam_file_pd(self):
-        self.assertIsNone(parse_sam_file_pd([]))
 
 
 if __name__ == '__main__':

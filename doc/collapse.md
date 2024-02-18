@@ -45,7 +45,7 @@ With this tool one can achieve the following goals:
 
 3. Convert lower features into higher ones, where each lower feature may correspond to **multiple** higher features. Examples:
    - Convert KEGG [orthologs](https://www.genome.jp/kegg/ko.html) to [pathways](https://www.genome.jp/kegg/pathway.html).
-   - Convert [GO](http://geneontology.org/docs/ontology-documentation/) terms to [GO Slim](http://www-legacy.geneontology.org/GO.slims.shtml) terms.
+   - Convert [GO](https://geneontology.org/docs/ontology-documentation/) terms to [GO subset](https://geneontology.org/docs/go-subset-guide/) terms.
 
 The last usage is an important complement to the main classification workflow, which currently relies on a tree structure and does not support one-to-many mapping. This can be achieved by using the profile collapsing function (although one can only move up one level per run).
 

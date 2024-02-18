@@ -237,9 +237,9 @@ class OrdinalTests(TestCase):
 
     def test_ordinal_parser_dummy(self):
         # b6o (BLAST, DIAMOND, BURST, etc.)
-        b6o = (
+        b6o = iter((
             'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270')
+            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270'))
         obs = ordinal_parser_dummy(b6o, parse_b6o_file_ext)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
         self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})

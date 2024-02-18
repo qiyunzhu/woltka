@@ -34,7 +34,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     fmt : str, optional
         Alignment file format.
     n : int, optional
-        Number of lines per chunk.
+        Number of unique queries per chunk.
     th : float
         Minimum threshold of overlap length : alignment length for a match.
     prefix : bool
@@ -42,7 +42,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
 
     See Also
     --------
-    align.plain_mapper
+    .align.plain_mapper
+    .align.range_mapper
 
     Yields
     ------
@@ -51,8 +52,12 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     dict of set of str
         Subject(s) queue.
     """
-    # determine file format
-    fmt, head = (fmt, []) if fmt else infer_align_format(fh)
+    # determine alignment file format
+    if not fmt:
+        fmt, head = infer_align_format(fh)
+        it = chain(iter(head), fh)
+    else:
+        it = fh
 
     # assign parser for given format
     parser = assign_parser(fmt, ext=True)
@@ -119,19 +124,14 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         # return matching read Ids and gene Ids
         return res.keys(), res.values()
 
-    this = None  # current query Id
-    target = n   # target line number at end of current chunk
+    # target query count at end of current chunk
+    target = n
 
     # parse alignment file
-    for i, row in enumerate(parser(chain(iter(head), fh))):
-        query, subject, _, length, beg, end = row[:6]
+    for i, (query, records) in enumerate(parser(it)):
 
-        # skip if length is not available or zero
-        if not length:
-            continue
-
-        # when query Id changes and chunk limits has been reached
-        if query != this and i >= target:
+        # when chunk limit is reached
+        if i == target:
 
             # flush: match currently cached reads with genes and yield
             yield flush()
@@ -142,19 +142,25 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
             locmap = defaultdict(list)
 
             # next target line number
-            target = i + n
+            target += n
 
-        # append read Id, alignment length and location
-        idx = len(rids)
-        rid_append(query)
+        # extract alignment info
+        for subject, _, length, beg, end in records:
 
-        # effective length = length * th
-        # -int(-x // 1) is equivalent to math.ceil(x) but faster
-        # this value must be >= 1
-        locmap[subject].extend((
-            (beg << 48) + (-int(-length * th // 1) << 31) + idx,
-            (end << 48) + idx))
-        this = query
+            # skip if length is not available or zero
+            if not length:
+                continue
+
+            # append read Id, alignment length and location
+            idx = len(rids)
+            rid_append(query)
+
+            # effective length = length * th
+            # -int(-x // 1) is equivalent to math.ceil(x) but faster
+            # this value must be >= 1
+            locmap[subject].extend((
+                (beg << 48) + (-int(-length * th // 1) << 31) + idx,
+                (end << 48) + idx))
 
     # final flush
     yield flush()
@@ -194,14 +200,14 @@ def ordinal_parser_dummy(fh, parser):
     lenmap = defaultdict(dict)
     locmap = defaultdict(list)
 
-    for row in parser(fh):
-        query, subject, _, length, start, end = row[:6]
-        idx = len(rids)
-        rids.append(query)
-        lenmap[subject][idx] = length
-        locmap[subject].extend((
-            (start, True, False, idx),
-            (end,  False, False, idx)))
+    for query, records in parser(fh):
+        for subject, _, length, beg, end in records:
+            idx = len(rids)
+            rids.append(query)
+            lenmap[subject][idx] = length
+            locmap[subject].extend((
+                (beg,  True, False, idx),
+                (end, False, False, idx)))
 
     return rids, lenmap, locmap
 

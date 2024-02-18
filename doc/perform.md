@@ -14,6 +14,7 @@ Woltka is for handling very large alignment files and complex classification sys
   - [Compress alignment files](#compress-alignment-files)
   - [Keep external decompressors on](#keep-external-decompressors-on)
   - [Convert alignments to simple maps](#convert-alignments-to-simple-maps)
+  - [Streamline alignment and classification](#streamline-alignment-and-classification)
 
 
 ## Runtime and memory estimates
@@ -32,7 +33,7 @@ For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which incl
 
 **TL;DR**: It takes 10 min (structural analysis) or 1 hr ("coord-match" functional analysis) For every 10 GB gzipped SAM files.
 
-In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) following the [SHOGUN](align.md#the-shogun-protocol) protocol against the Web of Life ([WoL](wol.md)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
+In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) following the [SHOGUN](align.md#the-shogun-protocol) protocol against the Web of Life ([WoL](wol.md)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
 
 The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in size. They include **1.05 billion** alignments (lines), with 501 million unique query sequences. They were stored in a hard disk drive (59,000 rpm, SATA 3). The test was performed on with a Xeon E3-1230 v3 CPU (Haswell microarchitecture) and 32 GB DDR3 memory. The software environment was Ubuntu 20.04 with Python 3.10.
 
@@ -162,3 +163,24 @@ Using **xz** | 2:33.65 | 10.664
 It is your call how to balance runtime and map file size.
 
 Warning however, converting alignments to maps will **lose alignment coordinates**, and **blocks "coord-match"** (see [details](ordinal.md)). If these analyses are in your plan, you should keep the alignment files.
+
+### Streamline alignment and classification
+
+The previous protocols assumed that you want to keep the alignments even after running Woltka. This is understandable because you may want to try various Woltka parameters or other programs on these alignments. However, if all you need is the one-off classification results, you may combine sequence alignment and classification into one operation while skipping the generation of alignment files. This can give you a significant saving in disk space and I/O.
+
+Woltka supports standard input (stdin) as input, which makes the following command valid:
+
+```bash
+bowtie2 -x db -U input.fq | woltka classify -i - -o output.biom
+```
+
+In a real study you may have multiple samples to analyze. Utilizing Woltka's features and some Linux tricks, you may create complex but efficient "one-liner" commands like the following:
+
+```bash
+while read id; do seqtk mergepe $id.F.fq.gz $id.R.fq.gz |\
+sed '1~4s/^@/@'$id'_/'; done < ids.txt |\
+bowtie2 -p 8 -x db --interleaved - --very-sensitive --no-head --no-unal |\
+woltka classify -i - -f sam -o output.biom
+```
+
+In this example, a list of sample IDs are recorded in `ids.txt`. Each sample has forward and reverse reads. The `seqtk` command merges paired-end reads into an "interleaved" style. The `sed` command prefixes each sequence ID with the sample ID, making the entire data flow multiplexed before feeding to Bowtie2. Finally, Woltka automatically recognizes the multiplexed samples from the data flow and generates a single output profile.
