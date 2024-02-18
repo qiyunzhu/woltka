@@ -29,7 +29,7 @@ Wolkta supports various types and formats of classification systems, as listed b
 
 3. `--lineage`: Map of taxon to lineage string (`;`-delimited taxa from high to low)
 
-   It can be [Greengenes-style](http://greengenes.secondgenome.com/) taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
+   It can be [Greengenes-style](https://greengenes.secondgenome.com/) taxonomy where rank codes such as `k__` will be parsed. But the rank code is not mandatory. Unassigned taxon (e.g., `s__`) and non-unique taxon are acceptable (e.g., `p__Actinobacteria` and `c__Actinobacteria`).
 
    Compatible with widely-used taxonomy systems in e.g., QIIME, SHOGUN, MetaPhlAn2, GTDB, etc.
 
@@ -172,7 +172,7 @@ Seq2 <tab> k__Bacteria; p__Firmicutes; c__Clostridia
 Seq3 <tab> k__Bacteria; p__Tenericutes; c__Mollicutes
 ```
 
-This format, a.k.a., [Greengenes-style](http://greengenes.secondgenome.com/) lineage, is widely used in bioinformatics tools and databases, such as QIIME, SHOGUN, MetaPhlAn2 and GTDB.
+This format, a.k.a., [Greengenes-style](https://greengenes.secondgenome.com/) lineage, is widely used in bioinformatics tools and databases, such as QIIME, SHOGUN, MetaPhlAn2 and GTDB.
 
 Woltka automatically recognizes the rank codes and convert them to rank names. The eight standard ranks are supported: **k**ingdom; **p**hylum; **c**lass; **o**rder, **f**amily, **g**enus, **s**pecies, and s**t**rain.
 

@@ -4,6 +4,11 @@
 
 ### Added
 - Added native support for PAF file format ([#182](https://github.com/qiyunzhu/woltka/pull/182)).
+- Improved support for interleaved paired-end SAM files ([#191](https://github.com/qiyunzhu/woltka/pull/191)).
+
+### Fixed
+- Updated hyperlinks in documentation.
+
 
 ## Version 0.1.5 (12/25/2022)
 
