@@ -375,5 +375,6 @@ class AlignTests(TestCase):
         obs = list(parse_paf_file_ext(iter(('Hi there!'))))
         self.assertEqual(len(obs), 0)
 
+
 if __name__ == '__main__':
     main()
