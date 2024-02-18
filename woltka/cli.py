@@ -54,8 +54,8 @@ def cli():
 # input files
 @click.option(
     '--format', '-f', 'input_fmt',
-    type=click.Choice(['b6o', 'sam', 'map'], case_sensitive=False),
-    help=('Format of read alignments: "b6o": BLAST tabular format, "sam": SAM '
+    type=click.Choice(['sam', 'b6o', 'paf', 'map'], case_sensitive=False),
+    help=('Format of read alignments: "sam": SAM format, "b6o": BLAST tabular '
           'format, "paf": PAF format, "map": simple query-to-subject map. If '
           'not specified, program will automatically infer from file content.'
           ''))

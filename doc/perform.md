@@ -33,7 +33,7 @@ For the Web of Life ([WoL](https://biocore.github.io/wol/)) database, which incl
 
 **TL;DR**: It takes 10 min (structural analysis) or 1 hr ("coord-match" functional analysis) For every 10 GB gzipped SAM files.
 
-In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) following the [SHOGUN](align.md#the-shogun-protocol) protocol against the Web of Life ([WoL](wol.md)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
+In this example, we started with the [CAMI](https://data.cami-challenge.org/) high complexity toy dataset, which contains 5 samples with 15 Gbp HiSeq sequencing data each. We aligned them using the [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/manual.shtml) following the [SHOGUN](align.md#the-shogun-protocol) protocol against the Web of Life ([WoL](wol.md)) database. This step generates up to 16 high-score alignments (matches) for each query sequence.
 
 The five resulting alignment files (SAM format, gzipped) total **38.6 GB** in size. They include **1.05 billion** alignments (lines), with 501 million unique query sequences. They were stored in a hard disk drive (59,000 rpm, SATA 3). The test was performed on with a Xeon E3-1230 v3 CPU (Haswell microarchitecture) and 32 GB DDR3 memory. The software environment was Ubuntu 20.04 with Python 3.10.
 

@@ -180,7 +180,7 @@ def round_biom(table: biom.Table, digits=0):
 
     See Also
     --------
-    util.rounder
+    .util.rounder
     """
     error = 1e-7 / 10 ** digits if digits else 1e-7
 

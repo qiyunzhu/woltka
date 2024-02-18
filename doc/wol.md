@@ -30,7 +30,7 @@ The following tutorial assumes that you have downloaded the basic or full WoL da
 
 ## Database indexing
 
-The full WoL data release contains a pre-built [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) index which can be directly used (and you can skip this section). The basic release only contains the original genome sequences (`concat.fna.xz`). You will need to build a Bowtie2 index by yourself (see [here](align.md#database-indexing) for details):
+The full WoL data release contains a pre-built [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) index which can be directly used (and you can skip this section). The basic release only contains the original genome sequences (`concat.fna.xz`). You will need to build a Bowtie2 index by yourself (see [here](align.md#database-indexing) for details):
 
 ```bash
 mkdir -p databases/bowtie2
@@ -41,7 +41,7 @@ rm concat.fna
 
 ## Sequence alignment
 
-With an indexed database, you can align your sequencing data (e.g., paired-end sequences `R1.fq` and `R2.fq`) against reference genomes using [Bowtie2](http://bowtie-bio.sourceforge.net/bowtie2/index.shtml) (see [here](align.md#sequence-alignment) for details):
+With an indexed database, you can align your sequencing data (e.g., paired-end sequences `R1.fq` and `R2.fq`) against reference genomes using [Bowtie2](https://bowtie-bio.sourceforge.net/bowtie2/index.shtml) (see [here](align.md#sequence-alignment) for details):
 
 ```bash
 bowtie2 -p 8 -x db -1 R1.fq -2 R2.fq -S output.sam --very-sensitive --no-head --no-unal
