@@ -664,6 +664,30 @@ def parse_map_file(fh, *args):
         yield this, pool
 
 
+def check_map_file(fh):
+    """Check if simple mapping file is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('#'):
+            continue
+        x = line.rstrip().split('\t')
+        if len(x) >= 2 and x[0] and x[1]:
+            count += 1
+    if count == 0:
+        raise ValueError('No mapping is found in the file.')
+
+
 def parse_b6o_file(fh):
     """Parse a BLAST tabular file (b6o) to get basic information.
 
@@ -761,6 +785,44 @@ def parse_b6o_file_ext(fh):
     # foot
     if this is not None:
         yield this, pool
+
+
+def check_b6o_file(fh):
+    """Check if a BLAST tabular file (b6o) is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+
+    Notes
+    -----
+    This function only checks if the file can be parsed by this program. It
+    does not perform a full-scale check following the format's definition.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('#'):
+            continue
+        line = line.rstrip()
+        x = line.split('\t')
+        if not (len(x) >= 12
+                and x[0]              # qseqid: non-empty string
+                and x[1]              # sseqid: non-empty string
+                and is_pos_int(x[3])  # length: positive integer
+                and is_int(x[8])      # sstart: integer
+                and is_int(x[9])      # send: integer
+                and is_float(x[11])   # bitscore: float
+                ):
+            raise ValueError(f'Invalid BLAST hit record: "{line}".')
+        count += 1
+    if count == 0:
+        raise ValueError('No BLAST hit record is found in the file.')
 
 
 def parse_paf_file(fh):
@@ -868,3 +930,42 @@ def parse_paf_file_ext(fh):
     # foot
     if this is not None:
         yield this, pool
+
+
+def check_paf_file(fh):
+    """Check if a PAF file (paf) is valid.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to check.
+
+    Raises
+    ------
+    ValueError
+        If the file format is invalid.
+
+    Notes
+    -----
+    This function only checks if the file can be parsed by this program. It
+    does not perform a full-scale check following the format's definition.
+    """
+    count = 0
+    for line in fh:
+        if line.startswith('#'):
+            continue
+        line = line.rstrip()
+        x = line.split('\t')
+        if not (len(x) >= 12
+                and x[0]               # Query sequence: non-empty string
+                and x[5]               # Target sequence: non-empty string
+                and is_int(x[7])       # Target start: integer
+                and is_int(x[8])       # Target end: integer
+                and int(x[8]) > int(x[7])
+                and is_pos_int(x[10])  # Alignment length: positive integer
+                and is_int(x[11])      # Mapping quality: integer
+                ):
+            raise ValueError(f'Invalid PAF alignment: "{line}".')
+        count += 1
+    if count == 0:
+        raise ValueError('No PAF alignment is found in the file.')
