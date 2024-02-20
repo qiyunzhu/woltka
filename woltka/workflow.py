@@ -305,8 +305,14 @@ def classify(mapper:  object,
                 for sample, (qryque, subque) in rmaps.items():
 
                     # (optional) strip suffixes from subject Ids
-                    subque = deque(map(tuple, map(sorted, strip_suffix(
-                        subque, trimsub) if trimsub else subque)))
+                    if trimsub:
+                        subque = strip_suffix(subque, trimsub)
+
+                    subque = list(map(tuple, subque))
+                    # subque = deque(map(tuple, map(sorted, subque)))
+
+                    # subque = deque(map(tuple, map(sorted, strip_suffix(
+                    #     subque, trimsub) if trimsub else subque)))
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:

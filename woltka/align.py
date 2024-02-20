@@ -13,18 +13,21 @@
 
 Notes
 -----
-A parser function operates on a single line in the input file.
-A parser function returns a tuple of:
-    str : query Id
+A parser function operates on an entire alignment file and yields one unique
+query and its corresponding subject(s) at a time.
+
+A regular parser yields only subject Ids.
+
+A extended parser yields five fields:
     str : subject Id
-    float : alignment score, optional
-    int : alignment length, optional
-    start : alignment start (5') coordinate, optional
-    start : alignment end (3') coordinate, optional
+    float : alignment score
+    int : alignment length,
+    int : alignment start (5') coordinate
+    int : alignment end (3') coordinate
 """
 
 from collections import deque
-from itertools import chain
+from itertools import chain, islice
 from functools import lru_cache
 
 
@@ -57,44 +60,116 @@ def plain_mapper(fh, fmt=None, n=1000):
     # determine alignment file format
     if not fmt:
         fmt, head = infer_align_format(fh)
-        it = chain(iter(head), fh)
-    else:
-        it = fh
+        fh = chain(iter(head), fh)
 
     # assign parser for given format
     parser = assign_parser(fmt)
+    it = parser(fh)
 
-    # query queue and subject(s) queue
-    qryque, subque = deque(), deque()
+    # parse query-subject(s) pairs in chunks
+    while True:
 
-    # pre-load method references
-    qryapd, subapd = qryque.append, subque.append
+        # whether current chunk is completed
+        done = False
 
-    # target query count at end of current chunk
-    target = n
+        # pre-allocate queues
+        qryque, subque = [None] * n, [None] * n
 
-    # parse alignment file
-    for i, (query, subjects) in enumerate(parser(it)):
+        # counter
+        i = 0
 
-        # line number has reached target
-        if i == target:
+        # populate query queue and subject(s) queue of current chunk
+        for query, subjects in it:
+            qryque[i] = query
+            subque[i] = subjects
+            i += 1
+            
+            # complete current chunk
+            if i == n:
+                done = True
+                break
 
-            # flush current queues of queries and subjects
+        # chunk stopped early, i.e., the entire file has been parsed
+        if not done:
+
+            # yield incomplete chunk
+            if i:
+                yield qryque[:i], subque[:i]
+            break
+
+        # yield complete chunk
+        else:
             yield qryque, subque
 
-            # reset queues and method references
-            qryque, subque = deque(), deque()
-            qryapd, subapd = qryque.append, subque.append
 
-            # next target query count
-            target += n
+# def plain_mapper(fh, fmt=None, n=1000):
+#     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
-        # append query and subjects
-        qryapd(query)
-        subapd(set(subjects))
+#     Parameters
+#     ----------
+#     fh : file handle
+#         Alignment file to parse.
+#     fmt : str, optional
+#         Alignment file format.
+#     n : int, optional
+#         Number of unique queries per chunk.
 
-    # final flush
-    yield qryque, subque
+#     Yields
+#     ------
+#     deque of str
+#         Query queue.
+#     deque of set of str
+#         Subject(s) queue.
+
+#     Notes
+#     -----
+#     The design of this function aims to couple with the extremely large size of
+#     typical alignment files. It reads the entire file sequentially, pauses and
+#     processes current cache for every _n_ unique queries, yields and clears
+#     cache, then proceeds.
+#     """
+#     # determine alignment file format
+#     if not fmt:
+#         fmt, head = infer_align_format(fh)
+#         it = chain(iter(head), fh)
+#     else:
+#         it = fh
+
+#     # assign parser for given format
+#     parser = assign_parser(fmt)
+
+#     # query queue and subject(s) queue
+#     qryque, subque = [], []
+
+#     # pre-load method references
+#     qryapd, subapd = qryque.append, subque.append
+
+#     # target query count at end of current chunk
+#     target = n
+
+#     # parse alignment file
+#     # this appears to be faster than itertools.islice
+#     for i, (query, subjects) in enumerate(parser(it)):
+
+#         # line number has reached target
+#         if i == target:
+
+#             # flush current queues of queries and subjects
+#             yield qryque, subque
+
+#             # reset queues and method references
+#             qryque, subque = [], []
+#             qryapd, subapd = qryque.append, subque.append
+
+#             # next target query count
+#             target += n
+
+#         # append query and subjects
+#         qryapd(query)
+#         subapd(subjects)
+
+#     # final flush
+#     yield qryque, subque
 
 
 def range_mapper(fh, fmt=None, n=1000):
@@ -276,7 +351,7 @@ def parse_sam_file(fh):
     ------
     str
         Query.
-    list of str
+    set of str
         Subjects.
 
     Notes
@@ -313,7 +388,7 @@ def parse_sam_file(fh):
     this = None
 
     # current subjects by mate: unpaired, forward, reverse
-    pool = ([], [], [])
+    pool = (set(), set(), set())
 
     # parse body
     for line in it:
@@ -340,10 +415,10 @@ def parse_sam_file(fh):
                 yield this + '/2', pool[2]
 
             # reset query and subjects
-            this, pool = qname, ([], [], [])
+            this, pool = qname, (set(), set(), set())
 
         # add subject to pool
-        pool[mate].append(rname)
+        pool[mate].add(rname)
 
     # final yield
     if pool[0]:
@@ -552,7 +627,7 @@ def parse_map_file(fh, *args):
     ------
     str
         Query.
-    list of str
+    set of str
         Subjects.
 
     Notes
@@ -560,7 +635,7 @@ def parse_map_file(fh, *args):
     Only the first two columns are considered.
     """
     # current query and subjects
-    this, pool = None, []
+    this, pool = None, set()
 
     # find first query (micro-optimization)
     for line in fh:
@@ -571,7 +646,7 @@ def parse_map_file(fh, *args):
             subject, _, _ = rest.partition('\t')
 
             # initialize query
-            this, pool = query, [subject.rstrip()]
+            this, pool = query, {subject.rstrip()}
             break
 
     # iterate over the rest of file
@@ -582,12 +657,12 @@ def parse_map_file(fh, *args):
 
             # if query is the same, add subject to pool
             if query == this:
-                pool.append(subject.rstrip())
+                pool.add(subject.rstrip())
 
             # if not, yield and reset query and subjects
             else:
                 yield this, pool
-                this, pool = query, [subject.rstrip()]
+                this, pool = query, {subject.rstrip()}
 
     # final yield
     if this is not None:
@@ -606,7 +681,7 @@ def parse_b6o_file(fh):
     ------
     str
         Query.
-    list of str
+    set of str
         Subjects.
 
     Notes
@@ -618,7 +693,7 @@ def parse_b6o_file(fh):
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
-    this, pool = None, []
+    this, pool = None, set()
 
     # head
     for line in fh:
@@ -626,7 +701,7 @@ def parse_b6o_file(fh):
             qseqid, sseqid, _ = line.split('\t', 2)
         except ValueError:
             continue
-        this, pool = qseqid, [sseqid]
+        this, pool = qseqid, {sseqid}
         break
 
     # body
@@ -636,10 +711,10 @@ def parse_b6o_file(fh):
         except ValueError:
             continue
         if qseqid == this:
-            pool.append(sseqid)
+            pool.add(sseqid)
         else:
             yield this, pool
-            this, pool = qseqid, [sseqid]
+            this, pool = qseqid, {sseqid}
 
     # foot
     if this is not None:
@@ -705,7 +780,7 @@ def parse_paf_file(fh):
     ------
     str
         Query.
-    list of str
+    set of str
         Subjects.
 
     Notes
@@ -727,7 +802,7 @@ def parse_paf_file(fh):
     .. _PAF format specification:
         https://github.com/lh3/miniasm/blob/master/PAF.md
     """
-    this, pool = None, []
+    this, pool = None, set()
 
     # head
     for line in fh:
@@ -735,7 +810,7 @@ def parse_paf_file(fh):
             qname, _, _, _, _, tname, _ = line.split('\t', 6)
         except ValueError:
             continue
-        this, pool = qname, [tname]
+        this, pool = qname, {tname}
         break
 
     # body
@@ -745,10 +820,10 @@ def parse_paf_file(fh):
         except ValueError:
             continue
         if qname == this:
-            pool.append(tname)
+            pool.add(tname)
         else:
             yield this, pool
-            this, pool = qname, [tname]
+            this, pool = qname, {tname}
 
     # foot
     if this is not None:

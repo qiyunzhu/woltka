@@ -214,11 +214,11 @@ class AlignTests(TestCase):
             'S3	403	NC_345678	261	0	10M5I85M	*	0	0	*	*'))
         obs = list(parse_sam_file(sam))
         self.assertEqual(len(obs), 5)
-        exp = [('S1/1', ['NC_123456']),
-               ('S1/2', ['NC_123456']),
-               ('S2',   ['NC_789012']),
-               ('S3/1', ['NC_123456', 'NC_345678']),
-               ('S3/2', ['NC_123456', 'NC_345678'])]
+        exp = [('S1/1', {'NC_123456'}),
+               ('S1/2', {'NC_123456'}),
+               ('S2',   {'NC_789012'}),
+               ('S3/1', {'NC_123456', 'NC_345678'}),
+               ('S3/2', {'NC_123456', 'NC_345678'})]
         for i in range(5):
             self.assertTupleEqual(obs[i], exp[i])
 
@@ -281,8 +281,8 @@ class AlignTests(TestCase):
             '# end of file'))  # 6th line (not tab-delimited)
         obs = list(parse_map_file(aln))
         self.assertEqual(len(obs), 2)
-        self.assertTupleEqual(obs[0], ('R1', ['G1', 'G2']))
-        self.assertTupleEqual(obs[1], ('R2', ['G3', 'G4']))
+        self.assertTupleEqual(obs[0], ('R1', {'G1', 'G2'}))
+        self.assertTupleEqual(obs[1], ('R2', {'G3', 'G4'}))
 
         obs = list(parse_map_file(iter(('Hi there!'))))
         self.assertEqual(len(obs), 0)
@@ -296,8 +296,8 @@ class AlignTests(TestCase):
             '- the end -'))
         obs = list(parse_b6o_file(b6o))
         self.assertEqual(len(obs), 2)
-        exp = [('S1/1', ['NC_123456']),
-               ('S1/2', ['NC_123456', 'NC_789012'])]
+        exp = [('S1/1', {'NC_123456'}),
+               ('S1/2', {'NC_123456', 'NC_789012'})]
         self.assertTupleEqual(obs[0], exp[0])
         self.assertTupleEqual(obs[1], exp[1])
 
@@ -338,10 +338,10 @@ class AlignTests(TestCase):
             '- the end -'))
         obs = list(parse_paf_file(paf))
         self.assertEqual(len(obs), 4)
-        exp = [('S1/1', ['NC_123456']),
-               ('S1/2', ['NC_123456']),
-               ('S2/1', ['NC_789012', 'NC_345678']),
-               ('S2/2', ['NC_789012'])]
+        exp = [('S1/1', {'NC_123456'}),
+               ('S1/2', {'NC_123456'}),
+               ('S2/1', {'NC_789012', 'NC_345678'}),
+               ('S2/2', {'NC_789012'})]
         for obs_, exp_ in zip(obs, exp):
             self.assertTupleEqual(obs_, exp_)
 
