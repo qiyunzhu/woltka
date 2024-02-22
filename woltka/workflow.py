@@ -316,6 +316,7 @@ def classify(mapper:  object,
                         subque = strip_suffix(subque, trimsub)
 
                     subque = list(map(tuple, subque))
+                    # line below is previous code; why sort? keep for record
                     # subque = list(map(tuple, map(sorted, subque)))
 
                     # (optional) read strata of current sample into cache
