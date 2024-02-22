@@ -11,10 +11,6 @@ Woltka is **deterministic**. Given the same input files and parameters, it alway
 
 The former. Woltka **exhaustively** captures all valid matches from the alignment file(s).
 
-### Are Woltka results consistent across versions?
-
-To date, all Woltka versions (0.1.0 to 0.1.5) generate **identical** output files given the same setting. Later versions are more efficient and have more features, though.
-
 ### How many CPU cores does Woltka use?
 
 Woltka works the best with **two CPU cores**: one for file decompression and the other for classification. This happens automatically. See [here](perform.md#keep-external-decompressors-on) for details.
@@ -38,20 +34,12 @@ Not out-of-the-box. But you can use SAMtools to extract BAM/CRAM files and direc
 samtools view input.bam | woltka classify -i - -o output.biom
 ```
 
-### Does Woltka support [PAF](https://github.com/lh3/miniasm/blob/master/PAF.md) format?
-
-Not out-of-the-box. But you can use the following AWK trick to convert a PAF file into mock BLAST format and feed into Woltka. There will be no percent identity, e-value or bit score, but Woltka doesn't need them anyway.
-
-```bash
-cat input.paf | awk -v OFS="\t" '{print $1,$6,0,$11,0,0,$3+1,$4,$8+1,$9,0,$12}' | woltka classify -i - -o output.biom
-```
-
 ### I ran `woltka classify -i input.fastq ...`, and got an error saying it cannot determine alignment file format. Why?
 
 Woltka takes alignment files as input, NOT original sequencing data (FASTQ, FASTA, etc.). You need to perform alignment on the sequencing data by yourself, such as:
 
 ```bash
-bowtie2 -x db -f input.fastq -S output.sam
+bowtie2 -x db -U input.fastq -S output.sam
 ```
 
 Then feed the resulting alignment(s) into Woltka.

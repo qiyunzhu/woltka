@@ -30,8 +30,9 @@ Option | Description
 --- | ---
 `--format`, `-f` | Format of read alignments. Options: <ul><li>`sam`: [SAM format](https://samtools.github.io/hts-specs/SAMv1.pdf).</li><li>`b6o`: [BLAST tabular format](https://www.ncbi.nlm.nih.gov/books/NBK279684/).</li><li>`paf`: [PAF format](https://github.com/lh3/miniasm/blob/master/PAF.md).</li><li>`map`: A simple map of query \<tab\> subject</li></ul>If not specified, program will automatically infer from file content.
 `--filext`, `-e` | Input filename extension following sample ID.
-`--samples`, `-s` | List of sample IDs to be included.
+`--samples`, `-s` | Sample IDs to include in the analysis. Can be a comma-separated string or path to a list file. Also defines the order of samples in the output.
 `--demux/--no-demux` | Demultiplex alignment by first underscore in query identifier.
+`--exclude`, `-x` | Subject IDs to exclude while parsing alignments. Can be a comma-separated string or path to a list file. If an alignment is hit, the entire query (and its paired mate, if any) will be dropped.
 `--trim-sub` | Trim subject IDs at the last given delimiter. Can accept the default value "_" or enter a custom value.
 
 ### Hierarchies
@@ -96,7 +97,7 @@ Option | Description
 
 Option | Description
 --- | ---
-`--chunk` | Number of alignment lines to read and parse in each chunk. Default: 1,000 for plain mapping, or 1,000,000 for ordinal mapping.
+`--chunk` | Number of unique queries to read and parse in each chunk of an alignment file. Default: 1,000 for plain or range mapping, or 1,000,000 for ordinal mapping.
 `--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1024.
 `--no-exe` | Disable calling external programs (`gzip`, `bzip2` and `xz`) for decompression. Otherwise, Woltka will use them if available for faster processing, or switch back to Python if not.
 

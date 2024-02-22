@@ -18,7 +18,7 @@ output (via `click`) and file input/output, except for raising errors.
 
 from os import makedirs
 from os.path import join, basename, isfile, isdir
-from collections import deque, defaultdict
+from collections import defaultdict
 from functools import partial, lru_cache
 from typing import Tuple
 import click
@@ -48,6 +48,7 @@ def workflow(input_fp:     str,
              input_ext:    str = None,
              samples:      str = None,
              demux:       bool = None,
+             exclude:      set = None,
              trimsub:      str = None,
              # hierarchies
              nodes_fps:   list = [],
@@ -111,6 +112,9 @@ def workflow(input_fp:     str,
     samples, files, demux = parse_samples(
         input_fp, input_ext, samples, demux)
 
+    # parse subjects to exclude
+    exclude = parse_exclude(exclude)
+
     # parse stratification files
     stratmap = parse_strata(strata_dir, samples)
 
@@ -133,8 +137,8 @@ def workflow(input_fp:     str,
     data = classify(
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
-        uniq, major, above, subok, sizes, unassigned, stratmap, chunk, cache,
-        zippers, outcov_dir)
+        uniq, major, above, subok, sizes, unassigned, stratmap, exclude, chunk,
+        cache, zippers, outcov_dir)
 
     # convert counts to fractions
     frac_profiles(data, frac)
@@ -174,6 +178,7 @@ def classify(mapper:  object,
              sizes:     dict = None,
              unasgd:    bool = False,
              stratmap:  dict = None,
+             exclude:    set = None,
              chunk:      int = None,
              cache:      int = 1024,
              zippers:   dict = None,
@@ -234,8 +239,10 @@ def classify(mapper:  object,
         Report unassigned sequences.
     stratmap : dict, optional
         Map of sample ID to stratification file.
+    exclude : set, optional
+        Subjects to exclude while reading an alignment file.
     chunk : int, optional
-        Number of lines per chunk to read from alignment file.
+        Number of queries per chunk to read from an alignment file.
     cache : int, optional
         LRU cache size for classification results at each rank.
     zippers : dict, optional
@@ -290,7 +297,7 @@ def classify(mapper:  object,
             nqry, nstep = 0, -1
 
             # parse alignment file by chunk
-            for qryque, subque in mapper(fh, fmt=fmt, n=chunk):
+            for qryque, subque in mapper(fh, fmt=fmt, excl=exclude, n=chunk):
                 nqry += len(qryque)
 
                 # (optional) demultiplex and generate per-sample maps
@@ -305,8 +312,12 @@ def classify(mapper:  object,
                 for sample, (qryque, subque) in rmaps.items():
 
                     # (optional) strip suffixes from subject Ids
-                    subque = deque(map(tuple, map(sorted, strip_suffix(
-                        subque, trimsub) if trimsub else subque)))
+                    if trimsub:
+                        subque = strip_suffix(subque, trimsub)
+
+                    subque = list(map(tuple, subque))
+                    # line below is previous code; why sort? keep for record
+                    # subque = list(map(tuple, map(sorted, subque)))
 
                     # (optional) read strata of current sample into cache
                     if stratmap and sample != csample:
@@ -465,6 +476,29 @@ def parse_samples(fp:        str,
     return samples, files, demux
 
 
+def parse_exclude(exclude: str = None) -> set:
+    """Get a set of subject IDs to exclude while parsing alignments.
+
+    Parameters
+    ----------
+    exclude : str, optional
+        Comma-separated list of subject IDs, or path to subject ID list file.
+
+    Returns
+    -------
+    set
+        Subject IDs to exclude.
+    """
+    if exclude:
+        if isfile(exclude):
+            with openzip(exclude) as fh:
+                exclude = read_ids(fh)
+        else:
+            exclude = exclude.split(',')
+        click.echo(f'Number of subjects to exclude: {len(exclude)}.')
+        return set(exclude)
+
+
 def parse_strata(fp:       str = None,
                  samples: list = None) -> dict:
     """Get a map of sample Ids to mapping files for stratification.
@@ -511,7 +545,7 @@ def build_mapper(coords_fp:  str = None,
     overlap : int, optional
         Read/gene overlapping percentage threshold.
     chunk : int, optional
-        Number of lines per chunk to read from alignment file.
+        Number of queries per chunk to read from an alignment file.
     zippers : dict, optional
         External compression programs.
 
@@ -822,7 +856,7 @@ def demultiplex(qryque:  list,
 
     Returns
     -------
-    dict of (deque, deque)
+    dict of (list, list)
         Per-sample read-to-subject(s) maps.
 
     Notes
@@ -837,7 +871,7 @@ def demultiplex(qryque:  list,
         samset = set(samples)
 
     # per-sample read and subject(s) queues
-    qryques, subques = defaultdict(deque), defaultdict(deque)
+    qryques, subques = defaultdict(list), defaultdict(list)
 
     # current sample Id (it can be None so start with False)
     csample = False

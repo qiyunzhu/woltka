@@ -11,6 +11,8 @@ Also check out this [guideline](align.md) for sequence alignment generation.
 - [Filename pattern](#filename-pattern)
 - [Sample list](#sample-list)
 - [Demultiplexing](#demultiplexing)
+- [Paired-end reads](#paired-end-reads)
+- [Subject exclusion](#subject-exclusion)
 - [Subject trimming](#subject-trimming)
 
 ## Input filepath
@@ -27,7 +29,6 @@ align/
 ```
 
 2\. A **mapping file** of sample ID \<tab\> alignment file path. The paths must point to existing files. They can either be full paths, or simply filenames under the same directory as the mapping file. For example, one can place a `map.txt` of the following content to where alignment files are located.
-
 
 ```
 S01 <tab> S01.sam.gz
@@ -57,11 +58,11 @@ Woltka supports the following alignment formats (specified by parameter `--forma
 - `map`: A **simple map** in the format of query \<tab\> subject.
 - `sam`: [**SAM**](https://en.wikipedia.org/wiki/SAM_(file_format)) format. Supported by tools such as Bowtie2, BWA and Minimap2.
 - `paf`: [**PAF**](https://github.com/lh3/miniasm/blob/master/PAF.md) format. Supported by tools such as Miniasm and Minimap2.
-- `b6o`: [**BLAST**](https://www.metagenomics.wiki/tools/blast/blastn-output-format-6) tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by tools such as BLAST, DIAMOND and BURST.
+- `b6o`: [**BLAST**](https://www.metagenomics.wiki/tools/blast/blastn-output-format-6) tabular format (i.e., BLAST parameter `-outfmt 6`). Supported by tools such as BLAST, DIAMOND, MMseqs2 and BURST.
 
 If not specified, Woltka will _automatically_ infer the format of input alignment files.
 
-Other formats may be converted into any of these three formats so that Woltka can parse them. Examples include **BAM**, **CRAM** and **PAF**. Here are example [commands](faq.md#input-files).
+Other formats may be converted into any of these three formats so that Woltka can parse them. Examples include **BAM** and **CRAM**. Here are examples [commands](faq.md#input-files).
 
 Woltka supports and automatically detects common file compression formats including `gzip`, `bzip2` and `xz`. Any input files, including alignment files and database files, can be supplied in any of these three formats. This saves disk space and compute.
 
@@ -118,6 +119,51 @@ woltka classify \
   --no-demux \
   --output profile.biom \
   ...
+```
+
+## Paired-end reads
+
+If the input alignment files are in SAM format, Woltka automatically extracts the paired-end information, if any, from the SAM flags, and appends it to the query ID as suffix `/1` (forward) or `/2` (reverse). Alignments will be grouped by their paired-end status. Each status under the same query ID will be treated as one query.
+
+For example, the following section of a SAM file:
+
+QNAME | FLAG | RNAME | ...
+--- | --- | --- | ---
+Q1 |  99 | G1 | ...
+Q1 | 147 | G1 | ...
+Q1 | 355 | G2 | ...
+Q1 | 403 | G2 | ...
+
+Will be converted into a mapping of:
+
+QNAME | RNAME | ...
+--- | --- | ---
+Q1/1 | G1 | ...
+Q1/2 | G1 | ...
+Q1/1 | G2 | ...
+Q1/2 | G2 | ...
+
+And be considered as:
+
+- Query "Q1/1" is simultaneously mapped to subjects "G1" and "G2".
+- Query "Q1/2" is simultaneously mapped to subjects "G1" and "G2".
+
+Note: If the query IDs in an alignment files already have `/1` and `/2` suffixes, these suffixes will not be considered by Woltka as paired-end information. Woltka only respects paired-end information coded in the SAM flags.
+
+## Subject exclusion
+
+Parameter `--exclude` or `-x` lets you specify a set of subject IDs to exclude during alignment file parsing. The value can be a list of subject IDs separated by comma, or a text file containing one subject ID per line. As long as one alignment of a query matches a subject in this set, the entire query (and its paired mate, if any) will be discarded from the analysis, regardless if it simultaneously matches other subjects that are not excluded. This function is useful for removing reads mapped to certain negative filter sequences in the reference database.
+
+For example, you can include the [bacteriophage phiX174](https://en.wikipedia.org/wiki/Phi_X_174) genome ([NC_001422.1](https://www.ncbi.nlm.nih.gov/nuccore/NC_001422.1)) (a common spike-in control for sequencing experiments) in the database, and filter out any reads that are mapped to it:
+
+```bash
+woltka classify ... -x NC_001422.1
+```
+
+For example, you can include the human reference genome [T2T-CHM13v2.0](https://www.ncbi.nlm.nih.gov/datasets/genome/GCF_009914755.1/) in the database, and create a list of its nucleotide accessions (`human.list`). Then you can remove putative human-derived sequences during the analysis with:
+
+```bash
+woltka classify ... -x human.list
 ```
 
 ## Subject trimming

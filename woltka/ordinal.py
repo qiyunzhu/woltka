@@ -15,10 +15,10 @@ from collections import defaultdict
 from itertools import chain
 from bisect import bisect
 
-from .align import infer_align_format, assign_parser
+from .align import iter_align
 
 
-def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
+def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
                    prefix=False):
     """Read an alignment file and match reads and genes in an ordinal system.
 
@@ -32,6 +32,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
         Gene identifiers.
     fmt : str, optional
         Alignment file format.
+    excl : set, optional
+        Subjects to exclude.
     n : int, optional
         Number of unique queries per chunk.
     th : float
@@ -51,15 +53,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     dict of set of str
         Subject(s) queue.
     """
-    # determine alignment file format
-    if not fmt:
-        fmt, head = infer_align_format(fh)
-        it = chain(iter(head), fh)
-    else:
-        it = fh
-
-    # assign parser for given format
-    parser = assign_parser(fmt, ext=True)
+    it = iter_align(fh, fmt, excl, True)
 
     # cached list of query Ids for reverse look-up
     # gene Ids are unique, but read Ids can have duplicates (i.e., one read is
@@ -127,7 +121,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, n=1000000, th=0.8,
     target = n
 
     # parse alignment file
-    for i, (query, records) in enumerate(parser(it)):
+    for i, (query, records) in enumerate(it):
 
         # when chunk limit is reached
         if i == target:
