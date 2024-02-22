@@ -9,6 +9,10 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}-latest
+    defaults:
+      run:
+        shell: bash -l {0}
+
     strategy:
       max-parallel: 5
       matrix:
