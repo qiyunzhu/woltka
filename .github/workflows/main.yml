@@ -16,8 +16,10 @@ jobs:
         python-version: ['3.6', '3.8', '3.10', '3.12']
 
     steps:
-      - name: Set up Conda
+      - name: Check out repo
         uses: actions/checkout@v4
+
+      - name: Set up Conda
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
