@@ -76,6 +76,14 @@ class AlignTests(TestCase):
                (['R4', 'R5'], [{'G4'}, {'G5'}]))
         self.assertTupleEqual(_res2lst(obs), exp)
 
+        # chunk of 4
+        aln.seek(0)
+        obs = plain_mapper(aln, n=4)
+        exp = ((['R1', 'R2', 'R3', 'R4'],
+                [{'G1'}, {'G1', 'G2'}, {'G1', 'G3'}, {'G4'}]),
+               (['R5'], [{'G5'}]))
+        self.assertTupleEqual(_res2lst(obs), exp)
+
         # chunk of 5
         aln.seek(0)
         obs = plain_mapper(aln, n=5)
@@ -129,6 +137,14 @@ class AlignTests(TestCase):
                ('R5', {'G3': [30, 49, 50, 69]})]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
         self.assertListEqual(list(obs[1]), [x[1] for x in exp])
+
+        # chunk of 3
+        aln.seek(0)
+        obs = _res2lst(range_mapper(aln, n=3))
+        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:3]])
+        self.assertListEqual(list(obs[0][1]), [x[1] for x in exp[:3]])
+        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[3:]])
+        self.assertListEqual(list(obs[1][1]), [x[1] for x in exp[3:]])
 
         # specify format
         aln.seek(0)
