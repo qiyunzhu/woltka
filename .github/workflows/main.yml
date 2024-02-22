@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Set up Conda
-      - uses: actions/checkout@v4
+        uses: actions/checkout@v4
         uses: conda-incubator/setup-miniconda@v3
         with:
           auto-update-conda: true
