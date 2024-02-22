@@ -104,7 +104,7 @@ def plain_mapper(fh, fmt=None, excl=None, n=1000):
             # yield incomplete chunk
             if i:
                 yield qryque[:i], subque[:i]
-            break
+            break  # pragma: no cover
 
         # yield complete chunk
         else:
@@ -174,7 +174,7 @@ def range_mapper(fh, fmt=None, excl=None, n=1000):
         if not done:
             if i:
                 yield qryque[:i], subque[:i]
-            break
+            break  # pragma: no cover
         else:
             yield qryque, subque
 
