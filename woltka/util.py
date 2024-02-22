@@ -89,8 +89,9 @@ def sum_dict(dic, other):
     --------
     update_dict
     """
+    dic_get = dic.get
     for key, value in other.items():
-        dic[key] = dic.get(key, 0) + value
+        dic[key] = dic_get(key, 0) + value
 
 
 def scale_factor(s):

@@ -62,7 +62,7 @@ Simple read-gene matching, with Numba [acceleration](install.md#acceleration) | 
 
 Two Woltka parameters visibly impacts Woltka's speed:
 
-- `--chunk` | Number of alignment lines to read and parse in each chunk. Default: one thousand for plain mapping, or one million for ordinal mapping.
+- `--chunk` | Number of unique queries to read and parse in each chunk of an alignment file. Default: 1,000 for plain or range mapping, or 1,000,000 for ordinal mapping.
 - `--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1024.
 
 Their default values were set based on our experience. However, alternative values could improve (or reduce) performance depending on the computer hardware, input file type, and database capacity. if you plan to routinely process bulks of biological big data using the same setting, we recommend that you do a few test runs on a small dataset and find out the values that work the best for you.

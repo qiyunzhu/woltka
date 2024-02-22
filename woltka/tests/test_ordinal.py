@@ -20,7 +20,7 @@ from io import StringIO
 from functools import partial
 
 from woltka.file import openzip
-from woltka.align import parse_b6o_file_ext, parse_sam_file_ext
+from woltka.align import parse_b6o_file_ex, parse_sam_file_ex
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
     match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
@@ -240,7 +240,7 @@ class OrdinalTests(TestCase):
         b6o = iter((
             'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
             'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270'))
-        obs = ordinal_parser_dummy(b6o, parse_b6o_file_ext)
+        obs = ordinal_parser_dummy(b6o, parse_b6o_file_ex)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
         self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
         self.assertDictEqual(obs[2], {'NC_123456': [
@@ -259,7 +259,7 @@ class OrdinalTests(TestCase):
             'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
             # unaligned
             'S2	16	*	0	0	*	*	0	0	*	*'))
-        obs = ordinal_parser_dummy(sam, parse_sam_file_ext)
+        obs = ordinal_parser_dummy(sam, parse_sam_file_ex)
         self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
         self.assertDictEqual(obs[1], {
             'NC_123456': {0: 100, 1: 80},

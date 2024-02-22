@@ -21,9 +21,10 @@ from biom import load_table
 from pandas.testing import assert_frame_equal
 
 from woltka.workflow import (
-    workflow, classify, parse_samples, parse_strata, build_mapper, parse_sizes,
-    prepare_ranks, build_hierarchy, assign_readmap, strip_suffix, demultiplex,
-    read_strata, frac_profiles, scale_profiles, round_profiles, write_profiles)
+    workflow, classify, parse_samples, parse_exclude, parse_strata,
+    build_mapper, parse_sizes, prepare_ranks, build_hierarchy, assign_readmap,
+    strip_suffix, demultiplex, read_strata, frac_profiles, scale_profiles,
+    round_profiles, write_profiles)
 
 
 class WorkflowTests(TestCase):
@@ -253,6 +254,22 @@ class WorkflowTests(TestCase):
             parse_samples('im/not/path')
         self.assertEqual(str(ctx.exception), (
             '"im/not/path" is not a valid file or directory.'))
+
+    def test_parse_exclude(self):
+        self.assertIsNone(parse_exclude())
+
+        # comma-separated subjects
+        obs = parse_exclude('G1,G2,G3')
+        self.assertSetEqual(obs, {'G1', 'G2', 'G3'})
+
+        # subject list file
+        fp = join(self.tmpdir, 'exclude.list')
+        with open(fp, 'w') as f:
+            for x in ('G1', 'G2', 'G3'):
+                print(x, file=f)
+        obs = parse_exclude(fp)
+        self.assertSetEqual(obs, {'G1', 'G2', 'G3'})
+        remove(fp)
 
     def test_parse_strata(self):
         # default

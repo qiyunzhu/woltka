@@ -2,9 +2,14 @@
 
 ## Ongoing
 
+### Changed
+- Improved performance moderately ([#192](https://github.com/qiyunzhu/woltka/pull/192)).
+- Parameter `--chunk` is now the number of unique query sequences instead of the number of lines ([#192](https://github.com/qiyunzhu/woltka/pull/192)).
+
 ### Added
+- Added parameter `-x|--exclude`, which will exclude query sequences that are mapped to given reference sequences (such as host genome, spike-in, vector, etc.) ([#192](https://github.com/qiyunzhu/woltka/pull/192)).
+- Added support for interleaved paired-end SAM files ([#191](https://github.com/qiyunzhu/woltka/pull/191)).
 - Added native support for PAF file format ([#182](https://github.com/qiyunzhu/woltka/pull/182)).
-- Improved support for interleaved paired-end SAM files ([#191](https://github.com/qiyunzhu/woltka/pull/191)).
 
 ### Fixed
 - Updated hyperlinks in documentation.

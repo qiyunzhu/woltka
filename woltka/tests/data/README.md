@@ -42,7 +42,7 @@ In addition, `nucl/` contains the mappings from nucleotide sequence accessions (
 
 Woltka output files generated from the provided alignments and classification systems. The commands for generating those files are:
 
-`bowtie2.ogu.tsv`: Generate an [OGU table](../../../doc/ogu.md) (just assign, don't classify).
+`bowtie2.ogu.tsv`: Generate an [OGU table](../../../doc/ogu.md) (just assign, don't classify) from Bowtie2 alignment results.
 
 ```bash
 woltka classify -i align/bowtie2 -o bowtie2.ogu.tsv
@@ -80,7 +80,7 @@ woltka classify \
 
 `blastn.species.biom`: Same as above, replacing `.tsv` with `.biom`.
 
-`burst.genus.tsv`:
+`burst.genus.tsv`: Taxonomic profiling of BURST alignment results (in the standard BLAST tabular format) using the NCBI taxonomy database.
 
 ```bash
 woltka classify \
@@ -125,6 +125,12 @@ woltka classify \
   --scale 1M \
   --digits 3 \
   --output bt2sho.order.cpm.tsv
+```
+
+`bt2sho.filt.ogu.tsv`: Filter out all reads that are mapped to reference sequence "G000215745" prior to classification. If a read is simultaneously mapped to multiple reference sequences, as long as one of them is "G000215745", all results will be discarded.
+
+```bash
+woltka classify -i align/bt2sho -x G000215745 -o bt2sho.filt.ogu.tsv
 ```
 
 `burst.process.tsv`: Functional profiling to GO biological processes.

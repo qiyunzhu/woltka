@@ -64,10 +64,17 @@ def cli():
     help='Input filename extension following sample ID.')
 @click.option(
     '--samples', '-s', type=click.STRING,
-    help='List of sample IDs to be included.')
+    help=('Sample IDs to include in the analysis. Can be a comma-separated '
+          'string or path to a list file. Also defines the order of samples '
+          'in the output.'))
 @click.option(
     '--demux/--no-demux', default=None,
     help='Demultiplex alignment by first underscore in query identifier.')
+@click.option(
+    '--exclude', '-x', type=click.STRING,
+    help=('Subject IDs to exclude while parsing alignments. Can be a comma-'
+          'separated string or path to a list file. If an alignment is hit, '
+          'the entire query (and its paired mate, if any) will be dropped.'))
 @click.option(
     '--trim-sub', 'trimsub', is_flag=False, flag_value='_',
     help=('Trim subject IDs at the last given delimiter. Default: "_", or '
@@ -175,7 +182,7 @@ def cli():
 # performance
 @click.option(
     '--chunk', type=click.INT, default=None,
-    help='Number of alignment lines to read and parse in each chunk.')
+    help='Number of queries to read and parse in each chunk of alignment.')
 @click.option(
     '--cache', type=click.INT, default=1024,
     help='Number of recent results to cache for faster classification.')

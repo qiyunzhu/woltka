@@ -16,22 +16,36 @@ Notes
 A parser function operates on an entire alignment file and yields one unique
 query and its corresponding subject(s) at a time.
 
-A regular parser yields only subject Ids.
+This script supports four alignment file formats:
+    simple mapping file (map)
+    BLAST tabular file (b6o)
+    PAF file (paf)
+    SAM file (sam)
 
-A extended parser yields five fields:
+For each format there are four variants of parser:
+    base : regular parser
+    base_ex : extended parser
+    base_ft : regular parser with filtering
+    base_ex_ft : extended parser with filtering
+* note: map format does not have ex mode
+
+A regular parser yields only subject Ids.
+A extended parser yields records with five fields:
     str : subject Id
     float : alignment score
-    int : alignment length,
+    int : alignment length
     int : alignment start (5') coordinate
     int : alignment end (3') coordinate
+
+In filter mode, if a subject is found in a given exclusion set, the entire
+unique query will be dropped.
 """
 
-from collections import deque
-from itertools import chain, islice
+from itertools import chain
 from functools import lru_cache
 
 
-def plain_mapper(fh, fmt=None, n=1000):
+def plain_mapper(fh, fmt=None, excl=None, n=1000):
     """Read an alignment file in chunks and yield query-to-subject(s) maps.
 
     Parameters
@@ -40,14 +54,16 @@ def plain_mapper(fh, fmt=None, n=1000):
         Alignment file to parse.
     fmt : str, optional
         Alignment file format.
+    excl : set, optional
+        Subjects to exclude.
     n : int, optional
         Number of unique queries per chunk.
 
     Yields
     ------
-    deque of str
+    list of str
         Query queue.
-    deque of set of str
+    list of set of str
         Subject(s) queue.
 
     Notes
@@ -57,14 +73,7 @@ def plain_mapper(fh, fmt=None, n=1000):
     processes current cache for every _n_ unique queries, yields and clears
     cache, then proceeds.
     """
-    # determine alignment file format
-    if not fmt:
-        fmt, head = infer_align_format(fh)
-        fh = chain(iter(head), fh)
-
-    # assign parser for given format
-    parser = assign_parser(fmt)
-    it = parser(fh)
+    it = iter_align(fh, fmt, excl)
 
     # parse query-subject(s) pairs in chunks
     while True:
@@ -83,7 +92,7 @@ def plain_mapper(fh, fmt=None, n=1000):
             qryque[i] = query
             subque[i] = subjects
             i += 1
-            
+
             # complete current chunk
             if i == n:
                 done = True
@@ -102,77 +111,7 @@ def plain_mapper(fh, fmt=None, n=1000):
             yield qryque, subque
 
 
-# def plain_mapper(fh, fmt=None, n=1000):
-#     """Read an alignment file in chunks and yield query-to-subject(s) maps.
-
-#     Parameters
-#     ----------
-#     fh : file handle
-#         Alignment file to parse.
-#     fmt : str, optional
-#         Alignment file format.
-#     n : int, optional
-#         Number of unique queries per chunk.
-
-#     Yields
-#     ------
-#     deque of str
-#         Query queue.
-#     deque of set of str
-#         Subject(s) queue.
-
-#     Notes
-#     -----
-#     The design of this function aims to couple with the extremely large size of
-#     typical alignment files. It reads the entire file sequentially, pauses and
-#     processes current cache for every _n_ unique queries, yields and clears
-#     cache, then proceeds.
-#     """
-#     # determine alignment file format
-#     if not fmt:
-#         fmt, head = infer_align_format(fh)
-#         it = chain(iter(head), fh)
-#     else:
-#         it = fh
-
-#     # assign parser for given format
-#     parser = assign_parser(fmt)
-
-#     # query queue and subject(s) queue
-#     qryque, subque = [], []
-
-#     # pre-load method references
-#     qryapd, subapd = qryque.append, subque.append
-
-#     # target query count at end of current chunk
-#     target = n
-
-#     # parse alignment file
-#     # this appears to be faster than itertools.islice
-#     for i, (query, subjects) in enumerate(parser(it)):
-
-#         # line number has reached target
-#         if i == target:
-
-#             # flush current queues of queries and subjects
-#             yield qryque, subque
-
-#             # reset queues and method references
-#             qryque, subque = [], []
-#             qryapd, subapd = qryque.append, subque.append
-
-#             # next target query count
-#             target += n
-
-#         # append query and subjects
-#         qryapd(query)
-#         subapd(subjects)
-
-#     # final flush
-#     yield qryque, subque
-
-
-def range_mapper(fh, fmt=None, n=1000):
+def range_mapper(fh, fmt=None, excl=None, n=1000):
     """Read an alignment file and yield maps of query to subject(s) and their
     ranges.
 
@@ -182,14 +121,16 @@ def range_mapper(fh, fmt=None, n=1000):
         Alignment file to parse.
     fmt : str, optional
         Alignment file format.
+    excl : set, optional
+        Subjects to exclude.
     n : int, optional
         Number of unique queries per chunk.
 
     Yields
     ------
-    deque of str
+    list of str
         Query queue.
-    deque of dict of str to list of int
+    list of dict of list of int
         Subject-to-ranges queue.
 
     Notes
@@ -204,39 +145,73 @@ def range_mapper(fh, fmt=None, n=1000):
     plain_mapper
     .coverage.merge_ranges
     """
+    it = iter_align(fh, fmt, excl, True)
+    while True:
+        i, done = 0, False
+        qryque, subque = [None] * n, [None] * n
+        for query, records in it:
+
+            # generate a mapping of subjects to interleaved starts and ends
+            ranges = {}
+            for subject, _, _, start, end in records:
+
+                # start and end must be positive integers
+                if start and end:
+
+                    # combine ranges on the same subject
+                    ranges.setdefault(subject, []).extend((start, end))
+
+            # append query and ranges
+            if ranges:
+                qryque[i] = query
+                subque[i] = ranges
+
+                i += 1
+                if i == n:
+                    done = True
+                    break
+
+        if not done:
+            if i:
+                yield qryque[:i], subque[:i]
+            break
+        else:
+            yield qryque, subque
+
+
+def iter_align(fh, fmt=None, excl=None, extr=None):
+    """Generate an iterator of alignment file content.
+
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    fmt : str, optional
+        Alignment file format.
+    excl : set, optional
+        Subjects to exclude.
+    extr : bool, optional
+        Whether to get extra information.
+
+    Yields
+    ------
+    iterator
+        Alignment file content iterator.
+    """
+    # determine alignment file format
     if not fmt:
         fmt, head = infer_align_format(fh)
         it = chain(iter(head), fh)
     else:
         it = fh
-    parser = assign_parser(fmt, ext=True)
-    qryque, subque = deque(), deque()
-    qryapd, subapd = qryque.append, subque.append
 
-    target = n
-    for i, (query, records) in enumerate(parser(it)):
-        if i == target:
-            yield qryque, subque
-            qryque, subque = deque(), deque()
-            qryapd, subapd = qryque.append, subque.append
-            target += n
-
-        # generate a mapping of subjects to interleaved starts and ends
-        ranges = {}
-        for subject, _, _, start, end in records:
-
-            # start and end must be positive integers
-            if start and end:
-
-                # combine ranges on the same subject
-                ranges.setdefault(subject, []).extend((start, end))
-
-        # append query and ranges
-        if ranges:
-            qryapd(query)
-            subapd(ranges)
-
-    yield qryque, subque
+    # assign parser for given format
+    if not excl:
+        parser = assign_parser(fmt, extr=extr)
+        return parser(it)
+    else:
+        parser = assign_parser(fmt, extr=extr, filt=True)
+        return parser(it, excl)
 
 
 def infer_align_format(fh):
@@ -312,15 +287,17 @@ def infer_align_format(fh):
     raise ValueError('Cannot determine alignment file format.')
 
 
-def assign_parser(fmt, ext=False):
+def assign_parser(fmt, extr=False, filt=False):
     """Assign parser function based on format code.
 
     Parameters
     ----------
     fmt : str
         Alignment file format code.
-    ext : bool, optional
+    extr : bool, optional
         Whether to get extra information.
+    filt : bool, optional
+        Whether to filter subjects.
 
     Returns
     -------
@@ -328,19 +305,22 @@ def assign_parser(fmt, ext=False):
         Alignment parser function.
     """
     if fmt == 'map':  # simple map of query <tab> subject
-        return parse_map_file
+        return parse_map_file_ft if filt else parse_map_file
     if fmt == 'b6o':  # BLAST format
-        return parse_b6o_file_ext if ext else parse_b6o_file
+        return ((parse_b6o_file_ex_ft if filt else parse_b6o_file_ex) if extr
+                else (parse_b6o_file_ft if filt else parse_b6o_file))
     elif fmt == 'sam':  # SAM format
-        return parse_sam_file_ext if ext else parse_sam_file
+        return ((parse_sam_file_ex_ft if filt else parse_sam_file_ex) if extr
+                else (parse_sam_file_ft if filt else parse_sam_file))
     elif fmt == 'paf':  # PAF format
-        return parse_paf_file_ext if ext else parse_paf_file
+        return ((parse_paf_file_ex_ft if filt else parse_paf_file_ex) if extr
+                else (parse_paf_file_ft if filt else parse_paf_file))
     else:
         raise ValueError(f'Invalid format code: "{fmt}".')
 
 
 def parse_sam_file(fh):
-    """Parse a SAM file (sam) to get basic information.
+    """Parse a SAM file to get basic information.
 
     Parameters
     ----------
@@ -403,7 +383,7 @@ def parse_sam_file(fh):
         # extract mate from flag (forward: bit 6; reverse: bit 7)
         mate = int(flag) >> 6 & 3
 
-        # previous query completes
+        # previous query completes, new query starts
         if qname != this:
 
             # yield query and subjects
@@ -429,8 +409,8 @@ def parse_sam_file(fh):
         yield this + '/2', pool[2]
 
 
-def parse_sam_file_ext(fh):
-    """Parse a SAM file (sam) to get extra information.
+def parse_sam_file_ex(fh):
+    """Parse a SAM file to get extra information.
 
     Parameters
     ----------
@@ -449,7 +429,6 @@ def parse_sam_file_ext(fh):
         if line[0] != '@':
             last = line
             break
-
     it = chain([last], fh) if last else fh
 
     this, pool = None, ([], [], [])
@@ -481,6 +460,147 @@ def parse_sam_file_ext(fh):
         pool[mate].append((rname, None, length, pos, pos + offset - 1))
 
     # final yield
+    if pool[0]:
+        yield this, pool[0]
+    if pool[1]:
+        yield this + '/1', pool[1]
+    if pool[2]:
+        yield this + '/2', pool[2]
+
+
+def parse_sam_file_ft(fh, excl):
+    """Parse a SAM file to get basic information, while filtering.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    set of str
+        Subjects.
+
+    See Also
+    --------
+    parse_sam_file
+    parse_map_file_ft
+
+    Notes
+    -----
+    When a query is marked for exclusion, all corresponding unpaired, forward
+    and reverse records will be excluded.
+    """
+    last = None
+    for line in fh:
+        if line[0] != '@':
+            last = line
+            break
+    it = chain([last], fh) if last else fh
+
+    this, keep, pool = None, True, (set(), set(), set())
+    for line in it:
+        qname, flag, rname, _ = line.split('\t', 3)
+        if rname == '*':
+            continue
+
+        # 1st record of a query
+        if qname != this:
+            if keep:
+                if pool[0]:
+                    yield this, pool[0]
+                if pool[1]:
+                    yield this + '/1', pool[1]
+                if pool[2]:
+                    yield this + '/2', pool[2]
+            this = qname
+            keep = rname not in excl
+            if keep:
+                pool = (set(), set(), set())
+                pool[int(flag) >> 6 & 3].add(rname)
+
+        # 2nd to last records of a query
+        elif keep:
+            if rname in excl:
+                keep = False
+            else:
+                pool[int(flag) >> 6 & 3].add(rname)
+
+    # final yield
+    if keep:
+        if pool[0]:
+            yield this, pool[0]
+        if pool[1]:
+            yield this + '/1', pool[1]
+        if pool[2]:
+            yield this + '/2', pool[2]
+
+
+def parse_sam_file_ex_ft(fh, excl):
+    """Parse a SAM file to get extra information, while filtering.
+
+    Parameters
+    ----------
+    fh : file handle
+        SAM file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    list of (str, None, int, int, int)
+        Records of (subject, None, length, start, end).
+
+    See Also
+    --------
+    parse_sam_file_ex
+    parse_map_file_ft
+    """
+    last = None
+    for line in fh:
+        if line[0] != '@':
+            last = line
+            break
+    it = chain([last], fh) if last else fh
+
+    this, keep, pool = None, True, ([], [], [])
+    for line in it:
+        qname, flag, rname, pos, _, cigar, _ = line.split('\t', 6)
+        if rname == '*':
+            continue
+
+        if qname != this:
+            if keep:
+                if pool[0]:
+                    yield this, pool[0]
+                if pool[1]:
+                    yield this + '/1', pool[1]
+                if pool[2]:
+                    yield this + '/2', pool[2]
+            this = qname
+            keep = rname not in excl
+            if keep:
+                pool = ([], [], [])
+                pos = int(pos)
+                length, offset = cigar_to_lens(cigar)
+                pool[int(flag) >> 6 & 3].append((
+                    rname, None, length, pos, pos + offset - 1))
+
+        elif keep:
+            if rname in excl:
+                keep = False
+            else:
+                pos = int(pos)
+                length, offset = cigar_to_lens(cigar)
+                pool[int(flag) >> 6 & 3].append((
+                    rname, None, length, pos, pos + offset - 1))
+
     if pool[0]:
         yield this, pool[0]
     if pool[1]:
@@ -669,8 +789,84 @@ def parse_map_file(fh, *args):
         yield this, pool
 
 
+def parse_map_file_ft(fh, excl):
+    """Parse a simple mapping file, while excluding given subjects.
+
+    Parameters
+    ----------
+    fh : file handle
+        Mapping file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    set of str
+        Subjects.
+
+    See Also
+    --------
+    parse_map_file
+    """
+    this, pool = None, set()
+
+    # whether current query should be kept
+    # i.e., subject(s) are not found in the exclusion set so far
+    keep = True
+
+    # head
+    for line in fh:
+        query, found, rest = line.partition('\t')
+        if found:
+            subject, _, _ = rest.partition('\t')
+            subject = subject.rstrip()
+            this = query
+
+            # if one subject is found in the exclusion set, the entire query
+            # (which may have multiple subjects) will not be kept
+            if subject in excl:
+                keep = False
+            else:
+                pool.add(subject)
+            break
+
+    # body
+    for line in fh:
+        query, found, rest = line.partition('\t')
+        if found:
+            subject, _, _ = rest.partition('\t')
+            subject = subject.rstrip()
+            if query != this:
+
+                # yield only if current query is kept (i.e., no subject is
+                # excluded)
+                if keep:
+                    yield this, pool
+
+                # reset status for the next unique query
+                # (no need to reset pool if subject is excluded)
+                this = query
+                keep = subject not in excl
+                if keep:
+                    pool = {subject}
+
+            # proceed with the rest of subjects only if current query is still
+            # kept, but will stop if current subject is excluded
+            elif keep:
+                if subject in excl:
+                    keep = False
+                else:
+                    pool.add(subject)
+
+    # foot
+    if this is not None and keep:
+        yield this, pool
+
+
 def parse_b6o_file(fh):
-    """Parse a BLAST tabular file (b6o) to get basic information.
+    """Parse a BLAST tabular file to get basic information.
 
     Parameters
     ----------
@@ -721,7 +917,7 @@ def parse_b6o_file(fh):
         yield this, pool
 
 
-def parse_b6o_file_ext(fh):
+def parse_b6o_file_ex(fh):
     """Parse a BLAST tabular file (b6o) to get extra information.
 
     Parameters
@@ -735,6 +931,10 @@ def parse_b6o_file_ext(fh):
         Query.
     list of (str, float, int, int, int)
         Records of (subject, score, length, start, end).
+
+    See Also
+    --------
+    parse_b6o_file
     """
     this, pool = None, []
 
@@ -768,8 +968,134 @@ def parse_b6o_file_ext(fh):
         yield this, pool
 
 
+def parse_b6o_file_ft(fh, excl):
+    """Parse a BLAST tabular file to get basic information, while filtering.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    set of str
+        Subjects.
+
+    See Also
+    --------
+    parse_b6o_file
+    parse_map_file_ft
+    """
+    this, keep, pool = None, True, set()
+
+    # head
+    for line in fh:
+        try:
+            qseqid, sseqid, _ = line.split('\t', 2)
+        except ValueError:
+            continue
+        this = qseqid
+        if sseqid in excl:
+            keep = False
+        else:
+            pool.add(sseqid)
+        break
+
+    # body
+    for line in fh:
+        try:
+            qseqid, sseqid, _ = line.split('\t', 2)
+        except ValueError:
+            continue
+        if qseqid != this:
+            if keep:
+                yield this, pool
+            this = qseqid
+            keep = sseqid not in excl
+            if keep:
+                pool = {sseqid}
+        elif keep:
+            if sseqid in excl:
+                keep = False
+            else:
+                pool.add(sseqid)
+
+    # foot
+    if this is not None and keep:
+        yield this, pool
+
+
+def parse_b6o_file_ex_ft(fh, excl):
+    """Parse a BLAST tabular file to get extra information, while filtering.
+
+    Parameters
+    ----------
+    fh : file handle
+        BLAST tabular file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    list of (str, float, int, int, int)
+        Records of (subject, score, length, start, end).
+
+    See Also
+    --------
+    parse_b6o_file_ex
+    parse_b6o_file_ft
+    """
+    this, keep, pool = None, True, []
+
+    # head
+    for line in fh:
+        x = line.split('\t')
+        try:
+            qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
+        except IndexError:
+            continue
+        this = qseqid
+        if sseqid in excl:
+            keep = False
+        else:
+            sstart, send = sorted((int(x[8]), int(x[9])))
+            pool.append((sseqid, score, length, sstart, send))
+        break
+
+    # body
+    for line in fh:
+        x = line.split('\t')
+        try:
+            qseqid, sseqid, length, score = x[0], x[1], int(x[3]), float(x[11])
+        except IndexError:
+            continue
+        sstart, send = sorted((int(x[8]), int(x[9])))
+        if qseqid != this:
+            if keep:
+                yield this, pool
+            this = qseqid
+            keep = sseqid not in excl
+            if keep:
+                pool = [(sseqid, score, length, sstart, send)]
+        elif keep:
+            if sseqid in excl:
+                keep = False
+            else:
+                pool.append((sseqid, score, length, sstart, send))
+
+    # foot
+    if this is not None and keep:
+        yield this, pool
+
+
 def parse_paf_file(fh):
-    """Parse a PAF file (paf) to get basic information.
+    """Parse a PAF file to get basic information.
 
     Parameters
     ----------
@@ -830,7 +1156,7 @@ def parse_paf_file(fh):
         yield this, pool
 
 
-def parse_paf_file_ext(fh):
+def parse_paf_file_ex(fh):
     """Parse a PAF file (paf) to get extra information.
 
     Parameters
@@ -851,25 +1177,150 @@ def parse_paf_file_ext(fh):
     for line in fh:
         x = line.split('\t')
         try:
-            rec = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
         except (IndexError, ValueError):
             continue
-        this, pool = x[0], [rec]
+        this, pool = x[0], [record]
         break
 
     # body
     for line in fh:
         x = line.split('\t')
         try:
-            rec = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
         except (IndexError, ValueError):
             continue
         if x[0] == this:
-            pool.append(rec)
+            pool.append(record)
         else:
             yield this, pool
-            this, pool = x[0], [rec]
+            this, pool = x[0], [record]
 
     # foot
     if this is not None:
+        yield this, pool
+
+
+def parse_paf_file_ft(fh, excl):
+    """Parse a PAF file to get basic information, while filtering.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    set of str
+        Subjects.
+
+    See Also
+    --------
+    parse_paf_file
+    parse_map_file_ft
+    """
+    this, keep, pool = None, True, set()
+
+    # head
+    for line in fh:
+        try:
+            qname, _, _, _, _, tname, _ = line.split('\t', 6)
+        except ValueError:
+            continue
+        this = qname
+        if tname in excl:
+            keep = False
+        else:
+            pool.add(tname)
+        break
+
+    # body
+    for line in fh:
+        try:
+            qname, _, _, _, _, tname, _ = line.split('\t', 6)
+        except ValueError:
+            continue
+        if qname != this:
+            if keep:
+                yield this, pool
+            this = qname
+            keep = tname not in excl
+            if keep:
+                pool = {tname}
+        elif keep:
+            if tname in excl:
+                keep = False
+            else:
+                pool.add(tname)
+
+    # foot
+    if this is not None and keep:
+        yield this, pool
+
+
+def parse_paf_file_ex_ft(fh, excl):
+    """Parse a PAF file to get extra information, while filtering.
+
+    Parameters
+    ----------
+    fh : file handle
+        PAF file to parse.
+    excl : set
+        Subjects to exclude.
+
+    Yields
+    ------
+    str
+        Query.
+    list of (str, int, int, int, int)
+        Records of (subject, score, length, start, end).
+
+    See Also
+    --------
+    parse_paf_file_ex
+    parse_paf_file_ft
+    """
+    this, keep, pool = None, True, []
+
+    # head
+    for line in fh:
+        x = line.split('\t')
+        try:
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+        except (IndexError, ValueError):
+            continue
+        this = x[0]
+        if x[5] in excl:
+            keep = False
+        else:
+            pool.append(record)
+        break
+
+    # body
+    for line in fh:
+        x = line.split('\t')
+        try:
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+        except (IndexError, ValueError):
+            continue
+
+        if x[0] != this:
+            if keep:
+                yield this, pool
+            this = x[0]
+            keep = x[5] not in excl
+            if keep:
+                pool = [record]
+        elif keep:
+            if x[5] in excl:
+                keep = False
+            else:
+                pool.append(record)
+
+    # foot
+    if this is not None and keep:
         yield this, pool
