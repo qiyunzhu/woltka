@@ -10,7 +10,7 @@
 
 __name__ = 'woltka'
 __description__ = 'versatile meta-omic data classifier'
-__version__ = '0.1.5'
+__version__ = '0.1.6'
 __license__ = 'BSD-3-Clause'
 __author__ = 'Qiyun Zhu'
 __email__ = 'qiyunzhu@gmail.com'

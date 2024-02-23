@@ -43,7 +43,7 @@ pip install git+https://github.com/qiyunzhu/woltka.git
 
 Option 4: Install from a local copy:
 
-Download this [repository](https://github.com/qiyunzhu/woltka/archive/master.zip) or any of the previous [releases](https://github.com/qiyunzhu/woltka/releases). Unzip and navigate to the package directory. Then execute:
+Download this [repository](https://github.com/qiyunzhu/woltka/archive/main.zip) or any of the previous [releases](https://github.com/qiyunzhu/woltka/releases). Unzip and navigate to the package directory. Then execute:
 
 ```bash
 python setup.py install
@@ -53,7 +53,7 @@ Type `woltka` to check if installation is successful, in which case command-line
 
 ## Acceleration
 
-Woltka has a [Numba](https://numba.pydata.org/)-accelerated version (the [numba](https://github.com/qiyunzhu/woltka/tree/numba) branch) in parallel to the master branch. In this version, the "coord-match" algorithm for functional analysis (see [details](ordinal.md)) is significantly faster and consumes less memory. To use this feature, install Woltka using the following commands instead:
+Woltka has a [Numba](https://numba.pydata.org/)-accelerated version (the [numba](https://github.com/qiyunzhu/woltka/tree/numba) branch) in parallel to the main branch. In this version, the "coord-match" algorithm for functional analysis (see [details](ordinal.md)) is significantly faster and consumes less memory. To use this feature, install Woltka using the following commands instead:
 
 ```bash
 conda install -c conda-forge numba biom-format
@@ -101,10 +101,10 @@ conda env remove -n woltka
 If in the future some dependencies have changes that are not compatible with the current release of Woltka, the following "safe" commands can be used to install the current versions of dependencies.
 
 ```bash
-conda create -n woltka python=3.10.8
+conda create -n woltka python=3.12.2
 conda activate woltka
-conda install -c conda-forge biom-format=2.1.13
-conda install -c bioconda woltka=0.1.5
+conda install -c conda-forge biom-format=2.1.15
+conda install -c bioconda woltka=0.1.6
 ```
 
 ## Test

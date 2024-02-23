@@ -2,7 +2,7 @@
 
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![CI Status](https://github.com/qiyunzhu/woltka/actions/workflows/main.yml/badge.svg)](https://github.com/qiyunzhu/woltka/actions)
-[![Coverage Status](https://coveralls.io/repos/github/qiyunzhu/woltka/badge.svg?branch=master)](https://coveralls.io/github/qiyunzhu/woltka?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/qiyunzhu/woltka/badge.svg?branch=main)](https://coveralls.io/github/qiyunzhu/woltka?branch=main)
 ![PyPI](https://img.shields.io/pypi/v/woltka)
 ![Conda (channel only)](https://img.shields.io/conda/vn/bioconda/woltka)
 
@@ -70,7 +70,7 @@ See more details about [installation](doc/install.md).
 
 ## Example usage
 
-Woltka provides several small test datasets under [woltka/tests/data](woltka/tests/data). To access them, [download](https://github.com/qiyunzhu/woltka/archive/master.zip) this GitHub repo, unzip, and navigate to this directory.
+Woltka provides several small test datasets under [woltka/tests/data](woltka/tests/data). To access them, [download](https://github.com/qiyunzhu/woltka/archive/main.zip) this GitHub repo, unzip, and navigate to this directory.
 
 One can execute the following commands to make sure that Woltka functions correctly, and to get an impression of the basic usage of Woltka.
 
@@ -173,4 +173,4 @@ Note: This paper focuses on the [OGU analysis](doc/ogu.md). Although it does not
 
 ## Contact
 
-Please forward any questions to the project leader: Dr. Qiyun Zhu (qiyunzhu@gmail.com) or the senior PI: Dr. Rob Knight (robknight@ucsd.edu).
+Please forward any questions to the project leader: **Dr. Qiyun Zhu** (qiyunzhu@gmail.com).

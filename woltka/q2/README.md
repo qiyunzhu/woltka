@@ -39,7 +39,7 @@ qiime woltka
 
 ## Example usage
 
-Multiple small test files can be found under [tests/data](tests/data). To access them, [download](https://github.com/qiyunzhu/woltka/archive/master.zip) this GitHub repo, unzip, and navigate to this directory.
+Multiple small test files can be found under [tests/data](tests/data). To access them, [download](https://github.com/qiyunzhu/woltka/archive/main.zip) this GitHub repo, unzip, and navigate to this directory.
 
 [**Note**] These files are QIIME 2 artifacts (*.qza). They are containers of actual data files. See [below](#data-importing) for how to generate these files.
 
