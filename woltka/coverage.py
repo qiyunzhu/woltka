@@ -50,7 +50,7 @@ def merge_ranges(ranges):
         if cend is None:
             # case 1: no active range, start active range
             cstart, cend = start, end
-        elif cend >= start - 1:
+        elif cend >= start:
             # case 2: active range continues through this range
             # extend active range
             cend = max(cend, end)
