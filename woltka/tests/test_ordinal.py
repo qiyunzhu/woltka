@@ -265,9 +265,9 @@ class OrdinalTests(TestCase):
             'NC_123456': {0: 100, 1: 80},
             'NC_789012': {2: 90}})
         self.assertDictEqual(obs[2], {
-            'NC_123456': [(26,  True, False, 0), (125, False, False, 0),
-                          (151, True, False, 1), (230, False, False, 1)],
-            'NC_789012': [(186, True, False, 2), (280, False, False, 2)]})
+            'NC_123456': [(26,  True, False, 0), (126, False, False, 0),
+                          (151, True, False, 1), (231, False, False, 1)],
+            'NC_789012': [(186, True, False, 2), (281, False, False, 2)]})
 
     def test_ordinal_mapper(self):
         # uses the same example as above, with some noises
