@@ -457,7 +457,7 @@ def parse_sam_file_ex(fh):
             this, pool = qname, ([], [], [])
 
         # append
-        pool[mate].append((rname, None, length, pos, pos + offset - 1))
+        pool[mate].append((rname, None, length, pos, pos + offset))
 
     # final yield
     if pool[0]:
@@ -590,7 +590,7 @@ def parse_sam_file_ex_ft(fh, excl):
                 pos = int(pos)
                 length, offset = cigar_to_lens(cigar)
                 pool[int(flag) >> 6 & 3].append((
-                    rname, None, length, pos, pos + offset - 1))
+                    rname, None, length, pos, pos + offset))
 
         elif keep:
             if rname in excl:
@@ -599,7 +599,7 @@ def parse_sam_file_ex_ft(fh, excl):
                 pos = int(pos)
                 length, offset = cigar_to_lens(cigar)
                 pool[int(flag) >> 6 & 3].append((
-                    rname, None, length, pos, pos + offset - 1))
+                    rname, None, length, pos, pos + offset))
 
     if pool[0]:
         yield this, pool[0]
@@ -718,7 +718,7 @@ def parse_sam_file_pd(fh, n=65536):
     #         # this is slow, because of function all
     #         chunk['length'], offset = zip(*chunk['cigar'].apply(
     #             cigar_to_lens))
-    #         chunk['right'] = chunk['pos'] + offset - 1
+    #         chunk['right'] = chunk['pos'] + offset
     #         # this is slow, because of function all
     #         # chunk['qname'] = chunk[['qname', 'flag']].apply(
     #         #   qname_by_flag, axis=1)
