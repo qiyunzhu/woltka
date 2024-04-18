@@ -38,8 +38,8 @@ class CoverageTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # ranges that are connected (but not overlapped)
-        obs = merge_ranges([1, 2, 3, 4, 5, 6])
-        exp = [1, 6]
+        obs = merge_ranges([1, 2, 2, 3, 3, 4])
+        exp = [1, 4]
         self.assertListEqual(obs, exp)
 
         # empty range list
@@ -79,8 +79,8 @@ class CoverageTests(TestCase):
                ('S2', 'G2'): [0, [26, 100, 151, 200]],
                ('S2', 'G3'): [0, [1, 50, 76, 125]],
                ('S2', 'G4'): [0, [26, 75, 101, 150]],
-               ('S3', 'G1'): [0, [1, 200]],
-               ('S3', 'G2'): [0, [1, 100]]}
+               ('S3', 'G1'): [0, [1, 50, 51, 100, 101, 150, 151, 200]],
+               ('S3', 'G2'): [0, [1, 50, 51, 100]]}
         self.assertDictEqual(obs, exp)
 
     def test_calc_coverage(self):
@@ -97,8 +97,8 @@ class CoverageTests(TestCase):
                'S2': {'G2': [26, 100, 151, 200],
                       'G3': [1, 50, 76, 125],
                       'G4': [26, 75, 101, 150]},
-               'S3': {'G1': [1, 200],
-                      'G2': [1, 100]}}
+               'S3': {'G1': [1, 50, 51, 100, 101, 150, 151, 200],
+                      'G2': [1, 50, 51, 100]}}
         self.assertDictEqual(obs, exp)
 
     def test_write_coverage(self):
