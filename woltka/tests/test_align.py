@@ -375,13 +375,13 @@ class AlignTests(TestCase):
         )
         obs = list(parse_sam_file_ex_ft(iter(sam), {'G1'}))
         exp = [
-            ('S2',   [('G2', None, 50, 80, 129),
-                      ('G3', None, 50, 80, 129)]),
-            ('S2/1', [('G3', None, 50, 80, 129)]),
-            ('S2/2', [('G4', None, 50, 80, 129)]),
-            ('S4',   [('G6', None, 50, 80, 129)]),
-            ('S4/1', [('G6', None, 50, 80, 129)]),
-            ('S4/2', [('G6', None, 50, 80, 129)])
+            ('S2',   [('G2', None, 50, 80, 130),
+                      ('G3', None, 50, 80, 130)]),
+            ('S2/1', [('G3', None, 50, 80, 130)]),
+            ('S2/2', [('G4', None, 50, 80, 130)]),
+            ('S4',   [('G6', None, 50, 80, 130)]),
+            ('S4/1', [('G6', None, 50, 80, 130)]),
+            ('S4/2', [('G6', None, 50, 80, 130)])
         ]
         self.assertEqual(len(obs), len(exp))
         for o, e in zip(obs, exp):
