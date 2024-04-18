@@ -1,5 +1,10 @@
 # Change Log
 
+## Version 0.1.6-dev
+
+### Fixed
+- Corrected coverage calculation to (1) remove an unnecessary left shift on start and (2) record the stop coordinate as exclusive in accordance with bedtools ([#204](https://github.com/qiyunzhu/woltka/pull/204)).
+
 ## Version 0.1.6 (2/22/2024)
 
 ### Changed
