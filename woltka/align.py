@@ -340,6 +340,8 @@ def parse_sam_file(fh):
         QNAME, FLAG, RNAME, POS, MAPQ, CIGAR, RNEXT, PNEXT, TLEN, SEQ, QUAL,
         TAGS
 
+    POS is 1-based.
+
     .. _Wikipedia:
         https://en.wikipedia.org/wiki/SAM_(file_format)
     .. _SAM format specification:
@@ -441,7 +443,7 @@ def parse_sam_file_ex(fh):
         mate = int(flag) >> 6 & 3
 
         # leftmost mapping position
-        pos = int(pos)
+        pos = int(pos) - 1
 
         # parse CIGAR string
         length, offset = cigar_to_lens(cigar)
@@ -587,7 +589,7 @@ def parse_sam_file_ex_ft(fh, excl):
             keep = rname not in excl
             if keep:
                 pool = ([], [], [])
-                pos = int(pos)
+                pos = int(pos) - 1
                 length, offset = cigar_to_lens(cigar)
                 pool[int(flag) >> 6 & 3].append((
                     rname, None, length, pos, pos + offset))
@@ -596,7 +598,7 @@ def parse_sam_file_ex_ft(fh, excl):
             if rname in excl:
                 keep = False
             else:
-                pos = int(pos)
+                pos = int(pos) - 1
                 length, offset = cigar_to_lens(cigar)
                 pool[int(flag) >> 6 & 3].append((
                     rname, None, length, pos, pos + offset))
@@ -886,6 +888,8 @@ def parse_b6o_file(fh):
         qseqid sseqid pident length mismatch gapopen qstart qend sstart send
         evalue bitscore
 
+    Coordinates are 1-based, inclusive.
+
     .. _BLAST manual:
         https://www.ncbi.nlm.nih.gov/books/NBK279684/
     """
@@ -946,7 +950,7 @@ def parse_b6o_file_ex(fh):
         except IndexError:
             continue
         sstart, send = sorted((int(x[8]), int(x[9])))
-        this, pool = qseqid, [(sseqid, score, length, sstart, send)]
+        this, pool = qseqid, [(sseqid, score, length, sstart - 1, send)]
         break
 
     # body
@@ -958,10 +962,10 @@ def parse_b6o_file_ex(fh):
             continue
         sstart, send = sorted((int(x[8]), int(x[9])))
         if qseqid == this:
-            pool.append((sseqid, score, length, sstart, send))
+            pool.append((sseqid, score, length, sstart - 1, send))
         else:
             yield this, pool
-            this, pool = qseqid, [(sseqid, score, length, sstart, send)]
+            this, pool = qseqid, [(sseqid, score, length, sstart - 1, send)]
 
     # foot
     if this is not None:
@@ -1065,7 +1069,7 @@ def parse_b6o_file_ex_ft(fh, excl):
             keep = False
         else:
             sstart, send = sorted((int(x[8]), int(x[9])))
-            pool.append((sseqid, score, length, sstart, send))
+            pool.append((sseqid, score, length, sstart - 1, send))
         break
 
     # body
@@ -1082,12 +1086,12 @@ def parse_b6o_file_ex_ft(fh, excl):
             this = qseqid
             keep = sseqid not in excl
             if keep:
-                pool = [(sseqid, score, length, sstart, send)]
+                pool = [(sseqid, score, length, sstart - 1, send)]
         elif keep:
             if sseqid in excl:
                 keep = False
             else:
-                pool.append((sseqid, score, length, sstart, send))
+                pool.append((sseqid, score, length, sstart - 1, send))
 
     # foot
     if this is not None and keep:
@@ -1177,7 +1181,7 @@ def parse_paf_file_ex(fh):
     for line in fh:
         x = line.split('\t')
         try:
-            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]), int(x[8]))
         except (IndexError, ValueError):
             continue
         this, pool = x[0], [record]
@@ -1187,7 +1191,7 @@ def parse_paf_file_ex(fh):
     for line in fh:
         x = line.split('\t')
         try:
-            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]), int(x[8]))
         except (IndexError, ValueError):
             continue
         if x[0] == this:
@@ -1290,7 +1294,7 @@ def parse_paf_file_ex_ft(fh, excl):
     for line in fh:
         x = line.split('\t')
         try:
-            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]), int(x[8]))
         except (IndexError, ValueError):
             continue
         this = x[0]
@@ -1304,7 +1308,7 @@ def parse_paf_file_ex_ft(fh, excl):
     for line in fh:
         x = line.split('\t')
         try:
-            record = (x[5], int(x[11]), int(x[10]), int(x[7]) + 1, int(x[8]))
+            record = (x[5], int(x[11]), int(x[10]), int(x[7]), int(x[8]))
         except (IndexError, ValueError):
             continue
 
