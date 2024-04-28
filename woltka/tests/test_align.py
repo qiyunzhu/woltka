@@ -441,8 +441,8 @@ class AlignTests(TestCase):
         self.assertEqual(len(obs), 2)
         exp = [
             ('S1/1', [('NC_123456', 345, 100, 224, 324)]),
-            ('S1/2', [('NC_123456', 270, 98, 607, 708),
-                      ('NC_789012', 206, 95, 336, 425)])
+            ('S1/2', [('NC_123456', 270,  98, 607, 708),
+                      ('NC_789012', 206,  95, 336, 425)])
         ]
         self.assertTupleEqual(obs[0], exp[0])
         self.assertTupleEqual(obs[1], exp[1])

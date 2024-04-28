@@ -66,19 +66,19 @@ class OrdinalTests(TestCase):
 
         """
         # gene table
-        genes = [('g1',  5, 29),
-                 ('g2', 33, 61),
-                 ('g3', 65, 94)]
+        genes = [('g1',  4, 29),
+                 ('g2', 32, 61),
+                 ('g3', 64, 94)]
         # read map
-        reads = [('r1', 10, 29),
-                 ('r2', 16, 35),
-                 ('r3', 20, 39),
-                 ('r4', 22, 41),
-                 ('r5', 30, 49),
-                 ('r6', 30, 49),  # identical
-                 ('r7', 60, 79),
-                 ('r8', 65, 84),
-                 ('r9', 82, 95)]  # shorter
+        reads = [('r1',  9, 29),
+                 ('r2', 15, 35),
+                 ('r3', 19, 39),
+                 ('r4', 21, 41),
+                 ('r5', 29, 49),
+                 ('r6', 29, 49),  # identical
+                 ('r7', 59, 79),
+                 ('r8', 64, 84),
+                 ('r9', 81, 95)]  # shorter
 
         # alignment length map
         lens = {'r{}'.format(i): 20 for i in range(1, 10)}
@@ -118,19 +118,19 @@ class OrdinalTests(TestCase):
         """This test is for the real function.
         """
         # gene table
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94)]
+        genes = [(1,  4, 29),
+                 (2, 32, 61),
+                 (3, 64, 94)]
         # read map
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),  # identical
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]  # shorter
+        reads = [(1,  9, 29),
+                 (2, 15, 35),
+                 (3, 19, 39),
+                 (4, 21, 41),
+                 (5, 29, 49),
+                 (6, 29, 49),  # identical
+                 (7, 59, 79),
+                 (8, 64, 84),
+                 (9, 81, 95)]  # shorter
 
         # read length is uniformly 20, threshold is 80%, so effective
         # alignment length is 20 * 0.8 = 16
@@ -154,18 +154,18 @@ class OrdinalTests(TestCase):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94)]
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]
+        genes = [(1,  4, 29),
+                 (2, 32, 61),
+                 (3, 63, 94)]
+        reads = [(1,  9, 29),
+                 (2, 15, 35),
+                 (3, 19, 39),
+                 (4, 21, 41),
+                 (5, 29, 49),
+                 (6, 29, 49),
+                 (7, 59, 79),
+                 (8, 64, 84),
+                 (9, 81, 95)]
         genes = [x for idx, beg, end in genes for x in (
             (beg << 48) + (1 << 31) + (1 << 30) + idx,
             (end << 48) + (0 << 31) + (1 << 30) + idx)]
@@ -187,20 +187,20 @@ class OrdinalTests(TestCase):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  5, 29),
-                 (2, 33, 61),
-                 (3, 65, 94),
-                 (4, 61, 76),  # added a small gene within a read
-                 (5, 68, 72)]  # added a tiny gene
-        reads = [(1, 10, 29),
-                 (2, 16, 35),
-                 (3, 20, 39),
-                 (4, 22, 41),
-                 (5, 30, 49),
-                 (6, 30, 49),
-                 (7, 60, 79),
-                 (8, 65, 84),
-                 (9, 82, 95)]
+        genes = [(1,  4, 29),
+                 (2, 32, 61),
+                 (3, 64, 94),
+                 (4, 60, 76),  # added a small gene within a read
+                 (5, 66, 72)]  # added a tiny gene
+        reads = [(1,  9, 29),
+                 (2, 15, 35),
+                 (3, 19, 39),
+                 (4, 21, 41),
+                 (5, 29, 49),
+                 (6, 29, 49),
+                 (7, 59, 79),
+                 (8, 64, 84),
+                 (9, 81, 95)]
         genes = [x for idx, beg, end in genes for x in (
             (beg << 48) + (1 << 31) + (1 << 30) + idx,
             (end << 48) + (0 << 31) + (1 << 30) + idx)]
@@ -220,10 +220,10 @@ class OrdinalTests(TestCase):
         self.assertListEqual(obs, exp)
 
         # a special case with a giant read
-        genes = [(1, 1, 5),
-                 (2, 6, 7),
-                 (3, 7, 8)]
-        reads = [(1, 4, 9)]
+        genes = [(1, 0, 5),
+                 (2, 5, 7),
+                 (3, 6, 8)]
+        reads = [(1, 3, 9)]
         genes = [x for idx, beg, end in genes for x in (
             (beg << 48) + (1 << 31) + (1 << 30) + idx,
             (end << 48) + (0 << 31) + (1 << 30) + idx)]
@@ -244,8 +244,8 @@ class OrdinalTests(TestCase):
         self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
         self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
         self.assertDictEqual(obs[2], {'NC_123456': [
-            (225, True, False, 0), (324, False, False, 0),
-            (608, True, False, 1), (708, False, False, 1)]})
+            (224, True, False, 0), (324, False, False, 0),
+            (607, True, False, 1), (708, False, False, 1)]})
 
         # sam (BWA, Bowtie2, Minimap2 etc.)
         sam = iter((
@@ -265,9 +265,9 @@ class OrdinalTests(TestCase):
             'NC_123456': {0: 100, 1: 80},
             'NC_789012': {2: 90}})
         self.assertDictEqual(obs[2], {
-            'NC_123456': [(26,  True, False, 0), (126, False, False, 0),
-                          (151, True, False, 1), (231, False, False, 1)],
-            'NC_789012': [(186, True, False, 2), (281, False, False, 2)]})
+            'NC_123456': [(25,  True, False, 0), (125, False, False, 0),
+                          (150, True, False, 1), (230, False, False, 1)],
+            'NC_789012': [(185, True, False, 2), (280, False, False, 2)]})
 
     def test_ordinal_mapper(self):
         # uses the same example as above, with some noises
@@ -342,11 +342,11 @@ class OrdinalTests(TestCase):
         self.assertFalse(isdup)
         self.assertDictEqual(idmap, {'n1': ['g1', 'g2', 'g3']})
         exp = {'n1': [
-            (5 << 48) + (3 << 30) + 0,
+            (4 << 48) + (3 << 30) + 0,
             (29 << 48) + (1 << 30) + 0,
-            (33 << 48) + (3 << 30) + 1,
+            (32 << 48) + (3 << 30) + 1,
             (61 << 48) + (1 << 30) + 1,
-            (65 << 48) + (3 << 30) + 2,
+            (64 << 48) + (3 << 30) + 2,
             (94 << 48) + (1 << 30) + 2]}
         self.assertDictEqual(obs, exp)
 
@@ -363,21 +363,21 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(idmap, {
             'NC_123456': ['1', '2'], 'NC_789012': ['1', '2']})
         exp = {'NC_123456': [
-            (5 << 48) + (3 << 30) + 0,
+            (4 << 48) + (3 << 30) + 0,
             (384 << 48) + (1 << 30) + 0,
-            (410 << 48) + (3 << 30) + 1,
+            (409 << 48) + (3 << 30) + 1,
             (933 << 48) + (1 << 30) + 1],
                'NC_789012': [
-            (75 << 48) + (3 << 30) + 1,
+            (74 << 48) + (3 << 30) + 1,
             (529 << 48) + (1 << 30) + 1,
-            (638 << 48) + (3 << 30) + 0,
+            (637 << 48) + (3 << 30) + 0,
             (912 << 48) + (1 << 30) + 0]}
         self.assertDictEqual(obs, exp)
 
         # don't sort
         obs = load_gene_coords(tbl, sort=False)[0]['NC_789012']
-        exp = [(638 << 48) + (3 << 30) + 0, (912 << 48) + (1 << 30) + 0,
-               (75 << 48) + (3 << 30) + 1,  (529 << 48) + (1 << 30) + 1]
+        exp = [(637 << 48) + (3 << 30) + 0, (912 << 48) + (1 << 30) + 0,
+               (74 << 48) + (3 << 30) + 1,  (529 << 48) + (1 << 30) + 1]
         self.assertListEqual(obs, exp)
 
         # incorrect formats
@@ -404,19 +404,19 @@ class OrdinalTests(TestCase):
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
-        self.assertEqual(obs_[0], (372 << 48) + (3 << 30) + 0)
+        self.assertEqual(obs_[0], (371 << 48) + (3 << 30) + 0)
         self.assertEqual(obs_[1], (806 << 48) + (1 << 30) + 0)
-        self.assertEqual(obs_[2], (816 << 48) + (3 << 30) + 1)
+        self.assertEqual(obs_[2], (815 << 48) + (3 << 30) + 1)
         self.assertEqual(obs_[3], (2177 << 48) + (1 << 30) + 1)
 
     def test_calc_gene_lens(self):
-        coords = {'NC_123456': [(5 << 48) + (3 << 30) + 0,
+        coords = {'NC_123456': [(4 << 48) + (3 << 30) + 0,
                                 (384 << 48) + (1 << 30) + 0,
-                                (410 << 48) + (3 << 30) + 1,
+                                (409 << 48) + (3 << 30) + 1,
                                 (933 << 48) + (1 << 30) + 1],
-                  'NC_789012': [(75 << 48) + (3 << 30) + 1,
+                  'NC_789012': [(74 << 48) + (3 << 30) + 1,
                                 (529 << 48) + (1 << 30) + 1,
-                                (638 << 48) + (3 << 30) + 0,
+                                (637 << 48) + (3 << 30) + 0,
                                 (912 << 48) + (1 << 30) + 0]}
         idmap = {'NC_123456': ['1', '2'],
                  'NC_789012': ['1', '2']}
