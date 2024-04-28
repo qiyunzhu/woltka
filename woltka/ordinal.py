@@ -44,7 +44,6 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     See Also
     --------
     .align.plain_mapper
-    .align.range_mapper
 
     Yields
     ------

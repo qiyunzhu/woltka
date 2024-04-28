@@ -13,18 +13,63 @@ from os.path import join, dirname, realpath
 from os import makedirs
 from shutil import rmtree
 from tempfile import mkdtemp
+from io import StringIO
 
-from woltka.coverage import (
-    merge_ranges, parse_ranges, calc_coverage, write_coverage)
+from woltka.range import (
+    range_mapper, merge_ranges, parse_ranges, calc_coverage, write_coverage)
 
 
-class CoverageTests(TestCase):
+class RangeTests(TestCase):
     def setUp(self):
         self.tmpdir = mkdtemp()
         self.datdir = join(dirname(realpath(__file__)), 'data')
 
     def tearDown(self):
         rmtree(self.tmpdir)
+
+    def test_range_mapper(self):
+
+        def _res2lst(res):
+            return tuple(tuple(list(x) for x in y) for y in res)
+
+        aln = StringIO('\n'.join((
+            'R1	G1	95	20	0	0	1	20	10	29	1	1',
+            'R2	G1	95	20	0	0	1	20	16	35	1	1',
+            'R3	G2	95	20	0	0	1	20	39	21	1	1',
+            'R3	G3	95	20	0	0	1	20	88	70	1	1',
+            'R4	G2	95	20	0	0	20	1	41	22	1	1',
+            'R5	G3	95	20	0	0	20	1	30	49	1	1',
+            'R5	G3	95	20	0	0	20	1	50	69	1	1',
+            'Rx	Gx	95	20	0	0	1	20	0	0	1	1',
+            '# this is not an alignment')))
+        obs = _res2lst(range_mapper(aln))[0]
+        exp = [('R1', {'G1': [9,  29]}),
+               ('R2', {'G1': [15, 35]}),
+               ('R3', {'G2': [20, 39], 'G3': [69, 88]}),
+               ('R4', {'G2': [21, 41]}),
+               ('R5', {'G3': [29, 49, 49, 69]})]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
+
+        # chunk of 3
+        aln.seek(0)
+        obs = _res2lst(range_mapper(aln, n=3))
+        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:3]])
+        self.assertListEqual(list(obs[0][1]), [x[1] for x in exp[:3]])
+        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[3:]])
+        self.assertListEqual(list(obs[1][1]), [x[1] for x in exp[3:]])
+
+        # specify format
+        aln.seek(0)
+        obs = _res2lst(range_mapper(aln, fmt='b6o'))[0]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
+
+        # exclude a subject
+        aln.seek(0)
+        obs = _res2lst(range_mapper(aln, excl={'G1'}))[0]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp[2:]])
+        self.assertListEqual(list(obs[1]), [x[1] for x in exp[2:]])
 
     def test_merge_ranges(self):
         # ranges that are sorted and overlapped

@@ -16,7 +16,7 @@ from io import StringIO
 
 from woltka.file import openzip
 from woltka.align import (
-    plain_mapper, range_mapper, iter_align, infer_align_format, assign_parser,
+    plain_mapper, iter_align, infer_align_format, assign_parser,
     parse_sam_file, parse_sam_file_ex, parse_sam_file_ft, parse_sam_file_ex_ft,
     cigar_to_lens, cigar_to_lens_ord, parse_sam_file_pd,
     parse_map_file, parse_map_file_ft,
@@ -113,50 +113,6 @@ class AlignTests(TestCase):
             list(plain_mapper(StringIO('Hi there!')))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
-
-    def test_range_mapper(self):
-
-        def _res2lst(res):
-            return tuple(tuple(list(x) for x in y) for y in res)
-
-        aln = StringIO('\n'.join((
-            'R1	G1	95	20	0	0	1	20	10	29	1	1',
-            'R2	G1	95	20	0	0	1	20	16	35	1	1',
-            'R3	G2	95	20	0	0	1	20	39	21	1	1',
-            'R3	G3	95	20	0	0	1	20	88	70	1	1',
-            'R4	G2	95	20	0	0	20	1	41	22	1	1',
-            'R5	G3	95	20	0	0	20	1	30	49	1	1',
-            'R5	G3	95	20	0	0	20	1	50	69	1	1',
-            'Rx	Gx	95	20	0	0	1	20	0	0	1	1',
-            '# this is not an alignment')))
-        obs = _res2lst(range_mapper(aln))[0]
-        exp = [('R1', {'G1': [9,  29]}),
-               ('R2', {'G1': [15, 35]}),
-               ('R3', {'G2': [20, 39], 'G3': [69, 88]}),
-               ('R4', {'G2': [21, 41]}),
-               ('R5', {'G3': [29, 49, 49, 69]})]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
-
-        # chunk of 3
-        aln.seek(0)
-        obs = _res2lst(range_mapper(aln, n=3))
-        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:3]])
-        self.assertListEqual(list(obs[0][1]), [x[1] for x in exp[:3]])
-        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[3:]])
-        self.assertListEqual(list(obs[1][1]), [x[1] for x in exp[3:]])
-
-        # specify format
-        aln.seek(0)
-        obs = _res2lst(range_mapper(aln, fmt='b6o'))[0]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
-
-        # exclude a subject
-        aln.seek(0)
-        obs = _res2lst(range_mapper(aln, excl={'G1'}))[0]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp[2:]])
-        self.assertListEqual(list(obs[1]), [x[1] for x in exp[2:]])
 
     def test_iter_align(self):
         line = 'S1/1	NC_123456'

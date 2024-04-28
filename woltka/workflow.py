@@ -28,7 +28,7 @@ from .util import (
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
-from .align import plain_mapper, range_mapper
+from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, counter, counter_size,
     counter_strat, counter_size_strat)
@@ -38,7 +38,7 @@ from .tree import (
 from .ordinal import (
     ordinal_mapper, load_gene_coords, calc_gene_lens)
 from .table import prep_table, write_table
-from .coverage import parse_ranges, calc_coverage, write_coverage
+from .range import range_mapper, parse_ranges, calc_coverage, write_coverage
 
 
 def workflow(input_fp:     str,

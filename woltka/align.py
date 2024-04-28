@@ -66,6 +66,11 @@ def plain_mapper(fh, fmt=None, excl=None, n=1000):
     list of set of str
         Subject(s) queue.
 
+    See Also
+    --------
+    .range.range_mapper
+    .ordinal.ordinal_mapper
+
     Notes
     -----
     The design of this function aims to couple with the extremely large size of
@@ -107,74 +112,6 @@ def plain_mapper(fh, fmt=None, excl=None, n=1000):
             break  # pragma: no cover
 
         # yield complete chunk
-        else:
-            yield qryque, subque
-
-
-def range_mapper(fh, fmt=None, excl=None, n=1000):
-    """Read an alignment file and yield maps of query to subject(s) and their
-    ranges.
-
-    Parameters
-    ----------
-    fh : file handle
-        Alignment file to parse.
-    fmt : str, optional
-        Alignment file format.
-    excl : set, optional
-        Subjects to exclude.
-    n : int, optional
-        Number of unique queries per chunk.
-
-    Yields
-    ------
-    list of str
-        Query queue.
-    list of dict of list of int
-        Subject-to-ranges queue.
-
-    Notes
-    -----
-    Same as `plain_mapper`, except that it also returns subject ranges.
-
-    Ranges are stored as a one-dimensional, interleaved list of start1, end1,
-    start2, end2, start3, end3...
-
-    See Also
-    --------
-    plain_mapper
-    .coverage.merge_ranges
-    """
-    it = iter_align(fh, fmt, excl, True)
-    while True:
-        i, done = 0, False
-        qryque, subque = [None] * n, [None] * n
-        for query, records in it:
-
-            # generate a mapping of subjects to interleaved starts and ends
-            ranges = {}
-            for subject, _, _, start, end in records:
-
-                # start and end must be positive integers
-                if start and end:
-
-                    # combine ranges on the same subject
-                    ranges.setdefault(subject, []).extend((start, end))
-
-            # append query and ranges
-            if ranges:
-                qryque[i] = query
-                subque[i] = ranges
-
-                i += 1
-                if i == n:
-                    done = True
-                    break
-
-        if not done:
-            if i:
-                yield qryque[:i], subque[:i]
-            break  # pragma: no cover
         else:
             yield qryque, subque
 
