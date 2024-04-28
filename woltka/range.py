@@ -68,12 +68,7 @@ def range_mapper(fh, fmt=None, excl=None, n=1000):
             # generate a mapping of subjects to interleaved starts and ends
             ranges = {}
             for subject, _, _, start, end in records:
-
-                # start and end must be positive integers
-                if start and end:
-
-                    # combine ranges on the same subject
-                    ranges.setdefault(subject, []).extend((start, end))
+                ranges.setdefault(subject, []).extend((start, end))
 
             # append query and ranges
             if ranges:

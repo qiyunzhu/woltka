@@ -40,7 +40,6 @@ class RangeTests(TestCase):
             'R4	G2	95	20	0	0	20	1	41	22	1	1',
             'R5	G3	95	20	0	0	20	1	30	49	1	1',
             'R5	G3	95	20	0	0	20	1	50	69	1	1',
-            'Rx	Gx	95	20	0	0	1	20	0	0	1	1',
             '# this is not an alignment')))
         obs = _res2lst(range_mapper(aln))[0]
         exp = [('R1', {'G1': [9,  29]}),
