@@ -81,7 +81,7 @@ Option | Description
 `--scale` | Scale counts by this factor. Accepts "k", "M" suffixes.
 `--digits` | Round counts to this number of digits after the decimal point.
 
-### Output files
+### Output table
 
 Option | Description
 --- | ---
@@ -90,8 +90,20 @@ Option | Description
 `--name-as-id` | Replace feature IDs with names. Otherwise append names to table as a metadata column.
 `--add-rank` | Append feature ranks to table as a metadata column.
 `--add-lineage` | Append lineage strings to table as a metadata column.
+
+### Output mapping
+
+Option | Description
+--- | ---
 `--outmap`, `-u` | Write read-to-feature maps to this directory.
 `--zipmap` | Compress read-to-feature maps using this algorithm. Options: `none`, `gz` (default), `bz2`, `xz`.
+
+### Output coverage
+
+Option | Description
+--- | ---
+`--outcov` | Write subject coverage maps to this directory.
+`--cov-fmt` | Format of subject coverage coordinates. Options: `bed` (BED-like, 0-based, exclusive end, equivalent to `0e`) (default), `gff` (GFF-like, 1-based, inclusive end, equivalent to `1i`), `0e`, `1e`, `0i`, `1i`.
 
 ### Performance
 

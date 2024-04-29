@@ -229,21 +229,18 @@ def write_coverage(covers, outdir, fmt=None):
     begoff, endoff = 0, 0
     errmsg = f'Invalid coverage format: {fmt}.'
     if fmt is not None:
-        if fmt.count(',') == 1:
-            offset, code = fmt.split(',')
-            try:
-                begoff = int(offset)
-            except ValueError:
-                raise ValueError(errmsg)
-            if code == 'e':
-                endoff = begoff
-            elif code == 'i':
-                endoff = begoff - 1
-            else:
-                raise ValueError(errmsg)
+        if fmt.lower() == 'bed':
+            pass
         elif fmt.lower() == 'gff':
             begoff, endoff = 1, 0
-        elif fmt.lower() != 'bed':
+        elif fmt.endswith(('i', 'e')):
+            try:
+                begoff = endoff = int(fmt[:-1])
+            except ValueError:
+                raise ValueError(errmsg)
+            if fmt[-1] == 'i':
+                endoff -= 1
+        else:
             raise ValueError(errmsg)
 
     # write coverage files

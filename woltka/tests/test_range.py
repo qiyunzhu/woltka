@@ -187,22 +187,22 @@ class RangeTests(TestCase):
         exp = ['G1\t1\t100', 'G1\t251\t300', 'G2\t101\t150']
         self.assertListEqual(obs, exp)
 
-        # "1,e" (begoff = 1, endoff = 1)
-        write_coverage(cov, outdir, '1,e')
+        # "1e" (begoff = 1, endoff = 1)
+        write_coverage(cov, outdir, '1e')
         with open(join(outdir, 'S1.cov'), 'r') as f:
             obs = f.read().splitlines()
         exp = ['G1\t1\t101', 'G1\t251\t301', 'G2\t101\t151']
         self.assertListEqual(obs, exp)
 
-        # "0,i" (begoff = 0, endoff = -1)
-        write_coverage(cov, outdir, '0,i')
+        # "0i" (begoff = 0, endoff = -1)
+        write_coverage(cov, outdir, '0i')
         with open(join(outdir, 'S1.cov'), 'r') as f:
             obs = f.read().splitlines()
         exp = ['G1\t0\t99', 'G1\t250\t299', 'G2\t100\t149']
         self.assertListEqual(obs, exp)
 
         # invalid formats
-        for fmt in ('blast', '1,x', 'a,e'):
+        for fmt in ('blast', '1x', 'ae'):
             with self.assertRaises(ValueError) as ctx:
                 write_coverage(cov, outdir, fmt)
             self.assertEqual(str(ctx.exception), (
