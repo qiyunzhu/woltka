@@ -70,15 +70,13 @@ def range_mapper(fh, fmt=None, excl=None, n=1000):
             for subject, _, _, start, end in records:
                 ranges.setdefault(subject, []).extend((start, end))
 
-            # append query and ranges
-            if ranges:
-                qryque[i] = query
-                subque[i] = ranges
+            qryque[i] = query
+            subque[i] = ranges
 
-                i += 1
-                if i == n:
-                    done = True
-                    break
+            i += 1
+            if i == n:
+                done = True
+                break
 
         if not done:
             if i:
@@ -201,7 +199,7 @@ def calc_coverage(covers):
     return res
 
 
-def write_coverage(covers, outdir):
+def write_coverage(covers, outdir, fmt=None):
     """Write subject coverage to per sample output files.
 
     Parameters
@@ -210,10 +208,49 @@ def write_coverage(covers, outdir):
         Coverage data structure.
     outdir : str
         Directory of output files.
+    fmt : str, optional
+        Format of output coordinates. Can be 'bed' (default) (BED-like, i.e.,
+        0-based, exclusive), 'gff' (GFF-like, i.e., 1-based, inclusive), or 
+        'offset(e.g., 0 or 1),i(nclusive)/e(xclusive)'.
+
+    Notes
+    -----
+    BED is 0-based, exclusive (equivalent to '0,e').
+    GFF is 1-based, inclusive (equivalent to '1,i').
+
+    .. _BED format:
+        https://samtools.github.io/hts-specs/BEDv1.pdf
+    .. _GFF format:
+        https://github.com/The-Sequence-Ontology/Specifications/blob/master/
+        gff3.md
     """
+
+    # determine coordinate format
+    begoff, endoff = 0, 0
+    errmsg = f'Invalid coverage format: {fmt}.'
+    if fmt is not None:
+        if fmt.count(',') == 1:
+            offset, code = fmt.split(',')
+            try:
+                begoff = int(offset)
+            except ValueError:
+                raise ValueError(errmsg)
+            if code == 'e':
+                endoff = begoff
+            elif code == 'i':
+                endoff = begoff - 1
+            else:
+                raise ValueError(errmsg)
+        elif fmt.lower() == 'gff':
+            begoff, endoff = 1, 0
+        elif fmt.lower() != 'bed':
+            raise ValueError(errmsg)
+
+    # write coverage files
     makedirs(outdir, exist_ok=True)
     for sample, cover in sorted(covers.items()):
         with open(join(outdir, f'{sample}.cov'), 'w') as fh:
             for subject, ranges in sorted(cover.items()):
-                for start, end in sorted(zip(*[iter(ranges)] * 2)):
-                    print(subject, start, end, sep='\t', file=fh)
+                for beg, end in sorted(zip(*[iter(ranges)] * 2)):
+                    print(subject, beg + begoff, end + endoff,
+                          sep='\t', file=fh)

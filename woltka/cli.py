@@ -179,6 +179,11 @@ def cli():
 @click.option(
     '--outcov', 'outcov_dir', type=click.Path(dir_okay=True),
     help='Write subject coverage maps to this directory.')
+@click.option(
+    '--cov-fmt', 'outcov_fmt', default='bed', type=click.Choice(
+        ['bed', 'gff', '0,e', '1,e', '0,i', '1,i'], case_sensitive=False),
+    help=('Format of subject coverage coordinates. Default is BED-like '
+          '(0-based, exclusive end).'))
 # performance
 @click.option(
     '--chunk', type=click.INT, default=None,

@@ -146,29 +146,68 @@ class RangeTests(TestCase):
         self.assertDictEqual(obs, exp)
 
     def test_write_coverage(self):
-        cov = {'S1': {'G1': [1, 100, 251, 300],
-                      'G2': [101, 150]},
-               'S2': {'G2': [26, 100, 151, 200],
-                      'G3': [1, 50, 76, 125],
-                      'G4': [26, 75, 101, 150]},
-               'S3': {'G1': [1, 200],
-                      'G2': [1, 100]}}
+        # original coverage (coordinates are BED-like)
+        cov = {'S1': {'G1': [0, 100, 250, 300],
+                      'G2': [100, 150]},
+               'S2': {'G2': [25, 100, 150, 200],
+                      'G3': [0, 50, 75, 125],
+                      'G4': [25, 75, 100, 150]},
+               'S3': {'G1': [0, 200],
+                      'G2': [0, 100]}}
         outdir = join(self.tmpdir, 'outdir')
         makedirs(outdir)
+
+        # default: no offset
         write_coverage(cov, outdir)
+        with open(join(outdir, 'S1.cov'), 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['G1\t0\t100', 'G1\t250\t300', 'G2\t100\t150']
+        self.assertListEqual(obs, exp)
+        with open(join(outdir, 'S2.cov'), 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['G2\t25\t100', 'G2\t150\t200', 'G3\t0\t50',
+               'G3\t75\t125', 'G4\t25\t75', 'G4\t100\t150']
+        self.assertListEqual(obs, exp)
+        with open(join(outdir, 'S3.cov'), 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['G1\t0\t200', 'G2\t0\t100']
+        self.assertListEqual(obs, exp)
+
+        # BED (same as default)
+        write_coverage(cov, outdir, 'bed')
+        with open(join(outdir, 'S1.cov'), 'r') as f:
+            obs = f.read().splitlines()
+        exp = ['G1\t0\t100', 'G1\t250\t300', 'G2\t100\t150']
+        self.assertListEqual(obs, exp)
+
+        # GFF (begoff = 1, endoff = 0)
+        write_coverage(cov, outdir, 'gff')
         with open(join(outdir, 'S1.cov'), 'r') as f:
             obs = f.read().splitlines()
         exp = ['G1\t1\t100', 'G1\t251\t300', 'G2\t101\t150']
         self.assertListEqual(obs, exp)
-        with open(join(outdir, 'S2.cov'), 'r') as f:
+
+        # "1,e" (begoff = 1, endoff = 1)
+        write_coverage(cov, outdir, '1,e')
+        with open(join(outdir, 'S1.cov'), 'r') as f:
             obs = f.read().splitlines()
-        exp = ['G2\t26\t100', 'G2\t151\t200', 'G3\t1\t50',
-               'G3\t76\t125', 'G4\t26\t75', 'G4\t101\t150']
+        exp = ['G1\t1\t101', 'G1\t251\t301', 'G2\t101\t151']
         self.assertListEqual(obs, exp)
-        with open(join(outdir, 'S3.cov'), 'r') as f:
+
+        # "0,i" (begoff = 0, endoff = -1)
+        write_coverage(cov, outdir, '0,i')
+        with open(join(outdir, 'S1.cov'), 'r') as f:
             obs = f.read().splitlines()
-        exp = ['G1\t1\t200', 'G2\t1\t100']
+        exp = ['G1\t0\t99', 'G1\t250\t299', 'G2\t100\t149']
         self.assertListEqual(obs, exp)
+
+        # invalid formats
+        for fmt in ('blast', '1,x', 'a,e'):
+            with self.assertRaises(ValueError) as ctx:
+                write_coverage(cov, outdir, fmt)
+            self.assertEqual(str(ctx.exception), (
+                f'Invalid coverage format: {fmt}.'))
+
         rmtree(outdir)
 
 
