@@ -210,13 +210,13 @@ def write_coverage(covers, outdir, fmt=None):
         Directory of output files.
     fmt : str, optional
         Format of output coordinates. Can be 'bed' (default) (BED-like, i.e.,
-        0-based, exclusive), 'gff' (GFF-like, i.e., 1-based, inclusive), or 
-        'offset(e.g., 0 or 1),i(nclusive)/e(xclusive)'.
+        0-based, exclusive), 'gff' (GFF-like, i.e., 1-based, inclusive), '0e',
+        '1e', '0i', or '1i'.
 
     Notes
     -----
-    BED is 0-based, exclusive (equivalent to '0,e').
-    GFF is 1-based, inclusive (equivalent to '1,i').
+    BED is 0-based, exclusive (equivalent to '0e').
+    GFF is 1-based, inclusive (equivalent to '1i').
 
     .. _BED format:
         https://samtools.github.io/hts-specs/BEDv1.pdf
