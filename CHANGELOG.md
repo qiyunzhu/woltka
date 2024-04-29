@@ -2,8 +2,9 @@
 
 ## Version 0.1.6-dev
 
-### Fixed
-- Corrected coverage calculation to (1) remove an unnecessary left shift on start and (2) record the stop coordinate as exclusive in accordance with bedtools ([#204](https://github.com/qiyunzhu/woltka/pull/204)).
+### Changed
+- Changed default output subject coverage (`--outcov`) coordinates into BED-like (0-based, exclusive end). The output can be directly parsed by programs like bedtools. Also added supported for GFF-like and other custom formats, as controled by paramter `--outcov-fmt` ([#204](https://github.com/qiyunzhu/woltka/pull/204) and [#205](https://github.com/qiyunzhu/woltka/pull/205)).
+
 
 ## Version 0.1.6 (2/22/2024)
 
