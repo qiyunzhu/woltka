@@ -118,120 +118,126 @@ class OrdinalTests(TestCase):
         """This test is for the real function.
         """
         # gene table
-        genes = [(1,  4, 29),
-                 (2, 32, 61),
-                 (3, 64, 94)]
+        genes = [(5, 29),   # 0
+                 (33, 61),  # 1
+                 (65, 94)]  # 2
         # read map
-        reads = [(1,  9, 29),
-                 (2, 15, 35),
-                 (3, 19, 39),
-                 (4, 21, 41),
-                 (5, 29, 49),
-                 (6, 29, 49),  # identical
-                 (7, 59, 79),
-                 (8, 64, 84),
-                 (9, 81, 95)]  # shorter
+        reads = [(10, 29),  # 0
+                 (16, 35),  # 1
+                 (20, 39),  # 2
+                 (22, 41),  # 3
+                 (30, 49),  # 4
+                 (30, 49),  # 5 (identical to 4)
+                 (60, 79),  # 6
+                 (65, 84),  # 7
+                 (82, 95)]  # 8 (shorter than others)
 
         # read length is uniformly 20, threshold is 80%, so effective
         # alignment length is 20 * 0.8 = 16
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (16 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        rels = [16] * len(reads)
+        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 48) + (1 << 31) + (1 << 30) + i,
+            (end << 48) + (0 << 31) + (1 << 30) + i)]
+        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 48) + (16 << 31) + (0 << 30) + i,
+            (end << 48) + (0 << 31) + (0 << 30) + i)]
         queue = sorted(genes + reads)
 
         # default
-        obs = list(match_read_gene(queue))
-        exp = [(1, 1),
-               (5, 2),
-               (6, 2),
-               (8, 3)]
+        obs = list(match_read_gene(queue, rels))
+        exp = [(0, 0),
+               (4, 1),
+               (5, 1),
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_naive(self):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  4, 29),
-                 (2, 32, 61),
-                 (3, 63, 94)]
-        reads = [(1,  9, 29),
-                 (2, 15, 35),
-                 (3, 19, 39),
-                 (4, 21, 41),
-                 (5, 29, 49),
-                 (6, 29, 49),
-                 (7, 59, 79),
-                 (8, 64, 84),
-                 (9, 81, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        genes = [(4, 29),
+                 (32, 61),
+                 (64, 94)]
+        reads = [(9, 29),
+                 (15, 35),
+                 (19, 39),
+                 (21, 41),
+                 (29, 49),
+                 (29, 49),
+                 (59, 79),
+                 (64, 84),
+                 (81, 95)]
+        # shorten effective length
+        rels = [14] * len(reads)
+        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 48) + (1 << 31) + (1 << 30) + i,
+            (end << 48) + (0 << 31) + (1 << 30) + i)]
+        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 48) + (16 << 31) + (0 << 30) + i,
+            (end << 48) + (0 << 31) + (0 << 30) + i)]
 
         # don't sort, but directly feed both queues
-        obs = list(match_read_gene_naive(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
+        obs = list(match_read_gene_naive(genes, reads, rels))
+        exp = [(0, 0),
+               (1, 0),
+               (4, 1),
+               (5, 1),
                (6, 2),
-               (7, 3),
-               (8, 3)]
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_quart(self):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  4, 29),
-                 (2, 32, 61),
-                 (3, 64, 94),
-                 (4, 60, 76),  # added a small gene within a read
-                 (5, 66, 72)]  # added a tiny gene
-        reads = [(1,  9, 29),
-                 (2, 15, 35),
-                 (3, 19, 39),
-                 (4, 21, 41),
-                 (5, 29, 49),
-                 (6, 29, 49),
-                 (7, 59, 79),
-                 (8, 64, 84),
-                 (9, 81, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes = [(4, 29),
+                 (32, 61),
+                 (64, 94),
+                 (60, 76),  # added a small gene within a read
+                 (66, 72)]  # added a tiny gene
+        reads = [(9, 29),
+                 (15, 35),
+                 (19, 39),
+                 (21, 41),
+                 (29, 49),
+                 (29, 49),
+                 (59, 79),
+                 (64, 84),
+                 (69, 75),  # added a small read starting in right half
+                 (81, 95)]
+        rels = [14] * len(reads)
+        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 48) + (1 << 31) + (1 << 30) + i,
+            (end << 48) + (0 << 31) + (1 << 30) + i)]
         genes.sort()
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 48) + (16 << 31) + (0 << 30) + i,
+            (end << 48) + (0 << 31) + (0 << 30) + i)]
 
-        obs = list(match_read_gene_quart(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
+        obs = list(match_read_gene_quart(genes, reads, rels))
+        exp = [(0, 0),
+               (1, 0),
+               (4, 1),
+               (5, 1),
+               (6, 3),  # match to added small gene
                (6, 2),
-               (7, 4),  # match to added small gene
-               (7, 3),
-               (8, 3)]
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
         # a special case with a giant read
-        genes = [(1, 0, 5),
-                 (2, 5, 7),
-                 (3, 6, 8)]
-        reads = [(1, 3, 9)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes = [(0, 5),
+                 (5, 7),
+                 (6, 8)]
+        reads = [(3, 9)]
+        rels = [5]
+        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 48) + (1 << 31) + (1 << 30) + i,
+            (end << 48) + (0 << 31) + (1 << 30) + i)]
         genes.sort()
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (5 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        obs = list(match_read_gene_quart(genes, reads))
+        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 48) + (16 << 31) + (0 << 30) + i,
+            (end << 48) + (0 << 31) + (0 << 30) + i)]
+        obs = list(match_read_gene_quart(genes, reads, rels))
         exp = []
         self.assertListEqual(obs, exp)
 

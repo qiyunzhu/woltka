@@ -125,15 +125,15 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     """
     it = iter_align(fh, fmt, excl, True)
 
+    # arguments for flush
+    args = (coords, idmap, th, prefix)
+
     # cached list of query Ids for reverse look-up
     # gene Ids are unique, but read Ids can have duplicates (i.e., one read is
     # mapped to multiple loci on a genome), therefore an incremental integer
     # here replaces the original read Id as its identifer
-    rids = []
-    rid_append = rids.append
-
-    # arguments for flush
-    args = (coords, idmap, prefix)
+    idx, rids, lens = 0, [], []
+    rids_append , lens_append = rids.append, lens.append
 
     # cached map of read to coordinates
     locmap = defaultdict(list)
@@ -144,15 +144,14 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     # parse alignment file
     for i, (query, records) in enumerate(it):
 
-        # when chunk limit is reached
+        # when chunk limit is reached, match currently cached reads with genes
+        # and flush
         if i == target:
-
-            # flush: match currently cached reads with genes and yield
-            yield flush(locmap, rids, *args)
+            yield flush(locmap, rids, lens, *args)
 
             # re-initiate read Ids, length map and location map
-            rids = []
-            rid_append = rids.append
+            idx, rids, lens = 0, [], []
+            rids_append, lens_append = rids.append, lens.append
             locmap = defaultdict(list)
 
             # next target line number
@@ -165,32 +164,49 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
             if not length:
                 continue
 
-            # append read Id, alignment length and location
-            idx = len(rids)
-            rid_append(query)
-
             # effective length = length * th
             # -int(-x // 1) is equivalent to math.ceil(x) but faster
             # this value must be >= 1
+            L = -int(-length * th // 1)
+
+            # append read Id, alignment length and location
+            rids_append(query)
+            lens_append(L)
             locmap[subject].extend((
-                (beg << 48) + (-int(-length * th // 1) << 31) + idx,
+                (beg << 48) + (L << 31) + idx,
                 (end << 48) + idx))
 
+            idx += 1
+
     # final flush
-    yield flush(locmap, rids, *args)
+    yield flush(locmap, rids, lens, *args)
 
 
-def flush(rlocmap, rids, glocmap, gidmap, prefix):
+def flush(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
     """Match reads in current chunk with genes from all nucleotides.
 
     Parameters
     ----------
+    rlocmap : dict of list
+        Read coordinates per genome.
+    rids : list of str
+        Read IDs.
+    rlens : list of int
+        Read lengths.
+    glocmap : dict of list
+        Gene coordinates per genome.
+    gidmap : dict of list
+        Gene identifiers.
+    th : float
+        Length threshold.
+    prefix : bool
+        Prefix gene IDs with nucleotide IDs.
 
     Returns
     -------
-    tuple of str
+    list of str
         Query queue.
-    dict of set of str
+    list of set of str
         Subject(s) queue.
     """
     # master read-to-gene(s) map
@@ -222,11 +238,11 @@ def flush(rlocmap, rids, glocmap, gidmap, prefix):
             queue = sorted(chain(glocs, rlocs))
 
             # map reads to genes using the core algorithm
-            gen = match_read_gene(queue)
-            
+            gen = match_read_gene(queue, rlens)
+
         # execute naive algorithm when reads are few
         else:
-            gen = match_read_gene_quart(glocs, rlocs)
+            gen = match_read_gene_quart(glocs, rlocs, rlens)
 
         # add read-gene pairs to the master map
         for read, gene in gen:
@@ -373,13 +389,15 @@ def load_gene_coords(fh, sort=False):
     return coords, idmap, isdup or False
 
 
-def match_read_gene(queue):
+def match_read_gene(queue, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
 
     Parameters
     ----------
     queue : list of int
         Sorted queue of coordinates.
+    rels : list of int
+        Effective lengths of reads.
 
     Yields
     ------
@@ -447,7 +465,15 @@ def match_read_gene(queue):
                     #   gloc:           gene start coordinate
                     #   rloc >> 17`:    read start coordinate
                     #   rloc & 131071`: effective length
-                    if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
+                    try:
+                        rel = rels[rid]
+                    except IndexError:
+                        print(rid)
+                        print(rels)
+                        raise ValueError
+
+                    if (code >> 48) - max(gloc, rloc >> 17) >= rels[rid]:
+                    # if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
                         yield rid, code & (1 << 30) - 1
 
         # if this is a read,
@@ -462,9 +488,10 @@ def match_read_gene(queue):
 
             # when a read ends,
             else:
+                rid = code & (1 << 30) - 1
 
                 # find read start and effective length
-                rloc = reads_pop(code & (1 << 30) - 1)
+                rloc = reads_pop(rid)
 
                 # check cached genes
                 # a potential optimization is to pre-calculate `rloc >> 17`
@@ -477,20 +504,22 @@ def match_read_gene(queue):
                 for gid, gloc in genes_items():
 
                     # same as above
-                    if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
-                        yield code & (1 << 30) - 1, gid
+                    if (code >> 48) - max(gloc, rloc >> 17) >= rels[rid]:
+                        yield rid, gid
 
 
-def match_read_gene_naive(geneque, readque):
+def match_read_gene_naive(gque, rque, rels):
     """Associate reads with genes using a naive approach, which performs
     nested iteration over genes and reads.
 
     Parameters
     ----------
-    geneque : list of int
+    gque : list of int
         Sorted queue of genes.
-    readque : list of int
+    rque : list of int
         Paired queue of reads.
+    rels : list of int
+        Effective lengths of reads.
 
     Yields
     ------
@@ -516,17 +545,17 @@ def match_read_gene_naive(geneque, readque):
     genes_pop = genes.pop
 
     # iterate over reads (paired)
-    it = iter(readque)
+    it = iter(rque)
     for x, y in zip(it, it):
 
         # pre-calculate read metrics
         rid = x & (1 << 30) - 1  # index
         beg = x >> 48            # start coordinate
         end = y >> 48            # end coordinate
-        L = x >> 31 & 131071     # effective length
+        L = rels[rid]            # effective length
 
         # iterate over genes (ordinal)
-        for code in geneque:
+        for code in gque:
 
             # add gene to cache
             if code & (1 << 31):
@@ -540,7 +569,7 @@ def match_read_gene_naive(geneque, readque):
                 yield rid, code & (1 << 30) - 1
 
 
-def match_read_gene_quart(geneque, readque):
+def match_read_gene_quart(geneque, readque, rels):
     """Associate reads with genes by iterating between read region and nearer
     end of gene queue.
 
@@ -550,6 +579,10 @@ def match_read_gene_quart(geneque, readque):
         Sorted queue of genes.
     readque : list of int
         Paired queue of reads.
+    rels : list of int
+        Effective lengths of reads.
+    rels : list of int
+        Effective lengths of reads.
 
     Yields
     ------
@@ -588,7 +621,7 @@ def match_read_gene_quart(geneque, readque):
         rid = x & (1 << 30) - 1  # index
         beg = x >> 48            # start coordinate
         end = y >> 48            # end coordinate
-        L = x >> 31 & 131071     # effective length
+        L = rels[rid]            # effective length
 
         # genes starting within read region
         # will record their coordinates
