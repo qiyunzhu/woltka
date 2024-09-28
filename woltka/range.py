@@ -22,6 +22,69 @@ Filter program (https://github.com/ucsd-cmi/zebra_filter).
 from os import makedirs
 from os.path import join
 
+from .align import iter_align
+
+
+def range_mapper(fh, fmt=None, excl=None, n=1000):
+    """Read an alignment file and yield maps of query to subject(s) and their
+    ranges.
+
+    Parameters
+    ----------
+    fh : file handle
+        Alignment file to parse.
+    fmt : str, optional
+        Alignment file format.
+    excl : set, optional
+        Subjects to exclude.
+    n : int, optional
+        Number of unique queries per chunk.
+
+    Yields
+    ------
+    list of str
+        Query queue.
+    list of dict of list of int
+        Subject-to-ranges queue.
+
+    Notes
+    -----
+    Same as `plain_mapper`, except that it also returns subject ranges.
+
+    Ranges are stored as a one-dimensional, interleaved list of start1, end1,
+    start2, end2, start3, end3...
+
+    See Also
+    --------
+    .align.plain_mapper
+    merge_ranges
+    """
+    it = iter_align(fh, fmt, excl, True)
+    while True:
+        i, done = 0, False
+        qryque, subque = [None] * n, [None] * n
+        for query, records in it:
+
+            # generate a mapping of subjects to interleaved starts and ends
+            ranges = {}
+            for subject, _, _, start, end in records:
+                ranges.setdefault(subject, []).extend((start, end))
+
+            qryque[i] = query
+            subque[i] = ranges
+
+            i += 1
+            if i == n:
+                done = True
+                break
+
+        if not done:
+            if i:
+                yield qryque[:i], subque[:i]
+            break  # pragma: no cover
+        else:
+            yield qryque, subque
+
 
 def merge_ranges(ranges):
     """Merge short, fragmental ranges into long, continuous ones.
@@ -50,7 +113,7 @@ def merge_ranges(ranges):
         if cend is None:
             # case 1: no active range, start active range
             cstart, cend = start, end
-        elif cend >= start - 1:
+        elif cend >= start:
             # case 2: active range continues through this range
             # extend active range
             cend = max(cend, end)
@@ -136,7 +199,7 @@ def calc_coverage(covers):
     return res
 
 
-def write_coverage(covers, outdir):
+def write_coverage(covers, outdir, fmt=None):
     """Write subject coverage to per sample output files.
 
     Parameters
@@ -145,10 +208,46 @@ def write_coverage(covers, outdir):
         Coverage data structure.
     outdir : str
         Directory of output files.
+    fmt : str, optional
+        Format of output coordinates. Can be 'bed' (default) (BED-like, i.e.,
+        0-based, exclusive), 'gff' (GFF-like, i.e., 1-based, inclusive), '0e',
+        '1e', '0i', or '1i'.
+
+    Notes
+    -----
+    BED is 0-based, exclusive (equivalent to '0e').
+    GFF is 1-based, inclusive (equivalent to '1i').
+
+    .. _BED format:
+        https://samtools.github.io/hts-specs/BEDv1.pdf
+    .. _GFF format:
+        https://github.com/The-Sequence-Ontology/Specifications/blob/master/
+        gff3.md
     """
+
+    # determine coordinate format
+    begoff, endoff = 0, 0
+    errmsg = f'Invalid coverage format: {fmt}.'
+    if fmt is not None:
+        if fmt.lower() == 'bed':
+            pass
+        elif fmt.lower() == 'gff':
+            begoff, endoff = 1, 0
+        elif fmt.endswith(('i', 'e')):
+            try:
+                begoff = endoff = int(fmt[:-1])
+            except ValueError:
+                raise ValueError(errmsg)
+            if fmt[-1] == 'i':
+                endoff -= 1
+        else:
+            raise ValueError(errmsg)
+
+    # write coverage files
     makedirs(outdir, exist_ok=True)
     for sample, cover in sorted(covers.items()):
         with open(join(outdir, f'{sample}.cov'), 'w') as fh:
             for subject, ranges in sorted(cover.items()):
-                for start, end in sorted(zip(*[iter(ranges)] * 2)):
-                    print(subject, start, end, sep='\t', file=fh)
+                for beg, end in sorted(zip(*[iter(ranges)] * 2)):
+                    print(subject, beg + begoff, end + endoff,
+                          sep='\t', file=fh)

@@ -28,7 +28,7 @@ from .util import (
 from .file import (
     openzip, readzip, path2stem, stem2rank, read_ids, id2file_from_dir,
     id2file_from_map, read_map_uniq, read_map_1st, write_readmap)
-from .align import plain_mapper, range_mapper
+from .align import plain_mapper
 from .classify import (
     assign_none, assign_free, assign_rank, counter, counter_size,
     counter_strat, counter_size_strat)
@@ -38,7 +38,7 @@ from .tree import (
 from .ordinal import (
     ordinal_mapper, load_gene_coords, calc_gene_lens)
 from .table import prep_table, write_table
-from .coverage import parse_ranges, calc_coverage, write_coverage
+from .range import range_mapper, parse_ranges, calc_coverage, write_coverage
 
 
 def workflow(input_fp:     str,
@@ -83,6 +83,7 @@ def workflow(input_fp:     str,
              outmap_dir:   str = None,
              outmap_zip:   str = 'gz',
              outcov_dir:   str = None,
+             outcov_fmt:   str = None,
              # performance
              chunk:        int = None,
              cache:        int = 1024,
@@ -138,7 +139,7 @@ def workflow(input_fp:     str,
         mapper, files, samples, input_fmt, demux, trimsub, tree, rankdic,
         namedic if name_as_id else None, root, ranks, rank2dir, outmap_zip,
         uniq, major, above, subok, sizes, unassigned, stratmap, exclude, chunk,
-        cache, zippers, outcov_dir)
+        cache, zippers, outcov_dir, outcov_fmt)
 
     # convert counts to fractions
     frac_profiles(data, frac)
@@ -182,7 +183,8 @@ def classify(mapper:  object,
              chunk:      int = None,
              cache:      int = 1024,
              zippers:   dict = None,
-             outcov_dir: str = None) -> dict:
+             outcov_dir: str = None,
+             outcov_fmt: str = None) -> dict:
     """Core of the classification workflow.
 
     Parameters
@@ -248,7 +250,9 @@ def classify(mapper:  object,
     zippers : dict, optional
         External compression programs.
     outcov_dir : str, optional
-        Write Subject coverage maps to directory.
+        Path to output subject coverage directory.
+    outcov_fmt : str, optional
+        Format of subject coverage coordinates.
 
     Returns
     -------
@@ -342,7 +346,7 @@ def classify(mapper:  object,
     # write coverage maps
     if outcov_dir:
         click.echo('Calculating per sample coverage...', nl=False)
-        write_coverage(calc_coverage(covers), outcov_dir)
+        write_coverage(calc_coverage(covers), outcov_dir, outcov_fmt)
         click.echo(' Done.')
 
     click.echo('Classification completed.')

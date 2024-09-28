@@ -16,7 +16,7 @@ from io import StringIO
 
 from woltka.file import openzip
 from woltka.align import (
-    plain_mapper, range_mapper, iter_align, infer_align_format, assign_parser,
+    plain_mapper, iter_align, infer_align_format, assign_parser,
     parse_sam_file, parse_sam_file_ex, parse_sam_file_ft, parse_sam_file_ex_ft,
     cigar_to_lens, cigar_to_lens_ord, parse_sam_file_pd,
     parse_map_file, parse_map_file_ft,
@@ -113,50 +113,6 @@ class AlignTests(TestCase):
             list(plain_mapper(StringIO('Hi there!')))
         self.assertEqual(str(ctx.exception), (
             'Cannot determine alignment file format.'))
-
-    def test_range_mapper(self):
-
-        def _res2lst(res):
-            return tuple(tuple(list(x) for x in y) for y in res)
-
-        aln = StringIO('\n'.join((
-            'R1	G1	95	20	0	0	1	20	10	29	1	1',
-            'R2	G1	95	20	0	0	1	20	16	35	1	1',
-            'R3	G2	95	20	0	0	1	20	39	21	1	1',
-            'R3	G3	95	20	0	0	1	20	88	70	1	1',
-            'R4	G2	95	20	0	0	20	1	41	22	1	1',
-            'R5	G3	95	20	0	0	20	1	30	49	1	1',
-            'R5	G3	95	20	0	0	20	1	50	69	1	1',
-            'Rx	Gx	95	20	0	0	1	20	0	0	1	1',
-            '# this is not an alignment')))
-        obs = _res2lst(range_mapper(aln))[0]
-        exp = [('R1', {'G1': [10, 29]}),
-               ('R2', {'G1': [16, 35]}),
-               ('R3', {'G2': [21, 39], 'G3': [70, 88]}),
-               ('R4', {'G2': [22, 41]}),
-               ('R5', {'G3': [30, 49, 50, 69]})]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
-
-        # chunk of 3
-        aln.seek(0)
-        obs = _res2lst(range_mapper(aln, n=3))
-        self.assertListEqual(list(obs[0][0]), [x[0] for x in exp[:3]])
-        self.assertListEqual(list(obs[0][1]), [x[1] for x in exp[:3]])
-        self.assertListEqual(list(obs[1][0]), [x[0] for x in exp[3:]])
-        self.assertListEqual(list(obs[1][1]), [x[1] for x in exp[3:]])
-
-        # specify format
-        aln.seek(0)
-        obs = _res2lst(range_mapper(aln, fmt='b6o'))[0]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
-        self.assertListEqual(list(obs[1]), [x[1] for x in exp])
-
-        # exclude a subject
-        aln.seek(0)
-        obs = _res2lst(range_mapper(aln, excl={'G1'}))[0]
-        self.assertListEqual(list(obs[0]), [x[0] for x in exp[2:]])
-        self.assertListEqual(list(obs[1]), [x[1] for x in exp[2:]])
 
     def test_iter_align(self):
         line = 'S1/1	NC_123456'
@@ -304,13 +260,13 @@ class AlignTests(TestCase):
         )
         obs = list(parse_sam_file_ex(iter(sam)))
         exp = [
-            ('S1/1', [('NC_123456', None, 100, 26,  125)]),
-            ('S1/2', [('NC_123456', None,  80, 151, 230)]),
-            ('S2',   [('NC_789012', None,  90, 186, 280)]),
-            ('S3/1', [('NC_123456', None, 100, 452, 551),
-                      ('NC_345678', None, 100, 133, 232)]),
-            ('S3/2', [('NC_123456', None,  95, 378, 477),
-                      ('NC_345678', None,  95, 261, 355)])
+            ('S1/1', [('NC_123456', None, 100, 25,  125)]),
+            ('S1/2', [('NC_123456', None,  80, 150, 230)]),
+            ('S2',   [('NC_789012', None,  90, 185, 280)]),
+            ('S3/1', [('NC_123456', None, 100, 451, 551),
+                      ('NC_345678', None, 100, 132, 232)]),
+            ('S3/2', [('NC_123456', None,  95, 377, 477),
+                      ('NC_345678', None,  95, 260, 355)])
         ]
         self.assertEqual(len(obs), len(exp))
         for o, e in zip(obs, exp):
@@ -320,20 +276,20 @@ class AlignTests(TestCase):
     def test_parse_sam_file_ft(self):
         sam = (
             '@HD	VN:1.0	SO:unsorted',
-            'S1	77	G1	80	0	50M	*	0	0	*	*',
-            'S1	141	G2	80	0	50M	*	0	0	*	*',
-            'S2	0	G2	80	0	50M	*	0	0	*	*',
-            'S2	16	G3	80	0	50M	*	0	0	*	*',
-            'S2	147	G4	80	0	50M	*	0	0	*	*',
-            'S2	99	G3	80	0	50M	*	0	0	*	*',
+            'S1	77	G1	81	0	50M	*	0	0	*	*',
+            'S1	141	G2	81	0	50M	*	0	0	*	*',
+            'S2	0	G2	81	0	50M	*	0	0	*	*',
+            'S2	16	G3	81	0	50M	*	0	0	*	*',
+            'S2	147	G4	81	0	50M	*	0	0	*	*',
+            'S2	99	G3	81	0	50M	*	0	0	*	*',
             'S2	0	*	0	0	*	*	0	0	*	*',
-            'S3	83	G3	80	0	50M	*	0	0	*	*',
-            'S3	163	G1	80	0	50M	*	0	0	*	*',
-            'S3	355	G4	80	0	50M	*	0	0	*	*',
-            'S3	403	G5	80	0	50M	*	0	0	*	*',
-            'S4	99	G6	80	0	50M	*	0	0	*	*',
-            'S4	147	G6	80	0	50M	*	0	0	*	*',
-            'S4	256	G6	80	0	50M	*	0	0	*	*'
+            'S3	83	G3	81	0	50M	*	0	0	*	*',
+            'S3	163	G1	81	0	50M	*	0	0	*	*',
+            'S3	355	G4	81	0	50M	*	0	0	*	*',
+            'S3	403	G5	81	0	50M	*	0	0	*	*',
+            'S4	99	G6	81	0	50M	*	0	0	*	*',
+            'S4	147	G6	81	0	50M	*	0	0	*	*',
+            'S4	256	G6	81	0	50M	*	0	0	*	*'
         )
         obs = list(parse_sam_file_ft(iter(sam), {'G1'}))
         exp = [
@@ -358,30 +314,30 @@ class AlignTests(TestCase):
     def test_parse_sam_file_ex_ft(self):
         sam = (
             '@HD	VN:1.0	SO:unsorted',
-            'S1	77	G1	80	0	50M	*	0	0	*	*',
-            'S1	141	G2	80	0	50M	*	0	0	*	*',
-            'S2	0	G2	80	0	50M	*	0	0	*	*',
-            'S2	16	G3	80	0	50M	*	0	0	*	*',
-            'S2	147	G4	80	0	50M	*	0	0	*	*',
-            'S2	99	G3	80	0	50M	*	0	0	*	*',
+            'S1	77	G1	81	0	50M	*	0	0	*	*',
+            'S1	141	G2	81	0	50M	*	0	0	*	*',
+            'S2	0	G2	81	0	50M	*	0	0	*	*',
+            'S2	16	G3	81	0	50M	*	0	0	*	*',
+            'S2	147	G4	81	0	50M	*	0	0	*	*',
+            'S2	99	G3	81	0	50M	*	0	0	*	*',
             'S2	0	*	0	0	*	*	0	0	*	*',
-            'S3	83	G3	80	0	50M	*	0	0	*	*',
-            'S3	163	G1	80	0	50M	*	0	0	*	*',
-            'S3	355	G4	80	0	50M	*	0	0	*	*',
-            'S3	403	G5	80	0	50M	*	0	0	*	*',
-            'S4	99	G6	80	0	50M	*	0	0	*	*',
-            'S4	147	G6	80	0	50M	*	0	0	*	*',
-            'S4	256	G6	80	0	50M	*	0	0	*	*'
+            'S3	83	G3	81	0	50M	*	0	0	*	*',
+            'S3	163	G1	81	0	50M	*	0	0	*	*',
+            'S3	355	G4	81	0	50M	*	0	0	*	*',
+            'S3	403	G5	81	0	50M	*	0	0	*	*',
+            'S4	99	G6	81	0	50M	*	0	0	*	*',
+            'S4	147	G6	81	0	50M	*	0	0	*	*',
+            'S4	256	G6	81	0	50M	*	0	0	*	*'
         )
         obs = list(parse_sam_file_ex_ft(iter(sam), {'G1'}))
         exp = [
-            ('S2',   [('G2', None, 50, 80, 129),
-                      ('G3', None, 50, 80, 129)]),
-            ('S2/1', [('G3', None, 50, 80, 129)]),
-            ('S2/2', [('G4', None, 50, 80, 129)]),
-            ('S4',   [('G6', None, 50, 80, 129)]),
-            ('S4/1', [('G6', None, 50, 80, 129)]),
-            ('S4/2', [('G6', None, 50, 80, 129)])
+            ('S2',   [('G2', None, 50, 80, 130),
+                      ('G3', None, 50, 80, 130)]),
+            ('S2/1', [('G3', None, 50, 80, 130)]),
+            ('S2/2', [('G4', None, 50, 80, 130)]),
+            ('S4',   [('G6', None, 50, 80, 130)]),
+            ('S4/1', [('G6', None, 50, 80, 130)]),
+            ('S4/2', [('G6', None, 50, 80, 130)])
         ]
         self.assertEqual(len(obs), len(exp))
         for o, e in zip(obs, exp):
@@ -484,9 +440,9 @@ class AlignTests(TestCase):
         obs = list(parse_b6o_file_ex(iter(b6o)))
         self.assertEqual(len(obs), 2)
         exp = [
-            ('S1/1', [('NC_123456', 345, 100, 225, 324)]),
-            ('S1/2', [('NC_123456', 270, 98, 608, 708),
-                      ('NC_789012', 206, 95, 337, 425)])
+            ('S1/1', [('NC_123456', 345, 100, 224, 324)]),
+            ('S1/2', [('NC_123456', 270,  98, 607, 708),
+                      ('NC_789012', 206,  95, 336, 425)])
         ]
         self.assertTupleEqual(obs[0], exp[0])
         self.assertTupleEqual(obs[1], exp[1])
@@ -534,13 +490,13 @@ class AlignTests(TestCase):
         )
         obs = list(parse_b6o_file_ex_ft(iter(b6o), set()))
         exp = [
-            ('S1', [('G1', 900, 100,   1, 100)]),
-            ('S2', [('G1', 800,  90, 101, 200),
-                    ('G2', 700,  80, 201, 300)]),
-            ('S3', [('G3', 600,  70, 301, 400),
-                    ('G1', 500,  60, 401, 500)]),
-            ('S4', [('G2', 400,  50, 501, 600),
-                    ('G3', 300,  40, 601, 700)])
+            ('S1', [('G1', 900, 100,   0, 100)]),
+            ('S2', [('G1', 800,  90, 100, 200),
+                    ('G2', 700,  80, 200, 300)]),
+            ('S3', [('G3', 600,  70, 300, 400),
+                    ('G1', 500,  60, 400, 500)]),
+            ('S4', [('G2', 400,  50, 500, 600),
+                    ('G3', 300,  40, 600, 700)])
         ]
         self.assertEqual(len(obs), len(exp))
         for o, e in zip(obs, exp):
@@ -596,11 +552,11 @@ class AlignTests(TestCase):
         )
         obs = list(parse_paf_file_ex(iter(paf)))
         exp = [
-            ('S1/1', [('NC_123456', 20, 75, 1026, 1100)]),
-            ('S1/2', [('NC_123456', 6, 100, 1201, 1300)]),
-            ('S2/1', [('NC_789012', 65, 150, 100001, 100150),
-                      ('NC_345678', 50, 100, 125001, 125100)]),
-            ('S2/2', [('NC_789012', 0, 250, 99901, 100150)])
+            ('S1/1', [('NC_123456', 20, 75, 1025, 1100)]),
+            ('S1/2', [('NC_123456', 6, 100, 1200, 1300)]),
+            ('S2/1', [('NC_789012', 65, 150, 100000, 100150),
+                      ('NC_345678', 50, 100, 125000, 125100)]),
+            ('S2/2', [('NC_789012', 0, 250, 99900, 100150)])
         ]
         self.assertEqual(len(obs), len(exp))
         for o, e in zip(obs, exp):
@@ -648,13 +604,13 @@ class AlignTests(TestCase):
         )
         obs = list(parse_paf_file_ex_ft(iter(paf), set()))
         exp = [
-            ('S1', [('G1', 200, 100,   1, 100)]),
-            ('S2', [('G1', 175,  95, 101, 200),
-                    ('G2', 150,  90, 201, 300)]),
-            ('S3', [('G3', 125,  85, 301, 400),
-                    ('G1', 100,  80, 401, 500)]),
-            ('S4', [('G2',  75,  75, 501, 600),
-                    ('G3',  50,  70, 601, 700)])
+            ('S1', [('G1', 200, 100,   0, 100)]),
+            ('S2', [('G1', 175,  95, 100, 200),
+                    ('G2', 150,  90, 200, 300)]),
+            ('S3', [('G3', 125,  85, 300, 400),
+                    ('G1', 100,  80, 400, 500)]),
+            ('S4', [('G2',  75,  75, 500, 600),
+                    ('G3',  50,  70, 600, 700)])
         ]
         self.assertEqual(len(obs), len(exp))
         for o, e in zip(obs, exp):

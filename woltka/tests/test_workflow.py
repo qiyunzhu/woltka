@@ -57,8 +57,8 @@ class WorkflowTests(TestCase):
         with open(join(outcov_dir, 'S04.cov'), 'r') as f:
             obs = f.read().splitlines()
         self.assertEqual(len(obs), 1078)
-        self.assertEqual(obs[10], 'G000007265\t2092666\t2092815')
-        self.assertEqual(obs[200], 'G000215745\t768758\t769038')
+        self.assertEqual(obs[10], 'G000007265\t2092665\t2092815')
+        self.assertEqual(obs[200], 'G000215745\t768757\t769038')
         remove(output_fp)
         rmtree(outcov_dir)
 

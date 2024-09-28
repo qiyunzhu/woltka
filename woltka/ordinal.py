@@ -44,7 +44,6 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     See Also
     --------
     .align.plain_mapper
-    .align.range_mapper
 
     Yields
     ------
@@ -276,8 +275,10 @@ def load_gene_coords(fh, sort=False):
             gids_append(gene)
             if beg > end:
                 beg, end = end, beg
-            queue_extend(((beg << 48) + (3 << 30) + idx,
-                          (end << 48) + (1 << 30) + idx))
+            queue_extend((
+                ((beg - 1) << 48) + (3 << 30) + idx,
+                (end << 48) + (1 << 30) + idx
+            ))
 
             # check duplicate
             if isdup is None:
@@ -386,7 +387,7 @@ def match_read_gene(queue):
                     #   code >> 48:     read end coordinate
                     #   gloc:           gene start coordinate
                     #   rloc >> 17`:    read start coordinate
-                    #   rloc & 131071`: effective length - 1
+                    #   rloc & 131071`: effective length
                     if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
                         yield rid, code & (1 << 30) - 1
 
@@ -396,9 +397,9 @@ def match_read_gene(queue):
             # when a read begins,
             if code >> 31 & 131071:
 
-                # add its index, coordinate and effective length - 1 to cache
+                # add its index, coordinate and effective length to cache
                 # the latter two are stored as a single integer
-                reads[code & (1 << 30) - 1] = (code >> 31) - 1
+                reads[code & (1 << 30) - 1] = code >> 31
 
             # when a read ends,
             else:
@@ -460,10 +461,10 @@ def match_read_gene_naive(geneque, readque):
     for x, y in zip(it, it):
 
         # pre-calculate read metrics
-        rid = x & (1 << 30) - 1     # index
-        beg = x >> 48               # start coordinate
-        end = y >> 48               # end coordinate
-        L = (x >> 31) - 1 & 131071  # effective length - 1
+        rid = x & (1 << 30) - 1  # index
+        beg = x >> 48            # start coordinate
+        end = y >> 48            # end coordinate
+        L = x >> 31 & 131071     # effective length
 
         # iterate over genes (ordinal)
         for code in geneque:
@@ -474,7 +475,7 @@ def match_read_gene_naive(geneque, readque):
 
             # check overlap while removing gene from cache:
             # min(gene end, read end) - max(gene start, read start) >=
-            # effective length - 1
+            # effective length
             elif (min(code >> 48, end) -
                   max(genes_pop(code & (1 << 30) - 1), beg)) >= L:
                 yield rid, code & (1 << 30) - 1
@@ -525,10 +526,10 @@ def match_read_gene_quart(geneque, readque):
     for x, y in zip(it, it):
 
         # pre-calculate read metrics
-        rid = x & (1 << 30) - 1     # index
-        beg = x >> 48               # start coordinate
-        end = y >> 48               # end coordinate
-        L = (x >> 31) - 1 & 131071  # effective length - 1
+        rid = x & (1 << 30) - 1  # index
+        beg = x >> 48            # start coordinate
+        end = y >> 48            # end coordinate
+        L = x >> 31 & 131071     # effective length
 
         # genes starting within read region
         # will record their coordinates
@@ -715,7 +716,7 @@ def match_read_gene_dummy(queue, lens, th):
                 for rid, rloc in reads.items():
 
                     # is a match if read/gene overlap is long enough
-                    if loc - max(gloc, rloc) + 1 >= lens[rid] * th:
+                    if loc - max(gloc, rloc) >= lens[rid] * th:
                         yield rid, idx
 
         # the same for reads
@@ -725,7 +726,7 @@ def match_read_gene_dummy(queue, lens, th):
             else:
                 rloc = reads.pop(idx)
                 for gid, gloc in genes.items():
-                    if loc - max(rloc, gloc) + 1 >= lens[idx] * th:
+                    if loc - max(rloc, gloc) >= lens[idx] * th:
                         yield idx, gid
 
 
@@ -753,7 +754,7 @@ def calc_gene_lens(mapper):
             if prefix:
                 gid = nucl + gid
             if code >> 31 & 131071:
-                res[gid] = 1 - (code >> 48)
+                res[gid] = -(code >> 48)
             else:
                 res[gid] += code >> 48
     return res
