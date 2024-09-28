@@ -9,6 +9,77 @@
 # ----------------------------------------------------------------------------
 
 """Functions for matching reads and genes using an ordinal system.
+
+This modules matches reads and genes based on their coordinates in the genome.
+It uses an efficient algorithm, in which starting and ending positions of reads
+and genes are flattened and sorted by coordinate into one sequence, followed by
+one iteration over the sequence to identify all read-gene overlaps.
+
+This algorithm was inspired by the sweep line algorithm [1] in computational
+geometry.
+
+    [1] Shamos, Michael Ian, and Dan Hoey. "Geometric intersection problems."
+        17th Annual Symposium on Foundations of Computer Science (sfcs 1976).
+        IEEE, 1976.
+
+In this sequence, each position contains 4 pieces of information:
+
+    0. Coordinate (nt).
+    1. Whether start or end.
+    2. Whether gene or read.
+    3. Index of gene / read.
+
+For efficient computing, the information is stored as a 64-bit signed integer
+(int64), and accessed using bitwise operations. The bits are defined as (from
+right to left):
+
+    Bits  1-22 (22): Index of gene / read (max.: 4,194,303).
+    Bits    23  (1): Whether it is a read (0) or a gene (1).
+    Bits    24  (1): Whether it is a start (0) or an end (1).
+    Bits 25-63 (39): Coordinate (max.: 549,755,813,887).
+
+To construct a position:
+
+    code = (nt << 24) + is_gene * (1 << 23) + is_end * (1 << 22) + idx
+
+To extract information from a position:
+
+    Index:        code & (1 << 22) - 1
+    Gene or read: code & (1 << 22)
+    End or start: code & (1 << 23)
+    Coordinate:   code >> 24
+
+Rationales of this design:
+
+    Index (max. = 4 million): It is larger than the largest number of protein-
+    coding genes in a genome (Trichomonas vaginalis, ca. 60,000). On the other
+    side, the input chunk size should be no more than 4 million, otherwise it
+    is possible that reads mapped to a single genome exceed the upper limit of
+    indices.
+
+    Read (0) or gene (1): Adding one bit costs some compute. It should be done
+    during gene queue construction, which only happens during database loading,
+    instead of during read queue construction, which happens for every chunk of
+    input data.
+
+    Start (0) or end (1): This ensures that the points (uint64) can be directly
+    sorted in ascending order, such that start always occurs before end, even
+    if their coordinates are equal (i.e., the gene/read has a length of 1 bp).
+
+    Coordinate (max. = 550 billion): It is larger than the largest known genome
+    (Tmesipteris oblanceolata, 160 Gbp). Therefore it should be sufficient for
+    the desired application.
+
+Notes:
+
+    If data type is uint64 instead of int64, the maximum coordinate can be 2x
+    as large. However, NumPy does not allow bitwise operations on uint64.
+
+    To remove the upper limit of coordinate, one may remove `dtype=np.int64`
+    from the code. This will slightly slow down the code even if no coordinate
+    exceeds the upper limit, and it will notably reduce efficiency when some
+    coordinates exceed the upper limit, because the array will downgrade to
+    data type to 'O' (Python object), which is inefficient.
 """
 
 from collections import defaultdict
@@ -327,26 +398,7 @@ def match_read_gene(queue):
 
     This function is the most compute-intensive step in the entire analysis,
     therefore it has been deeply optimized to increase performance wherever
-    possible. Notably, it extensively uses bitwise operations to extract
-    multiple pieces of information from a single integer.
-
-    Specifically, each coordinate (an integer) has the following information
-    (from right to left):
-
-    - Bits  1-30: Index of gene / read (30 bits, max.: 1,073,741,823).
-    - Bits    31: Whether it is a gene (1) or a read (0) (1 bit).
-    - Bits 32-58: Whether it is the start (positive) or end (0) of a gene /
-                  read. If start, the value represents the effective length of
-                  an alignment if it's a read, or 1 if it's a gene (17 bits,
-                  max.: 131,071).
-    - Bits 59-  : Coordinate (position on the genome, nt) (unlimited)
-
-    The Python code to extract these pieces of information is:
-
-    - Coordinate:       `code >> 48`
-    - Effective length: `code >> 31 & (1 << 17) - 1`, or `code >> 31 & 131071`
-    - Gene or read:     `code & (1 << 30)`
-    - Gene/read index:  `code & (1 << 30) - 1`
+    possible.
 
     Note: Repeated bitwise operations are usually more efficient that a single
     bitwise operation assigned to a new variable.
