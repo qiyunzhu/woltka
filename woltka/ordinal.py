@@ -132,60 +132,11 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     rids = []
     rid_append = rids.append
 
+    # arguments for flush
+    args = (coords, idmap, prefix)
+
     # cached map of read to coordinates
     locmap = defaultdict(list)
-
-    def flush():
-        """Match reads in current chunk with genes from all nucleotides.
-
-        Returns
-        -------
-        tuple of str
-            Query queue.
-        dict of set of str
-            Subject(s) queue.
-        """
-        # master read-to-gene(s) map
-        res = defaultdict(set)
-
-        # iterate over nucleotides
-        for nucl, locs in locmap.items():
-
-            # it's possible that no gene was annotated on the nucleotide
-            try:
-                glocs = coords[nucl]
-            except KeyError:
-                continue
-
-            # get reference to gene identifiers
-            gids = idmap[nucl]
-
-            # append prefix if needed
-            pfx = nucl + '_' if prefix else ''
-
-            # execute ordinal algorithm when reads are many
-            # 8 (5+ reads) is an empirically determined cutoff
-            if len(locs) > 8:
-
-                # merge and sort coordinates
-                # question is to add unsorted read coordinates into pre-sorted
-                # gene coordinates
-                # Python's Timsort algorithm is efficient for this task
-                queue = sorted(chain(glocs, locs))
-
-                # map reads to genes using the core algorithm
-                for read, gene in match_read_gene(queue):
-
-                    # add read-gene pairs to the master map
-                    res[rids[read]].add(pfx + gids[gene])
-
-            # execute naive algorithm when reads are few
-            else:
-                for read, gene in match_read_gene_quart(glocs, locs):
-                    res[rids[read]].add(pfx + gids[gene])
-
-        # return matching read Ids and gene Ids
-        return res.keys(), res.values()
 
     # target query count at end of current chunk
     target = n
@@ -197,7 +148,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
         if i == target:
 
             # flush: match currently cached reads with genes and yield
-            yield flush()
+            yield flush(locmap, rids, *args)
 
             # re-initiate read Ids, length map and location map
             rids = []
@@ -226,7 +177,63 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
                 (end << 48) + idx))
 
     # final flush
-    yield flush()
+    yield flush(locmap, rids, *args)
+
+
+def flush(rlocmap, rids, glocmap, gidmap, prefix):
+    """Match reads in current chunk with genes from all nucleotides.
+
+    Parameters
+    ----------
+
+    Returns
+    -------
+    tuple of str
+        Query queue.
+    dict of set of str
+        Subject(s) queue.
+    """
+    # master read-to-gene(s) map
+    res = defaultdict(set)
+
+    # iterate over nucleotides
+    for nucl, rlocs in rlocmap.items():
+
+        # it's possible that no gene was annotated on the nucleotide
+        try:
+            glocs = glocmap[nucl]
+        except KeyError:
+            continue
+
+        # get reference to gene identifiers
+        gids = gidmap[nucl]
+
+        # append prefix if needed
+        pfx = nucl + '_' if prefix else ''
+
+        # execute ordinal algorithm when reads are many
+        # 8 (5+ reads) is an empirically determined cutoff
+        if len(rlocs) > 8:
+
+            # merge and sort coordinates
+            # question is to add unsorted read coordinates into pre-sorted
+            # gene coordinates
+            # Python's Timsort algorithm is efficient for this task
+            queue = sorted(chain(glocs, rlocs))
+
+            # map reads to genes using the core algorithm
+            gen = match_read_gene(queue)
+            
+        # execute naive algorithm when reads are few
+        else:
+            gen = match_read_gene_quart(glocs, rlocs)
+
+        # add read-gene pairs to the master map
+        for read, gene in gen:
+            res[rids[read]].add(pfx + gids[gene])
+
+    # return matching read Ids and gene Ids
+    return res.keys(), res.values()
 
 
 def ordinal_parser_dummy(fh, parser):
