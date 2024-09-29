@@ -19,12 +19,15 @@ from tempfile import mkdtemp
 from io import StringIO
 from functools import partial
 
+import numpy as np
+import numpy.testing as npt
+
 from woltka.file import openzip
 from woltka.align import parse_b6o_file_ex, parse_sam_file_ex
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
     match_read_gene_quart, ordinal_mapper, flush_chunk,
-    load_gene_coords, calc_gene_lens, load_gene_lens)
+    load_gene_coords, encode_genes, calc_gene_lens, load_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -332,6 +335,7 @@ class OrdinalTests(TestCase):
                 locmap.setdefault(subject, []).extend((
                     (beg << 24) + idx, (end << 24) + (1 << 23) + idx))
                 idx += 1
+        rlens = np.array(rlens)
         obs = flush_chunk(
             len(rids), locmap, rids, rlens, coords, idmap, 0.8, False)
         exp = [('r1', 'g1'),
@@ -357,7 +361,8 @@ class OrdinalTests(TestCase):
             (61 << 24) + (3 << 22) + 1,
             (64 << 24) + (1 << 22) + 2,
             (94 << 24) + (3 << 22) + 2]}
-        self.assertDictEqual(obs, exp)
+        self.assertListEqual(list(obs.keys()), list(exp.keys()))
+        npt.assert_array_equal(obs['n1'], exp['n1'])
 
         # NCBI accession
         tbl = ('## GCF_000123456\n',
@@ -381,13 +386,15 @@ class OrdinalTests(TestCase):
             (529 << 24) + (3 << 22) + 1,
             (637 << 24) + (1 << 22) + 0,
             (912 << 24) + (3 << 22) + 0]}
-        self.assertDictEqual(obs, exp)
+        self.assertListEqual(list(obs.keys()), list(exp.keys()))
+        for key in obs.keys():
+            npt.assert_array_equal(obs[key], exp[key])
 
         # don't sort
         obs = load_gene_coords(tbl, sort=False)[0]['NC_789012']
         exp = [(637 << 24) + (1 << 22) + 0, (912 << 24) + (3 << 22) + 0,
                (74 << 24) + (1 << 22) + 1,  (529 << 24) + (3 << 22) + 1]
-        self.assertListEqual(obs, exp)
+        npt.assert_array_equal(obs, exp)
 
         # incorrect formats
         # only one column
@@ -399,10 +406,6 @@ class OrdinalTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             load_gene_coords(('hello\t100',))
         self.assertEqual(str(ctx.exception), f'{msg} "hello\t100".')
-        # three columns but 3rd is string
-        with self.assertRaises(ValueError) as ctx:
-            load_gene_coords(('hello\t100\tthere',))
-        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100\tthere".')
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
@@ -417,6 +420,21 @@ class OrdinalTests(TestCase):
         self.assertEqual(obs_[1], (806 << 24) + (3 << 22) + 0)
         self.assertEqual(obs_[2], (815 << 24) + (1 << 22) + 1)
         self.assertEqual(obs_[3], (2177 << 24) + (3 << 22) + 1)
+
+    def test_encode_genes(self):
+        lst = ['5', '384', '410', '933', '912', '638', '529', '75']
+        obs = encode_genes(lst)
+        exp = np.array([
+            (4 << 24) + (1 << 22) + 0, (384 << 24) + (3 << 22) + 0,
+            (409 << 24) + (1 << 22) + 1, (933 << 24) + (3 << 22) + 1,
+            (637 << 24) + (1 << 22) + 2, (912 << 24) + (3 << 22) + 2,
+            (74 << 24) + (1 << 22) + 3,  (529 << 24) + (3 << 22) + 3])
+        npt.assert_array_equal(obs, exp)
+
+        # coordinate not a number
+        with self.assertRaises(ValueError) as ctx:
+            encode_genes(['hello', 'there'])
+        self.assertEqual(str(ctx.exception), 'Invalid coordinate(s) found.')
 
     def test_calc_gene_lens(self):
         coords = {'NC_123456': [(4 << 24) + (1 << 22) + 0,

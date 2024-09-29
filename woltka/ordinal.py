@@ -86,6 +86,8 @@ from collections import defaultdict
 from itertools import chain
 from bisect import bisect
 
+import numpy as np
+
 from .align import iter_align
 
 
@@ -202,7 +204,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=2**20, th=0.8,
     # mapped to multiple loci on a genome), therefore an incremental integer
     # here replaces the original read Id as its identifer
     rids = [None] * n
-    lens = [0] * n
+    lens = np.empty((n,), dtype=np.uint16)
 
     # cached map of reads to per-genome coordinates
     locmap = defaultdict(list)
@@ -247,7 +249,7 @@ def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
         Read coordinates per genome.
     rids : list of str
         Read IDs.
-    rlens : list of int
+    rlens : 1-D array_like of int
         Read lengths.
     glocmap : dict of list
         Gene coordinates per genome.
@@ -269,9 +271,7 @@ def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
     res = defaultdict(set)
 
     # effective length = length * th
-    # -int(-x // 1) is equivalent to math.ceil(x) but faster
-    # this value must be >= 1
-    rels = [-int(-x * th // 1) for x in rlens[:n]]
+    rels = np.ceil(rlens[:n] * th).astype(np.uint16)
 
     # iterate over nucleotides
     for nucl, rlocs in rlocmap.items():
@@ -288,15 +288,19 @@ def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
         # append prefix if needed
         pfx = nucl + '_' if prefix else ''
 
-        # execute ordinal algorithm when reads are many
-        # 8 (5+ reads) is an empirically determined cutoff
-        if len(rlocs) > 8:
+        # convert list to array
+        rlocs = np.array(rlocs, dtype=np.int64)
 
-            # merge and sort coordinates
-            # question is to add unsorted read coordinates into pre-sorted
-            # gene coordinates
-            # Python's Timsort algorithm is efficient for this task
-            queue = sorted(chain(glocs, rlocs))
+        # execute ordinal algorithm when reads are many
+        # 10 (>5 reads) is an empirically determined cutoff
+        if rlocs.size > 10:
+
+            # merge pre-sorted genes with reads of unknown sorting status
+            queue = np.concatenate((glocs, rlocs))
+
+            # sort genes and reads into a mixture
+            # timsort is efficient for this task
+            queue.sort(kind='stable')
 
             # map reads to genes using the core algorithm
             gen = match_read_gene(queue, rels)
@@ -325,8 +329,8 @@ def load_gene_coords(fh, sort=False):
 
     Returns
     -------
-    dict of int
-        Binarized gene coordinate information per nucleotide.
+    dict of np.array(-1, dtype=int64)
+        Binarized gene position information per genome.
     dict of list of str
         Gene IDs.
     bool
@@ -335,15 +339,6 @@ def load_gene_coords(fh, sort=False):
     See Also
     --------
     match_read_gene
-
-    Notes
-    -----
-    This data structure is central to this algorithm. Starting and ending
-    coordinates of each gene are separated and flattened into a sorted list.
-    which enables only one round of list traversal for the entire set of genes
-    plus reads.
-
-    See the docstring of `match_read_gene` for details.
     """
     coords = {}
     queue_extend = None
@@ -356,6 +351,8 @@ def load_gene_coords(fh, sort=False):
     used = set()
     used_add = used.add
 
+    nucl = None  # current nucleotide
+
     for line in fh:
 
         # ">" or "#" indicates genome (nucleotide) name
@@ -365,29 +362,34 @@ def load_gene_coords(fh, sort=False):
             # double ">" or "#" indicates genome name, which serves as
             # a super group of subsequent nucleotide names; to be ignored
             if line[1] != c0:
+
+                # convert gene queue to np.array
+                try:
+                    coords[nucl] = encode_genes(coords[nucl])
+                except KeyError:
+                    pass
+
+                # re-initiate gene queue
                 nucl = line[1:].strip()
                 coords[nucl] = []
                 queue_extend = coords[nucl].extend
                 gids = idmap[nucl] = []
                 gids_append = gids.append
-        else:
-            x = line.rstrip().split('\t')
 
-            # begin and end positions are based on genome (nucleotide)
+        else:
+
+            # extract Id, start, end
             try:
-                beg, end = int(x[1]), int(x[2])
-            except (IndexError, ValueError):
+                gene, beg, end = line.rstrip().split('\t')
+            except ValueError:
                 raise ValueError(
                     f'Cannot extract coordinates from line: "{line}".')
-            idx = len(gids)
-            gene = x[0]
+
+            # add positions to queue
+            queue_extend((beg, end))
+
+            # record gene Id
             gids_append(gene)
-            if beg > end:
-                beg, end = end, beg
-            queue_extend((
-                ((beg - 1) << 24) + (1 << 22) + idx,
-                (end << 24) + (3 << 22) + idx
-            ))
 
             # check duplicate
             if isdup is None:
@@ -396,12 +398,63 @@ def load_gene_coords(fh, sort=False):
                 else:
                     used_add(gene)
 
+    # final conversion
+    try:
+        coords[nucl] = encode_genes(coords[nucl])
+    except KeyError:
+        raise ValueError('No coordinate was read from file.')
+
     # sort gene coordinates per nucleotide
     if sort:
         for queue in coords.values():
-            queue.sort()
+            queue.sort(kind='stable')  # timsort
 
     return coords, idmap, isdup or False
+
+
+def encode_genes(lst):
+    """Encode gene positions into a binary queue.
+
+    Parameters
+    ----------
+    lst : list of int
+        Flattened list of start and end coordinates.
+
+    Returns
+    -------
+    np.array(-1, dtype=int64)
+        Encoded gene queue.
+    """
+    try:
+        arr = np.asarray(lst, dtype=np.int64)
+    except ValueError:
+        raise ValueError('Invalid coordinate(s) found.')
+
+    n = arr.size // 2
+    idx = np.arange(n)  # gene indices
+
+    # separate start (odd) and end (even) positions
+    beg, end = arr[0::2], arr[1::2]
+
+    # order each pair of start and end coordinates such that smaller one
+    # comes first
+    # faster than np.sort since there are only two numbers
+    # < is slightly faster than np.less
+    cmp = beg < end
+    lo = np.where(cmp, beg, end)
+    hi = np.where(cmp, end, beg)
+
+    # encode coordinate, start/end, is gene, and index into one integer
+    lo = np.left_shift(lo - 1, 24) + (1 << 22) + idx
+    hi = np.left_shift(hi, 24) + (3 << 22) + idx
+
+    # fastest way to interleave two arrays
+    # https://stackoverflow.com/questions/5347065/
+    que = np.empty((2 * n,), dtype=np.int64)
+    que[0::2] = lo
+    que[1::2] = hi
+
+    return que
 
 
 def match_read_gene(queue, rels):
