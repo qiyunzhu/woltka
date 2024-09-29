@@ -118,9 +118,9 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
 
     Yields
     ------
-    tuple of str
+    list of str
         Query queue.
-    dict of set of str
+    list of set of str
         Subject(s) queue.
     """
     it = iter_align(fh, fmt, excl, True)
@@ -173,8 +173,8 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
             rids_append(query)
             lens_append(L)
             locmap[subject].extend((
-                (beg << 48) + (L << 31) + idx,
-                (end << 48) + idx))
+                (beg << 24) + idx,
+                (end << 24) + (1 << 23) + idx))
 
             idx += 1
 
@@ -370,8 +370,8 @@ def load_gene_coords(fh, sort=False):
             if beg > end:
                 beg, end = end, beg
             queue_extend((
-                ((beg - 1) << 48) + (3 << 30) + idx,
-                (end << 48) + (1 << 30) + idx
+                ((beg - 1) << 24) + (1 << 22) + idx,
+                (end << 24) + (3 << 22) + idx
             ))
 
             # check duplicate
@@ -442,69 +442,51 @@ def match_read_gene(queue, rels):
     for code in queue:
 
         # if this is a gene,
-        if code & (1 << 30):
+        if code & (1 << 22):
 
-            # when a gene begins,
-            # if code >> 31 & 131071:
-            if code & (1 << 31):
+            # when a gene starts,
+            if not code & (1 << 23):
 
-                # add its index and coordinate to cache
-                genes[code & (1 << 30) - 1] = code >> 48
+                # add it to cache
+                genes[code & (1 << 22) - 1] = code >> 24
 
             # when a gene ends,
             else:
 
-                # find gene start
-                gloc = genes_pop(code & (1 << 30) - 1)
+                # find the gene's start
+                gid = code & (1 << 22) - 1
+                gloc = genes_pop(gid)
 
                 # check cached reads for matches
                 for rid, rloc in reads_items():
 
                     # is a match if read/gene overlap is long enough
-                    #   code >> 48:     read end coordinate
-                    #   gloc:           gene start coordinate
-                    #   rloc >> 17`:    read start coordinate
-                    #   rloc & 131071`: effective length
-                    try:
-                        rel = rels[rid]
-                    except IndexError:
-                        print(rid)
-                        print(rels)
-                        raise ValueError
-
-                    if (code >> 48) - max(gloc, rloc >> 17) >= rels[rid]:
-                    # if (code >> 48) - max(gloc, rloc >> 17) >= rloc & 131071:
-                        yield rid, code & (1 << 30) - 1
+                    if (code >> 24) - max(gloc, rloc) >= rels[rid]:
+                        yield rid, gid
 
         # if this is a read,
         else:
 
-            # when a read begins,
-            if code >> 31 & 131071:
+            # when a read starts,
+            if not code & (1 << 23):
 
-                # add its index, coordinate and effective length to cache
-                # the latter two are stored as a single integer
-                reads[code & (1 << 30) - 1] = code >> 31
+                # add it to cache
+                reads[code & (1 << 22) - 1] = code >> 24
 
             # when a read ends,
             else:
-                rid = code & (1 << 30) - 1
 
-                # find read start and effective length
+                # find the read's start
+                rid = code & (1 << 22) - 1
                 rloc = reads_pop(rid)
 
                 # check cached genes
-                # a potential optimization is to pre-calculate `rloc >> 17`
-                #   and `(code >> 48) - (rloc & 131071)`, however, it is not
-                #   worth the overhead in real applications because there is
-                #   usually zero or one gene in cache
-                # another potential optimization is to replace `max` (which is
-                #   a function call with a ternary operator, but one needs the
-                #   first optimization prior to this
+                # theoretically, an optimization is to loop in reverse order,
+                # `dropwhile` unmatched, then return all remaining ones
                 for gid, gloc in genes_items():
 
                     # same as above
-                    if (code >> 48) - max(gloc, rloc >> 17) >= rels[rid]:
+                    if (code >> 24) - max(gloc, rloc) >= rels[rid]:
                         yield rid, gid
 
 
@@ -549,24 +531,24 @@ def match_read_gene_naive(gque, rque, rels):
     for x, y in zip(it, it):
 
         # pre-calculate read metrics
-        rid = x & (1 << 30) - 1  # index
-        beg = x >> 48            # start coordinate
-        end = y >> 48            # end coordinate
+        rid = x & (1 << 22) - 1  # index
+        beg = x >> 24            # start coordinate
+        end = y >> 24            # end coordinate
         L = rels[rid]            # effective length
 
-        # iterate over genes (ordinal)
+        # iterate over gene positions
         for code in gque:
 
-            # add gene to cache
-            if code & (1 << 31):
-                genes[code & (1 << 30) - 1] = code >> 48
+            # at start, add gene to cache
+            if not code & (1 << 23):
+                genes[code & (1 << 22) - 1] = code >> 24
 
-            # check overlap while removing gene from cache:
-            # min(gene end, read end) - max(gene start, read start) >=
-            # effective length
-            elif (min(code >> 48, end) -
-                  max(genes_pop(code & (1 << 30) - 1), beg)) >= L:
-                yield rid, code & (1 << 30) - 1
+            # at end, check overlap while removing gene from cache:
+            #   min(gene end, read end) - max(gene start, read start) >=
+            #   effective length
+            elif (min(code >> 24, end) -
+                  max(genes_pop(code & (1 << 22) - 1), beg)) >= L:
+                yield rid, code & (1 << 22) - 1
 
 
 def match_read_gene_quart(geneque, readque, rels):
@@ -618,9 +600,9 @@ def match_read_gene_quart(geneque, readque, rels):
     for x, y in zip(it, it):
 
         # pre-calculate read metrics
-        rid = x & (1 << 30) - 1  # index
-        beg = x >> 48            # start coordinate
-        end = y >> 48            # end coordinate
+        rid = x & (1 << 22) - 1  # index
+        beg = x >> 24            # start coordinate
+        end = y >> 24            # end coordinate
         L = rels[rid]            # effective length
 
         # genes starting within read region
@@ -645,12 +627,12 @@ def match_read_gene_quart(geneque, readque, rels):
             for code in geneque[:i]:
 
                 # add gene to cache when it starts
-                if code & (1 << 31):
-                    before_add(code & (1 << 30) - 1)
+                if not code & (1 << 23):
+                    before_add(code & (1 << 22) - 1)
 
                 # drop gene from cache when it ends
                 else:
-                    before_remove(code & (1 << 30) - 1)
+                    before_remove(code & (1 << 22) - 1)
 
             # iterate over gene positions after read start
             for code in geneque[i:]:
@@ -660,12 +642,12 @@ def match_read_gene_quart(geneque, readque, rels):
                     break
 
                 # when gene starts, add it and its coordinate to cache
-                elif code & (1 << 31):
-                    within[code & (1 << 30) - 1] = code >> 48
+                elif not code & (1 << 23):
+                    within[code & (1 << 22) - 1] = code >> 24
 
                 # when gene ends, check overlap and remove it from cache
                 else:
-                    gid = code & (1 << 30) - 1
+                    gid = code & (1 << 22) - 1
 
                     # most genes should start before read region
                     try:
@@ -674,13 +656,13 @@ def match_read_gene_quart(geneque, readque, rels):
                     # if gene started within read region,
                     # overlap = gene end - gene start
                     except KeyError:
-                        if (code >> 48) - within_pop(gid) >= L:
+                        if (code >> 24) - within_pop(gid) >= L:
                             yield rid, gid
 
                     # if gene started before read region,
                     # overlap = gene end - read start
                     else:
-                        if (code >> 48) - beg >= L:
+                        if (code >> 24) - beg >= L:
                             yield rid, gid
 
             # yield all genes that started before read but not yet ended
@@ -716,15 +698,15 @@ def match_read_gene_quart(geneque, readque, rels):
                     break
 
                 # when gene starts, add it and its coordinate to cache
-                if code & (1 << 31):
-                    within[code & (1 << 30) - 1] = code >> 48
+                if not code & (1 << 23):
+                    within[code & (1 << 22) - 1] = code >> 24
 
                 # when gene ends, check overlap and remove it from cache
                 # gene end must be <= read end
                 # if gene not found in cache (gene started before read region),
                 # use read start, otherwise use gene start
-                elif (code >> 48) - within_pop(code & (1 << 30) - 1, beg) >= L:
-                    yield rid, code & (1 << 30) - 1
+                elif (code >> 24) - within_pop(code & (1 << 22) - 1, beg) >= L:
+                    yield rid, code & (1 << 22) - 1
 
                 # move to next position
                 i += 1
@@ -733,15 +715,15 @@ def match_read_gene_quart(geneque, readque, rels):
             for code in geneque[i:]:
 
                 # add gene to cache when it starts
-                if code & (1 << 31):
-                    after_add(code & (1 << 30) - 1)
+                if not code & (1 << 23):
+                    after_add(code & (1 << 22) - 1)
 
                 # when gene ends,
                 else:
 
                     # most remaining genes should start after read region
                     try:
-                        after_remove(code & (1 << 30) - 1)
+                        after_remove(code & (1 << 22) - 1)
 
                     # otherwise, the gene spans over entire read region
                     except KeyError:
@@ -750,8 +732,8 @@ def match_read_gene_quart(geneque, readque, rels):
                         # gene end must be >= read end
                         # if gene not found in cache, use read start, otherwise
                         # use gene start
-                        if end - within_pop(code & (1 << 30) - 1, beg) >= L:
-                            yield rid, code & (1 << 30) - 1
+                        if end - within_pop(code & (1 << 22) - 1, beg) >= L:
+                            yield rid, code & (1 << 22) - 1
 
 
 def match_read_gene_dummy(queue, lens, th):
@@ -842,13 +824,13 @@ def calc_gene_lens(mapper):
         idmap_ = idmap[nucl]
         nucl += '_'
         for code in queue:
-            gid = idmap_[code & (1 << 30) - 1]
+            gid = idmap_[code & (1 << 22) - 1]
             if prefix:
                 gid = nucl + gid
-            if code >> 31 & 131071:
-                res[gid] = -(code >> 48)
-            else:
-                res[gid] += code >> 48
+            if not code & (1 << 23):  # start
+                res[gid] = -(code >> 24)
+            else:  # end
+                res[gid] += code >> 24
     return res
 
 
@@ -858,7 +840,7 @@ def load_gene_lens(fh):
     Parameters
     ----------
     fh : file handle
-        Gene coordinates file.
+        Gene coordinates file.  
 
     Returns
     -------
