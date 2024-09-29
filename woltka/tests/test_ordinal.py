@@ -137,14 +137,19 @@ class OrdinalTests(TestCase):
 
         # read length is uniformly 20, threshold is 80%, so effective
         # alignment length is 20 * 0.8 = 16
-        rels = [16] * len(reads)
-        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+        rels = np.full((len(reads),), 16, dtype=np.uint16)
+
+        # flatten genes and reads
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
-            (end << 24) + (3 << 22) + i)]
-        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+            (end << 24) + (3 << 22) + i)])
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + i,
-            (end << 24) + (1 << 23) + i)]
-        queue = sorted(genes + reads)
+            (end << 24) + (1 << 23) + i)])
+
+        # merge and sort genes and reads
+        queue = np.concatenate((genes, reads))
+        queue.sort()
 
         # default
         obs = list(match_read_gene(queue, rels))
@@ -171,13 +176,13 @@ class OrdinalTests(TestCase):
                  (64, 84),
                  (81, 95)]
         # shorten effective length
-        rels = [14] * len(reads)
-        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+        rels = np.full((len(reads),), 14, dtype=np.uint16)
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
-            (end << 24) + (3 << 22) + i)]
-        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+            (end << 24) + (3 << 22) + i)])
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + i,
-            (end << 24) + (1 << 23) + i)]
+            (end << 24) + (1 << 23) + i)])
 
         # don't sort, but directly feed both queues
         obs = list(match_read_gene_naive(genes, reads, rels))
@@ -208,14 +213,14 @@ class OrdinalTests(TestCase):
                  (64, 84),
                  (69, 75),  # added a small read starting in right half
                  (81, 95)]
-        rels = [14] * len(reads)
-        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+        rels = np.full((len(reads),), 14, dtype=np.uint16)
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
-            (end << 24) + (3 << 22) + i)]
+            (end << 24) + (3 << 22) + i)])
         genes.sort()
-        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + i,
-            (end << 24) + (1 << 23) + i)]
+            (end << 24) + (1 << 23) + i)])
 
         obs = list(match_read_gene_quart(genes, reads, rels))
         exp = [(0, 0),
@@ -232,14 +237,14 @@ class OrdinalTests(TestCase):
                  (5, 7),
                  (6, 8)]
         reads = [(3, 9)]
-        rels = [5]
-        genes = [x for i, (beg, end) in enumerate(genes) for x in (
+        rels = np.array([5], dtype=np.uint16)
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
-            (end << 24) + (3 << 22) + i)]
+            (end << 24) + (3 << 22) + i)])
         genes.sort()
-        reads = [x for i, (beg, end) in enumerate(reads) for x in (
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
             (beg << 24) + i,
-            (end << 24) + (1 << 23) + i)]
+            (end << 24) + (1 << 23) + i)])
         obs = list(match_read_gene_quart(genes, reads, rels))
         exp = []
         self.assertListEqual(obs, exp)
@@ -397,6 +402,11 @@ class OrdinalTests(TestCase):
         npt.assert_array_equal(obs, exp)
 
         # incorrect formats
+        # empty file
+        msg = 'No coordinate was read from file.'
+        with self.assertRaises(ValueError) as ctx:
+            load_gene_coords(())
+        self.assertEqual(str(ctx.exception), msg)
         # only one column
         msg = 'Cannot extract coordinates from line:'
         with self.assertRaises(ValueError) as ctx:

@@ -99,12 +99,13 @@ def merge_ranges(ranges):
     list of int
         Merged ranges.
 
-    Notes
-    -----
+    Examples
+    --------
     Ranges that have overlaps will be merged into one. For example:
 
     >>> merge_ranges([1, 3, 2, 4, 6, 8, 7, 9])
     [1, 4, 6, 9]
+
     """
     res = []
     res_extend = res.extend

@@ -164,8 +164,8 @@ def round_biom(table: biom.Table, digits=0):
     digits : int, optional
         Digits after the decimal point.
 
-    Notes
-    -----
+    Examples
+    --------
     There is a fully vectorized, much faster alternate:
 
     >>> arr = table.matrix_data.data
