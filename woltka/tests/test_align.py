@@ -18,7 +18,7 @@ from woltka.file import openzip
 from woltka.align import (
     plain_mapper, iter_align, infer_align_format, assign_parser,
     parse_sam_file, parse_sam_file_ex, parse_sam_file_ft, parse_sam_file_ex_ft,
-    cigar_to_lens, cigar_to_lens_ord, parse_sam_file_pd,
+    cigar_to_lens, cigar_to_lens_ord,
     parse_map_file, parse_map_file_ft,
     parse_b6o_file, parse_b6o_file_ex, parse_b6o_file_ft, parse_b6o_file_ex_ft,
     parse_paf_file, parse_paf_file_ex, parse_paf_file_ft, parse_paf_file_ex_ft)
@@ -353,9 +353,6 @@ class AlignTests(TestCase):
     def test_cigar_to_lens_ord(self):
         self.assertTupleEqual(cigar_to_lens_ord('150M'), (150, 150))
         self.assertTupleEqual(cigar_to_lens_ord('3M1I3M1D5M'), (11, 12))
-
-    def test_parse_sam_file_pd(self):
-        self.assertIsNone(parse_sam_file_pd([]))
 
     def test_parse_map_file(self):
         aln = (

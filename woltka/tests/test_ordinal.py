@@ -332,7 +332,8 @@ class OrdinalTests(TestCase):
                 locmap.setdefault(subject, []).extend((
                     (beg << 24) + idx, (end << 24) + (1 << 23) + idx))
                 idx += 1
-        obs = flush_chunk(locmap, rids, rlens, coords, idmap, 0.8, False)
+        obs = flush_chunk(
+            len(rids), locmap, rids, rlens, coords, idmap, 0.8, False)
         exp = [('r1', 'g1'),
                ('r5', 'g2'),
                ('r6', 'g2'),

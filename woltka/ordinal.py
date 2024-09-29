@@ -10,7 +10,7 @@
 
 """Functions for matching reads and genes using an ordinal system.
 
-This modules matches reads and genes based on their coordinates in the genome.
+This module matches reads and genes based on their coordinates in the genome.
 It uses an efficient algorithm, in which starting and ending positions of reads
 and genes are flattened and sorted by coordinate into one sequence, followed by
 one iteration over the sequence to identify all read-gene overlaps.
@@ -158,7 +158,7 @@ def match_read_gene_dummy(queue, lens, th):
                         yield idx, gid
 
 
-def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
+def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=2**20, th=0.8,
                    prefix=False):
     """Read an alignment file and match reads and genes in an ordinal system.
 
@@ -175,7 +175,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     excl : set, optional
         Subjects to exclude.
     n : int, optional
-        Number of unique queries per chunk.
+        Number of reads per chunk (max. 2 ** 22 = 4,194,304).
     th : float
         Minimum threshold of overlap length : alignment length for a match.
     prefix : bool
@@ -194,63 +194,55 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
     """
     it = iter_align(fh, fmt, excl, True)
 
-    # arguments for flush
+    # arguments for flush_chunk
     args = (coords, idmap, th, prefix)
 
-    # cached list of query Ids for reverse look-up
+    # cached lists of read Ids and lengths (pre-allocate space)
     # gene Ids are unique, but read Ids can have duplicates (i.e., one read is
     # mapped to multiple loci on a genome), therefore an incremental integer
     # here replaces the original read Id as its identifer
-    idx, rids, lens = 0, [], []
-    rids_append , lens_append = rids.append, lens.append
+    rids = [None] * n
+    lens = [0] * n
 
-    # cached map of read to coordinates
+    # cached map of reads to per-genome coordinates
     locmap = defaultdict(list)
 
-    # target query count at end of current chunk
-    target = n
+    # current read index in the cached lists; will reset after each flush
+    idx = 0
 
     # parse alignment file
-    for i, (query, records) in enumerate(it):
+    for query, records in it:
 
-        # when chunk limit is reached, match currently cached reads with genes
-        # and flush
-        if i == target:
-            yield flush_chunk(locmap, rids, lens, *args)
+        # exclude hits with unavailable or zero length
+        records = [x for x in records if x[2]]
 
-            # re-initiate read Ids, length map and location map
-            idx, rids, lens = 0, [], []
-            rids_append, lens_append = rids.append, lens.append
+        # when chunk limit is about to be exceeded by the next query, match
+        # currently cached reads with genes, flush, and reset
+        if idx + len(records) > n:
+            yield flush_chunk(idx, locmap, rids, lens, *args)
             locmap = defaultdict(list)
+            idx = 0
 
-            # next target line number
-            target += n
-
-        # extract alignment info
+        # extract alignment info and add to cache
         for subject, _, length, beg, end in records:
-
-            # skip if length is not available or zero
-            if not length:
-                continue
-
-            # append read Id, alignment length and location
-            rids_append(query)
-            lens_append(length)
+            rids[idx] = query
+            lens[idx] = length
             locmap[subject].extend((
                 (beg << 24) + idx,
                 (end << 24) + (1 << 23) + idx))
-
             idx += 1
 
     # final flush
-    yield flush_chunk(locmap, rids, lens, *args)
+    yield flush_chunk(idx, locmap, rids, lens, *args)
 
 
-def flush_chunk(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
-    """Match reads in current chunk with genes from all nucleotides.
+def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
+    """Match reads in current chunk with genes from all genomes.
 
     Parameters
     ----------
+    n : int
+        Number of reads to flush.
     rlocmap : dict of list
         Read coordinates per genome.
     rids : list of str
@@ -279,7 +271,7 @@ def flush_chunk(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
     # effective length = length * th
     # -int(-x // 1) is equivalent to math.ceil(x) but faster
     # this value must be >= 1
-    rels = [-int(-x * th // 1) for x in rlens]
+    rels = [-int(-x * th // 1) for x in rlens[:n]]
 
     # iterate over nucleotides
     for nucl, rlocs in rlocmap.items():
@@ -795,7 +787,7 @@ def load_gene_lens(fh):
     Parameters
     ----------
     fh : file handle
-        Gene coordinates file.  
+        Gene coordinates file.
 
     Returns
     -------

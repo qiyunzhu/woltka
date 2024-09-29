@@ -568,8 +568,8 @@ def build_mapper(coords_fp:  str = None,
     presence of a gene coordinates file (`coords_fp`) is an indicator for
     using the latter.
 
-    The chunk size, if not specified, is determined empirically: 1,000 for
-    plain mapper and 1,000,000 for ordinal mapper.
+    The chunk size, if not specified, is determined empirically: 1,024 for
+    plain mapper and 2 ** 20 = 1,048,576 for ordinal mapper.
     """
     if coords_fp:
         click.echo('Reading gene coordinates...', nl=False)
@@ -577,11 +577,11 @@ def build_mapper(coords_fp:  str = None,
             coords, idmap, prefix = load_gene_coords(fh, sort=True)
         click.echo(' Done.')
         click.echo(f'  Total number of host sequences: {len(coords)}.')
-        chunk = chunk or 1000000
+        chunk = chunk or 2**20
         return partial(ordinal_mapper, coords=coords, idmap=idmap,
                        prefix=prefix, th=overlap and overlap / 100), chunk
     else:
-        chunk = chunk or 1000
+        chunk = chunk or 1024
         return range_mapper if outcov_dir else plain_mapper, chunk
 
 
