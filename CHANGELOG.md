@@ -2,6 +2,9 @@
 
 ## Version 0.1.7-dev
 
+### Added
+- Formally adopted the NumPy + Numba solution in the ordinal mapper. This significantly accelerated the algorithm.
+
 ### Changed
 - Changed default output subject coverage (`--outcov`) coordinates into BED-like (0-based, exclusive end). The output can be directly parsed by programs like bedtools. Also added support for GFF-like and other custom formats, as controled by paramter `--outcov-fmt` ([#204](https://github.com/qiyunzhu/woltka/pull/204) and [#205](https://github.com/qiyunzhu/woltka/pull/205)).
 - Default chunk size is now 1024 for plain and range mapeprs, and 2 ** 20 = 1048576 for ordinal mapper.
