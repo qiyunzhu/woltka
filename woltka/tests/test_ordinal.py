@@ -23,7 +23,7 @@ from woltka.file import openzip
 from woltka.align import parse_b6o_file_ex, parse_sam_file_ex
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
-    match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
+    match_read_gene_quart, ordinal_mapper, flush_chunk,
     load_gene_coords, calc_gene_lens, load_gene_lens)
 
 
@@ -85,11 +85,11 @@ class OrdinalTests(TestCase):
 
         # flatten lists
         genes = [x for id_, beg, end in genes for x in (
-            (beg,  True,  True, id_),
-            (end, False,  True, id_))]
+            (beg, False,  True, id_),
+            (end,  True,  True, id_))]
         reads = [x for id_, beg, end in reads for x in (
-            (beg,  True, False, id_),
-            (end, False, False, id_))]
+            (beg, False, False, id_),
+            (end,  True, False, id_))]
 
         # merge genes and reads and sort
         queue = sorted(genes + reads)
@@ -241,40 +241,6 @@ class OrdinalTests(TestCase):
         exp = []
         self.assertListEqual(obs, exp)
 
-    def test_ordinal_parser_dummy(self):
-        # b6o (BLAST, DIAMOND, BURST, etc.)
-        b6o = iter((
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270'))
-        obs = ordinal_parser_dummy(b6o, parse_b6o_file_ex)
-        self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
-        self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
-        self.assertDictEqual(obs[2], {'NC_123456': [
-            (224, True, False, 0), (324, False, False, 0),
-            (607, True, False, 1), (708, False, False, 1)]})
-
-        # sam (BWA, Bowtie2, Minimap2 etc.)
-        sam = iter((
-            # SAM header to be ignored
-            '@HD	VN:1.0	SO:unsorted',
-            # normal, fully-aligned, forward strand
-            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
-            # shortened, reverse strand
-            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
-            # not perfectly aligned, unpaired
-            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            # unaligned
-            'S2	16	*	0	0	*	*	0	0	*	*'))
-        obs = ordinal_parser_dummy(sam, parse_sam_file_ex)
-        self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
-        self.assertDictEqual(obs[1], {
-            'NC_123456': {0: 100, 1: 80},
-            'NC_789012': {2: 90}})
-        self.assertDictEqual(obs[2], {
-            'NC_123456': [(25,  True, False, 0), (125, False, False, 0),
-                          (150, True, False, 1), (230, False, False, 1)],
-            'NC_789012': [(185, True, False, 2), (280, False, False, 2)]})
-
     def test_ordinal_mapper(self):
         # uses the same example as above, with some noises
         coords, idmap, _ = load_gene_coords((
@@ -335,6 +301,42 @@ class OrdinalTests(TestCase):
                ('r7', 'g3'),
                ('r8', 'g3'),
                ('r9', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
+    def test_flush_chunk(self):
+        coords, idmap, _ = load_gene_coords((
+            '>n1',
+            'g1	5	29',
+            'g2	33	61',
+            'g3	65	94',
+            'gx	108	135'))
+        aln = StringIO('\n'.join((
+            'r1	n1	95	20	0	0	1	20	10	29	1	1',
+            'r2	n1	95	20	0	0	1	20	16	35	1	1',
+            'r3	n1	95	20	0	0	1	20	20	39	1	1',
+            'r4	n1	95	20	0	0	20	1	22	41	1	1',
+            'r5	n1	95	20	0	0	20	1	30	49	1	1',
+            'rx	nx	95	20	0	0	1	20	1	20	1	1',
+            'r6	n1	95	20	0	0	1	20	49	30	1	1',
+            'r7	n1	95	20	0	0	25	6	79	60	1	1',
+            'r8	n1	95	20	0	0	1	20	84	65	1	1',
+            'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
+            '# end of file')))
+        idx, rids, rlens, locmap = 0, [], [], {}
+        for query, records in parse_b6o_file_ex(aln):
+            for subject, _, length, beg, end in records:
+                rids.append(query)
+                rlens.append(length)
+                locmap.setdefault(subject, []).extend((
+                    (beg << 24) + idx, (end << 24) + (1 << 23) + idx))
+                idx += 1
+        obs = flush_chunk(locmap, rids, rlens, coords, idmap, 0.8, False)
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
         self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
 

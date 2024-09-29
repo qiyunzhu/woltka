@@ -89,6 +89,75 @@ from bisect import bisect
 from .align import iter_align
 
 
+def match_read_gene_dummy(queue, lens, th):
+    """Associate reads with genes based on a sorted queue of coordinates.
+
+    Parameters
+    ----------
+    queue : list of tuple of (int, bool, bool, int)
+        Sorted queue of coordinates (location, start or end, gene or read,
+        index).
+    lens : dict
+        Read-to-alignment length map.
+    th : float
+        Threshold for read/gene overlapping fraction.
+
+    Yields
+    ------
+    int
+        Read index.
+    int
+        Gene index.
+
+    See Also
+    --------
+    match_read_gene
+    .tests.test_ordinal.OrdinalTests.test_match_read_gene_dummy
+
+    Notes
+    -----
+    This is a dummy function which is only for test and demonstration purpose,
+    but is not called anywhere in the program.
+
+    The formal function `match_read_gene` extensively uses bitwise operations
+    and thus is hard to read. Therefore the current function, which represents
+    the original form of prior to optimization, is retained.
+    """
+    genes = {}  # current genes
+    reads = {}  # current reads
+
+    # walk through flattened queue of reads and genes
+    for loc, is_end, is_gene, idx in queue:
+        if is_gene:
+
+            # when a gene starts, added to gene cache
+            if not is_end:
+                genes[idx] = loc
+
+            # when a gene ends,
+            else:
+
+                # find gene start and remove it from cache
+                gloc = genes.pop(idx)
+
+                # check cached reads for matches
+                for rid, rloc in reads.items():
+
+                    # is a match if read/gene overlap is long enough
+                    if loc - max(gloc, rloc) >= lens[rid] * th:
+                        yield rid, idx
+
+        # the same for reads
+        else:
+            if not is_end:
+                reads[idx] = loc
+            else:
+                rloc = reads.pop(idx)
+                for gid, gloc in genes.items():
+                    if loc - max(rloc, gloc) >= lens[idx] * th:
+                        yield idx, gid
+
+
 def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
                    prefix=False):
     """Read an alignment file and match reads and genes in an ordinal system.
@@ -147,7 +216,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
         # when chunk limit is reached, match currently cached reads with genes
         # and flush
         if i == target:
-            yield flush(locmap, rids, lens, *args)
+            yield flush_chunk(locmap, rids, lens, *args)
 
             # re-initiate read Ids, length map and location map
             idx, rids, lens = 0, [], []
@@ -164,14 +233,9 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
             if not length:
                 continue
 
-            # effective length = length * th
-            # -int(-x // 1) is equivalent to math.ceil(x) but faster
-            # this value must be >= 1
-            L = -int(-length * th // 1)
-
             # append read Id, alignment length and location
             rids_append(query)
-            lens_append(L)
+            lens_append(length)
             locmap[subject].extend((
                 (beg << 24) + idx,
                 (end << 24) + (1 << 23) + idx))
@@ -179,10 +243,10 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=1000000, th=0.8,
             idx += 1
 
     # final flush
-    yield flush(locmap, rids, lens, *args)
+    yield flush_chunk(locmap, rids, lens, *args)
 
 
-def flush(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
+def flush_chunk(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
     """Match reads in current chunk with genes from all nucleotides.
 
     Parameters
@@ -212,6 +276,11 @@ def flush(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
     # master read-to-gene(s) map
     res = defaultdict(set)
 
+    # effective length = length * th
+    # -int(-x // 1) is equivalent to math.ceil(x) but faster
+    # this value must be >= 1
+    rels = [-int(-x * th // 1) for x in rlens]
+
     # iterate over nucleotides
     for nucl, rlocs in rlocmap.items():
 
@@ -238,11 +307,11 @@ def flush(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
             queue = sorted(chain(glocs, rlocs))
 
             # map reads to genes using the core algorithm
-            gen = match_read_gene(queue, rlens)
+            gen = match_read_gene(queue, rels)
 
         # execute naive algorithm when reads are few
         else:
-            gen = match_read_gene_quart(glocs, rlocs, rlens)
+            gen = match_read_gene_quart(glocs, rlocs, rels)
 
         # add read-gene pairs to the master map
         for read, gene in gen:
@@ -250,52 +319,6 @@ def flush(rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
 
     # return matching read Ids and gene Ids
     return res.keys(), res.values()
-
-
-def ordinal_parser_dummy(fh, parser):
-    """Alignment parsing functionalities stripped from for `ordinal_mapper`.
-
-    Parameters
-    ----------
-    fh : file handle
-        Alignment file to parse.
-    parser : callable
-        Function to parse alignment lines of certain format.
-
-    Returns
-    -------
-    list of str
-        Read Ids in same order as in alignment file.
-    defaultdict of dict of int
-        Map of read indices to alignment lengths per nucleotide.
-    defaultdict of list of (int, bool, bool, str)
-        Flattened list of read coordinates per nucleotide.
-
-    See Also
-    --------
-    ordinal_mapper
-    match_read_gene_dummy
-    .tests.test_ordinal.OrdinalTests.test_ordinal_parser_dummy
-
-    Notes
-    -----
-    This is a dummy function only for test and demonstration purpose but not
-    called anywhere in the program. See its unit test for details.
-    """
-    rids = []
-    lenmap = defaultdict(dict)
-    locmap = defaultdict(list)
-
-    for query, records in parser(fh):
-        for subject, _, length, beg, end in records:
-            idx = len(rids)
-            rids.append(query)
-            lenmap[subject][idx] = length
-            locmap[subject].extend((
-                (beg,  True, False, idx),
-                (end, False, False, idx)))
-
-    return rids, lenmap, locmap
 
 
 def load_gene_coords(fh, sort=False):
@@ -734,74 +757,6 @@ def match_read_gene_quart(geneque, readque, rels):
                         # use gene start
                         if end - within_pop(code & (1 << 22) - 1, beg) >= L:
                             yield rid, code & (1 << 22) - 1
-
-
-def match_read_gene_dummy(queue, lens, th):
-    """Associate reads with genes based on a sorted queue of coordinates.
-    Parameters
-    ----------
-    queue : list of tuple of (int, bool, bool, int)
-        Sorted queue of coordinates (location, start or end, gene or read,
-        index).
-    lens : dict
-        Read-to-alignment length map.
-    th : float
-        Threshold for read/gene overlapping fraction.
-
-    Yields
-    ------
-    int
-        Read index.
-    int
-        Gene index.
-
-    See Also
-    --------
-    match_read_gene
-    .tests.test_ordinal.OrdinalTests.test_match_read_gene_dummy
-
-    Notes
-    -----
-    This is a dummy function which is only for test and demonstration purpose,
-    but is not called anywhere in the program.
-
-    The formal function `match_read_gene` extensively uses bitwise operations
-    and thus is hard to read. Therefore the current function, which represents
-    the original form of prior to optimization, is retained.
-    """
-    genes = {}  # current genes
-    reads = {}  # current reads
-
-    # walk through flattened queue of reads and genes
-    for loc, is_start, is_gene, idx in queue:
-        if is_gene:
-
-            # when a gene starts, added to gene cache
-            if is_start:
-                genes[idx] = loc
-
-            # when a gene ends,
-            else:
-
-                # find gene start and remove it from cache
-                gloc = genes.pop(idx)
-
-                # check cached reads for matches
-                for rid, rloc in reads.items():
-
-                    # is a match if read/gene overlap is long enough
-                    if loc - max(gloc, rloc) >= lens[rid] * th:
-                        yield rid, idx
-
-        # the same for reads
-        else:
-            if is_start:
-                reads[idx] = loc
-            else:
-                rloc = reads.pop(idx)
-                for gid, gloc in genes.items():
-                    if loc - max(rloc, gloc) >= lens[idx] * th:
-                        yield idx, gid
 
 
 def calc_gene_lens(mapper):
