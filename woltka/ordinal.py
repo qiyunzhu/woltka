@@ -461,7 +461,7 @@ def encode_genes(lst):
     return que
 
 
-@njit((int64[:], int64[:], uint16[:]))
+@njit((int64[:], uint16[:]))
 def match_read_gene(queue, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
 
