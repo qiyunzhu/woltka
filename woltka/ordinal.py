@@ -87,7 +87,7 @@ from collections import defaultdict
 import numpy as np
 from numba import njit
 from numba.typed import Dict
-from numba.types import uint16, int64, boolean
+from numba.types import uint32, int64, boolean
 from numba import config
 
 from .align import iter_align
@@ -208,7 +208,7 @@ def ordinal_mapper(fh, coords, idmap, fmt=None, excl=None, n=2**20, th=0.8,
     # mapped to multiple loci on a genome), therefore an incremental integer
     # here replaces the original read Id as its identifer
     rids = [None] * n
-    lens = np.empty((n,), dtype=np.uint16)
+    lens = np.empty((n,), dtype=np.uint32)
 
     # cached map of reads to per-genome coordinates
     locmap = defaultdict(list)
@@ -253,7 +253,7 @@ def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
         Read coordinates per genome.
     rids : list of str
         Read IDs.
-    rlens : 1-D array_like of int
+    rlens : np.array(-1, dtype=int64)
         Read lengths.
     glocmap : dict of list
         Gene coordinates per genome.
@@ -275,7 +275,7 @@ def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
     res = defaultdict(set)
 
     # effective length = length * th
-    rels = np.ceil(rlens[:n] * th).astype(np.uint16)
+    rels = np.ceil(rlens[:n] * th).astype(np.uint32)
 
     # iterate over nucleotides
     for nucl, rlocs in rlocmap.items():
@@ -305,6 +305,10 @@ def flush_chunk(n, rlocmap, rids, rlens, glocmap, gidmap, th, prefix):
             # sort genes and reads into a mixture
             # timsort is efficient for this task
             queue.sort(kind='stable')
+
+            # a potentially more efficient method is to use sortednp:
+            # rlocs.sort(kind='stable')
+            # queue = sortednp.merge(glocs, rlocs)
 
             # map reads to genes using the core algorithm
             matches = match_read_gene(queue, rels)
@@ -461,7 +465,7 @@ def encode_genes(lst):
     return que
 
 
-@njit((int64[:], uint16[:]))
+@njit((int64[:], uint32[:]))
 def match_read_gene(queue, rels):
     """Associate reads with genes based on a sorted queue of coordinates.
 
@@ -469,7 +473,7 @@ def match_read_gene(queue, rels):
     ----------
     queue : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : np.array(-1, dtype=uint16)
+    rels : np.array(-1, dtype=uint32)
         Effective lengths of reads.
 
     Returns
@@ -570,7 +574,7 @@ def match_read_gene(queue, rels):
     return matches
 
 
-@njit((int64[:], int64[:], uint16[:]))
+@njit((int64[:], int64[:], uint32[:]))
 def match_read_gene_naive(gque, rque, rels):
     """Associate reads with genes using a naive approach, which performs
     nested iteration over genes and reads.
@@ -581,7 +585,7 @@ def match_read_gene_naive(gque, rque, rels):
         Sorted queue of genes.
     rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : np.array(-1, dtype=uint16)
+    rels : np.array(-1, dtype=uint32)
         Effective lengths of reads.
 
     Returns
@@ -635,7 +639,7 @@ def match_read_gene_naive(gque, rque, rels):
     return matches
 
 
-@njit((int64[:], int64[:], uint16[:]))
+@njit((int64[:], int64[:], uint32[:]))
 def match_read_gene_quart(gque, rque, rels):
     """Associate reads with genes by iterating between read region and nearer
     end of gene queue.
@@ -646,7 +650,7 @@ def match_read_gene_quart(gque, rque, rels):
         Sorted queue of genes.
     rque : np.array(-1, dtype=int64)
         Paired queue of reads.
-    rels : np.array(-1, dtype=uint16)
+    rels : np.array(-1, dtype=uint32)
         Effective lengths of reads.
 
     Returns

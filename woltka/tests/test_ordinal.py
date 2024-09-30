@@ -137,7 +137,7 @@ class OrdinalTests(TestCase):
 
         # read length is uniformly 20, threshold is 80%, so effective
         # alignment length is 20 * 0.8 = 16
-        rels = np.full((len(reads),), 16, dtype=np.uint16)
+        rels = np.full((len(reads),), 16, dtype=np.uint32)
 
         # flatten genes and reads
         genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
@@ -176,7 +176,7 @@ class OrdinalTests(TestCase):
                  (64, 84),
                  (81, 95)]
         # shorten effective length
-        rels = np.full((len(reads),), 14, dtype=np.uint16)
+        rels = np.full((len(reads),), 14, dtype=np.uint32)
         genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
             (end << 24) + (3 << 22) + i)])
@@ -213,7 +213,7 @@ class OrdinalTests(TestCase):
                  (64, 84),
                  (69, 75),  # added a small read starting in right half
                  (81, 95)]
-        rels = np.full((len(reads),), 14, dtype=np.uint16)
+        rels = np.full((len(reads),), 14, dtype=np.uint32)
         genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
             (end << 24) + (3 << 22) + i)])
@@ -237,7 +237,7 @@ class OrdinalTests(TestCase):
                  (5, 7),
                  (6, 8)]
         reads = [(3, 9)]
-        rels = np.array([5], dtype=np.uint16)
+        rels = np.array([5], dtype=np.uint32)
         genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
             (beg << 24) + (1 << 22) + i,
             (end << 24) + (3 << 22) + i)])
