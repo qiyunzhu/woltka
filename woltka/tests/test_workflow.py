@@ -294,7 +294,7 @@ class WorkflowTests(TestCase):
         # plain
         obs = build_mapper()
         self.assertEqual(obs[0].__name__, 'plain_mapper')
-        self.assertEqual(obs[1], 1000)
+        self.assertEqual(obs[1], 1024)
 
         # ordinal
         fp = join(self.tmpdir, 'coords.txt')
@@ -302,7 +302,7 @@ class WorkflowTests(TestCase):
             f.write('>G1\n1\t10\t20\n2\t35\t50\n')
         obs = build_mapper(fp)
         self.assertEqual(obs[0].func.__name__, 'ordinal_mapper')
-        self.assertEqual(obs[1], 1000000)
+        self.assertEqual(obs[1], 1048576)
 
         # ordinal with overlap threshold and chunk size
         obs = build_mapper(fp, overlap=75, chunk=50000)

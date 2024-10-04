@@ -109,8 +109,8 @@ Option | Description
 
 Option | Description
 --- | ---
-`--chunk` | Number of unique queries to read and parse in each chunk of an alignment file. Default: 1,000 for plain or range mapping, or 1,000,000 for ordinal mapping.
-`--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1024.
+`--chunk` | Number of unique queries to read and parse in each chunk of an alignment file. Default: 1,024 for plain or range mapping, or 2 ** 20 = 1,048,576 for ordinal mapping. The latter cannot exceed 2 ** 22.
+`--cache` | Number of recent classification results to cache for faster subsequent classifications. Default: 1,024.
 `--no-exe` | Disable calling external programs (`gzip`, `bzip2` and `xz`) for decompression. Otherwise, Woltka will use them if available for faster processing, or switch back to Python if not.
 
 

@@ -19,12 +19,15 @@ from tempfile import mkdtemp
 from io import StringIO
 from functools import partial
 
+import numpy as np
+import numpy.testing as npt
+
 from woltka.file import openzip
 from woltka.align import parse_b6o_file_ex, parse_sam_file_ex
 from woltka.ordinal import (
     match_read_gene_dummy, match_read_gene, match_read_gene_naive,
-    match_read_gene_quart, ordinal_parser_dummy, ordinal_mapper,
-    load_gene_coords, calc_gene_lens, load_gene_lens)
+    match_read_gene_quart, ordinal_mapper, flush_chunk,
+    load_gene_coords, encode_genes, calc_gene_lens, load_gene_lens)
 
 
 class OrdinalTests(TestCase):
@@ -85,11 +88,11 @@ class OrdinalTests(TestCase):
 
         # flatten lists
         genes = [x for id_, beg, end in genes for x in (
-            (beg,  True,  True, id_),
-            (end, False,  True, id_))]
+            (beg, False,  True, id_),
+            (end,  True,  True, id_))]
         reads = [x for id_, beg, end in reads for x in (
-            (beg,  True, False, id_),
-            (end, False, False, id_))]
+            (beg, False, False, id_),
+            (end,  True, False, id_))]
 
         # merge genes and reads and sort
         queue = sorted(genes + reads)
@@ -118,156 +121,133 @@ class OrdinalTests(TestCase):
         """This test is for the real function.
         """
         # gene table
-        genes = [(1,  4, 29),
-                 (2, 32, 61),
-                 (3, 64, 94)]
+        genes = [(5, 29),   # 0
+                 (33, 61),  # 1
+                 (65, 94)]  # 2
         # read map
-        reads = [(1,  9, 29),
-                 (2, 15, 35),
-                 (3, 19, 39),
-                 (4, 21, 41),
-                 (5, 29, 49),
-                 (6, 29, 49),  # identical
-                 (7, 59, 79),
-                 (8, 64, 84),
-                 (9, 81, 95)]  # shorter
+        reads = [(10, 29),  # 0
+                 (16, 35),  # 1
+                 (20, 39),  # 2
+                 (22, 41),  # 3
+                 (30, 49),  # 4
+                 (30, 49),  # 5 (identical to 4)
+                 (60, 79),  # 6
+                 (65, 84),  # 7
+                 (82, 95)]  # 8 (shorter than others)
 
         # read length is uniformly 20, threshold is 80%, so effective
         # alignment length is 20 * 0.8 = 16
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (16 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        queue = sorted(genes + reads)
+        rels = np.full((len(reads),), 16, dtype=np.uint32)
+
+        # flatten genes and reads
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + i,
+            (end << 24) + (3 << 22) + i)])
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + i,
+            (end << 24) + (1 << 23) + i)])
+
+        # merge and sort genes and reads
+        queue = np.concatenate((genes, reads))
+        queue.sort()
 
         # default
-        obs = list(match_read_gene(queue))
-        exp = [(1, 1),
-               (5, 2),
-               (6, 2),
-               (8, 3)]
+        obs = list(match_read_gene(queue, rels))
+        exp = [(0, 0),
+               (4, 1),
+               (5, 1),
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_naive(self):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  4, 29),
-                 (2, 32, 61),
-                 (3, 63, 94)]
-        reads = [(1,  9, 29),
-                 (2, 15, 35),
-                 (3, 19, 39),
-                 (4, 21, 41),
-                 (5, 29, 49),
-                 (6, 29, 49),
-                 (7, 59, 79),
-                 (8, 64, 84),
-                 (9, 81, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        genes = [(4, 29),
+                 (32, 61),
+                 (64, 94)]
+        reads = [(9, 29),
+                 (15, 35),
+                 (19, 39),
+                 (21, 41),
+                 (29, 49),
+                 (29, 49),
+                 (59, 79),
+                 (64, 84),
+                 (81, 95)]
+        # shorten effective length
+        rels = np.full((len(reads),), 14, dtype=np.uint32)
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + i,
+            (end << 24) + (3 << 22) + i)])
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + i,
+            (end << 24) + (1 << 23) + i)])
 
         # don't sort, but directly feed both queues
-        obs = list(match_read_gene_naive(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
+        obs = list(match_read_gene_naive(genes, reads, rels))
+        exp = [(0, 0),
+               (1, 0),
+               (4, 1),
+               (5, 1),
                (6, 2),
-               (7, 3),
-               (8, 3)]
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
     def test_match_read_gene_quart(self):
         """The naive solution should produce identical result compared to
         the default (ordinal) solution.
         """
-        genes = [(1,  4, 29),
-                 (2, 32, 61),
-                 (3, 64, 94),
-                 (4, 60, 76),  # added a small gene within a read
-                 (5, 66, 72)]  # added a tiny gene
-        reads = [(1,  9, 29),
-                 (2, 15, 35),
-                 (3, 19, 39),
-                 (4, 21, 41),
-                 (5, 29, 49),
-                 (6, 29, 49),
-                 (7, 59, 79),
-                 (8, 64, 84),
-                 (9, 81, 95)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes = [(4, 29),
+                 (32, 61),
+                 (64, 94),
+                 (60, 76),  # added a small gene within a read
+                 (66, 72)]  # added a tiny gene
+        reads = [(9, 29),
+                 (15, 35),
+                 (19, 39),
+                 (21, 41),
+                 (29, 49),
+                 (29, 49),
+                 (59, 79),
+                 (64, 84),
+                 (69, 75),  # added a small read starting in right half
+                 (81, 95)]
+        rels = np.full((len(reads),), 14, dtype=np.uint32)
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + i,
+            (end << 24) + (3 << 22) + i)])
         genes.sort()
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (14 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + i,
+            (end << 24) + (1 << 23) + i)])
 
-        obs = list(match_read_gene_quart(genes, reads))
-        exp = [(1, 1),
-               (2, 1),
-               (5, 2),
+        obs = list(match_read_gene_quart(genes, reads, rels))
+        exp = [(0, 0),
+               (1, 0),
+               (4, 1),
+               (5, 1),
+               (6, 3),  # match to added small gene
                (6, 2),
-               (7, 4),  # match to added small gene
-               (7, 3),
-               (8, 3)]
+               (7, 2)]
         self.assertListEqual(obs, exp)
 
         # a special case with a giant read
-        genes = [(1, 0, 5),
-                 (2, 5, 7),
-                 (3, 6, 8)]
-        reads = [(1, 3, 9)]
-        genes = [x for idx, beg, end in genes for x in (
-            (beg << 48) + (1 << 31) + (1 << 30) + idx,
-            (end << 48) + (0 << 31) + (1 << 30) + idx)]
+        genes = [(0, 5),
+                 (5, 7),
+                 (6, 8)]
+        reads = [(3, 9)]
+        rels = np.array([5], dtype=np.uint32)
+        genes = np.array([x for i, (beg, end) in enumerate(genes) for x in (
+            (beg << 24) + (1 << 22) + i,
+            (end << 24) + (3 << 22) + i)])
         genes.sort()
-        reads = [x for idx, beg, end in reads for x in (
-            (beg << 48) + (5 << 31) + (0 << 30) + idx,
-            (end << 48) + (0 << 31) + (0 << 30) + idx)]
-        obs = list(match_read_gene_quart(genes, reads))
+        reads = np.array([x for i, (beg, end) in enumerate(reads) for x in (
+            (beg << 24) + i,
+            (end << 24) + (1 << 23) + i)])
+        obs = list(match_read_gene_quart(genes, reads, rels))
         exp = []
         self.assertListEqual(obs, exp)
-
-    def test_ordinal_parser_dummy(self):
-        # b6o (BLAST, DIAMOND, BURST, etc.)
-        b6o = iter((
-            'S1/1	NC_123456	100	100	0	0	1	100	225	324	1.2e-30	345',
-            'S1/2	NC_123456	95	98	2	1	2	99	708	608	3.4e-20	270'))
-        obs = ordinal_parser_dummy(b6o, parse_b6o_file_ex)
-        self.assertListEqual(obs[0], ['S1/1', 'S1/2'])
-        self.assertDictEqual(obs[1], {'NC_123456': {0: 100, 1: 98}})
-        self.assertDictEqual(obs[2], {'NC_123456': [
-            (224, True, False, 0), (324, False, False, 0),
-            (607, True, False, 1), (708, False, False, 1)]})
-
-        # sam (BWA, Bowtie2, Minimap2 etc.)
-        sam = iter((
-            # SAM header to be ignored
-            '@HD	VN:1.0	SO:unsorted',
-            # normal, fully-aligned, forward strand
-            'S1	77	NC_123456	26	0	100M	*	0	0	*	*',
-            # shortened, reverse strand
-            'S1	141	NC_123456	151	0	80M	*	0	0	*	*',
-            # not perfectly aligned, unpaired
-            'S2	0	NC_789012	186	0	50M5I20M5D20M	*	0	0	*	*',
-            # unaligned
-            'S2	16	*	0	0	*	*	0	0	*	*'))
-        obs = ordinal_parser_dummy(sam, parse_sam_file_ex)
-        self.assertListEqual(obs[0], ['S1/1', 'S1/2', 'S2'])
-        self.assertDictEqual(obs[1], {
-            'NC_123456': {0: 100, 1: 80},
-            'NC_789012': {2: 90}})
-        self.assertDictEqual(obs[2], {
-            'NC_123456': [(25,  True, False, 0), (125, False, False, 0),
-                          (150, True, False, 1), (230, False, False, 1)],
-            'NC_789012': [(185, True, False, 2), (280, False, False, 2)]})
 
     def test_ordinal_mapper(self):
         # uses the same example as above, with some noises
@@ -332,6 +312,44 @@ class OrdinalTests(TestCase):
         self.assertListEqual(list(obs[0]), [x[0] for x in exp])
         self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
 
+    def test_flush_chunk(self):
+        coords, idmap, _ = load_gene_coords((
+            '>n1',
+            'g1	5	29',
+            'g2	33	61',
+            'g3	65	94',
+            'gx	108	135'))
+        aln = StringIO('\n'.join((
+            'r1	n1	95	20	0	0	1	20	10	29	1	1',
+            'r2	n1	95	20	0	0	1	20	16	35	1	1',
+            'r3	n1	95	20	0	0	1	20	20	39	1	1',
+            'r4	n1	95	20	0	0	20	1	22	41	1	1',
+            'r5	n1	95	20	0	0	20	1	30	49	1	1',
+            'rx	nx	95	20	0	0	1	20	1	20	1	1',
+            'r6	n1	95	20	0	0	1	20	49	30	1	1',
+            'r7	n1	95	20	0	0	25	6	79	60	1	1',
+            'r8	n1	95	20	0	0	1	20	84	65	1	1',
+            'r9	n1	95	20	0	0	1	20	95	82	1	1',
+            'rx	nx	95	0	0	0	0	0	0	0	1	1',
+            '# end of file')))
+        idx, rids, rlens, locmap = 0, [], [], {}
+        for query, records in parse_b6o_file_ex(aln):
+            for subject, _, length, beg, end in records:
+                rids.append(query)
+                rlens.append(length)
+                locmap.setdefault(subject, []).extend((
+                    (beg << 24) + idx, (end << 24) + (1 << 23) + idx))
+                idx += 1
+        rlens = np.array(rlens)
+        obs = flush_chunk(
+            len(rids), locmap, rids, rlens, coords, idmap, 0.8, False)
+        exp = [('r1', 'g1'),
+               ('r5', 'g2'),
+               ('r6', 'g2'),
+               ('r8', 'g3')]
+        self.assertListEqual(list(obs[0]), [x[0] for x in exp])
+        self.assertListEqual(list(obs[1]), [{x[1]} for x in exp])
+
     def test_load_gene_coords(self):
         # simple case
         tbl = ('>n1',
@@ -342,13 +360,14 @@ class OrdinalTests(TestCase):
         self.assertFalse(isdup)
         self.assertDictEqual(idmap, {'n1': ['g1', 'g2', 'g3']})
         exp = {'n1': [
-            (4 << 48) + (3 << 30) + 0,
-            (29 << 48) + (1 << 30) + 0,
-            (32 << 48) + (3 << 30) + 1,
-            (61 << 48) + (1 << 30) + 1,
-            (64 << 48) + (3 << 30) + 2,
-            (94 << 48) + (1 << 30) + 2]}
-        self.assertDictEqual(obs, exp)
+            (4 << 24) + (1 << 22) + 0,
+            (29 << 24) + (3 << 22) + 0,
+            (32 << 24) + (1 << 22) + 1,
+            (61 << 24) + (3 << 22) + 1,
+            (64 << 24) + (1 << 22) + 2,
+            (94 << 24) + (3 << 22) + 2]}
+        self.assertListEqual(list(obs.keys()), list(exp.keys()))
+        npt.assert_array_equal(obs['n1'], exp['n1'])
 
         # NCBI accession
         tbl = ('## GCF_000123456\n',
@@ -363,24 +382,31 @@ class OrdinalTests(TestCase):
         self.assertDictEqual(idmap, {
             'NC_123456': ['1', '2'], 'NC_789012': ['1', '2']})
         exp = {'NC_123456': [
-            (4 << 48) + (3 << 30) + 0,
-            (384 << 48) + (1 << 30) + 0,
-            (409 << 48) + (3 << 30) + 1,
-            (933 << 48) + (1 << 30) + 1],
+            (4 << 24) + (1 << 22) + 0,
+            (384 << 24) + (3 << 22) + 0,
+            (409 << 24) + (1 << 22) + 1,
+            (933 << 24) + (3 << 22) + 1],
                'NC_789012': [
-            (74 << 48) + (3 << 30) + 1,
-            (529 << 48) + (1 << 30) + 1,
-            (637 << 48) + (3 << 30) + 0,
-            (912 << 48) + (1 << 30) + 0]}
-        self.assertDictEqual(obs, exp)
+            (74 << 24) + (1 << 22) + 1,
+            (529 << 24) + (3 << 22) + 1,
+            (637 << 24) + (1 << 22) + 0,
+            (912 << 24) + (3 << 22) + 0]}
+        self.assertListEqual(list(obs.keys()), list(exp.keys()))
+        for key in obs.keys():
+            npt.assert_array_equal(obs[key], exp[key])
 
         # don't sort
         obs = load_gene_coords(tbl, sort=False)[0]['NC_789012']
-        exp = [(637 << 48) + (3 << 30) + 0, (912 << 48) + (1 << 30) + 0,
-               (74 << 48) + (3 << 30) + 1,  (529 << 48) + (1 << 30) + 1]
-        self.assertListEqual(obs, exp)
+        exp = [(637 << 24) + (1 << 22) + 0, (912 << 24) + (3 << 22) + 0,
+               (74 << 24) + (1 << 22) + 1,  (529 << 24) + (3 << 22) + 1]
+        npt.assert_array_equal(obs, exp)
 
         # incorrect formats
+        # empty file
+        msg = 'No coordinate was read from file.'
+        with self.assertRaises(ValueError) as ctx:
+            load_gene_coords(())
+        self.assertEqual(str(ctx.exception), msg)
         # only one column
         msg = 'Cannot extract coordinates from line:'
         with self.assertRaises(ValueError) as ctx:
@@ -390,10 +416,6 @@ class OrdinalTests(TestCase):
         with self.assertRaises(ValueError) as ctx:
             load_gene_coords(('hello\t100',))
         self.assertEqual(str(ctx.exception), f'{msg} "hello\t100".')
-        # three columns but 3rd is string
-        with self.assertRaises(ValueError) as ctx:
-            load_gene_coords(('hello\t100\tthere',))
-        self.assertEqual(str(ctx.exception), f'{msg} "hello\t100\tthere".')
 
         # real coords file
         fp = join(self.datdir, 'function', 'coords.txt.xz')
@@ -404,20 +426,35 @@ class OrdinalTests(TestCase):
         self.assertEqual(len(obs), 107)
         obs_ = obs['G000006745']
         self.assertEqual(len(obs_), 7188)
-        self.assertEqual(obs_[0], (371 << 48) + (3 << 30) + 0)
-        self.assertEqual(obs_[1], (806 << 48) + (1 << 30) + 0)
-        self.assertEqual(obs_[2], (815 << 48) + (3 << 30) + 1)
-        self.assertEqual(obs_[3], (2177 << 48) + (1 << 30) + 1)
+        self.assertEqual(obs_[0], (371 << 24) + (1 << 22) + 0)
+        self.assertEqual(obs_[1], (806 << 24) + (3 << 22) + 0)
+        self.assertEqual(obs_[2], (815 << 24) + (1 << 22) + 1)
+        self.assertEqual(obs_[3], (2177 << 24) + (3 << 22) + 1)
+
+    def test_encode_genes(self):
+        lst = ['5', '384', '410', '933', '912', '638', '529', '75']
+        obs = encode_genes(lst)
+        exp = np.array([
+            (4 << 24) + (1 << 22) + 0, (384 << 24) + (3 << 22) + 0,
+            (409 << 24) + (1 << 22) + 1, (933 << 24) + (3 << 22) + 1,
+            (637 << 24) + (1 << 22) + 2, (912 << 24) + (3 << 22) + 2,
+            (74 << 24) + (1 << 22) + 3,  (529 << 24) + (3 << 22) + 3])
+        npt.assert_array_equal(obs, exp)
+
+        # coordinate not a number
+        with self.assertRaises(ValueError) as ctx:
+            encode_genes(['hello', 'there'])
+        self.assertEqual(str(ctx.exception), 'Invalid coordinate(s) found.')
 
     def test_calc_gene_lens(self):
-        coords = {'NC_123456': [(4 << 48) + (3 << 30) + 0,
-                                (384 << 48) + (1 << 30) + 0,
-                                (409 << 48) + (3 << 30) + 1,
-                                (933 << 48) + (1 << 30) + 1],
-                  'NC_789012': [(74 << 48) + (3 << 30) + 1,
-                                (529 << 48) + (1 << 30) + 1,
-                                (637 << 48) + (3 << 30) + 0,
-                                (912 << 48) + (1 << 30) + 0]}
+        coords = {'NC_123456': [(4 << 24) + (1 << 22) + 0,
+                                (384 << 24) + (3 << 22) + 0,
+                                (409 << 24) + (1 << 22) + 1,
+                                (933 << 24) + (3 << 22) + 1],
+                  'NC_789012': [(74 << 24) + (1 << 22) + 1,
+                                (529 << 24) + (3 << 22) + 1,
+                                (637 << 24) + (1 << 22) + 0,
+                                (912 << 24) + (3 << 22) + 0]}
         idmap = {'NC_123456': ['1', '2'],
                  'NC_789012': ['1', '2']}
         mapper = partial(ordinal_mapper, coords=coords, idmap=idmap,

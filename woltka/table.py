@@ -59,22 +59,6 @@ def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
     list of dict
         Metadata (extra columns, or BIOM observation metadata).
 
-    Examples
-    --------
-    Convert output to a BIOM table:
-    >>> import biom
-    >>> args = profile, samples, tree, rankdic, namedic, name_as_id
-    >>> table = biom.Table(prep_table(*args))
-
-    Convert output to a Pandas DataFrame (data only):
-    >>> import pandas as pd
-    >>> data, features, samples, metadata = prep_table(*args)
-    >>> df = pd.DataFrame(data, features, samples)
-
-    Convert output to a Pandas DataFrame (data and metadata):
-    >>> df = pd.concat([pd.DataFrame(data, features, samples),
-                        pd.DataFrame.from_records(metadata, features)], axis=1)
-
     See Also
     --------
     write_tsv
@@ -90,6 +74,26 @@ def prep_table(profile, samples=None, tree=None, rankdic=None, namedic=None,
     not be dropped even when empty.
 
     A stratified feature will be printed as "stratum|feature".
+
+    Examples
+    --------
+    Convert output to a BIOM table:
+
+    >>> import biom
+    >>> args = profile, samples, tree, rankdic, namedic, name_as_id
+    >>> table = biom.Table(prep_table(*args))
+
+    Convert output to a Pandas DataFrame (data only):
+
+    >>> import pandas as pd
+    >>> data, features, samples, metadata = prep_table(*args)
+    >>> df = pd.DataFrame(data, features, samples)
+
+    Convert output to a Pandas DataFrame (data and metadata):
+
+    >>> df = pd.concat([pd.DataFrame(data, features, samples),
+                        pd.DataFrame.from_records(metadata, features)], axis=1)
+
     """
     # determine range and order of samples
     samples = [x for x in samples if x in profile] if samples else sorted(
