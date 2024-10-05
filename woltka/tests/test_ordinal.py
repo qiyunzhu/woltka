@@ -337,7 +337,7 @@ class OrdinalTests(TestCase):
         qrys, lens, begs, ends = [], [], [], []
         for query, records in parse_b6o_file_ex(aln):
             for subject, _, length, beg, end in records:
-                qrys.append(query)  
+                qrys.append(query)
                 lens.append(length)
                 begs.append(beg)
                 ends.append(end)
