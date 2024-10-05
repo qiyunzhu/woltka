@@ -281,11 +281,11 @@ def flush_chunk(n, idxmap, rids, lens, begs, ends, glocmap, gidmap, th,
     rels = np.ceil(lens[:n] * th).astype(np.uint32)
 
     # encode read start and end positions
-    idxs = np.arange(n)
+    idx = np.arange(n)
     begs[:n] <<= 24
     ends[:n] <<= 24
-    begs[:n] += idxs
-    ends[:n] += idxs + (1 << 23)
+    begs[:n] += idx
+    ends[:n] += idx + (1 << 23)
 
     # iterate over genomes:
     for nucl, idx in idxmap.items():
@@ -456,23 +456,21 @@ def encode_genes(lst):
 
     # order each pair of start and end coordinates such that smaller one
     # comes first
-    # faster than np.sort since there are only two numbers
-    # < is slightly faster than np.less
     cmp = beg < end
     lo = np.where(cmp, beg, end)
     hi = np.where(cmp, end, beg)
 
     # encode coordinate, start/end, is gene, and index into one integer
-    lo = np.left_shift(lo - 1, 24) + (1 << 22) + idx
-    hi = np.left_shift(hi, 24) + (3 << 22) + idx
+    lo = (lo - 1 << 24) + (1 << 22) + idx
+    hi = (hi << 24) + (3 << 22) + idx
 
     # fastest way to interleave two arrays
     # https://stackoverflow.com/questions/5347065/
-    que = np.empty((2 * n,), dtype=np.int64)
-    que[0::2] = lo
-    que[1::2] = hi
+    queue = np.empty(2 * n, dtype=np.int64)
+    queue[0::2] = lo
+    queue[1::2] = hi
 
-    return que
+    return queue
 
 
 @njit((int64[:], uint32[:]))
