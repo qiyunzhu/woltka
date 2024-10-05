@@ -18,6 +18,7 @@ from shutil import rmtree
 from tempfile import mkdtemp
 from io import StringIO
 from functools import partial
+from collections import defaultdict
 
 import numpy as np
 import numpy.testing as npt
@@ -332,17 +333,21 @@ class OrdinalTests(TestCase):
             'r9	n1	95	20	0	0	1	20	95	82	1	1',
             'rx	nx	95	0	0	0	0	0	0	0	1	1',
             '# end of file')))
-        idx, rids, rlens, locmap = 0, [], [], {}
+        idx, sub2idx = 0, defaultdict(list)
+        qrys, lens, begs, ends = [], [], [], []
         for query, records in parse_b6o_file_ex(aln):
             for subject, _, length, beg, end in records:
-                rids.append(query)
-                rlens.append(length)
-                locmap.setdefault(subject, []).extend((
-                    (beg << 24) + idx, (end << 24) + (1 << 23) + idx))
+                qrys.append(query)
+                lens.append(length)
+                begs.append(beg)
+                ends.append(end)
+                sub2idx[subject].append(idx)
                 idx += 1
-        rlens = np.array(rlens)
+        lens = np.array(lens, dtype=np.uint32)
+        begs = np.array(begs, dtype=np.int64)
+        ends = np.array(ends, dtype=np.int64)
         obs = flush_chunk(
-            len(rids), locmap, rids, rlens, coords, idmap, 0.8, False)
+            idx, sub2idx, qrys, lens, begs, ends, coords, idmap, 0.8, False)
         exp = [('r1', 'g1'),
                ('r5', 'g2'),
                ('r6', 'g2'),
