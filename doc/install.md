@@ -51,17 +51,6 @@ python setup.py install
 
 Type `woltka` to check if installation is successful, in which case command-line help information will be displayed on the screen.
 
-## Acceleration
-
-Woltka has a [Numba](https://numba.pydata.org/)-accelerated version (the [numba](https://github.com/qiyunzhu/woltka/tree/numba) branch) in parallel to the main branch. In this version, the "coord-match" algorithm for functional analysis (see [details](ordinal.md)) is significantly faster and consumes less memory. To use this feature, install Woltka using the following commands instead:
-
-```bash
-conda install -c conda-forge numba biom-format
-pip install git+https://github.com/qiyunzhu/woltka.git@numba
-```
-
-[**Note**] This feature only accelerates read-gene matching. It does not help with the analysis of microbiome structure.
-
 ## Upgrade
 
 If you installed Woltka using Conda, do:
@@ -101,10 +90,10 @@ conda env remove -n woltka
 If in the future some dependencies have changes that are not compatible with the current release of Woltka, the following "safe" commands can be used to install the current versions of dependencies.
 
 ```bash
-conda create -n woltka python=3.12.2
+conda create -n woltka python=3.12.7
 conda activate woltka
-conda install -c conda-forge biom-format=2.1.15
-conda install -c bioconda woltka=0.1.6
+conda install -c conda-forge numba=0.60.0 biom-format=2.1.16
+conda install -c bioconda woltka=0.1.7
 ```
 
 ## Test

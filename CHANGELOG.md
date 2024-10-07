@@ -1,6 +1,6 @@
 # Change Log
 
-## Version 0.1.7-dev
+## Version 0.1.7 (10/7/2024)
 
 ### Added
 - Formally adopted the NumPy + Numba solution in the ordinal mapper. This significantly accelerated the algorithm ([#209](https://github.com/qiyunzhu/woltka/pull/209)).
