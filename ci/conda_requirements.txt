@@ -1,3 +1,2 @@
-numpy
 numba
 biom-format
