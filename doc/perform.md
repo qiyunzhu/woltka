@@ -52,8 +52,7 @@ _Functional analysis_
 Simple read-gene matching | 4:08:53 | 7.745 GB
 Simple read-gene matching, reporting RPK | 4:16:31 | 11.99 GB
 Functional profiling at UniRef entry, then GO process | 4:24:49 | 14.92 GB
-_Experimental_
-Simple read-gene matching, with Numba [acceleration](install.md#acceleration) | 1:55:40 | 5.066 GB
+Simple read-gene matching, with Numba acceleration (default since v0.1.7) | 1:55:40 | 5.066 GB
 
 
 ## Tips for efficient computing
