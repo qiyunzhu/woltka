@@ -72,7 +72,8 @@ class BiomTests(TestCase):
             'G5\t0\t7\t5\t\t\t\n'),
             sep='\t', index_col=0, na_filter=False)
         assert_frame_equal(
-            obs.to_dataframe(dense=True).astype(int), exp.iloc[:, :3].astype(int))
+            obs.to_dataframe(dense=True).astype(int),
+            exp.iloc[:, :3].astype(int))
         assert_frame_equal(
             obs.metadata_to_dataframe('observation')[[
                 'Name', 'Rank', 'Lineage']], exp.iloc[:, -3:])
