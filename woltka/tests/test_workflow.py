@@ -695,7 +695,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'free.biom')
         obs = load_table(fp).to_dataframe(dense=True).astype(int)
         exp = pd.DataFrame([[3, 1], [0, 2]], index=['Ecoli', 'Strep'],
-                           columns=['S1', 'S2'])
+                           columns=['S1', 'S2']).astype(int)
         assert_frame_equal(obs, exp)
         remove(fp)
 
