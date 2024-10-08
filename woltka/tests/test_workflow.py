@@ -679,7 +679,7 @@ class WorkflowTests(TestCase):
         write_profiles(data, fp, is_biom=True)
         obs = load_table(fp).to_dataframe(dense=True).astype(int)
         exp = pd.DataFrame([[1, 3], [2, 0], [0, 2]], index=['G1', 'G2', 'G3'],
-                           columns=['S1', 'S2'])
+                           columns=['S1', 'S2']).astype(int)
         assert_frame_equal(obs, exp)
 
         # multiple profiles in BIOM format (default)
@@ -695,7 +695,7 @@ class WorkflowTests(TestCase):
         fp = join(self.tmpdir, 'free.biom')
         obs = load_table(fp).to_dataframe(dense=True).astype(int)
         exp = pd.DataFrame([[3, 1], [0, 2]], index=['Ecoli', 'Strep'],
-                           columns=['S1', 'S2'])
+                           columns=['S1', 'S2']).astype(int)
         assert_frame_equal(obs, exp)
         remove(fp)
 

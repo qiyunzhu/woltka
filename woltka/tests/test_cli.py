@@ -81,12 +81,12 @@ class CliTests(TestCase):
         # check read maps
         for i in range(1, 6):
             outmap_fp = join(self.tmpdir, f'S0{i}.txt.gz')
-            with gzip.open(outmap_fp, 'r') as f:
-                obs = f.read()
+            with gzip.open(outmap_fp, 'rt') as f:
+                obs = [x.rstrip() for x in f.readlines()]
             with gzip.open(join(self.outdir, 'burst.genus.map',
-                                f'S0{i}.txt.gz'), 'r') as f:
-                exp = f.read()
-            self.assertEqual(obs, exp)
+                                f'S0{i}.txt.gz'), 'rt') as f:
+                exp = [x.rstrip() for x in f.readlines()]
+            self.assertListEqual(obs, exp)
             remove(outmap_fp)
 
         # blastn, family-level classification, report relative abundance (%)

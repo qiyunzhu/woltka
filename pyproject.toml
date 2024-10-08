@@ -1,0 +1,52 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "woltka"
+dynamic = ["version"]
+dependencies = [
+  "numba",
+  "biom-format",
+]
+requires-python = ">=3.6"
+authors = [
+  {name = "Qiyun Zhu", email = "qiyunzhu@gmail.com"}
+]
+maintainers = [
+  {name = "Qiyun Zhu", email = "qiyunzhu@gmail.com"}
+]
+description = "versatile meta-omic data classifier"
+readme = "README.md"
+license = {file = "LICENSE"}
+keywords = ["bioinformatics", "metagenomics", "microbiome"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "License :: OSI Approved :: BSD License",
+  "Topic :: Scientific/Engineering",
+  "Topic :: Scientific/Engineering :: Bio-Informatics",
+  "Intended Audience :: Science/Research",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Operating System :: OS Independent",
+  "Operating System :: POSIX :: Linux",
+  "Operating System :: MacOS :: MacOS X",
+  "Operating System :: Microsoft :: Windows",
+]
+
+[project.urls]
+Homepage = "https://github.com/qiyunzhu/woltka"
+Documentation = "https://github.com/qiyunzhu/woltka/blob/main/README.md"
+Repository = "https://github.com/qiyunzhu/woltka.git"
+Issues = "https://github.com/qiyunzhu/woltka/issues"
+Changelog = "https://github.com/qiyunzhu/woltka/blob/main/CHANGELOG.md"
+
+[project.scripts]
+woltka = "woltka.cli:cli"
+
+[project.entry-points."qiime2.plugins"]
+q2-woltka = "woltka.q2.plugin_setup:plugin"
+
+[tool.hatch.version]
+path = "woltka/__init__.py"

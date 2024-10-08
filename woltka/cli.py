@@ -14,8 +14,6 @@
 import click
 
 from . import __version__
-from .workflow import workflow
-from .tools import normalize_wf, filter_wf, merge_wf, collapse_wf, coverage_wf
 
 
 class NaturalOrderGroup(click.Group):
@@ -197,6 +195,7 @@ def cli():
 def classify_cmd(**kwargs):
     """Main classification workflow: Alignments => profile(s).
     """
+    from .workflow import workflow
     workflow(**kwargs)
 
 
@@ -236,6 +235,7 @@ def classify_cmd(**kwargs):
 def collapse_cmd(**kwargs):
     """Collapse a profile by feature mapping and/or hierarchy.
     """
+    from .tools import collapse_wf
     collapse_wf(**kwargs)
 
 
@@ -263,6 +263,7 @@ def collapse_cmd(**kwargs):
 def normalize_cmd(**kwargs):
     """Normalize a profile to fractions and/or by feature sizes.
     """
+    from .tools import normalize_wf
     normalize_wf(**kwargs)
 
 
@@ -284,6 +285,7 @@ def normalize_cmd(**kwargs):
 def filter_cmd(**kwargs):
     """Filter a profile by per-sample abundance.
     """
+    from .tools import filter_wf
     filter_wf(**kwargs)
 
 
@@ -300,6 +302,7 @@ def filter_cmd(**kwargs):
 def merge_cmd(**kwargs):
     """Merge multiple profiles into one profile.
     """
+    from .tools import merge_wf
     merge_wf(**kwargs)
 
 
@@ -330,19 +333,8 @@ def merge_cmd(**kwargs):
 def coverage_cmd(**kwargs):
     """Calculate per-sample coverage of feature groups.
     """
+    from .tools import coverage_wf
     coverage_wf(**kwargs)
-
-
-# the "tools" menu is for backward compatibility
-@cli.group('tools', cls=NaturalOrderGroup)
-def tools():
-    """Entries to the same commands for backward compatibility (deprecated).
-    """
-    pass  # pragma: no cover
-
-
-for cmd in collapse_cmd, normalize_cmd, filter_cmd, merge_cmd, coverage_cmd:
-    tools.add_command(cmd)
 
 
 if __name__ == '__main__':
