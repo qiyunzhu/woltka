@@ -46,7 +46,7 @@ Option 4: Install from a local copy:
 Download this [repository](https://github.com/qiyunzhu/woltka/archive/main.zip) or any of the previous [releases](https://github.com/qiyunzhu/woltka/releases). Unzip and navigate to the package directory. Then execute:
 
 ```bash
-python setup.py install
+pip install .
 ```
 
 Type `woltka` to check if installation is successful, in which case command-line help information will be displayed on the screen.
