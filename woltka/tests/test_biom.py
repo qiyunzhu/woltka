@@ -206,6 +206,30 @@ class BiomTests(TestCase):
             'S2': {'G1': 1.55, 'G2': 0.17, 'G3': 1.5}})))
         self.assertBIOMEqual(obs, exp)
 
+    def test_round_biom_empty_table(self):
+        # https://github.com/qiyunzhu/woltka/issues/216
+        exp = Table(data=[], observation_ids=[], sample_ids=[])
+        round_biom(exp)
+        obs = Table(data=[], observation_ids=[], sample_ids=[])
+        self.assertBIOMEqual(obs, exp)
+
+    def test_round_biom_empty_table_with_labels(self):
+        # https://github.com/qiyunzhu/woltka/issues/216
+        observation_ids = ['G1', 'G2', 'G3']
+        sample_ids = ['S1', 'S2']
+        data = np.zeros((len(observation_ids), len(sample_ids)))
+
+        obs = Table(data, observation_ids=observation_ids,
+                    sample_ids=sample_ids)
+        round_biom(obs)
+
+        data = np.zeros((len(observation_ids), len(sample_ids)))
+        exp = Table(data, observation_ids=observation_ids,
+                    sample_ids=sample_ids)
+        exp.remove_empty(axis='observation')
+
+        self.assertBIOMEqual(obs, exp)
+
     def test_biom_add_metacol(self):
         obs = Table(*map(np.array, prep_table({
             'S1': {'G1': 4, 'G2': 5, 'G3': 8, 'G4': 0, 'G5': 3},

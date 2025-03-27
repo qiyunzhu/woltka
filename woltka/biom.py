@@ -192,7 +192,8 @@ def round_biom(table: biom.Table, digits=0):
             return round(num, digits)
 
     tmd = table.matrix_data
-    tmd.data = np.vectorize(f)(tmd.data).astype('float64')
+    if tmd.nnz:
+        tmd.data = np.vectorize(f)(tmd.data).astype('float64')
     tmd.eliminate_zeros()
     table.remove_empty(axis='observation')
 
