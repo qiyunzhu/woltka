@@ -14,6 +14,7 @@
 from os.path import basename, dirname, splitext, isfile, join
 from shutil import which
 from subprocess import Popen, PIPE
+from contextlib import contextmanager
 import glob
 import gzip
 import bz2
@@ -22,9 +23,9 @@ import lzma
 from .util import count_list
 
 
-zipfmts = {'.gz':   'gzip', '.gzip':   'gzip',
+zipfmts = {'.gz': 'gzip', '.gzip': 'gzip',
            '.bz2': 'bzip2', '.bzip2': 'bzip2',
-           '.xz':     'xz', '.lz':       'xz', '.lzma': 'xz'}
+           '.xz': 'xz', '.lz': 'xz', '.lzma': 'xz'}
 ziplibs = {'gzip': gzip, 'bzip2': bz2, 'xz': lzma}
 
 
@@ -59,6 +60,7 @@ def openzip(fp, mode='rt'):
     return zipper(fp, mode)
 
 
+@contextmanager
 def readzip(fp, zippers=None):
     """Open a regular or compressed file by matching filename extension to
     proper library.
@@ -108,13 +110,25 @@ def readzip(fp, zippers=None):
 
     # not a compressed file
     if ext not in zipfmts:
-        return open(fp, 'r')
+        f = open(fp, 'r', encoding='utf-8')
+        try:
+            yield f
+        finally:
+            f.close()
+        return
+        # return open(fp, 'r')
 
     fmt = zipfmts[ext]
 
     # external programs are disabled
     if zippers is None:
-        return ziplibs[fmt].open(fp, 'rt')
+        f = ziplibs[fmt].open(fp, 'rt')
+        try:
+            yield f
+        finally:
+            f.close()
+        return
+        # return ziplibs[fmt].open(fp, 'rt')
 
     # check whether specific external program exists
     if fmt not in zippers:
@@ -122,11 +136,25 @@ def readzip(fp, zippers=None):
 
     # use external program
     if zippers[fmt]:
-        return Popen([fmt, '-cdfq', fp], stdout=PIPE, encoding='utf-8').stdout
+        proc = Popen([fmt, '-cdfq', fp], stdout=PIPE, text=True)
+        try:
+            yield proc.stdout
+        finally:
+            try:
+                if proc.stdout:
+                    proc.stdout.close()
+            finally:
+                proc.wait()
+        # return Popen([fmt, '-cdfq', fp], stdout=PIPE, encoding='utf-8').stdout
 
     # external program does not exist
     else:
-        return ziplibs[fmt].open(fp, 'rt')
+        f = ziplibs[fmt].open(fp, 'rt')
+        try:
+            yield f
+        finally:
+            f.close()
+        # return ziplibs[fmt].open(fp, 'rt')
 
 
 def file2stem(fname, ext=None):
