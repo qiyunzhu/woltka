@@ -235,9 +235,8 @@ class CliTests(TestCase):
                   '--divide']
         res = self.runner.invoke(collapse_cmd, params)
         self.assertEqual(res.exit_code, 0)
-        # self.assertEqual(res.output.splitlines()[-1],
-        #                  'Collapsed profile written.')
-        self.assertIn('Collapsed profile written.', res.output.splitlines())
+        self.assertEqual(res.output.splitlines()[-1],
+                         'Collapsed profile written.')
         with open(output_fp, 'r') as f:
             self.assertEqual(len(f.read().splitlines()), 74)
         remove(output_fp)

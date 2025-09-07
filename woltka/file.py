@@ -110,13 +110,12 @@ def readzip(fp, zippers=None):
 
     # not a compressed file
     if ext not in zipfmts:
-        f = open(fp, 'r', encoding='utf-8')
+        f = open(fp, 'r')
         try:
             yield f
         finally:
             f.close()
         return
-        # return open(fp, 'r')
 
     fmt = zipfmts[ext]
 
@@ -128,7 +127,6 @@ def readzip(fp, zippers=None):
         finally:
             f.close()
         return
-        # return ziplibs[fmt].open(fp, 'rt')
 
     # check whether specific external program exists
     if fmt not in zippers:
@@ -136,16 +134,15 @@ def readzip(fp, zippers=None):
 
     # use external program
     if zippers[fmt]:
-        proc = Popen([fmt, '-cdfq', fp], stdout=PIPE, text=True)
+        p = Popen([fmt, '-cdfq', fp], stdout=PIPE, text=True)
         try:
-            yield proc.stdout
+            yield p.stdout
         finally:
             try:
-                if proc.stdout:
-                    proc.stdout.close()
+                if p.stdout:
+                    p.stdout.close()
             finally:
-                proc.wait()
-        # return Popen([fmt, '-cdfq', fp], stdout=PIPE, encoding='utf-8').stdout
+                p.wait()
 
     # external program does not exist
     else:
@@ -154,7 +151,6 @@ def readzip(fp, zippers=None):
             yield f
         finally:
             f.close()
-        # return ziplibs[fmt].open(fp, 'rt')
 
 
 def file2stem(fname, ext=None):
