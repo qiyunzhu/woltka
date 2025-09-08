@@ -138,11 +138,9 @@ def readzip(fp, zippers=None):
         try:
             yield p.stdout
         finally:
-            try:
-                if p.stdout:
-                    p.stdout.close()
-            finally:
-                p.wait()
+            if p.stdout:
+                p.stdout.close()
+            p.wait()
 
     # external program does not exist
     else:
